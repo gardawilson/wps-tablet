@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication"
+        tools:targetApi="31">
+        <activity
+            android:name=".SawnTimber"
+            android:exported="false" />
+        <activity
+            android:name=".Packing"
+            android:exported="false" />
+        <activity
+            android:name=".Sanding"
+            android:exported="false" />
+        <activity
+            android:name=".CrossCut"
+            android:exported="false" />
+        <activity
+            android:name=".Laminating"
+            android:exported="false" />
+        <activity
+            android:name=".Moulding"
+            android:exported="false" />
+        <activity
+            android:name=".FingerJoint"
+            android:exported="false" />
+        <activity
+            android:name=".BeforeLabel"
+            android:exported="false" />
+        <activity
+            android:name=".S4S"
+            android:exported="true" />
+        <activity
+            android:name=".InputProduksi"
+            android:exported="false" />
+        <activity
+            android:name=".MenuUtama"
+            android:exported="false" />
+        <activity
+            android:name=".Registrasi"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
