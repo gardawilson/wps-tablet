@@ -26,6 +26,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -65,6 +66,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import java.text.DecimalFormat;
+import android.view.Gravity;
+import android.widget.TableRow;
+
 public class CrossCut extends AppCompatActivity {
 
     private EditText NoCC;
@@ -91,11 +96,6 @@ public class CrossCut extends AppCompatActivity {
     private boolean isDataBaruClickedCC = false;
     private CheckBox CBAfkirCC;
     private CheckBox CBLemburCC;
-    private TextView TabelTebalCC;
-    private TextView TabelNoCC;
-    private TextView TabelLebarCC;
-    private TextView TabelPanjangCC;
-    private TextView TabelPcsCC;
     private Button BtnInputDetailCC;
     private EditText DetailLebarCC;
     private EditText DetailTebalCC;
@@ -108,6 +108,9 @@ public class CrossCut extends AppCompatActivity {
     private boolean isCBAfkirCC, isCBLemburCC;
     private Button BtnSearchCC;
     private Spinner SpinProfileCC;
+    private int rowCount = 0;
+    private TableLayout Tabel;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,11 +140,6 @@ public class CrossCut extends AppCompatActivity {
         BtnHapusDetailCC = findViewById(R.id.BtnHapusDetailCC);
         CBLemburCC = findViewById(R.id.CBLemburCC);
         CBAfkirCC = findViewById(R.id.CBAfkirCC);
-        TabelTebalCC = findViewById(R.id.TabelTebalCC);
-        TabelPcsCC = findViewById(R.id.TabelPcsCC);
-        TabelPanjangCC = findViewById(R.id.TabelPanjangCC);
-        TabelNoCC = findViewById(R.id.TabelNoCC);
-        TabelLebarCC = findViewById(R.id.TabelLebarCC);
         BtnInputDetailCC = findViewById(R.id.BtnInputDetailCC);
         DetailPcsCC = findViewById(R.id.DetailPcsCC);
         DetailTebalCC = findViewById(R.id.DetailTebalCC);
@@ -153,6 +151,7 @@ public class CrossCut extends AppCompatActivity {
         BtnSearchCC = findViewById(R.id.BtnSearchCC);
         BtnPrintCC.setEnabled(false);
         SpinProfileCC = findViewById(R.id.SpinProfileCC);
+        Tabel = findViewById(R.id.Tabel);
 
          radioButtonMesinCC.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -233,11 +232,6 @@ public class CrossCut extends AppCompatActivity {
             int isLembur = CBLemburCC.isChecked() ? 1 : 0;
 
             if (noCC.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    TabelLebarCC.getText().toString().isEmpty() ||
-                    TabelPanjangCC.getText().toString().isEmpty() ||
-                    TabelTebalCC.getText().toString().isEmpty() ||
-                    TabelPcsCC.getText().toString().isEmpty() ||
-                    TabelNoCC.getText().toString().isEmpty() ||
                     selectedTelly == null ||
                     selectedSPK == null ||
                     selectedProfile == null ||
@@ -253,15 +247,6 @@ public class CrossCut extends AppCompatActivity {
             }
             BtnDataBaruCC.setEnabled(true);
             BtnPrintCC.setEnabled(true);
-
-            new InsertDatabaseTask(
-                    TabelLebarCC.getText().toString(),
-                    TabelPanjangCC.getText().toString(),
-                    TabelTebalCC.getText().toString(),
-                    TabelPcsCC.getText().toString(),
-                    TabelNoCC.getText().toString(),
-                    noCC
-            ).execute();
 
             new UpdateDatabaseTask(
                     noCC,
@@ -279,8 +264,18 @@ public class CrossCut extends AppCompatActivity {
 
             if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
                 new SaveToDatabaseTask(noProduksi, noCC).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noCC, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else if (radioButtonBSusunCC.isChecked() && SpinSusunCC.isEnabled() && noBongkarSusun != null) {
                 new SaveBongkarSusunTask(noBongkarSusun, noCC).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noCC, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else {
                 Toast.makeText(CrossCut.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
@@ -290,17 +285,20 @@ public class CrossCut extends AppCompatActivity {
 
         });
 
+        BtnHapusDetailCC.setOnClickListener(v -> {
+            resetDetailData();
+        });
+
+
         BtnBatalCC.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String noCC = NoCC.getText().toString().trim();
 
                 if (!noCC.isEmpty()) {
-                    new DeleteDataTask().execute(noCC);
                 }
 
                 clearTableData2();
-                clearTableData();
                 Toast.makeText(CrossCut.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -362,65 +360,69 @@ public class CrossCut extends AppCompatActivity {
         TimeCC.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailCC.setOnClickListener(v -> {
-            updateTableData();
-            m3();
-            jumlahpcs();
-            clearTableData();
-        });
+            String noCC = NoCC.getText().toString();
 
-        BtnPrintCC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    String noCC = NoCC.getText() != null ? NoCC.getText().toString() : "";
-                    String Kayu = SpinKayuCC.getSelectedItem() != null ? SpinKayuCC.getSelectedItem().toString() : "";
-                    String Grade = SpinGradeCC.getSelectedItem() != null ? SpinGradeCC.getSelectedItem().toString() : "";
-                    String Fisik = SpinFisikCC.getSelectedItem() != null ? SpinFisikCC.getSelectedItem().toString() : "";
-                    String Tanggal = DateCC.getText() != null ? DateCC.getText().toString() : "";
-                    String Waktu = TimeCC.getText() != null ? TimeCC.getText().toString() : "";
-                    String Telly = SpinTellyCC.getSelectedItem() != null ? SpinTellyCC.getSelectedItem().toString() : "";
-                    String Mesin = SpinMesinCC.getSelectedItem() != null ? SpinMesinCC.getSelectedItem().toString() : "";
-                    String noSPK = SpinSPKCC.getSelectedItem() != null ? SpinSPKCC.getSelectedItem().toString() : "";
-                    String tebal = TabelTebalCC.getText() != null ? TabelTebalCC.getText().toString() : "";
-                    String lebar = TabelLebarCC.getText() != null ? TabelLebarCC.getText().toString() : "";
-                    String panjang = TabelPanjangCC.getText() != null ? TabelPanjangCC.getText().toString() : "";
-                    String pcs = TabelPcsCC.getText() != null ? TabelPcsCC.getText().toString() : "";
-                    String jlh = JumlahPcsCC.getText() != null ? JumlahPcsCC.getText().toString() : "";
-                    String m3 = M3CC.getText() != null ? M3CC.getText().toString() : "";
-                    String Susun = SpinSusunCC.getSelectedItem() != null ? SpinSusunCC.getSelectedItem().toString() : "";
-
-                    Uri pdfUri = createPdf(noCC, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
-
-                    if (pdfUri != null) {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setDataAndType(pdfUri, "application/pdf");
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                        intent.setPackage("com.mi.globalbrowser");
-
-                        try {
-                            startActivity(intent);
-                        } catch (ActivityNotFoundException e) {
-                            Toast.makeText(CrossCut.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
-
-                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
-                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
-                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
-                        }
-                    } else {
-                        Toast.makeText(CrossCut.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(CrossCut.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(CrossCut.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-                clearTableData();
+            if (!noCC.isEmpty()) {
+                addDataDetail(noCC);
+            } else {
+                Toast.makeText(CrossCut.this, "NoCC tidak boleh kosong", Toast.LENGTH_SHORT).show();
             }
+            jumlahpcs();
         });
+
+//        BtnPrintCC.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                try {
+//                    String noCC = NoCC.getText() != null ? NoCC.getText().toString() : "";
+//                    String Kayu = SpinKayuCC.getSelectedItem() != null ? SpinKayuCC.getSelectedItem().toString() : "";
+//                    String Grade = SpinGradeCC.getSelectedItem() != null ? SpinGradeCC.getSelectedItem().toString() : "";
+//                    String Fisik = SpinFisikCC.getSelectedItem() != null ? SpinFisikCC.getSelectedItem().toString() : "";
+//                    String Tanggal = DateCC.getText() != null ? DateCC.getText().toString() : "";
+//                    String Waktu = TimeCC.getText() != null ? TimeCC.getText().toString() : "";
+//                    String Telly = SpinTellyCC.getSelectedItem() != null ? SpinTellyCC.getSelectedItem().toString() : "";
+//                    String Mesin = SpinMesinCC.getSelectedItem() != null ? SpinMesinCC.getSelectedItem().toString() : "";
+//                    String noSPK = SpinSPKCC.getSelectedItem() != null ? SpinSPKCC.getSelectedItem().toString() : "";
+//                    String tebal = TabelTebalCC.getText() != null ? TabelTebalCC.getText().toString() : "";
+//                    String lebar = TabelLebarCC.getText() != null ? TabelLebarCC.getText().toString() : "";
+//                    String panjang = TabelPanjangCC.getText() != null ? TabelPanjangCC.getText().toString() : "";
+//                    String pcs = TabelPcsCC.getText() != null ? TabelPcsCC.getText().toString() : "";
+//                    String jlh = JumlahPcsCC.getText() != null ? JumlahPcsCC.getText().toString() : "";
+//                    String m3 = M3CC.getText() != null ? M3CC.getText().toString() : "";
+//                    String Susun = SpinSusunCC.getSelectedItem() != null ? SpinSusunCC.getSelectedItem().toString() : "";
+//
+//                    Uri pdfUri = createPdf(noCC, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
+//
+//                    if (pdfUri != null) {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        intent.setDataAndType(pdfUri, "application/pdf");
+//                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//
+//                        intent.setPackage("com.mi.globalbrowser");
+//
+//                        try {
+//                            startActivity(intent);
+//                        } catch (ActivityNotFoundException e) {
+//                            Toast.makeText(CrossCut.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
+//
+//                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
+//                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
+//                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
+//                        }
+//                    } else {
+//                        Toast.makeText(CrossCut.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(CrossCut.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(CrossCut.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                }
+//                clearTableData();
+//            }
+//        });
     }
 
     @SuppressLint("NewApi")
@@ -486,12 +488,7 @@ public class CrossCut extends AppCompatActivity {
                             public void run() {
                                 NoCC.setText(noCC);
                                 DateCC.setText(dateCreate != null ? dateCreate : "");
-                                TabelNoCC.setText(String.valueOf(no));
                                 TimeCC.setText(jam != null ? jam : "");
-                                TabelLebarCC.setText(String.valueOf(lebar));
-                                TabelPanjangCC.setText(String.valueOf(panjang));
-                                TabelTebalCC.setText(String.valueOf(tebal));
-                                TabelPcsCC.setText(String.valueOf(jmlhBatang));
                                 CBAfkirCC.setChecked(isReject);
                                 CBLemburCC.setChecked(isLembur);
 
@@ -535,37 +532,194 @@ public class CrossCut extends AppCompatActivity {
         }
     }
 
-    private void updateTableData() {
+
+    //Fungsi untuk add Data Detail
+
+    private static class DataRow {
+        String tebal;
+        String lebar;
+        String panjang;
+        String pcs;
+        int rowId;
+        private static int nextId = 1;
+
+        DataRow(String tebal, String lebar, String panjang, String pcs) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.pcs = pcs;
+            this.rowId = nextId++;
+        }
+    }
+
+    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
+
+    private void addDataDetail(String noCC) {
         String tebal = DetailTebalCC.getText().toString();
         String panjang = DetailPanjangCC.getText().toString();
         String lebar = DetailLebarCC.getText().toString();
         String pcs = DetailPcsCC.getText().toString();
 
-        String no = String.valueOf(1);
+        if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
+            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        TabelTebalCC.setText(tebal);
-        TabelPanjangCC.setText(panjang);
-        TabelLebarCC.setText(lebar);
-        TabelNoCC.setText(no);
-        TabelPcsCC.setText(pcs);
+        try {
+            // Buat objek DataRow baru
+            DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
+            temporaryDataListDetail.add(newDataRow);
 
+            // Buat baris tabel baru
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+            DecimalFormat df = new DecimalFormat("#,###.##");
+
+            // Tambahkan kolom-kolom data dengan weight
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+
+            // Buat dan tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("Hapus");
+            deleteButton.setTextSize(12);
+
+            // Atur style tombol
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+
+            // Set listener tombol hapus
+            deleteButton.setOnClickListener(v -> {
+                Tabel.removeView(newRow);
+                temporaryDataListDetail.remove(newDataRow);
+                updateRowNumbers();
+                jumlahpcs();
+            });
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+
+            // Bersihkan field input
+            DetailTebalCC.setText("");
+            DetailPanjangCC.setText("");
+            DetailLebarCC.setText("");
+            DetailPcsCC.setText("");
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private void clearTableData() {
-        DetailPanjangCC.setText("");
-        DetailTebalCC.setText("");
-        DetailLebarCC.setText("");
-        DetailPcsCC.setText("");
-
-        currentNumber = 1;
+    // Metode helper yang baru untuk menambahkan TextView dengan weight
+    private void addTextViewToRowWithWeight(TableRow row, String text, float weight) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        TableRow.LayoutParams params = new TableRow.LayoutParams(0,
+                TableRow.LayoutParams.WRAP_CONTENT, weight);
+        params.setMargins(5, 5, 5, 5);
+        textView.setLayoutParams(params);
+        textView.setGravity(Gravity.CENTER);
+        textView.setPadding(10, 10, 10, 10);
+        row.addView(textView);
     }
+
+    // Metode untuk memperbarui nomor baris setelah penghapusan
+    private void updateRowNumbers() {
+        for (int i = 1; i < Tabel.getChildCount(); i++) {
+            TableRow row = (TableRow) Tabel.getChildAt(i);
+            TextView numberView = (TextView) row.getChildAt(0);
+            numberView.setText(String.valueOf(i));
+        }
+        rowCount = Tabel.getChildCount() - 1;
+    }
+    private void resetDetailData() {
+        // Reset temporary list detail
+        temporaryDataListDetail.clear();
+
+        // Reset row counter
+        rowCount = 0;
+
+        // Reset tabel detail (hapus semua baris kecuali header)
+        if (Tabel.getChildCount() > 1) {
+            Tabel.removeViews(1, Tabel.getChildCount() - 1);
+        }
+
+        // Reset input fields
+        if (DetailTebalCC != null) {
+            DetailTebalCC.setText("");
+        }
+        if (DetailLebarCC != null) {
+            DetailLebarCC.setText("");
+        }
+        if (DetailPanjangCC != null) {
+            DetailPanjangCC.setText("");
+        }
+        if (DetailPcsCC != null) {
+            DetailPcsCC.setText("");
+        }
+    }
+
+    private void saveDataDetailToDatabase(String noCC, int noUrut, double tebal, double lebar, double panjang, int pcs) {
+        new CrossCut.SaveDataTaskDetail().execute(noCC, String.valueOf(noUrut), String.valueOf(tebal), String.valueOf(lebar),
+                String.valueOf(panjang), String.valueOf(pcs));
+    }
+
+    private class SaveDataTaskDetail extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String noCC = params[0];
+            String noUrut = params[1];
+            String tebal = params[2];
+            String lebar = params[3];
+            String panjang = params[4];
+            String pcs = params[5];
+
+            try {
+                Connection connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "INSERT INTO dbo.CCAkhir_d (NoCCAkhir, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setString(1, noCC);
+                    preparedStatement.setInt(2, Integer.parseInt(noUrut));
+                    preparedStatement.setDouble(3, Double.parseDouble(tebal));
+                    preparedStatement.setDouble(4, Double.parseDouble(lebar));
+                    preparedStatement.setDouble(5, Double.parseDouble(panjang));
+                    preparedStatement.setInt(6, Integer.parseInt(pcs));
+
+                    int rowsAffected = preparedStatement.executeUpdate();
+                    return rowsAffected > 0;
+                } else {
+                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
+                }
+            } catch (SQLException e) {
+                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage());
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
+            } else {
+                Log.e("DB_INSERT", "Data gagal disimpan");
+            }
+        }
+    }
+
 
     private void clearTableData2() {
-        TabelPanjangCC.setText("");
-        TabelTebalCC.setText("");
-        TabelLebarCC.setText("");
-        TabelPcsCC.setText("");
-        TabelNoCC.setText("");
         NoCC.setText("");
         M3CC.setText("");
         JumlahPcsCC.setText("");
@@ -607,47 +761,46 @@ public class CrossCut extends AppCompatActivity {
 
 
     private void m3() {
-        TextView tabeltebalTextView = TabelTebalCC;
-        TextView tabelpanjangTextView = TabelPanjangCC;
-        TextView tabellebarTextView = TabelLebarCC;
-        TextView tabelpcsTextView = TabelPcsCC;
-
-        String tebalString = tabeltebalTextView.getText().toString();
-        String panjangString = tabelpanjangTextView.getText().toString();
-        String lebarString = tabellebarTextView.getText().toString();
-        String jmlhBatangString = tabelpcsTextView.getText().toString();
-
-        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
-        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
-        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
-        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
-
-        float result = (tebal * panjang);
-        float result2 = ( lebar * jmlhBatang);
-        float result3 = (result * result2 / 1000000000);
-
-        TextView M3 = findViewById(R.id.M3CC);
-        M3.setText(String.format("%.4f" , result3));
+//        TextView tabeltebalTextView = TabelTebalCC;
+//        TextView tabelpanjangTextView = TabelPanjangCC;
+//        TextView tabellebarTextView = TabelLebarCC;
+//        TextView tabelpcsTextView = TabelPcsCC;
+//
+//        String tebalString = tabeltebalTextView.getText().toString();
+//        String panjangString = tabelpanjangTextView.getText().toString();
+//        String lebarString = tabellebarTextView.getText().toString();
+//        String jmlhBatangString = tabelpcsTextView.getText().toString();
+//
+//        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
+//        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
+//        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
+//        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
+//
+//        float result = (tebal * panjang);
+//        float result2 = ( lebar * jmlhBatang);
+//        float result3 = (result * result2 / 1000000000);
+//
+//        TextView M3 = findViewById(R.id.M3CC);
+//        M3.setText(String.format("%.4f" , result3));
     }
 
 
     private void jumlahpcs() {
-        String pcsString = TabelPcsCC.getText().toString();
+        TableLayout table = findViewById(R.id.Tabel);
+        int childCount = table.getChildCount();
 
-        if (!pcsString.isEmpty()) {
-            try {
-                int jumlahPcs = Integer.parseInt(pcsString);
-                TextView JumlahPcsCC = findViewById(R.id.JumlahPcsCC);
-                JumlahPcsCC.setText(String.valueOf(jumlahPcs));
-            } catch (NumberFormatException e) {
-                Log.e("JumlahPCS", "Invalid PCS number: " + pcsString);
-                TextView JumlahPcsCC = findViewById(R.id.JumlahPcsCC);
-                JumlahPcsCC.setText("0");
-            }
-        } else {
-            TextView JumlahPcsCC = findViewById(R.id.JumlahPcsCC);
-            JumlahPcsCC.setText("0");
+        int totalPcs = 0;
+
+        for (int i = 1; i < childCount; i++) {
+            TableRow row = (TableRow) table.getChildAt(i);
+            TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
+
+            String pcsString = pcsTextView.getText().toString().replace(",", "");
+            int pcs = Integer.parseInt(pcsString);
+            totalPcs += pcs;
         }
+
+        JumlahPcsCC.setText(String.valueOf(totalPcs));
     }
 
 
@@ -925,92 +1078,6 @@ public class CrossCut extends AppCompatActivity {
                 Toast.makeText(CrossCut.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(CrossCut.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-    private class InsertDatabaseTask extends AsyncTask<Void, Void, Boolean> {
-        private String lebar, panjang, tebal, pcs, noUrut, noCC;
-
-        public InsertDatabaseTask(String lebar, String panjang, String tebal, String pcs, String noUrut, String noCC) {
-            this.lebar = lebar;
-            this.panjang = panjang;
-            this.tebal = tebal;
-            this.pcs = pcs;
-            this.noUrut = noUrut;
-            this.noCC = noCC;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "INSERT INTO dbo.CCAkhir_d (Lebar, Panjang, Tebal, JmlhBatang, NoUrut, NoCCAkhir) VALUES (?, ?, ?, ?, ?, ?)";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, lebar);
-                    ps.setString(2, panjang);
-                    ps.setString(3, tebal);
-                    ps.setString(4, pcs);
-                    ps.setString(5, noUrut);
-                    ps.setString(6, noCC);
-
-                    int rowsInserted = ps.executeUpdate();
-                    ps.close();
-                    con.close();
-                    return rowsInserted > 0;
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                    return false;
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(CrossCut.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(CrossCut.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-    private class DeleteDataTask extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noCC = params[0];
-            Connection con = ConnectionClass();
-            boolean success = false;
-
-            if (con != null) {
-                try {
-                    String query = "DELETE FROM dbo.CCAkhir_h WHERE NoCCAkhir = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noCC);
-
-                    int rowsAffected = ps.executeUpdate();
-                    success = rowsAffected > 0;
-
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(CrossCut.this, "Data berhasil dihapus.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(CrossCut.this, "Gagal menghapus data.", Toast.LENGTH_SHORT).show();
             }
         }
     }

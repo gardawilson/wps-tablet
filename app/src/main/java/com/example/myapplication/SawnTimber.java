@@ -109,7 +109,6 @@ public class SawnTimber extends AppCompatActivity {
     private Spinner SpinStickBy;
     private Spinner SpinGrade;
     private TextView JumlahPcsST;
-    private TextView M3ST;
     private TextView DetailTebalST;
     private TextView DetailLebarST;
     private TextView DetailPanjangST;
@@ -170,7 +169,6 @@ public class SawnTimber extends AppCompatActivity {
         JumlahStick = findViewById(R.id.JumlahStick);
         JumlahPcsST = findViewById(R.id.JumlahPcsST);
         JenisKayuKB = findViewById(R.id.JenisKayuKB);
-        M3ST = findViewById(R.id.M3ST);
         Tabel = findViewById(R.id.Tabel);
         Tabel2 = findViewById(R.id.Tabel2);
         CBKering = findViewById(R.id.CBKering);

@@ -28,6 +28,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -75,6 +76,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+
+import java.text.DecimalFormat;
+import android.view.Gravity;
+
 public class Sanding extends AppCompatActivity {
     private EditText NoSanding;
     private EditText DateS;
@@ -100,11 +105,6 @@ public class Sanding extends AppCompatActivity {
     private boolean isDataBaruClickedS = false;
     private CheckBox CBAfkirS;
     private CheckBox CBLemburS;
-    private TextView TabelTebalS;
-    private TextView TabelNoS;
-    private TextView TabelLebarS;
-    private TextView TabelPanjangS;
-    private TextView TabelPcsS;
     private Button BtnInputDetailS;
     private EditText DetailLebarS;
     private EditText DetailTebalS;
@@ -116,6 +116,8 @@ public class Sanding extends AppCompatActivity {
     private TextView JumlahPcsS;
     private boolean isCBAfkirS, isCBLemburS;
     private Button BtnSearchS;
+    private int rowCount = 0;
+    private TableLayout Tabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,11 +147,6 @@ public class Sanding extends AppCompatActivity {
         BtnHapusDetailS = findViewById(R.id.BtnHapusDetailS);
         CBLemburS = findViewById(R.id.CBLemburS);
         CBAfkirS = findViewById(R.id.CBAfkirS);
-        TabelTebalS = findViewById(R.id.TabelTebalS);
-        TabelPcsS = findViewById(R.id.TabelPcsS);
-        TabelPanjangS = findViewById(R.id.TabelPanjangS);
-        TabelNoS = findViewById(R.id.TabelNoS);
-        TabelLebarS = findViewById(R.id.TabelLebarS);
         BtnInputDetailS = findViewById(R.id.BtnInputDetailS);
         DetailPcsS = findViewById(R.id.DetailPcsS);
         DetailTebalS = findViewById(R.id.DetailTebalS);
@@ -159,6 +156,8 @@ public class Sanding extends AppCompatActivity {
         M3S = findViewById(R.id.M3S);
         JumlahPcsS = findViewById(R.id.JumlahPcsS);
         BtnSearchS = findViewById(R.id.BtnSearchS);
+        Tabel = findViewById(R.id.Tabel);
+
         BtnPrintS.setEnabled(false);
 
         radioButtonMesinS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -239,11 +238,6 @@ public class Sanding extends AppCompatActivity {
             int isLembur = CBLemburS.isChecked() ? 1 : 0;
 
             if (noSanding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    TabelLebarS.getText().toString().isEmpty() ||
-                    TabelPanjangS.getText().toString().isEmpty() ||
-                    TabelTebalS.getText().toString().isEmpty() ||
-                    TabelPcsS.getText().toString().isEmpty() ||
-                    TabelNoS.getText().toString().isEmpty() ||
                     selectedTelly == null ||
                     selectedSPK == null ||
                     selectedProfile == null ||
@@ -259,15 +253,6 @@ public class Sanding extends AppCompatActivity {
             }
             BtnDataBaruS.setEnabled(true);
             BtnPrintS.setEnabled(true);
-
-            new InsertDatabaseTask(
-                    TabelLebarS.getText().toString(),
-                    TabelPanjangS.getText().toString(),
-                    TabelTebalS.getText().toString(),
-                    TabelPcsS.getText().toString(),
-                    TabelNoS.getText().toString(),
-                    noSanding
-            ).execute();
 
             new UpdateDatabaseTask(
                     noSanding,
@@ -285,8 +270,18 @@ public class Sanding extends AppCompatActivity {
 
             if (radioButtonMesinS.isChecked() && SpinMesinS.isEnabled() && noProduksi != null) {
                 new SaveToDatabaseTask(noProduksi, noSanding).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    Sanding.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noSanding, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else if (radioButtonBSusunS.isChecked() && SpinSusunS.isEnabled() && noBongkarSusun != null) {
                 new SaveBongkarSusunTask(noBongkarSusun, noSanding).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    Sanding.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noSanding, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else {
                 Toast.makeText(Sanding.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
@@ -306,7 +301,6 @@ public class Sanding extends AppCompatActivity {
                 }
 
                 clearTableData2();
-                clearTableData();
                 Toast.makeText(Sanding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -368,69 +362,73 @@ public class Sanding extends AppCompatActivity {
         TimeS.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailS.setOnClickListener(v -> {
-            updateTableData();
-            m3();
+            String noSanding = NoSanding.getText().toString();
+
+            if (!noSanding.isEmpty()) {
+                addDataDetail(noSanding);
+            } else {
+                Toast.makeText(Sanding.this, "NoSanding tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            }
             jumlahpcs();
-            clearTableData();
         });
 
         BtnHapusDetailS.setOnClickListener(v -> {
-            clearTableData();
+            resetDetailData();
         });
 
-        BtnPrintS.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    String noSanding = NoSanding.getText() != null ? NoSanding.getText().toString() : "";
-                    String Kayu = SpinKayuS.getSelectedItem() != null ? SpinKayuS.getSelectedItem().toString() : "";
-                    String Grade = SpinGradeS.getSelectedItem() != null ? SpinGradeS.getSelectedItem().toString() : "";
-                    String Fisik = SpinFisikS.getSelectedItem() != null ? SpinFisikS.getSelectedItem().toString() : "";
-                    String Tanggal = DateS.getText() != null ? DateS.getText().toString() : "";
-                    String Waktu = TimeS.getText() != null ? TimeS.getText().toString() : "";
-                    String Telly = SpinTellyS.getSelectedItem() != null ? SpinTellyS.getSelectedItem().toString() : "";
-                    String Mesin = SpinMesinS.getSelectedItem() != null ? SpinMesinS.getSelectedItem().toString() : "";
-                    String noSPK = SpinSPKS.getSelectedItem() != null ? SpinSPKS.getSelectedItem().toString() : "";
-                    String tebal = TabelTebalS.getText() != null ? TabelTebalS.getText().toString() : "";
-                    String lebar = TabelLebarS.getText() != null ? TabelLebarS.getText().toString() : "";
-                    String panjang = TabelPanjangS.getText() != null ? TabelPanjangS.getText().toString() : "";
-                    String pcs = TabelPcsS.getText() != null ? TabelPcsS.getText().toString() : "";
-                    String jlh = JumlahPcsS.getText() != null ? JumlahPcsS.getText().toString() : "";
-                    String m3 = M3S.getText() != null ? M3S.getText().toString() : "";
-                    String Susun = SpinSusunS.getSelectedItem() != null ? SpinSusunS.getSelectedItem().toString() : "";
-
-                    Uri pdfUri = createPdf(noSanding, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
-
-                    if (pdfUri != null) {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setDataAndType(pdfUri, "application/pdf");
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                        intent.setPackage("com.mi.globalbrowser");
-
-                        try {
-                            startActivity(intent);
-                        } catch (ActivityNotFoundException e) {
-                            Toast.makeText(Sanding.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
-
-                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
-                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
-                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
-                        }
-                    } else {
-                        Toast.makeText(Sanding.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(Sanding.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(Sanding.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-                clearTableData();
-            }
-        });
+//        BtnPrintS.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                try {
+//                    String noSanding = NoSanding.getText() != null ? NoSanding.getText().toString() : "";
+//                    String Kayu = SpinKayuS.getSelectedItem() != null ? SpinKayuS.getSelectedItem().toString() : "";
+//                    String Grade = SpinGradeS.getSelectedItem() != null ? SpinGradeS.getSelectedItem().toString() : "";
+//                    String Fisik = SpinFisikS.getSelectedItem() != null ? SpinFisikS.getSelectedItem().toString() : "";
+//                    String Tanggal = DateS.getText() != null ? DateS.getText().toString() : "";
+//                    String Waktu = TimeS.getText() != null ? TimeS.getText().toString() : "";
+//                    String Telly = SpinTellyS.getSelectedItem() != null ? SpinTellyS.getSelectedItem().toString() : "";
+//                    String Mesin = SpinMesinS.getSelectedItem() != null ? SpinMesinS.getSelectedItem().toString() : "";
+//                    String noSPK = SpinSPKS.getSelectedItem() != null ? SpinSPKS.getSelectedItem().toString() : "";
+//                    String tebal = TabelTebalS.getText() != null ? TabelTebalS.getText().toString() : "";
+//                    String lebar = TabelLebarS.getText() != null ? TabelLebarS.getText().toString() : "";
+//                    String panjang = TabelPanjangS.getText() != null ? TabelPanjangS.getText().toString() : "";
+//                    String pcs = TabelPcsS.getText() != null ? TabelPcsS.getText().toString() : "";
+//                    String jlh = JumlahPcsS.getText() != null ? JumlahPcsS.getText().toString() : "";
+//                    String m3 = M3S.getText() != null ? M3S.getText().toString() : "";
+//                    String Susun = SpinSusunS.getSelectedItem() != null ? SpinSusunS.getSelectedItem().toString() : "";
+//
+//                    Uri pdfUri = createPdf(noSanding, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
+//
+//                    if (pdfUri != null) {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        intent.setDataAndType(pdfUri, "application/pdf");
+//                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//
+//                        intent.setPackage("com.mi.globalbrowser");
+//
+//                        try {
+//                            startActivity(intent);
+//                        } catch (ActivityNotFoundException e) {
+//                            Toast.makeText(Sanding.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
+//
+//                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
+//                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
+//                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
+//                        }
+//                    } else {
+//                        Toast.makeText(Sanding.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(Sanding.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(Sanding.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                }
+//                clearTableData();
+//            }
+//        });
     }
 
      @SuppressLint("NewApi")
@@ -497,12 +495,7 @@ public class Sanding extends AppCompatActivity {
                             public void run() {
                                 NoSanding.setText(noSanding);
                                 DateS.setText(dateCreate != null ? dateCreate : "");
-                                TabelNoS.setText(String.valueOf(no));
                                 TimeS.setText(jam != null ? jam : "");
-                                TabelLebarS.setText(String.valueOf(lebar));
-                                TabelPanjangS.setText(String.valueOf(panjang));
-                                TabelTebalS.setText(String.valueOf(tebal));
-                                TabelPcsS.setText(String.valueOf(jmlhBatang));
                                 CBAfkirS.setChecked(isReject);
                                 CBLemburS.setChecked(isLembur);
 
@@ -546,37 +539,193 @@ public class Sanding extends AppCompatActivity {
         }
     }
 
-    private void updateTableData() {
+    //Fungsi untuk add Data Detail
+
+    private static class DataRow {
+        String tebal;
+        String lebar;
+        String panjang;
+        String pcs;
+        int rowId;
+        private static int nextId = 1;
+
+        DataRow(String tebal, String lebar, String panjang, String pcs) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.pcs = pcs;
+            this.rowId = nextId++;
+        }
+    }
+
+    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
+
+    private void addDataDetail(String noSanding) {
         String tebal = DetailTebalS.getText().toString();
         String panjang = DetailPanjangS.getText().toString();
         String lebar = DetailLebarS.getText().toString();
         String pcs = DetailPcsS.getText().toString();
 
-        String no = String.valueOf(1);
+        if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
+            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        TabelTebalS.setText(tebal);
-        TabelPanjangS.setText(panjang);
-        TabelLebarS.setText(lebar);
-        TabelNoS.setText(no);
-        TabelPcsS.setText(pcs);
+        try {
+            // Buat objek DataRow baru
+            DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
+            temporaryDataListDetail.add(newDataRow);
 
+            // Buat baris tabel baru
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+            DecimalFormat df = new DecimalFormat("#,###.##");
+
+            // Tambahkan kolom-kolom data dengan weight
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+
+            // Buat dan tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("Hapus");
+            deleteButton.setTextSize(12);
+
+            // Atur style tombol
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+
+            // Set listener tombol hapus
+            deleteButton.setOnClickListener(v -> {
+                Tabel.removeView(newRow);
+                temporaryDataListDetail.remove(newDataRow);
+                updateRowNumbers();
+                jumlahpcs();
+            });
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+
+            // Bersihkan field input
+            DetailTebalS.setText("");
+            DetailPanjangS.setText("");
+            DetailLebarS.setText("");
+            DetailPcsS.setText("");
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private void clearTableData() {
-        DetailPanjangS.setText("");
-        DetailTebalS.setText("");
-        DetailLebarS.setText("");
-        DetailPcsS.setText("");
-
-        currentNumber = 1;
+    // Metode helper yang baru untuk menambahkan TextView dengan weight
+    private void addTextViewToRowWithWeight(TableRow row, String text, float weight) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        TableRow.LayoutParams params = new TableRow.LayoutParams(0,
+                TableRow.LayoutParams.WRAP_CONTENT, weight);
+        params.setMargins(5, 5, 5, 5);
+        textView.setLayoutParams(params);
+        textView.setGravity(Gravity.CENTER);
+        textView.setPadding(10, 10, 10, 10);
+        row.addView(textView);
     }
+
+    // Metode untuk memperbarui nomor baris setelah penghapusan
+    private void updateRowNumbers() {
+        for (int i = 1; i < Tabel.getChildCount(); i++) {
+            TableRow row = (TableRow) Tabel.getChildAt(i);
+            TextView numberView = (TextView) row.getChildAt(0);
+            numberView.setText(String.valueOf(i));
+        }
+        rowCount = Tabel.getChildCount() - 1;
+    }
+    private void resetDetailData() {
+        // Reset temporary list detail
+        temporaryDataListDetail.clear();
+
+        // Reset row counter
+        rowCount = 0;
+
+        // Reset tabel detail (hapus semua baris kecuali header)
+        if (Tabel.getChildCount() > 1) {
+            Tabel.removeViews(1, Tabel.getChildCount() - 1);
+        }
+
+        // Reset input fields
+        if (DetailTebalS != null) {
+            DetailTebalS.setText("");
+        }
+        if (DetailLebarS != null) {
+            DetailLebarS.setText("");
+        }
+        if (DetailPanjangS != null) {
+            DetailPanjangS.setText("");
+        }
+        if (DetailPcsS != null) {
+            DetailPcsS.setText("");
+        }
+    }
+
+    private void saveDataDetailToDatabase(String noSanding, int noUrut, double tebal, double lebar, double panjang, int pcs) {
+        new Sanding.SaveDataTaskDetail().execute(noSanding, String.valueOf(noUrut), String.valueOf(tebal), String.valueOf(lebar),
+                String.valueOf(panjang), String.valueOf(pcs));
+    }
+
+    private class SaveDataTaskDetail extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String noSanding = params[0];
+            String noUrut = params[1];
+            String tebal = params[2];
+            String lebar = params[3];
+            String panjang = params[4];
+            String pcs = params[5];
+
+            try {
+                Connection connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "INSERT INTO dbo.Sanding_d (NoSanding, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setString(1, noSanding);
+                    preparedStatement.setInt(2, Integer.parseInt(noUrut));
+                    preparedStatement.setDouble(3, Double.parseDouble(tebal));
+                    preparedStatement.setDouble(4, Double.parseDouble(lebar));
+                    preparedStatement.setDouble(5, Double.parseDouble(panjang));
+                    preparedStatement.setInt(6, Integer.parseInt(pcs));
+
+                    int rowsAffected = preparedStatement.executeUpdate();
+                    return rowsAffected > 0;
+                } else {
+                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
+                }
+            } catch (SQLException e) {
+                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage());
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
+            } else {
+                Log.e("DB_INSERT", "Data gagal disimpan");
+            }
+        }
+    }
+
 
     private void clearTableData2() {
-        TabelPanjangS.setText("");
-        TabelTebalS.setText("");
-        TabelLebarS.setText("");
-        TabelPcsS.setText("");
-        TabelNoS.setText("");
         NoSanding.setText("");
         M3S.setText("");
         JumlahPcsS.setText("");
@@ -617,47 +766,45 @@ public class Sanding extends AppCompatActivity {
     }
 
     private void m3() {
-        TextView tabeltebalTextView = TabelTebalS;
-        TextView tabelpanjangTextView = TabelPanjangS;
-        TextView tabellebarTextView = TabelLebarS;
-        TextView tabelpcsTextView = TabelPcsS;
-
-        String tebalString = tabeltebalTextView.getText().toString();
-        String panjangString = tabelpanjangTextView.getText().toString();
-        String lebarString = tabellebarTextView.getText().toString();
-        String jmlhBatangString = tabelpcsTextView.getText().toString();
-
-        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
-        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
-        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
-        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
-
-        float result = (tebal * panjang);
-        float result2 = ( lebar * jmlhBatang);
-        float result3 = (result * result2 / 1000000000);
-
-        TextView M3 = findViewById(R.id.M3S);
-        M3.setText(String.format("%.4f" , result3));
+//        TextView tabeltebalTextView = TabelTebalS;
+//        TextView tabelpanjangTextView = TabelPanjangS;
+//        TextView tabellebarTextView = TabelLebarS;
+//        TextView tabelpcsTextView = TabelPcsS;
+//
+//        String tebalString = tabeltebalTextView.getText().toString();
+//        String panjangString = tabelpanjangTextView.getText().toString();
+//        String lebarString = tabellebarTextView.getText().toString();
+//        String jmlhBatangString = tabelpcsTextView.getText().toString();
+//
+//        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
+//        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
+//        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
+//        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
+//
+//        float result = (tebal * panjang);
+//        float result2 = ( lebar * jmlhBatang);
+//        float result3 = (result * result2 / 1000000000);
+//
+//        TextView M3 = findViewById(R.id.M3S);
+//        M3.setText(String.format("%.4f" , result3));
     }
 
-
     private void jumlahpcs() {
-        String pcsString = TabelPcsS.getText().toString();
+        TableLayout table = findViewById(R.id.Tabel);
+        int childCount = table.getChildCount();
 
-        if (!pcsString.isEmpty()) {
-            try {
-                int jumlahPcs = Integer.parseInt(pcsString);
-                TextView JumlahPcsS = findViewById(R.id.JumlahPcsS);
-                JumlahPcsS.setText(String.valueOf(jumlahPcs));
-            } catch (NumberFormatException e) {
-                Log.e("JumlahPCS", "Invalid PCS number: " + pcsString);
-                TextView JumlahPcsS = findViewById(R.id.JumlahPcsS);
-                JumlahPcsS.setText("0");
-            }
-        } else {
-            TextView JumlahPcs = findViewById(R.id.JumlahPcs);
-            JumlahPcs.setText("0");
+        int totalPcs = 0;
+
+        for (int i = 1; i < childCount; i++) {
+            TableRow row = (TableRow) table.getChildAt(i);
+            TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
+
+            String pcsString = pcsTextView.getText().toString().replace(",", "");
+            int pcs = Integer.parseInt(pcsString);
+            totalPcs += pcs;
         }
+
+        JumlahPcsS.setText(String.valueOf(totalPcs));
     }
 
 

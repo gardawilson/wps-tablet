@@ -28,6 +28,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -75,6 +76,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+
+import java.text.DecimalFormat;
+import android.view.Gravity;
+
 public class Moulding extends AppCompatActivity {
 
     //deklarasi semua item yang ada di xml yang akan digunakan
@@ -102,11 +107,6 @@ public class Moulding extends AppCompatActivity {
     private boolean isDataBaruClickedM = false;
     private CheckBox CBAfkirM;
     private CheckBox CBLemburM;
-    private TextView TabelTebalM;
-    private TextView TabelNoM;
-    private TextView TabelLebarM;
-    private TextView TabelPanjangM;
-    private TextView TabelPcsM;
     private Button BtnInputDetailM;
     private EditText DetailLebarM;
     private EditText DetailTebalM;
@@ -118,6 +118,8 @@ public class Moulding extends AppCompatActivity {
     private TextView JumlahPcsM;
     private boolean isCBAfkirM, isCBLemburM;
     private Button BtnSearchM;
+    private int rowCount = 0;
+    private TableLayout Tabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,11 +150,6 @@ public class Moulding extends AppCompatActivity {
         BtnHapusDetailM = findViewById(R.id.BtnHapusDetailM);
         CBLemburM = findViewById(R.id.CBLemburM);
         CBAfkirM = findViewById(R.id.CBAfkirM);
-        TabelTebalM = findViewById(R.id.TabelTebalM);
-        TabelPcsM = findViewById(R.id.TabelPcsM);
-        TabelPanjangM = findViewById(R.id.TabelPanjangM);
-        TabelNoM = findViewById(R.id.TabelNoM);
-        TabelLebarM = findViewById(R.id.TabelLebarM);
         BtnInputDetailM = findViewById(R.id.BtnInputDetailM);
         DetailPcsM = findViewById(R.id.DetailPcsM);
         DetailTebalM = findViewById(R.id.DetailTebalM);
@@ -162,6 +159,8 @@ public class Moulding extends AppCompatActivity {
         M3M = findViewById(R.id.M3M);
         JumlahPcsM = findViewById(R.id.JumlahPcsM);
         BtnSearchM = findViewById(R.id.BtnSearchM);
+        Tabel = findViewById(R.id.Tabel);
+
         BtnPrintM.setEnabled(false);
 
         //mengatur fungsu RadioButtonMesin
@@ -247,11 +246,6 @@ public class Moulding extends AppCompatActivity {
             int isLembur = CBLemburM.isChecked() ? 1 : 0;
 
             if (noMoulding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    TabelLebarM.getText().toString().isEmpty() ||
-                    TabelPanjangM.getText().toString().isEmpty() ||
-                    TabelTebalM.getText().toString().isEmpty() ||
-                    TabelPcsM.getText().toString().isEmpty() ||
-                    TabelNoM.getText().toString().isEmpty() ||
                     selectedTelly == null ||
                     selectedSPK == null ||
                     selectedProfile == null ||
@@ -267,15 +261,6 @@ public class Moulding extends AppCompatActivity {
             }
             BtnDataBaruM.setEnabled(true);
             BtnPrintM.setEnabled(true);
-
-            new InsertDatabaseTask(
-                    TabelLebarM.getText().toString(),
-                    TabelPanjangM.getText().toString(),
-                    TabelTebalM.getText().toString(),
-                    TabelPcsM.getText().toString(),
-                    TabelNoM.getText().toString(),
-                    noMoulding
-            ).execute();
 
             new UpdateDatabaseTask(
                     noMoulding,
@@ -293,8 +278,18 @@ public class Moulding extends AppCompatActivity {
 
             if (radioButtonMesinM.isChecked() && SpinMesinM.isEnabled() && noProduksi != null) {
                 new SaveToDatabaseTask(noProduksi, noMoulding).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noMoulding, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else if (radioButtonBSusunM.isChecked() && SpinSusunM.isEnabled() && noBongkarSusun != null) {
                 new SaveBongkarSusunTask(noBongkarSusun, noMoulding).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noMoulding, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                }
             } else {
                 Toast.makeText(Moulding.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
@@ -305,20 +300,19 @@ public class Moulding extends AppCompatActivity {
         });
 
         //fungsi button Batal
-       BtnBatalM.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String noFJoin = NoMoulding.getText().toString().trim();
-
-                if (!noFJoin.isEmpty()) {
-                    new DeleteDataTask().execute(noFJoin);
-                }
-
-                clearTableData2();
-                clearTableData();
-                Toast.makeText(Moulding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-            }
-        });
+//       BtnBatalM.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                String noFJoin = NoMoulding.getText().toString().trim();
+//
+//                if (!noFJoin.isEmpty()) {
+//                    new DeleteDataTask().execute(noFJoin);
+//                }
+//
+//                clearTableData2();
+//                Toast.makeText(Moulding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+//            }
+//        });
 
 
         //fungsi button Search
@@ -382,74 +376,74 @@ public class Moulding extends AppCompatActivity {
 
         //fungsi button Input Detail
         BtnInputDetailM.setOnClickListener(v -> {
-            updateTableData();
-            m3();
+            String noMoulding = NoMoulding.getText().toString();
+
+            if (!noMoulding.isEmpty()) {
+                addDataDetail(noMoulding);
+            } else {
+                Toast.makeText(Moulding.this, "NoFJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            }
             jumlahpcs();
-            clearTableData();
         });
 
         //fungsi button Hapus Detail
         BtnHapusDetailM.setOnClickListener(v -> {
-            clearTableData();
+            resetDetailData();
         });
 
         //fungsi button Print
-        BtnPrintM.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-
-                    //deklarasikan semua data yang akan tampil di pdf, sesuai dari sumber nya masing seperti spinner/textview
-                    String noMoulding = NoMoulding.getText() != null ? NoMoulding.getText().toString() : "";
-                    String Kayu = SpinKayuM.getSelectedItem() != null ? SpinKayuM.getSelectedItem().toString() : "";
-                    String Grade = SpinGradeM.getSelectedItem() != null ? SpinGradeM.getSelectedItem().toString() : "";
-                    String Fisik = SpinFisikM.getSelectedItem() != null ? SpinFisikM.getSelectedItem().toString() : "";
-                    String Tanggal = DateM.getText() != null ? DateM.getText().toString() : "";
-                    String Waktu = TimeM.getText() != null ? TimeM.getText().toString() : "";
-                    String Telly = SpinTellyM.getSelectedItem() != null ? SpinTellyM.getSelectedItem().toString() : "";
-                    String Mesin = SpinMesinM.getSelectedItem() != null ? SpinMesinM.getSelectedItem().toString() : "";
-                    String noSPK = SpinSPKM.getSelectedItem() != null ? SpinSPKM.getSelectedItem().toString() : "";
-                    String tebal = TabelTebalM.getText() != null ? TabelTebalM.getText().toString() : "";
-                    String lebar = TabelLebarM.getText() != null ? TabelLebarM.getText().toString() : "";
-                    String panjang = TabelPanjangM.getText() != null ? TabelPanjangM.getText().toString() : "";
-                    String pcs = TabelPcsM.getText() != null ? TabelPcsM.getText().toString() : "";
-                    String jlh = JumlahPcsM.getText() != null ? JumlahPcsM.getText().toString() : "";
-                    String m3 = M3M.getText() != null ? M3M.getText().toString() : "";
-                    String Susun = SpinSusunM.getSelectedItem() != null ? SpinSusunM.getSelectedItem().toString() : "";
-
-                    Uri pdfUri = createPdf(noMoulding, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
-
-                    if (pdfUri != null) {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setDataAndType(pdfUri, "application/pdf");
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                        //aplikasi yang dipilih untuk membuka pdf
-                        intent.setPackage("com.mi.globalbrowser");
-
-                        try {
-                            startActivity(intent);
-                        } catch (ActivityNotFoundException e) {
-                            Toast.makeText(Moulding.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
-
-                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
-                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
-                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
-                        }
-                    } else {
-                        Toast.makeText(Moulding.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(Moulding.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(Moulding.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-                clearTableData();
-            }
-        });
+//        BtnPrintM.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                try {
+//
+//                    //deklarasikan semua data yang akan tampil di pdf, sesuai dari sumber nya masing seperti spinner/textview
+//                    String noMoulding = NoMoulding.getText() != null ? NoMoulding.getText().toString() : "";
+//                    String Kayu = SpinKayuM.getSelectedItem() != null ? SpinKayuM.getSelectedItem().toString() : "";
+//                    String Grade = SpinGradeM.getSelectedItem() != null ? SpinGradeM.getSelectedItem().toString() : "";
+//                    String Fisik = SpinFisikM.getSelectedItem() != null ? SpinFisikM.getSelectedItem().toString() : "";
+//                    String Tanggal = DateM.getText() != null ? DateM.getText().toString() : "";
+//                    String Waktu = TimeM.getText() != null ? TimeM.getText().toString() : "";
+//                    String Telly = SpinTellyM.getSelectedItem() != null ? SpinTellyM.getSelectedItem().toString() : "";
+//                    String Mesin = SpinMesinM.getSelectedItem() != null ? SpinMesinM.getSelectedItem().toString() : "";
+//                    String noSPK = SpinSPKM.getSelectedItem() != null ? SpinSPKM.getSelectedItem().toString() : "";
+//                    String jlh = JumlahPcsM.getText() != null ? JumlahPcsM.getText().toString() : "";
+//                    String m3 = M3M.getText() != null ? M3M.getText().toString() : "";
+//                    String Susun = SpinSusunM.getSelectedItem() != null ? SpinSusunM.getSelectedItem().toString() : "";
+//
+//                    Uri pdfUri = createPdf(noMoulding, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, jlh, m3);
+//
+//                    if (pdfUri != null) {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        intent.setDataAndType(pdfUri, "application/pdf");
+//                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//
+//                        //aplikasi yang dipilih untuk membuka pdf
+//                        intent.setPackage("com.mi.globalbrowser");
+//
+//                        try {
+//                            startActivity(intent);
+//                        } catch (ActivityNotFoundException e) {
+//                            Toast.makeText(Moulding.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
+//
+//                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
+//                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
+//                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
+//                        }
+//                    } else {
+//                        Toast.makeText(Moulding.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(Moulding.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    Toast.makeText(Moulding.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                }
+//                clearTableData();
+//            }
+//        });
     }
 
     //alamat koneksi database, WPS_Test dapat diubah ke database mana saja dengan mengganti sesuai dengan nama database yang diinginkan
@@ -517,12 +511,7 @@ public class Moulding extends AppCompatActivity {
                             public void run() {
                                 NoMoulding.setText(noMoulding);
                                 DateM.setText(dateCreate != null ? dateCreate : "");
-                                TabelNoM.setText(String.valueOf(no));
                                 TimeM.setText(jam != null ? jam : "");
-                                TabelLebarM.setText(String.valueOf(lebar));
-                                TabelPanjangM.setText(String.valueOf(panjang));
-                                TabelTebalM.setText(String.valueOf(tebal));
-                                TabelPcsM.setText(String.valueOf(jmlhBatang));
                                 CBAfkirM.setChecked(isReject);
                                 CBLemburM.setChecked(isLembur);
 
@@ -566,40 +555,193 @@ public class Moulding extends AppCompatActivity {
         }
     }
 
-    //fungsi untuk memindahkan detail ke dalam tabel
-    private void updateTableData() {
+    //Fungsi untuk add Data Detail
+
+    private static class DataRow {
+        String tebal;
+        String lebar;
+        String panjang;
+        String pcs;
+        int rowId;
+        private static int nextId = 1;
+
+        DataRow(String tebal, String lebar, String panjang, String pcs) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.pcs = pcs;
+            this.rowId = nextId++;
+        }
+    }
+
+    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
+
+    private void addDataDetail(String noMoulding) {
         String tebal = DetailTebalM.getText().toString();
         String panjang = DetailPanjangM.getText().toString();
         String lebar = DetailLebarM.getText().toString();
         String pcs = DetailPcsM.getText().toString();
 
-        String no = String.valueOf(1);
+        if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
+            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        TabelTebalM.setText(tebal);
-        TabelPanjangM.setText(panjang);
-        TabelLebarM.setText(lebar);
-        TabelNoM.setText(no);
-        TabelPcsM.setText(pcs);
+        try {
+            // Buat objek DataRow baru
+            DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
+            temporaryDataListDetail.add(newDataRow);
 
+            // Buat baris tabel baru
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+            DecimalFormat df = new DecimalFormat("#,###.##");
+
+            // Tambahkan kolom-kolom data dengan weight
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+
+            // Buat dan tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("Hapus");
+            deleteButton.setTextSize(12);
+
+            // Atur style tombol
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+
+            // Set listener tombol hapus
+            deleteButton.setOnClickListener(v -> {
+                Tabel.removeView(newRow);
+                temporaryDataListDetail.remove(newDataRow);
+                updateRowNumbers();
+                jumlahpcs();
+            });
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+
+            // Bersihkan field input
+            DetailTebalM.setText("");
+            DetailPanjangM.setText("");
+            DetailLebarM.setText("");
+            DetailPcsM.setText("");
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    // fungsi mengosongkan tabel detail
-    private void clearTableData() {
-        DetailPanjangM.setText("");
-        DetailTebalM.setText("");
-        DetailLebarM.setText("");
-        DetailPcsM.setText("");
+    // Metode helper yang baru untuk menambahkan TextView dengan weight
+    private void addTextViewToRowWithWeight(TableRow row, String text, float weight) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        TableRow.LayoutParams params = new TableRow.LayoutParams(0,
+                TableRow.LayoutParams.WRAP_CONTENT, weight);
+        params.setMargins(5, 5, 5, 5);
+        textView.setLayoutParams(params);
+        textView.setGravity(Gravity.CENTER);
+        textView.setPadding(10, 10, 10, 10);
+        row.addView(textView);
+    }
 
-        currentNumber = 1;
+    // Metode untuk memperbarui nomor baris setelah penghapusan
+    private void updateRowNumbers() {
+        for (int i = 1; i < Tabel.getChildCount(); i++) {
+            TableRow row = (TableRow) Tabel.getChildAt(i);
+            TextView numberView = (TextView) row.getChildAt(0);
+            numberView.setText(String.valueOf(i));
+        }
+        rowCount = Tabel.getChildCount() - 1;
+    }
+    private void resetDetailData() {
+        // Reset temporary list detail
+        temporaryDataListDetail.clear();
+
+        // Reset row counter
+        rowCount = 0;
+
+        // Reset tabel detail (hapus semua baris kecuali header)
+        if (Tabel.getChildCount() > 1) {
+            Tabel.removeViews(1, Tabel.getChildCount() - 1);
+        }
+
+        // Reset input fields
+        if (DetailTebalM != null) {
+            DetailTebalM.setText("");
+        }
+        if (DetailLebarM != null) {
+            DetailLebarM.setText("");
+        }
+        if (DetailPanjangM != null) {
+            DetailPanjangM.setText("");
+        }
+        if (DetailPcsM != null) {
+            DetailPcsM.setText("");
+        }
+    }
+
+    private void saveDataDetailToDatabase(String noMoulding, int noUrut, double tebal, double lebar, double panjang, int pcs) {
+        new Moulding.SaveDataTaskDetail().execute(noMoulding, String.valueOf(noUrut), String.valueOf(tebal), String.valueOf(lebar),
+                String.valueOf(panjang), String.valueOf(pcs));
+    }
+
+    private class SaveDataTaskDetail extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String noMoulding = params[0];
+            String noUrut = params[1];
+            String tebal = params[2];
+            String lebar = params[3];
+            String panjang = params[4];
+            String pcs = params[5];
+
+            try {
+                Connection connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "INSERT INTO dbo.Moulding_d (NoMoulding, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setString(1, noMoulding);
+                    preparedStatement.setInt(2, Integer.parseInt(noUrut));
+                    preparedStatement.setDouble(3, Double.parseDouble(tebal));
+                    preparedStatement.setDouble(4, Double.parseDouble(lebar));
+                    preparedStatement.setDouble(5, Double.parseDouble(panjang));
+                    preparedStatement.setInt(6, Integer.parseInt(pcs));
+
+                    int rowsAffected = preparedStatement.executeUpdate();
+                    return rowsAffected > 0;
+                } else {
+                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
+                }
+            } catch (SQLException e) {
+                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage());
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
+            } else {
+                Log.e("DB_INSERT", "Data gagal disimpan");
+            }
+        }
     }
 
     //// fungsi mengosongkan
     private void clearTableData2() {
-        TabelPanjangM.setText("");
-        TabelTebalM.setText("");
-        TabelLebarM.setText("");
-        TabelPcsM.setText("");
-        TabelNoM.setText("");
         NoMoulding.setText("");
         M3M.setText("");
         JumlahPcsM.setText("");
@@ -645,47 +787,45 @@ public class Moulding extends AppCompatActivity {
 
     // fungsi menghitung dan menampilkan jumlah M3
     private void m3() {
-        TextView tabeltebalTextView = TabelTebalM;
-        TextView tabelpanjangTextView = TabelPanjangM;
-        TextView tabellebarTextView = TabelLebarM;
-        TextView tabelpcsTextView = TabelPcsM;
-
-        String tebalString = tabeltebalTextView.getText().toString();
-        String panjangString = tabelpanjangTextView.getText().toString();
-        String lebarString = tabellebarTextView.getText().toString();
-        String jmlhBatangString = tabelpcsTextView.getText().toString();
-
-        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
-        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
-        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
-        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
-
-        float result = (tebal * panjang);
-        float result2 = ( lebar * jmlhBatang);
-        float result3 = (result * result2 / 1000000000);
-
-        TextView M3 = findViewById(R.id.M3M);
-        M3.setText(String.format("%.4f" , result3));
+//        TextView tabeltebalTextView = TabelTebalM;
+//        TextView tabelpanjangTextView = TabelPanjangM;
+//        TextView tabellebarTextView = TabelLebarM;
+//        TextView tabelpcsTextView = TabelPcsM;
+//
+//        String tebalString = tabeltebalTextView.getText().toString();
+//        String panjangString = tabelpanjangTextView.getText().toString();
+//        String lebarString = tabellebarTextView.getText().toString();
+//        String jmlhBatangString = tabelpcsTextView.getText().toString();
+//
+//        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
+//        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
+//        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
+//        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
+//
+//        float result = (tebal * panjang);
+//        float result2 = ( lebar * jmlhBatang);
+//        float result3 = (result * result2 / 1000000000);
+//
+//        TextView M3 = findViewById(R.id.M3M);
+//        M3.setText(String.format("%.4f" , result3));
     }
 
-    // fungsi menghitung dan menampilkan jumlah batang
     private void jumlahpcs() {
-        String pcsString = TabelPcsM.getText().toString();
+        TableLayout table = findViewById(R.id.Tabel);
+        int childCount = table.getChildCount();
 
-        if (!pcsString.isEmpty()) {
-            try {
-                int jumlahPcs = Integer.parseInt(pcsString);
-                TextView JumlahPcs = findViewById(R.id.JumlahPcsM);
-                JumlahPcs.setText(String.valueOf(jumlahPcs));
-            } catch (NumberFormatException e) {
-                Log.e("JumlahPCS", "Invalid PCS number: " + pcsString);
-                TextView JumlahPcs = findViewById(R.id.JumlahPcsM);
-                JumlahPcs.setText("0");
-            }
-        } else {
-            TextView JumlahPcs = findViewById(R.id.JumlahPcsM);
-            JumlahPcs.setText("0");
+        int totalPcs = 0;
+
+        for (int i = 1; i < childCount; i++) {
+            TableRow row = (TableRow) table.getChildAt(i);
+            TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
+
+            String pcsString = pcsTextView.getText().toString().replace(",", "");
+            int pcs = Integer.parseInt(pcsString);
+            totalPcs += pcs;
         }
+
+        JumlahPcsM.setText(String.valueOf(totalPcs));
     }
 
     // fungsi untuk memunculkan waktu dan tanggal realtime
@@ -737,7 +877,6 @@ public class Moulding extends AppCompatActivity {
 
         timePickerDialog.show();
     }
-
 
     //fungsi untuk mendelarasikan pencetakan PDF
      private Uri createPdf(String noMoulding, String Kayu, String Grade, String Fisik, String Tanggal, String Waktu, String Telly, String Mesin, String Susun, String noSPK, String tebal, String lebar, String panjang, String pcs, String jlh, String m3) throws IOException {
@@ -973,96 +1112,6 @@ public class Moulding extends AppCompatActivity {
                 Toast.makeText(Moulding.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(Moulding.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    //menyimpan data detail
-    private class InsertDatabaseTask extends AsyncTask<Void, Void, Boolean> {
-        private String lebar, panjang, tebal, pcs, noUrut, noMoulding;
-
-        public InsertDatabaseTask(String lebar, String panjang, String tebal, String pcs, String noUrut, String noMoulding) {
-            this.lebar = lebar;
-            this.panjang = panjang;
-            this.tebal = tebal;
-            this.pcs = pcs;
-            this.noUrut = noUrut;
-            this.noMoulding = noMoulding;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "INSERT INTO dbo.Moulding_d (Lebar, Panjang, Tebal, JmlhBatang, NoUrut, NoMoulding) VALUES (?, ?, ?, ?, ?, ?)";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, lebar);
-                    ps.setString(2, panjang);
-                    ps.setString(3, tebal);
-                    ps.setString(4, pcs);
-                    ps.setString(5, noUrut);
-                    ps.setString(6, noMoulding);
-
-                    int rowsInserted = ps.executeUpdate();
-                    ps.close();
-                    con.close();
-                    return rowsInserted > 0;
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                    return false;
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(Moulding.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(Moulding.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    //menghapus data berdsasarkan nomor moulding
-   private class DeleteDataTask extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noMoulding = params[0];
-            Connection con = ConnectionClass();
-            boolean success = false;
-
-            if (con != null) {
-                try {
-                    String query = "DELETE FROM dbo.Moulding_h WHERE NoMoulding = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noMoulding);
-
-                    int rowsAffected = ps.executeUpdate();
-                    success = rowsAffected > 0;
-
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(Moulding.this, "Data berhasil dihapus.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(Moulding.this, "Gagal menghapus data.", Toast.LENGTH_SHORT).show();
             }
         }
     }
