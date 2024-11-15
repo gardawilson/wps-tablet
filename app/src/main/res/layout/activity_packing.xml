@@ -489,7 +489,7 @@
             android:layout_width="123dp"
             android:layout_height="29dp"
             android:background="#E8EBE9"
-            android:inputType="number"
+            android:inputType="numberDecimal"
             android:textColor="@color/black"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -503,7 +503,7 @@
             android:layout_width="123dp"
             android:layout_height="29dp"
             android:background="#E8EBE9"
-            android:inputType="number"
+            android:inputType="numberDecimal"
             android:textColor="@color/black"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -518,7 +518,7 @@
             android:layout_height="29dp"
             android:background="#E8EBE9"
             android:backgroundTint="#E8EBE9"
-            android:inputType="number"
+            android:inputType="numberDecimal"
             android:text=""
             android:textColor="@color/black"
             android:textSize="18sp"
@@ -777,16 +777,16 @@
 
     <TextView
         android:id="@+id/M3P"
-        android:layout_width="95dp"
-        android:layout_height="35dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:textColor="@color/white"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.603"
+        app:layout_constraintHorizontal_bias="0.591"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.941" />
+        app:layout_constraintVertical_bias="0.925" />
 
     <TextView
         android:id="@+id/textView28"

@@ -383,6 +383,7 @@ public class S4S extends AppCompatActivity {
             }
 
             jumlahpcs();
+            m3();
         });
 
         BtnHapusDetail.setOnClickListener(v -> {
@@ -583,6 +584,20 @@ public class S4S extends AppCompatActivity {
             return;
         }
 
+        // Cek duplikasi data
+        boolean isDuplicate = false;
+        for (DataRow existingData : temporaryDataListDetail) {
+            if (existingData.tebal.equals(tebal) && existingData.panjang.equals(panjang) && existingData.lebar.equals(lebar)) {
+                isDuplicate = true;
+                break;
+            }
+        }
+
+        if (isDuplicate) {
+            Toast.makeText(this, "Data dengan ukuran yang sama sudah ada dalam tabel", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
             // Buat objek DataRow baru
             DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
@@ -623,6 +638,7 @@ public class S4S extends AppCompatActivity {
                 temporaryDataListDetail.remove(newDataRow);
                 updateRowNumbers();
                 jumlahpcs();
+                m3();
             });
 
             newRow.addView(deleteButton);
@@ -782,7 +798,42 @@ public class S4S extends AppCompatActivity {
     }
 
     private void m3() {
+        try {
+            double totalM3 = 0.0;
 
+            for (DataRow row : temporaryDataListDetail) {
+
+                // Parse nilai-nilai langsung tanpa membersihkan
+                double tebal = Double.parseDouble(row.tebal);
+                double lebar = Double.parseDouble(row.lebar);
+                double panjang = Double.parseDouble(row.panjang);
+                int pcs = Integer.parseInt(row.pcs);
+
+                // Hitung M3 untuk baris ini
+                double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                rowM3 = Math.floor(rowM3 * 10000) / 10000;
+
+                totalM3 += rowM3;
+            }
+
+            // Format hasil
+            DecimalFormat df = new DecimalFormat("0.000000");
+            String formattedM3 = df.format(totalM3);
+
+            // Update TextView
+            TextView M3TextView = findViewById(R.id.M3);
+            if (M3TextView != null) {
+                M3TextView.setText(formattedM3);
+                // Debug: Konfirmasi setText
+                Log.d("M3_DEBUG", "TextView updated with: " + formattedM3);
+            } else {
+                Log.e("M3_DEBUG", "M3TextView is null!");
+            }
+
+        } catch (Exception e) {
+            Log.e("M3_DEBUG", "Error in m3 calculation: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 

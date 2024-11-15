@@ -374,6 +374,7 @@ public class FingerJoint extends AppCompatActivity {
                 Toast.makeText(FingerJoint.this, "NoFJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
             }
             jumlahpcs();
+            m3();
         });
 
         BtnHapusDetailFJ.setOnClickListener(v -> {
@@ -572,7 +573,7 @@ public class FingerJoint extends AppCompatActivity {
                                 CBAfkirFJ.setChecked(isReject);
                                 CBLemburFJ.setChecked(isLembur);
 
-                                m3FJ();
+                                m3();
                                 jumlahpcs();
                             }
                         });
@@ -641,6 +642,20 @@ public class FingerJoint extends AppCompatActivity {
 
         if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
             Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Cek duplikasi data
+        boolean isDuplicate = false;
+        for (DataRow existingData : temporaryDataListDetail) {
+            if (existingData.tebal.equals(tebal) && existingData.panjang.equals(panjang) && existingData.lebar.equals(lebar)) {
+                isDuplicate = true;
+                break;
+            }
+        }
+
+        if (isDuplicate) {
+            Toast.makeText(this, "Data dengan ukuran yang sama sudah ada dalam tabel", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -849,8 +864,42 @@ public class FingerJoint extends AppCompatActivity {
         isDataBaruFJClicked = true;
     }
 
-    private void m3FJ() {
+    private void m3() {
+        try {
+            double totalM3 = 0.0;
 
+            for (DataRow row : temporaryDataListDetail) {
+
+                // Parse nilai-nilai langsung tanpa membersihkan
+                double tebal = Double.parseDouble(row.tebal);
+                double lebar = Double.parseDouble(row.lebar);
+                double panjang = Double.parseDouble(row.panjang);
+                int pcs = Integer.parseInt(row.pcs);
+
+                // Hitung M3 untuk baris ini
+                double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+
+                totalM3 += rowM3;
+            }
+
+            // Format hasil
+            DecimalFormat df = new DecimalFormat("0.0000");
+            String formattedM3 = df.format(totalM3);
+
+            // Update TextView
+            TextView M3TextView = findViewById(R.id.M3FJ);
+            if (M3TextView != null) {
+                M3TextView.setText(formattedM3);
+                // Debug: Konfirmasi setText
+                Log.d("M3_DEBUG", "TextView updated with: " + formattedM3);
+            } else {
+                Log.e("M3_DEBUG", "M3TextView is null!");
+            }
+
+        } catch (Exception e) {
+            Log.e("M3_DEBUG", "Error in m3 calculation: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void jumlahpcs() {

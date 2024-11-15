@@ -81,6 +81,7 @@ import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
+import java.math.RoundingMode;
 
 public class SawnTimber extends AppCompatActivity {
 
@@ -177,6 +178,8 @@ public class SawnTimber extends AppCompatActivity {
         CBMilimeter2 = findViewById(R.id.CBMilimeter2);
         CBMilimeter = findViewById(R.id.CBMilimeter);
         CBInch = findViewById(R.id.CBInch);
+
+        CBMilimeter2.setChecked(true);
         BtnPrintST.setEnabled(false);
 
         CBBagus.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -259,6 +262,8 @@ public class SawnTimber extends AppCompatActivity {
             }
 
             jumlahPcsST();
+            m3();
+            ton();
         });
 
         BtnTambahStickST.setOnClickListener(view -> {
@@ -546,6 +551,102 @@ public class SawnTimber extends AppCompatActivity {
         isDataBaruClickedST = true;
     }
 
+
+    private void ton() {
+        try {
+            double totalTON = 0.0;
+            boolean isMillimeter = CBMilimeter2.isChecked();
+
+            for (DataRow row : temporaryDataListDetail) {
+
+                // Parse nilai-nilai langsung tanpa membersihkan
+                double tebal = Double.parseDouble(row.tebal);
+                double lebar = Double.parseDouble(row.lebar);
+                double panjang = Double.parseDouble(row.panjang);
+                int pcs = Integer.parseInt(row.pcs);
+
+                // Hitung ton untuk baris ini
+                double rowTON;
+
+                if(isMillimeter){
+                    rowTON = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000);
+                    rowTON = Math.floor(rowTON * 10000) / 10000;
+                }
+                else{
+                    rowTON = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000);
+                    rowTON = Math.floor(rowTON * 10000) / 10000;
+                }
+                totalTON += rowTON;
+
+            }
+
+            // Format hasil
+            DecimalFormat df = new DecimalFormat("0.0000");
+            String formattedTON = df.format(totalTON);
+
+            // Update TextView
+            TextView TONTextView = findViewById(R.id.Ton);
+            if (TONTextView != null) {
+                TONTextView.setText(formattedTON);
+                // Debug: Konfirmasi setText
+                Log.d("TON_DEBUG", "TextView updated with: " + formattedTON);
+            } else {
+                Log.e("TON_DEBUG", "TONTextView is null!");
+            }
+
+        } catch (Exception e) {
+            Log.e("TON_DEBUG", "Error in ton calculation: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void m3() {
+        try {
+            double totalM3 = 0.0;
+            boolean isMillimeter = CBMilimeter2.isChecked();
+
+            for (DataRow row : temporaryDataListDetail) {
+
+                // Parse nilai-nilai langsung tanpa membersihkan
+                double tebal = Double.parseDouble(row.tebal);
+                double lebar = Double.parseDouble(row.lebar);
+                double panjang = Double.parseDouble(row.panjang);
+                int pcs = Integer.parseInt(row.pcs);
+
+                // Hitung ton untuk baris ini
+                double rowM3;
+
+                if(isMillimeter){
+                    rowM3 = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000) * 1.416;
+                    rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                }
+                else{
+                    rowM3 = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000) * 1.416;
+                    rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                }
+                totalM3 += rowM3;
+            }
+
+            // Format hasil
+            DecimalFormat df = new DecimalFormat("0.0000");
+            String formattedM3 = df.format(totalM3);
+
+            // Update TextView
+            TextView M3TextView = findViewById(R.id.M3ST);
+            if (M3TextView != null) {
+                M3TextView.setText(formattedM3);
+                // Debug: Konfirmasi setText
+                Log.d("M3_DEBUG", "TextView updated with: " + formattedM3);
+            } else {
+                Log.e("M3_DEBUG", "M3TextView is null!");
+            }
+
+        } catch (Exception e) {
+            Log.e("M3_DEBUG", "Error in ton calculation: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private void jumlahPcsST() {
         TableLayout table = findViewById(R.id.Tabel);
         int childCount = table.getChildCount();
@@ -797,6 +898,20 @@ public class SawnTimber extends AppCompatActivity {
             return;
         }
 
+        // Cek duplikasi data
+        boolean isDuplicate = false;
+        for (DataRow existingData : temporaryDataListDetail) {
+            if (existingData.tebal.equals(tebal) && existingData.panjang.equals(panjang) && existingData.lebar.equals(lebar)) {
+                isDuplicate = true;
+                break;
+            }
+        }
+
+        if (isDuplicate) {
+            Toast.makeText(this, "Data dengan ukuran yang sama sudah ada dalam tabel", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
             // Buat objek DataRow baru
             DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
@@ -837,6 +952,8 @@ public class SawnTimber extends AppCompatActivity {
                 temporaryDataListDetail.remove(newDataRow);
                 updateRowNumbers();
                 jumlahPcsST();
+                m3();
+                ton();
             });
 
             newRow.addView(deleteButton);

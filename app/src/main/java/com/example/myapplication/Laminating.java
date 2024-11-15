@@ -574,6 +574,20 @@ public class Laminating extends AppCompatActivity {
             return;
         }
 
+        // Cek duplikasi data
+        boolean isDuplicate = false;
+        for (DataRow existingData : temporaryDataListDetail) {
+            if (existingData.tebal.equals(tebal) && existingData.panjang.equals(panjang) && existingData.lebar.equals(lebar)) {
+                isDuplicate = true;
+                break;
+            }
+        }
+
+        if (isDuplicate) {
+            Toast.makeText(this, "Data dengan ukuran yang sama sudah ada dalam tabel", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
             // Buat objek DataRow baru
             DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
@@ -613,6 +627,7 @@ public class Laminating extends AppCompatActivity {
                 temporaryDataListDetail.remove(newDataRow);
                 updateRowNumbers();
                 jumlahpcs();
+                m3();
             });
 
             newRow.addView(deleteButton);
@@ -761,27 +776,41 @@ public class Laminating extends AppCompatActivity {
     }
 
     private void m3() {
-//        TextView tabeltebalTextView = TabelTebalL;
-//        TextView tabelpanjangTextView = TabelPanjangL;
-//        TextView tabellebarTextView = TabelLebarL;
-//        TextView tabelpcsTextView = TabelPcsL;
-//
-//        String tebalString = tabeltebalTextView.getText().toString();
-//        String panjangString = tabelpanjangTextView.getText().toString();
-//        String lebarString = tabellebarTextView.getText().toString();
-//        String jmlhBatangString = tabelpcsTextView.getText().toString();
-//
-//        int tebal = Integer.parseInt(tebalString.isEmpty() ? "0" : tebalString);
-//        int panjang = Integer.parseInt(panjangString.isEmpty() ? "0" : panjangString);
-//        int lebar = Integer.parseInt(lebarString.isEmpty() ? "0" : lebarString);
-//        int jmlhBatang = Integer.parseInt(jmlhBatangString.isEmpty() ? "0" : jmlhBatangString);
-//
-//        float result = (tebal * panjang);
-//        float result2 = ( lebar * jmlhBatang);
-//        float result3 = (result * result2 / 1000000000);
-//
-//        TextView M3 = findViewById(R.id.M3L);
-//        M3.setText(String.format("%.4f" , result3));
+        try {
+            double totalM3 = 0.0;
+
+            for (DataRow row : temporaryDataListDetail) {
+
+                // Parse nilai-nilai langsung tanpa membersihkan
+                double tebal = Double.parseDouble(row.tebal);
+                double lebar = Double.parseDouble(row.lebar);
+                double panjang = Double.parseDouble(row.panjang);
+                int pcs = Integer.parseInt(row.pcs);
+
+                // Hitung M3 untuk baris ini
+                double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+
+                totalM3 += rowM3;
+            }
+
+            // Format hasil
+            DecimalFormat df = new DecimalFormat("0.0000");
+            String formattedM3 = df.format(totalM3);
+
+            // Update TextView
+            TextView M3TextView = findViewById(R.id.M3L);
+            if (M3TextView != null) {
+                M3TextView.setText(formattedM3);
+                // Debug: Konfirmasi setText
+                Log.d("M3_DEBUG", "TextView updated with: " + formattedM3);
+            } else {
+                Log.e("M3_DEBUG", "M3TextView is null!");
+            }
+
+        } catch (Exception e) {
+            Log.e("M3_DEBUG", "Error in m3 calculation: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 
