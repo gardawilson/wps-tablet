@@ -303,12 +303,6 @@ public class S4S extends AppCompatActivity {
         BtnBatal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String noFJoin = NoS4S.getText().toString().trim();
-
-                if (!noFJoin.isEmpty()) {
-
-                }
-
                 clearTableData2();
                 Toast.makeText(S4S.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
@@ -758,10 +752,10 @@ public class S4S extends AppCompatActivity {
         NoS4S.setText("");
         M3.setText("");
         JumlahPcs.setText("");
+        NoSTA.setText("");
         CBAfkir.setChecked(false);
         CBLembur.setChecked(false);
 
-        currentNumber = 1;
     }
 
     private void resetSpinners() {

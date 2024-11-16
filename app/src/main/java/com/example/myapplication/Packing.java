@@ -240,6 +240,7 @@ public class Packing extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkirP.isChecked() ? 1 : 0;
             int isLembur = CBLemburP.isChecked() ? 1 : 0;
+            String idBarangJadi = selectedFisik != null ? selectedFisik.getIdBarangJadi() : null;
 
             if (noBarangJadi.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     NoWIP.getText().toString().isEmpty() ||
@@ -264,16 +265,13 @@ public class Packing extends AppCompatActivity {
                     time,
                     idTelly,
                     noSPK,
-                    noSPKasal != null ? noSPKasal : "", // Handle jika null
+                    noSPKasal,
                     idJenisKayu,
                     idProfile,
                     isReject,
-                    isLembur
+                    isLembur,
+                    idBarangJadi
             ).execute();
-//            new UpdateNoSTAsalTask(
-//                    noBarangJadi,
-//                    noWIP
-//            ).execute();
 
             if (radioButtonMesinP.isChecked() && SpinMesinP.isEnabled() && noProduksi != null) {
                 new SaveToDatabaseTask(noProduksi, noBarangJadi).execute();
@@ -328,7 +326,7 @@ public class Packing extends AppCompatActivity {
                 if (!noBarangJadi.isEmpty()) {
                     new LoadMesinTask2(noBarangJadi).execute();
                     new LoadSusunTask2(noBarangJadi).execute();
-                    new LoadFisikTask2(noBarangJadi).execute();
+//                    new LoadFisikTask2(noBarangJadi).execute();
 
                     new LoadJenisKayuTask2(noBarangJadi).execute();
                     new LoadTellyTask2(noBarangJadi).execute();
@@ -1106,13 +1104,13 @@ public class Packing extends AppCompatActivity {
     }
 
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
-        private String noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal, idJenisKayu, idFJProfile;
+        private String noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal, idJenisKayu, idFJProfile, idBarangJadi;
         private int isReject, isLembur;
 
         public UpdateDatabaseTask(String noBarangJadi, String dateCreate, String time,
                                   String idTelly, String noSPK, String noSPKasal,
                                   String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur) {
+                                  int isReject, int isLembur, String idBarangJadi) {
             this.noBarangJadi = noBarangJadi;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1123,6 +1121,7 @@ public class Packing extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.idBarangJadi = idBarangJadi;
         }
 
         @Override
@@ -1139,12 +1138,13 @@ public class Packing extends AppCompatActivity {
                             "Jam = ?, " +
                             "IdOrgTelly = ?, " +
                             "NoSPK = ?, " +
-                            "NoSPKAsal = ?, " +  // Tambahkan koma di sini
+                            "NoSPKAsal = ?, " +
                             "IdFJProfile = ?, " +
                             "IdJenisKayu = ?, " +
                             "IdWarehouse = ?, " +
                             "IsReject = ?, " +
-                            "IsLembur = ? " +
+                            "IsLembur = ?, " +
+                            "IdBarangJadi = ? " +
                             "WHERE NoBJ = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
@@ -1157,10 +1157,11 @@ public class Packing extends AppCompatActivity {
                     ps.setString(5, noSPKasal);
                     ps.setString(6, idFJProfile);
                     ps.setString(7, idJenisKayu);
-                    ps.setInt(8, 11); // IdWarehouse default 11 untuk BarangJadi
+                    ps.setInt(8, 11);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noBarangJadi);
+                    ps.setString(11, idBarangJadi);
+                    ps.setString(12, noBarangJadi);
 
                     // Log parameter values untuk debugging
                     Log.d("UpdateDatabase", "Parameters: " +
@@ -1786,15 +1787,15 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NamaBarangJadi FROM dbo.MstBarangJadi";
+                    String query = "SELECT IdBarangJadi, NamaBarangJadi FROM dbo.MstBarangJadi";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaBarangJadi");
-
-                        Fisik fisik = new Fisik(namaWarehouse);
-                        fisikList.add(fisik);
+                        String namaBarangJadi = rs.getString("NamaBarangJadi");
+                        String idBarangJadi = rs.getString("IdBarangJadi");
+                        Fisik fisikObj = new Fisik(namaBarangJadi, idBarangJadi);
+                        fisikList.add(fisikObj);
                     }
 
                     rs.close();
@@ -1816,69 +1817,69 @@ public class Packing extends AppCompatActivity {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinBarangJadiP.setAdapter(adapter);
             } else {
-                Log.e("Error", "Failed to load fisik data.");
+                Log.e("Error", "Failed to load barang jadi data.");
             }
         }
     }
 
-    private class LoadFisikTask2 extends AsyncTask<String, Void, List<Fisik>> {
-        private String noBarangJadi;
-
-        public LoadFisikTask2(String noBarangJadi) {
-            this.noBarangJadi = noBarangJadi;
-        }
-
-        @Override
-        protected List<Fisik> doInBackground(String... params) {
-            List<Fisik> fisikList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT mw.NamaWarehouse " +
-                            "FROM dbo.MstWarehouse mw " +
-                            "INNER JOIN dbo.BarangJadi_h bj ON mw.IdWarehouse = bj.IdWarehouse " +
-                            "WHERE bj.NoBJ = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noBarangJadi);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaWarehouse");
-                        Fisik fisik = new Fisik(namaWarehouse);
-                        fisikList.add(fisik);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", "Error during query execution: " + e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return fisikList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Fisik> fisikList) {
-            if (!fisikList.isEmpty()) {
-                ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Packing.this,
-                        android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinBarangJadiP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "No warehouse found.");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Packing.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada Fisik"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinBarangJadiP.setAdapter(emptyAdapter);
-            }
-        }
-    }
+//    private class LoadFisikTask2 extends AsyncTask<String, Void, List<Fisik>> {
+//        private String noBarangJadi;
+//
+//        public LoadFisikTask2(String noBarangJadi) {
+//            this.noBarangJadi = noBarangJadi;
+//        }
+//
+//        @Override
+//        protected List<Fisik> doInBackground(String... params) {
+//            List<Fisik> fisikList = new ArrayList<>();
+//            Connection con = ConnectionClass();
+//            if (con != null) {
+//                try {
+//                    String query = "SELECT mw.NamaWarehouse " +
+//                            "FROM dbo.MstWarehouse mw " +
+//                            "INNER JOIN dbo.BarangJadi_h bj ON mw.IdWarehouse = bj.IdWarehouse " +
+//                            "WHERE bj.NoBJ = ?";
+//
+//                    PreparedStatement ps = con.prepareStatement(query);
+//                    ps.setString(1, noBarangJadi);
+//
+//                    ResultSet rs = ps.executeQuery();
+//
+//                    while (rs.next()) {
+//                        String namaWarehouse = rs.getString("NamaWarehouse");
+//                        Fisik fisik = new Fisik(namaWarehouse);
+//                        fisikList.add(fisik);
+//                    }
+//
+//                    rs.close();
+//                    ps.close();
+//                    con.close();
+//                } catch (Exception e) {
+//                    Log.e("Database Error", "Error during query execution: " + e.getMessage());
+//                }
+//            } else {
+//                Log.e("Connection Error", "Failed to connect to the database.");
+//            }
+//
+//            return fisikList;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(List<Fisik> fisikList) {
+//            if (!fisikList.isEmpty()) {
+//                ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Packing.this,
+//                        android.R.layout.simple_spinner_item, fisikList);
+//                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//                SpinBarangJadiP.setAdapter(adapter);
+//            } else {
+//                Log.e("Error", "No warehouse found.");
+//                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Packing.this,
+//                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada Fisik"});
+//                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//                SpinBarangJadiP.setAdapter(emptyAdapter);
+//            }
+//        }
+//    }
 
     private class LoadMesinTask extends AsyncTask<String, Void, List<Mesin>> {
         @Override
@@ -2204,34 +2205,28 @@ public class Packing extends AppCompatActivity {
         }
     }
 
-
-
     public class Fisik {
-        private String idWarehouse; // Jika diperlukan
-        private String namaWarehouse;
+        private String idBarangJadi;
+        private String namaBarangJadi;
 
-        public Fisik(String namaWarehouse) {
-            this.namaWarehouse = namaWarehouse;
+        public Fisik(String namaBarangJadi, String idBarangJadi) {
+            this.namaBarangJadi = namaBarangJadi;
+            this.idBarangJadi = idBarangJadi;
         }
 
-        public String getIdWarehouse() {
-            return idWarehouse;
+        public String getIdBarangJadi() {
+            return idBarangJadi;
         }
 
-        public void setIdWarehouse(String idWarehouse) {
-            this.idWarehouse = idWarehouse;
-        }
-
-        public String getNamaWarehouse() {
-            return namaWarehouse;
+        public String getNamaBarangJadi() {
+            return namaBarangJadi;
         }
 
         @Override
         public String toString() {
-            return namaWarehouse;
+            return namaBarangJadi;
         }
     }
-
 
     public class Grade {
         private String idGrade;

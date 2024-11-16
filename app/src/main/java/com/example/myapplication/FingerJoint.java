@@ -1261,7 +1261,7 @@ public class FingerJoint extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.FJ_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 5, IdJenisKayu = ?, IdWarehouse = 5, IsReject = ?, IsLembur = ? WHERE NoFJ = ?";
+                            "IdFJProfile = ?, IdJenisKayu = ?, IdFisik = 5, IdWarehouse = 5, IsReject = ?, IsLembur = ? WHERE NoFJ = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
