@@ -222,6 +222,8 @@ public class S4S extends AppCompatActivity {
             JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
             Mesin selectedMesin = (Mesin) SpinMesin.getSelectedItem();
             Susun selectedSusun = (Susun) SpinSusun.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
             // Get values
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
@@ -234,6 +236,15 @@ public class S4S extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkir.isChecked() ? 1 : 0;
             int isLembur = CBLembur.isChecked() ? 1 : 0;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 1;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 3;
+            }
 
             // Validasi input
             if (noS4S.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
@@ -272,11 +283,13 @@ public class S4S extends AppCompatActivity {
                                 idJenisKayu,
                                 idProfile,
                                 isReject,
-                                isLembur
+                                isLembur,
+                                idUOMTblLebar,
+                                idUOMPanjang
                         ).execute();
 
                         // Update NoSTAsal
-                        new UpdateNoSTAsalTask(noS4S, noSTAsal).execute();
+//                        new UpdateNoSTAsalTask(noS4S, noSTAsal).execute();
 
                         // Simpan sesuai pilihan radio button
                         if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
@@ -1190,11 +1203,11 @@ public class S4S extends AppCompatActivity {
     @SuppressWarnings("deprecation")
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
         private String noS4S, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
-        private int isReject, isLembur, noSTAsal;
+        private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noS4S, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur) {
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang) {
             this.noS4S = noS4S;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1206,6 +1219,8 @@ public class S4S extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.IdUOMTblLebar = IdUOMTblLebar;
+            this.IdUOMPanjang = IdUOMPanjang;
         }
 
         @Override
@@ -1214,7 +1229,7 @@ public class S4S extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.S4S_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ? WHERE NoS4S = ?";
+                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoS4S = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -1227,7 +1242,10 @@ public class S4S extends AppCompatActivity {
                     ps.setString(8, idJenisKayu);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noS4S);
+                    ps.setInt(11, IdUOMTblLebar);
+                    ps.setInt(12, IdUOMPanjang);
+                    ps.setString(13, noS4S);
+
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -1244,89 +1262,89 @@ public class S4S extends AppCompatActivity {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private class UpdateNoSTAsalTask extends AsyncTask<Void, Void, Boolean> {
-        private String noS4S;
-        private String noSTAsal;
-        private String errorMessage = null;
-
-        public UpdateNoSTAsalTask(String noS4S, String noSTAsal) {
-            this.noS4S = noS4S;
-            this.noSTAsal = noSTAsal;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    Log.d("UpdateNoSTAsalTask", "Checking and updating NoSTAsal for NoS4S: " + noS4S);
-
-                    String checkQuery = "SELECT NoSTAsal FROM dbo.S4S_h WHERE NoSTAsal = ?";
-                    PreparedStatement checkPs = con.prepareStatement(checkQuery);
-                    checkPs.setString(1, noSTAsal);
-                    ResultSet rs = checkPs.executeQuery();
-
-                    if (!rs.next()) {
-                        errorMessage = "NoSTAsal tidak ditemukan di tabel ST_h.";
-                        Log.e("UpdateNoSTAsalTask", errorMessage);
-                        return false;
-                    }
-
-                    String selectQuery = "SELECT NoSTAsal FROM dbo.S4S_h WHERE NoS4S = ?";
-                    PreparedStatement selectPs = con.prepareStatement(selectQuery);
-                    selectPs.setString(1, noS4S);
-                    ResultSet selectRs = selectPs.executeQuery();
-
-                    if (selectRs.next()) {
-                        String currentNoSTAsal = selectRs.getString("NoSTAsal");
-                        if (currentNoSTAsal == null) {
-                            String updateQuery = "UPDATE dbo.S4S_h SET NoSTAsal = ? WHERE NoS4S = ?";
-                            PreparedStatement updatePs = con.prepareStatement(updateQuery);
-                            updatePs.setString(1, noSTAsal);
-                            updatePs.setString(2, noS4S);
-
-                            int rowsUpdated = updatePs.executeUpdate();
-                            updatePs.close();
-                            Log.d("UpdateNoSTAsalTask", "Rows updated: " + rowsUpdated);
-                            return rowsUpdated > 0;
-                        } else {
-                            errorMessage = "NoSTAsal sudah memiliki nilai: " + currentNoSTAsal;
-                            Log.e("UpdateNoSTAsalTask", errorMessage);
-                            return false;
-                        }
-                    } else {
-                        errorMessage = "NoS4S tidak ditemukan di tabel S4S_h.";
-                        Log.e("UpdateNoSTAsalTask", errorMessage);
-                        return false;
-                    }
-                } catch (SQLException e) {
-                    errorMessage = "SQL Error: " + e.getMessage();
-                    Log.e("Database Error", errorMessage);
-                    return false;
-                } finally {
-                    try {
-                        con.close();
-                    } catch (SQLException e) {
-                        Log.e("Connection Close Error", e.getMessage());
-                    }
-                }
-            } else {
-                errorMessage = "Koneksi ke database gagal.";
-                Log.e("Connection Error", errorMessage);
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(S4S.this, "NoSTAsal berhasil diperbarui.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(S4S.this, "Gagal memperbarui NoSTAsal: " + errorMessage, Toast.LENGTH_LONG).show();
-            }
-        }
-    }
+//    @SuppressWarnings("deprecation")
+//    private class UpdateNoSTAsalTask extends AsyncTask<Void, Void, Boolean> {
+//        private String noS4S;
+//        private String noSTAsal;
+//        private String errorMessage = null;
+//
+//        public UpdateNoSTAsalTask(String noS4S, String noSTAsal) {
+//            this.noS4S = noS4S;
+//            this.noSTAsal = noSTAsal;
+//        }
+//
+//        @Override
+//        protected Boolean doInBackground(Void... voids) {
+//            Connection con = ConnectionClass();
+//            if (con != null) {
+//                try {
+//                    Log.d("UpdateNoSTAsalTask", "Checking and updating NoSTAsal for NoS4S: " + noS4S);
+//
+//                    String checkQuery = "SELECT NoSTAsal FROM dbo.S4S_h WHERE NoSTAsal = ?";
+//                    PreparedStatement checkPs = con.prepareStatement(checkQuery);
+//                    checkPs.setString(1, noSTAsal);
+//                    ResultSet rs = checkPs.executeQuery();
+//
+//                    if (!rs.next()) {
+//                        errorMessage = "NoSTAsal tidak ditemukan di tabel ST_h.";
+//                        Log.e("UpdateNoSTAsalTask", errorMessage);
+//                        return false;
+//                    }
+//
+//                    String selectQuery = "SELECT NoSTAsal FROM dbo.S4S_h WHERE NoS4S = ?";
+//                    PreparedStatement selectPs = con.prepareStatement(selectQuery);
+//                    selectPs.setString(1, noS4S);
+//                    ResultSet selectRs = selectPs.executeQuery();
+//
+//                    if (selectRs.next()) {
+//                        String currentNoSTAsal = selectRs.getString("NoSTAsal");
+//                        if (currentNoSTAsal == null) {
+//                            String updateQuery = "UPDATE dbo.S4S_h SET NoSTAsal = ? WHERE NoS4S = ?";
+//                            PreparedStatement updatePs = con.prepareStatement(updateQuery);
+//                            updatePs.setString(1, noSTAsal);
+//                            updatePs.setString(2, noS4S);
+//
+//                            int rowsUpdated = updatePs.executeUpdate();
+//                            updatePs.close();
+//                            Log.d("UpdateNoSTAsalTask", "Rows updated: " + rowsUpdated);
+//                            return rowsUpdated > 0;
+//                        } else {
+//                            errorMessage = "NoSTAsal sudah memiliki nilai: " + currentNoSTAsal;
+//                            Log.e("UpdateNoSTAsalTask", errorMessage);
+//                            return false;
+//                        }
+//                    } else {
+//                        errorMessage = "NoS4S tidak ditemukan di tabel S4S_h.";
+//                        Log.e("UpdateNoSTAsalTask", errorMessage);
+//                        return false;
+//                    }
+//                } catch (SQLException e) {
+//                    errorMessage = "SQL Error: " + e.getMessage();
+//                    Log.e("Database Error", errorMessage);
+//                    return false;
+//                } finally {
+//                    try {
+//                        con.close();
+//                    } catch (SQLException e) {
+//                        Log.e("Connection Close Error", e.getMessage());
+//                    }
+//                }
+//            } else {
+//                errorMessage = "Koneksi ke database gagal.";
+//                Log.e("Connection Error", errorMessage);
+//                return false;
+//            }
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Boolean success) {
+//            if (success) {
+//                Toast.makeText(S4S.this, "NoSTAsal berhasil diperbarui.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(S4S.this, "Gagal memperbarui NoSTAsal: " + errorMessage, Toast.LENGTH_LONG).show();
+//            }
+//        }
+//    }
 
     @SuppressWarnings("deprecation")
     private class SetAndSaveNoS4STask extends AsyncTask<Void, Void, String> {

@@ -1649,6 +1649,7 @@ public class Sanding extends AppCompatActivity {
                 Log.e("Error", "No SPK data found for the provided NoSanding.");
                 SpinSPKS.setAdapter(null);
                 SpinSPKS.setEnabled(false);
+                SpinSPKS.setEnabled(false);
                 Toast.makeText(Sanding.this, "Tidak ada data SPK yang ditemukan.", Toast.LENGTH_SHORT).show();
             }
         }
