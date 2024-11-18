@@ -1347,7 +1347,6 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-
     public class LoadJenisKayuTaskFJ extends AsyncTask<Void, Void, List<JenisKayuFJ>> {
         @Override
         protected List<JenisKayuFJ> doInBackground(Void... voids) {
