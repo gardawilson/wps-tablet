@@ -98,7 +98,7 @@ public class Packing extends AppCompatActivity {
     private Spinner SpinMesinP;
     private Spinner SpinSusunP;
     private Calendar calendarP;
-    private RadioGroup radioGroup;
+    private RadioGroup RadioGroupP;
     private RadioButton radioButtonMesinP;
     private RadioButton radioButtonBSusunP;
     private Button BtnDataBaruP;
@@ -161,6 +161,7 @@ public class Packing extends AppCompatActivity {
         JumlahPcsP = findViewById(R.id.JumlahPcsP);
         BtnSearchP = findViewById(R.id.BtnSearchP);
         Tabel = findViewById(R.id.Tabel);
+        RadioGroupP = findViewById(R.id.RadioGroupP);
 
         BtnPrintP.setEnabled(false);
 
@@ -189,7 +190,6 @@ public class Packing extends AppCompatActivity {
 
         BtnDataBaruP.setOnClickListener(v -> {
             if (!isDataBaruClickedP) {
-                resetSpinners();
                 new LoadJenisKayuTask().execute();
                 new LoadTellyTask().execute();
                 new LoadSPKTask().execute();
@@ -211,7 +211,6 @@ public class Packing extends AppCompatActivity {
             radioButtonMesinP.setEnabled(true);
             radioButtonBSusunP.setEnabled(true);
             setCurrentDateTime();
-            clearTableData2();
             BtnDataBaruP.setEnabled(false);
         });
 
@@ -229,6 +228,8 @@ public class Packing extends AppCompatActivity {
             JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuP.getSelectedItem();
             Mesin selectedMesin = (Mesin) SpinMesinP.getSelectedItem();
             Susun selectedSusun = (Susun) SpinSusunP.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
 
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
@@ -241,17 +242,28 @@ public class Packing extends AppCompatActivity {
             int isReject = CBAfkirP.isChecked() ? 1 : 0;
             int isLembur = CBLemburP.isChecked() ? 1 : 0;
             String idBarangJadi = selectedFisik != null ? selectedFisik.getIdBarangJadi() : null;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 3;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 1;
+            }
 
             if (noBarangJadi.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     NoWIP.getText().toString().isEmpty() ||
-                    selectedTelly == null ||
-                    selectedSPK == null ||
-                    selectedProfile == null ||
-                    selectedFisik == null ||
-                    selectedJenisKayu == null ||
+                    selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
+                    selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
+                    selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
+                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
+                    selectedFisik == null || selectedFisik.getIdBarangJadi().equals("PILIH") ||
+                    selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinP.isChecked() && !radioButtonBSusunP.isChecked()) ||
-                    (radioButtonMesinP.isChecked() && selectedMesin == null) ||
-                    (radioButtonBSusunP.isChecked() && selectedSusun == null)) {
+                    (radioButtonMesinP.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
+                    (radioButtonBSusunP.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+
 
                 Toast.makeText(Packing.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
@@ -299,14 +311,10 @@ public class Packing extends AppCompatActivity {
         BtnBatalP.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String noFJoin = NoBarangJadi.getText().toString().trim();
-
-                if (!noFJoin.isEmpty()) {
-
-                }
-
-                clearTableData2();
-                Toast.makeText(Packing.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+                setCurrentDateTime();
+                clearData();
+                resetDetailData();
+                BtnSimpanP.setEnabled(true);
             }
         });
 
@@ -731,42 +739,23 @@ public class Packing extends AppCompatActivity {
     }
 
 
-    private void clearTableData2() {
+    private void clearData() {
         NoBarangJadi.setText("");
         M3P.setText("");
         JumlahPcsP.setText("");
+        NoWIP.setText("");
         CBAfkirP.setChecked(false);
         CBLemburP.setChecked(false);
-
-        currentNumber = 1;
+        SpinKayuP.setSelection(0);
+        SpinTellyP.setSelection(0);
+        SpinSPKP.setSelection(0);
+        SpinSPKAsalP.setSelection(0);
+        SpinProfileP.setSelection(0);
+        SpinMesinP.setEnabled(false);
+        SpinSusunP.setEnabled(false);
+        RadioGroupP.clearCheck();
     }
 
-    private void resetSpinners() {
-        if (SpinKayuP.getAdapter() != null) {
-            SpinKayuP.setSelection(0);
-        }
-        if (SpinMesinP.getAdapter() != null) {
-            SpinMesinP.setSelection(0);
-        }
-        if (SpinSusunP.getAdapter() != null) {
-            SpinSusunP.setSelection(0);
-        }
-        if (SpinTellyP.getAdapter() != null) {
-            SpinTellyP.setSelection(0);
-        }
-        if (SpinProfileP.getAdapter() != null) {
-            SpinProfileP.setSelection(0);
-        }
-        if (SpinBarangJadiP.getAdapter() != null) {
-            SpinBarangJadiP.setSelection(0);
-        }
-        if (SpinSPKP.getAdapter() != null) {
-            SpinSPKP.setSelection(0);
-        }
-
-        BtnDataBaruP.setEnabled(true);
-        isDataBaruClickedP = true;
-    }
 
     private void m3() {
         try {
@@ -1378,13 +1367,14 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayu dummyKayu = new JenisKayu("", "PILIH");
+            jenisKayuList.add(0, dummyKayu);
+
+            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinKayuP.setAdapter(adapter);
+            SpinKayuP.setSelection(0);
         }
     }
     public class LoadJenisKayuTask2 extends AsyncTask<String, Void, List<JenisKayu>> {
@@ -1476,14 +1466,19 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Tambahkan elemen dummy di awal
+            Telly dummyTelly = new Telly("", "PILIH");
+            tellyList.add(0, dummyTelly);
 
-                SpinTellyP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTellyP.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTellyP.setSelection(0);
         }
     }
 
@@ -1575,13 +1570,14 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPK dummySPK = new SPK("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKP.setAdapter(adapter);
+            SpinSPKP.setSelection(0);
         }
     }
 
@@ -1617,13 +1613,14 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKAsal> spkAsalList) {
-            if (!spkAsalList.isEmpty()) {
-                ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, spkAsalList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKAsalP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKAsal dummySPKAsal = new SPKAsal("PILIH");
+            spkAsalList.add(0, dummySPKAsal);
+
+            ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, spkAsalList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKAsalP.setAdapter(adapter);
+            SpinSPKAsalP.setSelection(0);
         }
     }
 
@@ -1716,13 +1713,14 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Profile> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
+            Profile dummyProfile = new Profile("PILIH", "");
+            profileList.add(0, dummyProfile);
+
+            ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, profileList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinProfileP.setAdapter(adapter);
+            SpinProfileP.setSelection(0);
         }
     }
 
@@ -1812,13 +1810,14 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Fisik> fisikList) {
-            if (!fisikList.isEmpty()) {
-                ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinBarangJadiP.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load barang jadi data.");
-            }
+            Fisik dummyFisik = new Fisik("PILIH", "");
+            fisikList.add(0, dummyFisik);
+
+            ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, fisikList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinBarangJadiP.setAdapter(adapter);
+            SpinBarangJadiP.setSelection(0);
         }
     }
 

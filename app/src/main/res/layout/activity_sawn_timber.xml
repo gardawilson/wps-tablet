@@ -156,10 +156,11 @@
         android:id="@+id/NoSuket"
         android:layout_width="250dp"
         android:layout_height="20dp"
-        android:background="#E8EBE9"
+        android:background="@color/abu_disabled"
         android:inputType="number"
         android:textColor="@color/black"
         android:textSize="16sp"
+        android:enabled="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.222"
@@ -185,10 +186,10 @@
         android:id="@+id/SpinLokasi"
         android:layout_width="250dp"
         android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
+        android:background="@color/abu_disabled"
         android:textColor="@color/black"
         android:textSize="16sp"
+        android:enabled="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.22"
@@ -395,33 +396,35 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.647" />
 
-    <CheckBox
-        android:id="@+id/CBKulit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Kulit"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.53"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.386" />
 
-    <CheckBox
-        android:id="@+id/CBBagus"
-        android:layout_width="wrap_content"
+    <RadioGroup
+        android:id="@+id/radioGroupBagusKulit"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Bagus"
-        android:textColor="@color/white"
-        android:textSize="14sp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.451"
+        app:layout_constraintHorizontal_bias="0.507"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.386" />
+        app:layout_constraintVertical_bias="0.385">
+
+        <RadioButton
+            android:id="@+id/radioBagus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Bagus"
+            android:textColor="@color/white" />
+
+        <RadioButton
+            android:id="@+id/radioKulit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="Kulit"
+            android:textColor="@color/white" />
+    </RadioGroup>
 
     <Button
         android:id="@+id/BtnSearchST"
@@ -586,11 +589,11 @@
         android:id="@+id/Supplier"
         android:layout_width="100dp"
         android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
+        android:background="@color/abu_disabled"
         android:text=""
         android:textColor="@color/black"
         android:textSize="12sp"
+        android:enabled="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.194"
@@ -618,7 +621,7 @@
         android:id="@+id/TglStickBundel"
         android:layout_width="100dp"
         android:layout_height="20dp"
-        android:background="@color/abu_disabled"
+        android:background="#E8EBE9"
         android:text=""
         android:textColor="@color/black"
         android:textSize="16sp"
@@ -627,8 +630,7 @@
         app:layout_constraintHorizontal_bias="0.192"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.542"
-        android:enabled="false"/>
+        app:layout_constraintVertical_bias="0.542" />
 
     <TextView
         android:id="@+id/textView13"
@@ -675,20 +677,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.269" />
 
-    <CheckBox
-        android:id="@+id/CBMilimeter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="Centimeter"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.874"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.626" />
-
     <TextView
         android:id="@+id/textView24"
         android:layout_width="wrap_content"
@@ -716,33 +704,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.746" />
-
-    <CheckBox
-        android:id="@+id/CBMeter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="false"
-        android:text="Meter"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.935"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.626" />
-
-    <CheckBox
-        android:id="@+id/CBFeet"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="280dp"
-        android:clickable="false"
-        android:text="Feet"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.994"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/DetailTebalST"
@@ -774,21 +735,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.552" />
 
-    <CheckBox
-        android:id="@+id/CBInch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:text="Inch"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.927"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.547"
-        tools:ignore="MissingConstraints" />
-
     <TextView
         android:id="@+id/textView22"
         android:layout_width="wrap_content"
@@ -818,19 +764,70 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.669" />
 
-    <CheckBox
-        android:id="@+id/CBMilimeter2"
-        android:layout_width="wrap_content"
+    <RadioGroup
+        android:id="@+id/radioGroupUOMTblLebar"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:enabled="true"
-        android:text="Milimeter"
-        android:textColor="@color/white"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.874"
+        app:layout_constraintHorizontal_bias="0.951"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.547" />
+        app:layout_constraintVertical_bias="0.539">
+
+        <RadioButton
+            android:id="@+id/radioMillimeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Milimeter"
+            android:textColor="@color/white" />
+
+        <RadioButton
+            android:id="@+id/radioInch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inch"
+            android:textColor="@color/white" />
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/radioGroupUOMPanjang"
+        android:layout_width="270dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.626">
+
+        <RadioButton
+            android:id="@+id/radioCentimeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Centimeter"
+            android:textColor="@color/white" />
+
+        <RadioButton
+            android:id="@+id/radioMeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="Meter"
+            android:textColor="@color/white" />
+
+        <RadioButton
+            android:id="@+id/radioFeet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="Feet"
+            android:textColor="@color/white" />
+    </RadioGroup>
 
     <EditText
         android:id="@+id/DetailPanjangST"

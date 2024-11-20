@@ -22,6 +22,8 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -114,8 +116,6 @@ public class SawnTimber extends AppCompatActivity {
     private TextView DetailLebarST;
     private TextView DetailPanjangST;
     private TextView DetailPcsST;
-    private CheckBox CBBagus;
-    private CheckBox CBKulit;
     private boolean isDataBaruClickedST = false;
     private int currentTableNo = 1;
     private TableLayout Tabel;
@@ -124,11 +124,16 @@ public class SawnTimber extends AppCompatActivity {
     private CheckBox CBKering;
     private CheckBox CBStick;
     private CheckBox CBUpah;
-    private CheckBox CBInch;
-    private CheckBox CBMilimeter2;
-    private CheckBox CBMilimeter;
-    private static int currentNumber = 1;
     private Button BtnInputDetailST;
+    private RadioGroup radioGroupUOMTblLebar;
+    private RadioButton radioMillimeter;
+    private RadioButton radioInch;
+    private RadioButton radioCentimeter;
+    private RadioGroup radioBagusKulit;
+    private RadioButton radioBagus;
+    private RadioButton radioKulit;
+
+
     private List<DataRow> dataRows = new ArrayList<>();
 
     @Override
@@ -137,7 +142,6 @@ public class SawnTimber extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_sawn_timber);
 
-        BtnBatalST = findViewById(R.id.BtnBatalST);
         BtnSearchST = findViewById(R.id.BtnSearchST);
         BtnBatalST = findViewById(R.id.BtnBatalST);
         BtnDataBaruST = findViewById(R.id.BtnDataBaruST);
@@ -146,8 +150,6 @@ public class SawnTimber extends AppCompatActivity {
         BtnHapusStickST = findViewById(R.id.BtnHapusStickST);
         BtnTambahStickST = findViewById(R.id.BtnTambahStickST);
         BtnSimpanST = findViewById(R.id.BtnSimpanST);
-        CBBagus = findViewById(R.id.CBBagus);
-        CBKulit = findViewById(R.id.CBKulit);
         BtnInputDetailST = findViewById(R.id.BtnInputDetailST);
         BtnHapusDetailST = findViewById(R.id.BtnHapusDetailST);
         NoST = findViewById(R.id.NoST);
@@ -175,50 +177,14 @@ public class SawnTimber extends AppCompatActivity {
         CBKering = findViewById(R.id.CBKering);
         CBStick = findViewById(R.id.CBStick);
         CBUpah = findViewById(R.id.CBUpah);
-        CBMilimeter2 = findViewById(R.id.CBMilimeter2);
-        CBMilimeter = findViewById(R.id.CBMilimeter);
-        CBInch = findViewById(R.id.CBInch);
+        radioMillimeter = findViewById(R.id.radioMillimeter);
+        radioInch = findViewById(R.id.radioInch);
+        radioCentimeter = findViewById(R.id.radioCentimeter);
+        radioBagus = findViewById(R.id.radioBagus);
+        radioKulit = findViewById(R.id.radioKulit);
+        radioBagusKulit = findViewById(R.id.radioGroupBagusKulit);
 
-        CBMilimeter2.setChecked(true);
         BtnPrintST.setEnabled(false);
-
-        CBBagus.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    CBKulit.setChecked(false);
-                }
-            }
-        });
-
-        CBKulit.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    CBBagus.setChecked(false);
-                }
-            }
-        });
-
-
-
-        CBMilimeter2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    CBInch.setChecked(false);
-                }
-            }
-        });
-
-        CBInch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    CBMilimeter2.setChecked(false);
-                }
-            }
-        });
 
         BtnSearchST.setOnClickListener(v -> {
             String noKayuBulat = NoKayuBulat.getText().toString();
@@ -233,7 +199,6 @@ public class SawnTimber extends AppCompatActivity {
 
         BtnDataBaruST.setOnClickListener(v -> {
             if (!isDataBaruClickedST) {
-                resetSpinners();
                 new LoadSPKTask().execute();
                 new LoadTellyTask().execute();
                 new LoadStickByTask().execute();
@@ -242,8 +207,6 @@ public class SawnTimber extends AppCompatActivity {
                 new LoadLokasiTask().execute();
                 isDataBaruClickedST = true;
                 setCurrentDateTime();
-            } else {
-                Toast.makeText(SawnTimber.this, "Data baru sudah dimuat.", Toast.LENGTH_SHORT).show();
             }
             new SetAndSaveNoSTTask().execute();
             setCurrentDateTime();
@@ -280,12 +243,6 @@ public class SawnTimber extends AppCompatActivity {
         SpinGrade.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                GradeStick selectedGrade = (GradeStick) parent.getItemAtPosition(position);
-
-                int selectedGradeId = selectedGrade.getIdGradeStick();
-                String selectedGradeName = selectedGrade.getNamaGradeStick();
-
-                Toast.makeText(getApplicationContext(), "Selected Grade: " + selectedGradeName + ", ID: " + selectedGradeId, Toast.LENGTH_SHORT).show();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -295,12 +252,10 @@ public class SawnTimber extends AppCompatActivity {
         SpinLokasi.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Lokasi selectedLokasi = (Lokasi) parent.getItemAtPosition(position);
-
-                String selectedLokasiId = selectedLokasi.getIdLokasi();
-                String selectedNamaLokasi = selectedLokasi.getNamaLokasi();
-
-                Toast.makeText(getApplicationContext(), "Selected Lokasi: " + selectedLokasiId + ", ID: " + selectedNamaLokasi, Toast.LENGTH_SHORT).show();
+//                Lokasi selectedLokasi = (Lokasi) parent.getItemAtPosition(position);
+//
+//                String selectedLokasiId = selectedLokasi.getIdLokasi();
+//                String selectedNamaLokasi = selectedLokasi.getNamaLokasi();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -317,6 +272,8 @@ public class SawnTimber extends AppCompatActivity {
                     new DeleteDataTask().execute(noST);
                 }
                 clearTableData();
+                resetGradeData();
+                resetDetailData();
                 BtnSimpanST.setEnabled(false);
 
             }
@@ -336,14 +293,24 @@ public class SawnTimber extends AppCompatActivity {
                 String idLokasi = selectedLokasi.getIdLokasi();
                 String dateCreate = TglStickBundel.getText().toString().trim();
 
+                if (!validateKayuLatSelection()) {
+                    return;
+                }
 
-                if (!noST.isEmpty() && !noKayuBulat.isEmpty() && !jenisKayu.isEmpty() && !noSPK.isEmpty() && !telly.isEmpty() && !stickBy.isEmpty() && CBMilimeter2.isChecked() || CBInch.isChecked()) {
-                    new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, idLokasi, dateCreate);
+                if (!noST.isEmpty() && !noKayuBulat.isEmpty() && !jenisKayu.isEmpty() && !noSPK.equals("PILIH") && !telly.isEmpty() && !stickBy.isEmpty() && (radioMillimeter.isChecked() || radioInch.isChecked()) && !temporaryDataListDetail.isEmpty() && !temporaryDataListGrade.isEmpty()) {
 
-                    int isBagusKulit = CBBagus.isChecked() ? 1 : (CBKulit.isChecked() ? 2 : 0);
+                    int isBagusKulit = 0;
+
+                    JenisKayu selectedKayu = (JenisKayu) SpinKayu.getSelectedItem();
+
+                    if (selectedKayu != null && selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                        isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+                    }
+
                     int isSticked = CBStick.isChecked() ? 1 : 0;
                     int startKering = CBKering.isChecked() ? 1 : 0;
 
+                    new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, idLokasi, dateCreate);
                     new UpdateCheckboxDataTask().execute(noST, isBagusKulit, isSticked, startKering);
 
                     for (int i = 0; i < temporaryDataListDetail.size(); i++) {
@@ -360,6 +327,9 @@ public class SawnTimber extends AppCompatActivity {
                     BtnSimpanST.setEnabled(false);
                     BtnBatalST.setEnabled(false);
                     BtnPrintST.setEnabled(true);
+                    clearTableData();
+                    resetDetailData();
+                    resetGradeData();
 
                     Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
                 } else {
@@ -378,10 +348,27 @@ public class SawnTimber extends AppCompatActivity {
                 } else {
                     CBUpah.setChecked(false);
                 }
+
+                if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+
+                    radioBagus.setEnabled(true);
+                    radioKulit.setEnabled(true);
+
+                } else {
+                    radioBagus.setEnabled(false);
+                    radioKulit.setEnabled(false);
+                    radioBagus.setChecked(false);
+                    radioKulit.setChecked(false);
+                }
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+
                 CBUpah.setChecked(false);
+                radioBagus.setEnabled(false);
+                radioKulit.setEnabled(false);
+                radioBagus.setChecked(false);
+                radioKulit.setChecked(false);
             }
         });
 
@@ -455,7 +442,6 @@ public class SawnTimber extends AppCompatActivity {
                     Toast.makeText(SawnTimber.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
 
-                clearTableData();
             }
         });
     }
@@ -476,6 +462,18 @@ public class SawnTimber extends AppCompatActivity {
             Log.e("Error", exception.getMessage());
         }
         return con;
+    }
+
+    private boolean validateKayuLatSelection() {
+        JenisKayu selectedKayu = (JenisKayu) SpinKayu.getSelectedItem();
+        if (selectedKayu != null &&
+                selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+            if (!radioBagus.isChecked() && !radioKulit.isChecked()) {
+                Toast.makeText(this, "Silahkan pilih (Bagus/Kulit)", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+        return true;
     }
 
     private static class DataRow {
@@ -511,10 +509,6 @@ public class SawnTimber extends AppCompatActivity {
     }
 
     private void clearTableData() {
-        DetailPanjangST.setText("");
-        DetailTebalST.setText("");
-        DetailLebarST.setText("");
-        DetailPcsST.setText("");
         NoST.setText("");
         NoKayuBulat.setText("");
         Supplier.setText("");
@@ -523,39 +517,21 @@ public class SawnTimber extends AppCompatActivity {
         NoSuket.setText("");
         JenisKayuKB.setText("");
         JumlahStick.setText("");
-        CBBagus.setChecked(false);
-        CBKulit.setChecked(false);
+        radioBagusKulit.clearCheck();
         CBStick.setChecked(false);
         CBKering.setChecked(false);
         CBUpah.setChecked(false);
-        currentNumber = 1;
-    }
+        SpinKayu.setSelection(0);
+        SpinStickBy.setSelection(0);
+        SpinSPK.setSelection(0);
+        SpinTelly.setSelection(0);
 
-    private void resetSpinners() {
-        if (SpinKayu.getAdapter() != null) {
-            SpinKayu.setSelection(0);
-        }
-        if (SpinTelly.getAdapter() != null) {
-            SpinTelly.setSelection(0);
-        }
-        if (SpinGrade.getAdapter() != null) {
-            SpinGrade.setSelection(0);
-        }
-        if (SpinSPK.getAdapter() != null) {
-            SpinSPK.setSelection(0);
-        }
-        if (SpinStickBy.getAdapter() != null) {
-            SpinStickBy.setSelection(0);
-        }
-        BtnDataBaruST.setEnabled(true);
-        isDataBaruClickedST = true;
     }
-
 
     private void ton() {
         try {
             double totalTON = 0.0;
-            boolean isMillimeter = CBMilimeter2.isChecked();
+            boolean isMillimeter = radioMillimeter.isChecked();
 
             for (DataRow row : temporaryDataListDetail) {
 
@@ -603,7 +579,7 @@ public class SawnTimber extends AppCompatActivity {
     private void m3() {
         try {
             double totalM3 = 0.0;
-            boolean isMillimeter = CBMilimeter2.isChecked();
+            boolean isMillimeter = radioMillimeter.isChecked();
 
             for (DataRow row : temporaryDataListDetail) {
 
@@ -661,7 +637,6 @@ public class SawnTimber extends AppCompatActivity {
             int pcs = Integer.parseInt(pcsString);
             totalPcs += pcs;
         }
-
         JumlahPcsST.setText(String.valueOf(totalPcs));
     }
 
@@ -894,7 +869,7 @@ public class SawnTimber extends AppCompatActivity {
         String pcs = DetailPcsST.getText().toString();
 
         if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
-            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1017,6 +992,10 @@ public class SawnTimber extends AppCompatActivity {
         if (DetailPcsST != null) {
             DetailPcsST.setText("");
         }
+
+        m3();
+        ton();
+        jumlahPcsST();
     }
 
 
@@ -1031,7 +1010,7 @@ public class SawnTimber extends AppCompatActivity {
         String jumlah = JumlahStick.getText().toString();
 
         if (gradeName.isEmpty() || jumlah.isEmpty()) {
-            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Masukkan Jumlah Stick", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1115,6 +1094,8 @@ public class SawnTimber extends AppCompatActivity {
     private boolean checkIfGradeIdExists(int gradeId) {
         for (DataRow2 data : temporaryDataListGrade) {
             if (data.gradeId == gradeId) {  // Akses langsung ke field gradeId
+                Toast.makeText(this, "Data Grade telah terisi", Toast.LENGTH_SHORT).show();
+
                 return true;
             }
         }
@@ -1336,13 +1317,13 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayu.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayu dummyKayu1 = new JenisKayu("", "PILIH", 0);
+            jenisKayuList.add(0, dummyKayu1);
+
+            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            SpinKayu.setAdapter(adapter);
+            SpinKayu.setSelection(0);
         }
     }
     private class SearchKayuBulatTask extends AsyncTask<String, Void, KayuBulat> {
@@ -1458,13 +1439,15 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPK> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPK.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+
+            SPK dummySPK = new SPK("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPK.setAdapter(adapter);
+            SpinSPK.setSelection(0);
         }
     }
 
@@ -1550,6 +1533,7 @@ public class SawnTimber extends AppCompatActivity {
                 ArrayAdapter<Lokasi> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, lokasiList);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinLokasi.setAdapter(adapter);
+                SpinLokasi.setEnabled(false);
             } else {
                 Log.e("Error", "Tidak ada grade ditemukan");
             }
@@ -1590,14 +1574,19 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<Telly> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Tambahkan elemen dummy di awal
+            Telly dummyTelly = new Telly("", "PILIH");
+            tellyList.add(0, dummyTelly);
 
-                SpinTelly.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTelly.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTelly.setSelection(0);
         }
     }
 
@@ -1657,7 +1646,7 @@ public class SawnTimber extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdStickBy, NamaStickBy FROM dbo.MstStickBy WHERE Enable = 1";
+                    String query = "SELECT IdStickBy, NamaStickBy FROM dbo.MstStickBy WHERE Enable = 1 AND IdStickBy != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -1685,14 +1674,19 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<StickBy> stickByList) {
-            if (!stickByList.isEmpty()) {
-                ArrayAdapter<StickBy> adapter = new ArrayAdapter<>(SawnTimber.this,
-                        android.R.layout.simple_spinner_item, stickByList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinStickBy.setAdapter(adapter);
-            } else {
-                Toast.makeText(SawnTimber.this, "Data StickBy tidak ditemukan.", Toast.LENGTH_SHORT).show();
-            }
+            // Tambahkan elemen dummy di awal
+            StickBy dummyStickBy = new StickBy("", "PILIH");
+            stickByList.add(0, dummyStickBy);
+
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<StickBy> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, stickByList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinStickBy.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinStickBy.setSelection(0);
         }
     }
 
@@ -1715,13 +1709,13 @@ public class SawnTimber extends AppCompatActivity {
             int idUOMPanjang = 0;
 
             // Check which checkbox is checked and set values accordingly
-            if (CBInch.isChecked()) {
+            if (radioInch.isChecked()) {
                 idUOMTblLebar = 1;  // Value for "Inch" = 1
-            } else if (CBMilimeter2.isChecked()) {
+            } else if (radioMillimeter.isChecked()) {
                 idUOMTblLebar = 3;  // Value for "Millimeter 2" = 3
             }
 
-            if (CBMilimeter.isChecked()) {
+            if (radioCentimeter.isChecked()) {
                 idUOMPanjang = 4;   // Value for "Millimeter" = 4
             }
 

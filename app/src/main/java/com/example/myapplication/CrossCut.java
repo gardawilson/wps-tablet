@@ -86,7 +86,7 @@ public class CrossCut extends AppCompatActivity {
     private Spinner SpinMesinCC;
     private Spinner SpinSusunCC;
     private Calendar calendarCC;
-    private RadioGroup radioGroupCC;
+    private RadioGroup RadioGroupCC;
     private RadioButton radioButtonMesinCC;
     private RadioButton radioButtonBSusunCC;
     private Button BtnDataBaruCC;
@@ -101,7 +101,6 @@ public class CrossCut extends AppCompatActivity {
     private EditText DetailTebalCC;
     private EditText DetailPanjangCC;
     private EditText DetailPcsCC;
-    private static int currentNumber = 1;
     private Button BtnPrintCC;
     private TextView M3CC;
     private TextView JumlahPcsCC;
@@ -152,6 +151,7 @@ public class CrossCut extends AppCompatActivity {
         BtnPrintCC.setEnabled(false);
         SpinProfileCC = findViewById(R.id.SpinProfileCC);
         Tabel = findViewById(R.id.Tabel);
+        RadioGroupCC = findViewById(R.id.RadioGroupCC);
 
          radioButtonMesinCC.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -200,7 +200,6 @@ public class CrossCut extends AppCompatActivity {
             radioButtonMesinCC.setEnabled(true);
             radioButtonBSusunCC.setEnabled(true);
             setCurrentDateTime();
-            clearTableData2();
             BtnDataBaruCC.setEnabled(false);
         });
 
@@ -219,6 +218,8 @@ public class CrossCut extends AppCompatActivity {
             JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuCC.getSelectedItem();
             Mesin selectedMesin = (Mesin) SpinMesinCC.getSelectedItem();
             Susun selectedSusun = (Susun) SpinSusunCC.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
@@ -230,17 +231,27 @@ public class CrossCut extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkirCC.isChecked() ? 1 : 0;
             int isLembur = CBLemburCC.isChecked() ? 1 : 0;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 3;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 1;
+            }
 
             if (noCC.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    selectedTelly == null ||
-                    selectedSPK == null ||
-                    selectedProfile == null ||
-                    selectedFisik == null ||
-                    selectedGrade == null ||
-                    selectedJenisKayu == null ||
+                    selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
+                    selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
+                    selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
+                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
+                    selectedFisik == null || selectedFisik.getNamaWarehouse().equals("PILIH") ||
+                    selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
+                    selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinCC.isChecked() && !radioButtonBSusunCC.isChecked()) ||
-                    (radioButtonMesinCC.isChecked() && selectedMesin == null) ||
-                    (radioButtonBSusunCC.isChecked() && selectedSusun == null)) {
+                    (radioButtonMesinCC.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
+                    (radioButtonBSusunCC.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
 
                 Toast.makeText(CrossCut.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
@@ -259,7 +270,9 @@ public class CrossCut extends AppCompatActivity {
                     idJenisKayu,
                     idProfile,
                     isReject,
-                    isLembur
+                    isLembur,
+                    idUOMTblLebar,
+                    idUOMPanjang
             ).execute();
 
             if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
@@ -293,13 +306,11 @@ public class CrossCut extends AppCompatActivity {
         BtnBatalCC.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String noCC = NoCC.getText().toString().trim();
+                setCurrentDateTime();
+                resetDetailData();
+                clearData();
+                BtnDataBaruCC.setEnabled(true);
 
-                if (!noCC.isEmpty()) {
-                }
-
-                clearTableData2();
-                Toast.makeText(CrossCut.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -735,15 +746,23 @@ public class CrossCut extends AppCompatActivity {
     }
 
 
-    private void clearTableData2() {
+    private void clearData() {
         NoCC.setText("");
         M3CC.setText("");
         JumlahPcsCC.setText("");
         CBAfkirCC.setChecked(false);
         CBLemburCC.setChecked(false);
-
-        currentNumber = 1;
+        SpinKayuCC.setSelection(0);
+        SpinTellyCC.setSelection(0);
+        SpinSPKCC.setSelection(0);
+        SpinSPKAsalCC.setSelection(0);
+        SpinGradeCC.setSelection(0);
+        SpinProfileCC.setSelection(0);
+        SpinMesinCC.setEnabled(false);
+        SpinSusunCC.setEnabled(false);
+        RadioGroupCC.clearCheck();
     }
+
 
     private void resetSpinners() {
         if (SpinKayuCC.getAdapter() != null) {
@@ -1114,11 +1133,11 @@ public class CrossCut extends AppCompatActivity {
 
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
         private String noCC, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
-        private int isReject, isLembur;
+        private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noCC, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur) {
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang) {
             this.noCC = noCC;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1130,6 +1149,8 @@ public class CrossCut extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.IdUOMTblLebar = IdUOMTblLebar;
+            this.IdUOMPanjang = IdUOMPanjang;
         }
 
         @Override
@@ -1138,7 +1159,7 @@ public class CrossCut extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.CCAkhir_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ? WHERE NoCCAkhir = ?";
+                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoCCAkhir = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -1151,7 +1172,9 @@ public class CrossCut extends AppCompatActivity {
                     ps.setString(8, idJenisKayu);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noCC);
+                    ps.setInt(11, IdUOMTblLebar);
+                    ps.setInt(12, IdUOMPanjang);
+                    ps.setString(13, noCC);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -1257,13 +1280,14 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayu dummyKayu = new JenisKayu("", "PILIH");
+            jenisKayuList.add(0, dummyKayu);
+
+            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinKayuCC.setAdapter(adapter);
+            SpinKayuCC.setSelection(0);
         }
     }
     public class LoadJenisKayuTask2 extends AsyncTask<String, Void, List<JenisKayu>> {
@@ -1356,14 +1380,19 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<Telly> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Tambahkan elemen dummy di awal
+            Telly dummyTelly = new Telly("", "PILIH");
+            tellyList.add(0, dummyTelly);
 
-                SpinTellyCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTellyCC.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTellyCC.setSelection(0);
         }
     }
 
@@ -1455,13 +1484,14 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPK> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPK dummySPK = new SPK("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKCC.setAdapter(adapter);
+            SpinSPKCC.setSelection(0);
         }
     }
 
@@ -1497,13 +1527,14 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKAsal> spkAsalList) {
-            if (!spkAsalList.isEmpty()) {
-                ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, spkAsalList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKAsalCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKAsal dummySPKAsal = new SPKAsal("PILIH");
+            spkAsalList.add(0, dummySPKAsal);
+
+            ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, spkAsalList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKAsalCC.setAdapter(adapter);
+            SpinSPKAsalCC.setSelection(0);
         }
     }
 
@@ -1571,7 +1602,7 @@ public class CrossCut extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile";
+                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -1596,13 +1627,14 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Profile> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<Profile> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
+            Profile dummyProfile = new Profile("PILIH", "");
+            profileList.add(0, dummyProfile);
+
+            ArrayAdapter<Profile> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, profileList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinProfileCC.setAdapter(adapter);
+            SpinProfileCC.setSelection(0);
         }
     }
 
@@ -1692,13 +1724,14 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Fisik> fisikList) {
-            if (!fisikList.isEmpty()) {
-                ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinFisikCC.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load fisik data.");
-            }
+            Fisik dummyFisik = new Fisik("PILIH");
+            fisikList.add(0, dummyFisik);
+
+            ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, fisikList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinFisikCC.setAdapter(adapter);
+            SpinFisikCC.setSelection(0);
         }
     }
 
@@ -1820,17 +1853,19 @@ public class CrossCut extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<Grade> gradeList) {
             if (!gradeList.isEmpty()) {
-                ArrayAdapter<Grade> adapter = new ArrayAdapter<>(CrossCut.this,
-                        android.R.layout.simple_spinner_item, gradeList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeCC.setAdapter(adapter);
+                Grade dummyGrade = new Grade("", "PILIH");
+                gradeList.add(0, dummyGrade);
+
             } else {
                 Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(CrossCut.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Pilih Menu"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeCC.setAdapter(emptyAdapter);
+                gradeList = new ArrayList<>();
+                gradeList.add(new Grade(null, "GRADE TIDAK TERSEDIA"));
             }
+
+            ArrayAdapter<Grade> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, gradeList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            SpinGradeCC.setAdapter(adapter);
+            SpinGradeCC.setSelection(0);
         }
     }
 

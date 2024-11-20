@@ -321,7 +321,7 @@
         app:layout_constraintVertical_bias="0.62" />
 
     <EditText
-        android:id="@+id/NoSTA"
+        android:id="@+id/NoSTAsal"
         android:layout_width="108dp"
         android:layout_height="24dp"
         android:background="#E8EBE9"
@@ -331,10 +331,10 @@
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.194"
+        app:layout_constraintHorizontal_bias="0.195"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.68" />
+        app:layout_constraintVertical_bias="0.685" />
 
     <Spinner
         android:id="@+id/SpinFisik"

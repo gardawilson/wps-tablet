@@ -49,46 +49,44 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.101" />
 
-    <CheckBox
-        android:id="@+id/CBMilimeterFJ"
-        android:layout_width="wrap_content"
+    <RadioGroup
+        android:id="@+id/radioGroupUOMPanjang"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="Milimeter"
-        android:textColor="@color/white"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.862"
+        app:layout_constraintHorizontal_bias="0.943"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.143" />
+        app:layout_constraintVertical_bias="0.123">
 
-    <CheckBox
-        android:id="@+id/CBMeterFJ"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="false"
-        android:text="Meter"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.923"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.143" />
+        <RadioButton
+            android:id="@+id/radioCentimeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Centimeter"
+            android:textColor="@color/white"
+            android:enabled="false"/>
 
-    <CheckBox
-        android:id="@+id/CBFeetFJ"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="592dp"
-        android:clickable="false"
-        android:text="Feet"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.838"
-        app:layout_constraintStart_toStartOf="parent" />
+        <RadioButton
+            android:id="@+id/radioMeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Meter"
+            android:textColor="@color/white"
+            android:enabled="false"/>
+
+        <RadioButton
+            android:id="@+id/radioFeet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Feet"
+            android:textColor="@color/white"
+            android:checked="true"/>
+    </RadioGroup>
+
 
     <TextView
         android:id="@+id/textView10"
@@ -628,34 +626,35 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.897" />
 
-    <CheckBox
-        android:id="@+id/checkBox3"
-        android:layout_width="wrap_content"
+    <RadioGroup
+        android:id="@+id/radioGroupUOMTblLebar"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Milimeter"
-        android:textColor="@color/white"
-        android:checked="true"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.862"
+        app:layout_constraintHorizontal_bias="0.938"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.066" />
+        app:layout_constraintVertical_bias="0.033">
 
-    <CheckBox
-        android:id="@+id/checkBox4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="false"
-        android:text="Inch"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.915"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.066"
-        tools:ignore="MissingConstraints" />
+        <RadioButton
+            android:id="@+id/radioMillimeter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Milimeter"
+            android:textColor="@color/white" />
+
+        <RadioButton
+            android:id="@+id/radioInch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inch"
+            android:textColor="@color/white"
+            android:enabled="false"/>
+    </RadioGroup>
+
 
     <CheckBox
         android:id="@+id/CBLemburM"
@@ -686,7 +685,7 @@
         app:layout_constraintVertical_bias="0.085" />
 
     <RadioGroup
-        android:id="@+id/radioGroupFJ"
+        android:id="@+id/radioGroupM"
         android:layout_width="122dp"
         android:layout_height="98dp"
         android:orientation="vertical"

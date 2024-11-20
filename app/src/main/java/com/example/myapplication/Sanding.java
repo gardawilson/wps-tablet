@@ -95,7 +95,7 @@ public class Sanding extends AppCompatActivity {
     private Spinner SpinMesinS;
     private Spinner SpinSusunS;
     private Calendar calendarS;
-    private RadioGroup radioGroupS;
+    private RadioGroup RadioGroupS;
     private RadioButton radioButtonMesinS;
     private RadioButton radioButtonBSusunS;
     private Button BtnDataBaruS;
@@ -157,6 +157,7 @@ public class Sanding extends AppCompatActivity {
         JumlahPcsS = findViewById(R.id.JumlahPcsS);
         BtnSearchS = findViewById(R.id.BtnSearchS);
         Tabel = findViewById(R.id.Tabel);
+        RadioGroupS = findViewById(R.id.RadioGroupS);
 
         BtnPrintS.setEnabled(false);
 
@@ -184,7 +185,6 @@ public class Sanding extends AppCompatActivity {
 
         BtnDataBaruS.setOnClickListener(v -> {
             if (!isDataBaruClickedS) {
-                resetSpinners();
                 new LoadJenisKayuTask().execute();
                 new LoadTellyTask().execute();
                 new LoadSPKTask().execute();
@@ -207,7 +207,6 @@ public class Sanding extends AppCompatActivity {
             radioButtonMesinS.setEnabled(true);
             radioButtonBSusunS.setEnabled(true);
             setCurrentDateTime();
-            clearTableData2();
             BtnDataBaruS.setEnabled(false);
         });
 
@@ -225,6 +224,8 @@ public class Sanding extends AppCompatActivity {
             JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuS.getSelectedItem();
             Mesin selectedMesin = (Mesin) SpinMesinS.getSelectedItem();
             Susun selectedSusun = (Susun) SpinSusunS.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
@@ -236,17 +237,28 @@ public class Sanding extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkirS.isChecked() ? 1 : 0;
             int isLembur = CBLemburS.isChecked() ? 1 : 0;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 3;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 1;
+            }
 
             if (noSanding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    selectedTelly == null ||
-                    selectedSPK == null ||
-                    selectedProfile == null ||
-                    selectedFisik == null ||
-                    selectedGrade == null ||
-                    selectedJenisKayu == null ||
+                    selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
+                    selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
+                    selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
+                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
+                    selectedFisik == null || selectedFisik.getNamaWarehouse().equals("PILIH") ||
+                    selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
+                    selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinS.isChecked() && !radioButtonBSusunS.isChecked()) ||
-                    (radioButtonMesinS.isChecked() && selectedMesin == null) ||
-                    (radioButtonBSusunS.isChecked() && selectedSusun == null)) {
+                    (radioButtonMesinS.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
+                    (radioButtonBSusunS.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+
 
                 Toast.makeText(Sanding.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
@@ -265,7 +277,9 @@ public class Sanding extends AppCompatActivity {
                     idJenisKayu,
                     idProfile,
                     isReject,
-                    isLembur
+                    isLembur,
+                    idUOMTblLebar,
+                    idUOMPanjang
             ).execute();
 
             if (radioButtonMesinS.isChecked() && SpinMesinS.isEnabled() && noProduksi != null) {
@@ -294,14 +308,10 @@ public class Sanding extends AppCompatActivity {
         BtnBatalS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String noSanding = NoSanding.getText().toString().trim();
-
-                if (!noSanding.isEmpty()) {
-                    new DeleteDataTask().execute(noSanding);
-                }
-
-                clearTableData2();
-                Toast.makeText(Sanding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+                setCurrentDateTime();
+                resetDetailData();
+                clearData();
+                BtnDataBaruS.setEnabled(true);
             }
         });
 
@@ -740,46 +750,24 @@ public class Sanding extends AppCompatActivity {
         }
     }
 
-
-    private void clearTableData2() {
+    private void clearData() {
         NoSanding.setText("");
         M3S.setText("");
         JumlahPcsS.setText("");
+        NoMouldingAsal.setText("");
         CBAfkirS.setChecked(false);
         CBLemburS.setChecked(false);
-
-        currentNumber = 1;
+        SpinKayuS.setSelection(0);
+        SpinTellyS.setSelection(0);
+        SpinSPKS.setSelection(0);
+        SpinSPKAsalS.setSelection(0);
+        SpinGradeS.setSelection(0);
+        SpinProfileS.setSelection(0);
+        SpinMesinS.setEnabled(false);
+        SpinSusunS.setEnabled(false);
+        RadioGroupS.clearCheck();
     }
 
-    private void resetSpinners() {
-        if (SpinKayuS.getAdapter() != null) {
-            SpinKayuS.setSelection(0);
-        }
-        if (SpinMesinS.getAdapter() != null) {
-            SpinMesinS.setSelection(0);
-        }
-        if (SpinSusunS.getAdapter() != null) {
-            SpinSusunS.setSelection(0);
-        }
-        if (SpinTellyS.getAdapter() != null) {
-            SpinTellyS.setSelection(0);
-        }
-        if (SpinGradeS.getAdapter() != null) {
-            SpinGradeS.setSelection(0);
-        }
-        if (SpinProfileS.getAdapter() != null) {
-            SpinProfileS.setSelection(0);
-        }
-        if (SpinFisikS.getAdapter() != null) {
-            SpinFisikS.setSelection(0);
-        }
-        if (SpinSPKS.getAdapter() != null) {
-            SpinSPKS.setSelection(0);
-        }
-
-        BtnDataBaruS.setEnabled(true);
-        isDataBaruClickedS = true;
-    }
 
     private void m3() {
         try {
@@ -1202,11 +1190,11 @@ public class Sanding extends AppCompatActivity {
 
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
         private String noSanding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
-        private int isReject, isLembur;
+        private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noSanding, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur) {
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang) {
             this.noSanding = noSanding;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1217,6 +1205,8 @@ public class Sanding extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.IdUOMTblLebar = IdUOMTblLebar;
+            this.IdUOMPanjang = IdUOMPanjang;
         }
 
         @Override
@@ -1225,7 +1215,7 @@ public class Sanding extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.Sanding_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 9, IdJenisKayu = ?, IdWarehouse = 9, IsReject = ?, IsLembur = ? WHERE NoSanding = ?";
+                            "IdFJProfile = ?, IdFisik = 9, IdJenisKayu = ?, IdWarehouse = 9, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoSanding = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -1238,7 +1228,9 @@ public class Sanding extends AppCompatActivity {
                     ps.setString(8, idJenisKayu);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noSanding);
+                    ps.setInt(11, IdUOMTblLebar);
+                    ps.setInt(12, IdUOMPanjang);
+                    ps.setString(13, noSanding);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -1344,13 +1336,14 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayu dummyKayu = new JenisKayu("", "PILIH");
+            jenisKayuList.add(0, dummyKayu);
+
+            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinKayuS.setAdapter(adapter);
+            SpinKayuS.setSelection(0);
         }
     }
     public class LoadJenisKayuTask2 extends AsyncTask<String, Void, List<JenisKayu>> {
@@ -1445,14 +1438,19 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Tambahkan elemen dummy di awal
+            Telly dummyTelly = new Telly("", "PILIH");
+            tellyList.add(0, dummyTelly);
 
-                SpinTellyS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTellyS.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTellyS.setSelection(0);
         }
     }
 
@@ -1545,13 +1543,14 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPK dummySPK = new SPK("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKS.setAdapter(adapter);
+            SpinSPKS.setSelection(0);
         }
     }
 
@@ -1587,13 +1586,14 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKAsal> spkAsalList) {
-            if (!spkAsalList.isEmpty()) {
-                ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, spkAsalList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKAsalS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKAsal dummySPKAsal = new SPKAsal("PILIH");
+            spkAsalList.add(0, dummySPKAsal);
+
+            ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, spkAsalList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKAsalS.setAdapter(adapter);
+            SpinSPKAsalS.setSelection(0);
         }
     }
 
@@ -1663,7 +1663,7 @@ public class Sanding extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile";
+                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -1688,13 +1688,14 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Profile> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
+            Profile dummyProfile = new Profile("PILIH", "");
+            profileList.add(0, dummyProfile);
+
+            ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, profileList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinProfileS.setAdapter(adapter);
+            SpinProfileS.setSelection(0);
         }
     }
 
@@ -1916,16 +1917,20 @@ public class Sanding extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<Grade> gradeList) {
             if (!gradeList.isEmpty()) {
-                ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Sanding.this,
-                        android.R.layout.simple_spinner_item, gradeList);
+                if (!gradeList.isEmpty()) {
+                    Grade dummyGrade = new Grade("", "PILIH");
+                    gradeList.add(0, dummyGrade);
+
+                } else {
+                    Log.e("Error", "Tidak ada grade");
+                    gradeList = new ArrayList<>();
+                    gradeList.add(new Grade(null, "GRADE TIDAK TERSEDIA"));
+                }
+
+                ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, gradeList);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinGradeS.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Sanding.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Pilih Menu"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeS.setAdapter(emptyAdapter);
+                SpinGradeS.setSelection(0);
             }
         }
     }

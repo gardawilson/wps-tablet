@@ -144,6 +144,7 @@ public class FingerJoint extends AppCompatActivity {
         JumlahPcsFJ = findViewById(R.id.JumlahPcsFJ);
         BtnSearchFJ = findViewById(R.id.BtnSearchFJ);
         Tabel = findViewById(R.id.Tabel);
+        radioGroupFJ = findViewById(R.id.radioGroupFJ);
 
         BtnPrintFJ.setEnabled(false);
 
@@ -197,7 +198,6 @@ public class FingerJoint extends AppCompatActivity {
             radioButtonMesinFJ.setEnabled(true);
             radioButtonBSusunFJ.setEnabled(true);
             setCurrentDateTimeFJ();
-            clearTableData2FJ();
             BtnDataBaruFJ.setEnabled(false);
         });
 
@@ -215,6 +215,8 @@ public class FingerJoint extends AppCompatActivity {
             JenisKayuFJ selectedJenisKayu = (JenisKayuFJ) SpinKayuFJ.getSelectedItem();
             MesinFJ selectedMesin = (MesinFJ) SpinMesinFJ.getSelectedItem();
             SusunFJ selectedSusun = (SusunFJ) SpinSusunFJ.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
@@ -226,17 +228,28 @@ public class FingerJoint extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkirFJ.isChecked() ? 1 : 0;
             int isLembur = CBLemburFJ.isChecked() ? 1 : 0;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 1;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 3;
+            }
+
 
             if (noFJ.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    selectedTelly == null ||
-                    selectedSPK == null ||
-                    selectedProfile == null ||
+                    selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
+                    selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
+                    selectedSPKasal == null || selectedSPKasal.getNoSPKAsal().equals("PILIH") ||
+                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null ||
-                    selectedGrade == null ||
-                    selectedJenisKayu == null ||
+                    selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
+                    selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinFJ.isChecked() && !radioButtonBSusunFJ.isChecked()) ||
-                    (radioButtonMesinFJ.isChecked() && selectedMesin == null) ||
-                    (radioButtonBSusunFJ.isChecked() && selectedSusun == null)) {
+                    (radioButtonMesinFJ.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
+                    (radioButtonBSusunFJ.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
 
                 Toast.makeText(FingerJoint.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
@@ -245,54 +258,69 @@ public class FingerJoint extends AppCompatActivity {
             BtnPrintFJ.setEnabled(true);
 
 
-            new UpdateDatabaseTaskFJ(
-                    noFJ,
-                    dateCreate,
-                    time,
-                    idTelly,
-                    noSPK,
-                    noSPKasal,
-                    idGrade,
-                    idJenisKayu,
-                    idProfile,
-                    isReject,
-                    isLembur
-            ).execute();
+            // Jalankan pengecekan sebelum menyimpan
+            new CheckNoFJDataTask() {
+                @Override
+                protected void onPostExecute(Boolean hasData) {
+                    super.onPostExecute(hasData);
 
-            if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
-                new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noFJ, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                    if (!hasData) {
+                        // Update database utama
+                        new UpdateDatabaseTaskFJ(
+                                noFJ,
+                                dateCreate,
+                                time,
+                                idTelly,
+                                noSPK,
+                                noSPKasal,
+                                idGrade,
+                                idJenisKayu,
+                                idProfile,
+                                isReject,
+                                isLembur,
+                                idUOMTblLebar,
+                                idUOMPanjang
+                        ).execute();
+
+                        // Simpan sesuai pilihan radio button
+                        if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
+                            new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
+                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                saveDataDetailToDatabase(noFJ, i + 1,
+                                        Double.parseDouble(dataRow.tebal),
+                                        Double.parseDouble(dataRow.lebar),
+                                        Double.parseDouble(dataRow.panjang),
+                                        Integer.parseInt(dataRow.pcs));
+                            }
+                        } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
+                            new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
+                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                saveDataDetailToDatabase(noFJ, i + 1,
+                                        Double.parseDouble(dataRow.tebal),
+                                        Double.parseDouble(dataRow.lebar),
+                                        Double.parseDouble(dataRow.panjang),
+                                        Integer.parseInt(dataRow.pcs));
+                            }
+                        }
+
+                        // Update UI
+                        BtnDataBaruFJ.setEnabled(true);
+                        BtnPrintFJ.setEnabled(true);
+                        BtnSimpanFJ.setEnabled(false);
+
+                        Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }
                 }
-            } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
-                new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noFJ, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                }
-            } else {
-                Toast.makeText(FingerJoint.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            Toast.makeText(FingerJoint.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-
+            }.execute(noFJ);
         });
 
         BtnBatalFJ.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String noFJ = NoFJ.getText().toString().trim();
-
-                if (!noFJ.isEmpty()) {
-                    new DeleteDataTaskFJ().execute(noFJ);
-                }
-
-                clearTableData2FJ();
-                clearTableDataFJ();
+                clearData();
+                resetDetailData();
                 Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -469,6 +497,68 @@ public class FingerJoint extends AppCompatActivity {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         TimeFJ.setText(currentTime);
+    }
+
+    private class CheckNoFJDataTask extends AsyncTask<String, Void, Boolean> {
+        private String errorMessage;
+        private String source = ""; // Untuk menyimpan sumber data (Mesin atau Bongkar Susun)
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String noFJ = params[0];
+            Connection con = ConnectionClass();
+            boolean hasData = false;
+
+            if (con != null) {
+                try {
+                    String queryMesin = "SELECT NoProduksi FROM dbo.FJProduksiOutput WHERE NoFJ = ?";
+                    PreparedStatement psMesin = con.prepareStatement(queryMesin);
+                    psMesin.setString(1, noFJ);
+                    ResultSet rsMesin = psMesin.executeQuery();
+
+                    if (rsMesin.next()) {
+                        hasData = true;
+                        source = "Mesin";
+                    } else {
+
+                        String querySusun = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputFJ WHERE NoFJ = ?";
+                        PreparedStatement psSusun = con.prepareStatement(querySusun);
+                        psSusun.setString(1, noFJ);
+                        ResultSet rsSusun = psSusun.executeQuery();
+
+                        if (rsSusun.next()) {
+                            hasData = true;
+                            source = "Bongkar Susun";
+                        }
+
+                        rsSusun.close();
+                        psSusun.close();
+                    }
+
+                    rsMesin.close();
+                    psMesin.close();
+                    con.close();
+                } catch (Exception e) {
+                    errorMessage = "Error: " + e.getMessage();
+                    Log.e("CheckNoFJDataTask", errorMessage);
+                }
+            }
+            return hasData;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean hasData) {
+            if (hasData) {
+                Toast.makeText(FingerJoint.this,
+                        "Data NoFJ ini sudah pernah disimpan di " + source + "!",
+                        Toast.LENGTH_SHORT).show();
+                // Disable tombol simpan
+                BtnSimpanFJ.setEnabled(false);
+            } else {
+                // Data belum pernah disimpan, enable tombol simpan
+                BtnSimpanFJ.setEnabled(true);
+            }
+        }
     }
 
     private class LoadProfileTask2FJ extends AsyncTask<String, Void, List<ProfileFJ>> {
@@ -812,23 +902,22 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private void clearTableDataFJ() {
-        DetailPanjangFJ.setText("");
-        DetailTebalFJ.setText("");
-        DetailLebarFJ.setText("");
-        DetailPcsFJ.setText("");
-
-        currentNumber = 1;
-    }
-
-    private void clearTableData2FJ() {
+    private void clearData() {
         NoFJ.setText("");
         M3FJ.setText("");
         JumlahPcsFJ.setText("");
         CBAfkirFJ.setChecked(false);
         CBLemburFJ.setChecked(false);
-
-        currentNumber = 1;
+        SpinKayuFJ.setSelection(0);
+        SpinTellyFJ.setSelection(0);
+        SpinSPKFJ.setSelection(0);
+        SpinSPKAsalFJ.setSelection(0);
+        SpinGradeFJ.setSelection(0);
+        NoSTAFJ.setText("");
+        SpinProfileFJ.setSelection(0);
+        SpinMesinFJ.setEnabled(false);
+        SpinSusunFJ.setEnabled(false);
+        radioGroupFJ.clearCheck();
     }
 
     private void resetSpinnersFJ() {
@@ -1237,11 +1326,11 @@ public class FingerJoint extends AppCompatActivity {
 
     private class UpdateDatabaseTaskFJ extends AsyncTask<Void, Void, Boolean> {
         private String noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
-        private int isReject, isLembur;
+        private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTaskFJ(String noFJ, String dateCreate, String time, String idTelly, String noSPK,String noSPKasal,
                                     String idGrade, String idJenisKayu, String idFJProfile,
-                                    int isReject, int isLembur) {
+                                    int isReject, int isLembur,  int IdUOMTblLebar, int IdUOMPanjang) {
             this.noFJ = noFJ;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1253,6 +1342,8 @@ public class FingerJoint extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.IdUOMTblLebar = IdUOMTblLebar;
+            this.IdUOMPanjang = IdUOMPanjang;
         }
 
         @Override
@@ -1261,7 +1352,7 @@ public class FingerJoint extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.FJ_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdJenisKayu = ?, IdFisik = 5, IdWarehouse = 5, IsReject = ?, IsLembur = ? WHERE NoFJ = ?";
+                            "IdFJProfile = ?, IdJenisKayu = ?, IdFisik = 5, IdWarehouse = 5, IsReject = ?, IsLembur = ?, IdUOMTblLebar =?, IdUOMPanjang = ? WHERE NoFJ = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -1274,7 +1365,9 @@ public class FingerJoint extends AppCompatActivity {
                     ps.setString(8, idJenisKayu);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noFJ);
+                    ps.setInt(11, IdUOMTblLebar);
+                    ps.setInt(12, IdUOMPanjang);
+                    ps.setString(13, noFJ);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -1380,13 +1473,14 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayuFJ> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayuFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayuFJ dummyKayu = new JenisKayuFJ("", "PILIH");
+            jenisKayuList.add(0, dummyKayu);
+
+            ArrayAdapter<JenisKayuFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinKayuFJ.setAdapter(adapter);
+            SpinKayuFJ.setSelection(0);
         }
     }
 
@@ -1478,13 +1572,19 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<TellyFJ> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<TellyFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinTellyFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Tambahkan elemen dummy di awal
+            TellyFJ dummyTelly = new TellyFJ("", "PILIH");
+            tellyList.add(0, dummyTelly);
+
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<TellyFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTellyFJ.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTellyFJ.setSelection(0);
         }
     }
 
@@ -1576,13 +1676,14 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKFJ> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPKFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKFJ dummySPK = new SPKFJ("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPKFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKFJ.setAdapter(adapter);
+            SpinSPKFJ.setSelection(0);
         }
     }
 
@@ -1618,13 +1719,14 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKAsalFJ> spkAsalList) {
-            if (!spkAsalList.isEmpty()) {
-                ArrayAdapter<SPKAsalFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkAsalList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKAsalFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKAsalFJ dummySPKAsal = new SPKAsalFJ("PILIH");
+            spkAsalList.add(0, dummySPKAsal);
+
+            ArrayAdapter<SPKAsalFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkAsalList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKAsalFJ.setAdapter(adapter);
+            SpinSPKAsalFJ.setSelection(0);
         }
     }
 
@@ -1692,7 +1794,7 @@ public class FingerJoint extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile";
+                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -1718,13 +1820,14 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<ProfileFJ> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<ProfileFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
+            ProfileFJ dummyProfile = new ProfileFJ("PILIH", "");
+            profileList.add(0, dummyProfile);
+
+            ArrayAdapter<ProfileFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, profileList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinProfileFJ.setAdapter(adapter);
+            SpinProfileFJ.setSelection(0);
         }
     }
 
@@ -1887,17 +1990,19 @@ public class FingerJoint extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<GradeFJ> gradeList) {
             if (!gradeList.isEmpty()) {
-                ArrayAdapter<GradeFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, gradeList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeFJ.setAdapter(adapter);
+                GradeFJ dummyGrade = new GradeFJ("", "PILIH");
+                gradeList.add(0, dummyGrade);
+
             } else {
                 Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Pilih Menu"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeFJ.setAdapter(emptyAdapter);
+                gradeList = new ArrayList<>();
+                gradeList.add(new GradeFJ(null, "GRADE TIDAK TERSEDIA"));
             }
+
+            ArrayAdapter<GradeFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, gradeList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            SpinGradeFJ.setAdapter(adapter);
+            SpinGradeFJ.setSelection(0);
         }
     }
 

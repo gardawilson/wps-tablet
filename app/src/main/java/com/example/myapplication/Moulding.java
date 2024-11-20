@@ -160,10 +160,11 @@ public class Moulding extends AppCompatActivity {
         JumlahPcsM = findViewById(R.id.JumlahPcsM);
         BtnSearchM = findViewById(R.id.BtnSearchM);
         Tabel = findViewById(R.id.Tabel);
+        radioGroupM = findViewById(R.id.radioGroupM);
 
         BtnPrintM.setEnabled(false);
 
-        //mengatur fungsu RadioButtonMesin
+        //mengatur fungsi RadioButtonMesin
         radioButtonMesinM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -213,9 +214,9 @@ public class Moulding extends AppCompatActivity {
             BtnBatalM.setEnabled(true);
             radioButtonMesinM.setEnabled(true);
             radioButtonBSusunM.setEnabled(true);
-            setCurrentDateTime();
-            clearTableData2();
             BtnDataBaruM.setEnabled(false);
+            clearData();
+            resetDetailData();
         });
 
         //fungsi button Simpan
@@ -233,6 +234,8 @@ public class Moulding extends AppCompatActivity {
             JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuM.getSelectedItem();
             Mesin selectedMesin = (Mesin) SpinMesinM.getSelectedItem();
             Susun selectedSusun = (Susun) SpinSusunM.getSelectedItem();
+            RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
+            RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
@@ -244,17 +247,29 @@ public class Moulding extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
             int isReject = CBAfkirM.isChecked() ? 1 : 0;
             int isLembur = CBLemburM.isChecked() ? 1 : 0;
+            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+            int idUOMPanjang;
+            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                idUOMPanjang = 1;
+            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                idUOMPanjang = 2;
+            } else {
+                idUOMPanjang = 3;
+            }
+
 
             if (noMoulding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    selectedTelly == null ||
-                    selectedSPK == null ||
-                    selectedProfile == null ||
+                    selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
+                    selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
+                    selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
+                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null ||
-                    selectedGrade == null ||
-                    selectedJenisKayu == null ||
+                    selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
+                    selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinM.isChecked() && !radioButtonBSusunM.isChecked()) ||
-                    (radioButtonMesinM.isChecked() && selectedMesin == null) ||
-                    (radioButtonBSusunM.isChecked() && selectedSusun == null)) {
+                    (radioButtonMesinM.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
+                    (radioButtonBSusunM.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+
 
                 Toast.makeText(Moulding.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
@@ -273,7 +288,9 @@ public class Moulding extends AppCompatActivity {
                     idJenisKayu,
                     idProfile,
                     isReject,
-                    isLembur
+                    isLembur,
+                    idUOMTblLebar,
+                    idUOMPanjang
             ).execute();
 
             if (radioButtonMesinM.isChecked() && SpinMesinM.isEnabled() && noProduksi != null) {
@@ -299,20 +316,16 @@ public class Moulding extends AppCompatActivity {
 
         });
 
-        //fungsi button Batal
-//       BtnBatalM.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                String noFJoin = NoMoulding.getText().toString().trim();
-//
-//                if (!noFJoin.isEmpty()) {
-//                    new DeleteDataTask().execute(noFJoin);
-//                }
-//
-//                clearTableData2();
-//                Toast.makeText(Moulding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-//            }
-//        });
+
+       BtnBatalM.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setCurrentDateTime();
+                clearData();
+                resetDetailData();
+                BtnDataBaruM.setEnabled(true);
+            }
+        });
 
 
         //fungsi button Search
@@ -756,15 +769,22 @@ public class Moulding extends AppCompatActivity {
         }
     }
 
-    //// fungsi mengosongkan
-    private void clearTableData2() {
+    private void clearData() {
         NoMoulding.setText("");
         M3M.setText("");
         JumlahPcsM.setText("");
         CBAfkirM.setChecked(false);
         CBLemburM.setChecked(false);
-
-        currentNumber = 1;
+        SpinKayuM.setSelection(0);
+        SpinTellyM.setSelection(0);
+        SpinSPKM.setSelection(0);
+        SpinSPKAsalM.setSelection(0);
+        SpinGradeM.setSelection(0);
+        NoSTAM.setText("");
+        SpinProfileM.setSelection(0);
+        SpinMesinM.setEnabled(false);
+        SpinSusunM.setEnabled(false);
+        radioGroupM.clearCheck();
     }
 
     //fungsi untuk mereset spinner kembali di tampilan awal
@@ -1149,11 +1169,11 @@ public class Moulding extends AppCompatActivity {
     //mengupdate data berdasarkan nomor moulding
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
         private String noMoulding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
-        private int isReject, isLembur;
+        private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noMoulding, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur) {
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang ){
             this.noMoulding = noMoulding;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -1165,6 +1185,8 @@ public class Moulding extends AppCompatActivity {
             this.idFJProfile = idFJProfile;
             this.isReject = isReject;
             this.isLembur = isLembur;
+            this.IdUOMTblLebar = IdUOMTblLebar;
+            this.IdUOMPanjang = IdUOMPanjang;
         }
 
         @Override
@@ -1173,7 +1195,7 @@ public class Moulding extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.Moulding_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ? WHERE NoMoulding = ?";
+                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoMoulding = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -1186,7 +1208,9 @@ public class Moulding extends AppCompatActivity {
                     ps.setString(8, idJenisKayu);
                     ps.setInt(9, isReject);
                     ps.setInt(10, isLembur);
-                    ps.setString(11, noMoulding);
+                    ps.setInt(11, IdUOMTblLebar);
+                    ps.setInt(12, IdUOMPanjang);
+                    ps.setString(13, noMoulding);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -1294,13 +1318,14 @@ public class Moulding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
+            JenisKayu dummyKayu = new JenisKayu("", "PILIH");
+            jenisKayuList.add(0, dummyKayu);
+
+            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, jenisKayuList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinKayuM.setAdapter(adapter);
+            SpinKayuM.setSelection(0);
         }
     }
 
@@ -1396,14 +1421,19 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Tambahkan elemen dummy di awal
+            Telly dummyTelly = new Telly("", "PILIH");
+            tellyList.add(0, dummyTelly);
 
-                SpinTellyM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
+            // Buat adapter dengan data yang dimodifikasi
+            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, tellyList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            // Set adapter ke spinner
+            SpinTellyM.setAdapter(adapter);
+
+            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
+            SpinTellyM.setSelection(0);
         }
     }
 
@@ -1497,13 +1527,14 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPK dummySPK = new SPK("PILIH");
+            spkList.add(0, dummySPK);
+
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKM.setAdapter(adapter);
+            SpinSPKM.setSelection(0);
         }
     }
 
@@ -1539,13 +1570,14 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
 
         @Override
         protected void onPostExecute(List<SPKAsal> spkAsalList) {
-            if (!spkAsalList.isEmpty()) {
-                ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkAsalList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKAsalM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load SPK data.");
-            }
+            SPKAsal dummySPKAsal = new SPKAsal("PILIH");
+            spkAsalList.add(0, dummySPKAsal);
+
+            ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkAsalList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinSPKAsalM.setAdapter(adapter);
+            SpinSPKAsalM.setSelection(0);
         }
     }
 
@@ -1614,7 +1646,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile";
+                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -1639,13 +1671,14 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
 
         @Override
         protected void onPostExecute(List<Profile> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
+            Profile dummyProfile = new Profile("PILIH", "");
+            profileList.add(0, dummyProfile);
+
+            ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, profileList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            SpinProfileM.setAdapter(adapter);
+            SpinProfileM.setSelection(0);
         }
     }
 
@@ -1868,17 +1901,19 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         @Override
         protected void onPostExecute(List<Grade> gradeList) {
             if (!gradeList.isEmpty()) {
-                ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, gradeList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeM.setAdapter(adapter);
+                Grade dummyGrade = new Grade("", "PILIH");
+                gradeList.add(0, dummyGrade);
+
             } else {
                 Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Pilih Menu"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeM.setAdapter(emptyAdapter);
+                gradeList = new ArrayList<>();
+                gradeList.add(new Grade(null, "GRADE TIDAK TERSEDIA"));
             }
+
+            ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, gradeList);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            SpinGradeM.setAdapter(adapter);
+            SpinGradeM.setSelection(0);
         }
     }
 

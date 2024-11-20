@@ -86,7 +86,7 @@ public class S4S extends AppCompatActivity {
     private EditText NoS4S;
     private EditText Date;
     private EditText Time;
-    private EditText NoSTA;
+    private EditText NoSTAsal;
     private Spinner SpinKayu;
     private Spinner SpinTelly;
     private Spinner SpinSPK;
@@ -126,7 +126,7 @@ public class S4S extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_s4_s);
 
-        NoSTA = findViewById(R.id.NoSTA);
+        NoSTAsal = findViewById(R.id.NoSTAsal);
         NoS4S = findViewById(R.id.NoS4S);
         Date = findViewById(R.id.Date);
         Time = findViewById(R.id.Time);
@@ -210,7 +210,7 @@ public class S4S extends AppCompatActivity {
             String noS4S = NoS4S.getText().toString();
             String dateCreate = Date.getText().toString();
             String time = Time.getText().toString();
-            String noSTAsal = NoSTA.getText().toString();
+            String noSTAsal = NoSTAsal.getText().toString();
 
             // Get selected items
             Telly selectedTelly = (Telly) SpinTelly.getSelectedItem();
@@ -248,7 +248,7 @@ public class S4S extends AppCompatActivity {
 
             // Validasi input
             if (noS4S.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    NoSTA.getText().toString().isEmpty() ||
+                    NoSTAsal.getText().toString().isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKasal == null || selectedSPKasal.getNoSPKAsal().equals("PILIH") ||
@@ -258,12 +258,11 @@ public class S4S extends AppCompatActivity {
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesin.isChecked() && !radioButtonBSusun.isChecked()) ||
                     (radioButtonMesin.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
-                    (radioButtonBSusun.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty()))) {
+                    (radioButtonBSusun.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
 
                 Toast.makeText(S4S.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             // Jalankan pengecekan sebelum menyimpan
             new CheckNoS4SDataTask() {
                 @Override
@@ -287,9 +286,6 @@ public class S4S extends AppCompatActivity {
                                 idUOMTblLebar,
                                 idUOMPanjang
                         ).execute();
-
-                        // Update NoSTAsal
-//                        new UpdateNoSTAsalTask(noS4S, noSTAsal).execute();
 
                         // Simpan sesuai pilihan radio button
                         if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
@@ -323,13 +319,16 @@ public class S4S extends AppCompatActivity {
                     }
                 }
             }.execute(noS4S);
+
         });
 
         BtnBatal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setCurrentDateTime();
                 clearData();
                 resetDetailData();
+
                 BtnDataBaru.setEnabled(true);
                 BtnSimpan.setEnabled(false);
                 Toast.makeText(S4S.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
@@ -347,7 +346,7 @@ public class S4S extends AppCompatActivity {
                 DetailTebalS4S.setText("");
                 DetailPcsS4S.setText("");
                 NoS4S.setText("");
-                NoSTA.setText("");
+                NoSTAsal.setText("");
 
                 if (!noS4S.isEmpty()) {
                     new LoadMesinTask2(noS4S).execute();
@@ -485,21 +484,33 @@ public class S4S extends AppCompatActivity {
         return con;
     }
 
-
-    //Cek apakah nos4s sudah ada di table database S4SProduksiOutput atau BongkarSusun
-    @SuppressWarnings("deprecation")
     private class CheckNoS4SDataTask extends AsyncTask<String, Void, Boolean> {
         private String errorMessage;
         private String source = ""; // Untuk menyimpan sumber data (Mesin atau Bongkar Susun)
+        private boolean isNoSTAsalValid = false; // Untuk menyimpan status validasi NoSTAsal
 
         @Override
         protected Boolean doInBackground(String... params) {
             String noS4S = params[0];
+            String noSTAsal = NoSTAsal.getText().toString();
             Connection con = ConnectionClass();
             boolean hasData = false;
 
             if (con != null) {
                 try {
+                    // Cek validitas NoSTAsal di tabel st_h
+                    String querySTAsal = "SELECT COUNT(*) FROM dbo.ST_h WHERE NoST = ?";
+                    PreparedStatement psSTAsal = con.prepareStatement(querySTAsal);
+                    psSTAsal.setString(1, noSTAsal);
+                    ResultSet rsSTAsal = psSTAsal.executeQuery();
+
+                    if (rsSTAsal.next() && rsSTAsal.getInt(1) > 0) {
+                        isNoSTAsalValid = true;
+                    }
+
+                    rsSTAsal.close();
+                    psSTAsal.close();
+
                     // Cek di tabel S4SProduksiOutput
                     String queryMesin = "SELECT NoProduksi FROM dbo.S4SProduksiOutput WHERE NoS4S = ?";
                     PreparedStatement psMesin = con.prepareStatement(queryMesin);
@@ -538,7 +549,10 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean hasData) {
-            if (hasData) {
+            if (!isNoSTAsalValid) {
+                Toast.makeText(S4S.this, "NoST tidak valid.", Toast.LENGTH_SHORT).show();
+                BtnSimpan.setEnabled(false);
+            } else if (hasData) {
                 Toast.makeText(S4S.this,
                         "Data S4S ini sudah pernah disimpan di " + source + "!",
                         Toast.LENGTH_SHORT).show();
@@ -550,7 +564,6 @@ public class S4S extends AppCompatActivity {
             }
         }
     }
-
 
     private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
         private String noS4S;
@@ -846,7 +859,7 @@ public class S4S extends AppCompatActivity {
         NoS4S.setText("");
         M3.setText("");
         JumlahPcs.setText("");
-        NoSTA.setText("");
+        NoSTAsal.setText("");
         CBAfkir.setChecked(false);
         CBLembur.setChecked(false);
         SpinTelly.setSelection(0);
@@ -928,6 +941,9 @@ public class S4S extends AppCompatActivity {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         Time.setText(currentTime);
+
+        new LoadMesinTask().execute(currentDate);
+        new LoadSusunTask().execute(currentDate);
     }
 
     private void showDatePickerDialog() {
@@ -1104,15 +1120,6 @@ public class S4S extends AppCompatActivity {
         } else {
             Log.d("Delete PDF", "File not found in file system: " + file.getPath());
         }
-    }
-
-
-
-    private String getIdJenisKayu(String namaJenisKayu) {
-        if (namaJenisKayu != null) {
-            return "IdJenisKayu";
-        }
-        return null;
     }
 
     @SuppressWarnings("deprecation")
