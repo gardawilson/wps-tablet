@@ -1782,14 +1782,14 @@ public class S4S extends AppCompatActivity {
 
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.S4S_h WHERE NoS4S = ?";
+                    String query = "SELECT NoSPKAsal FROM dbo.S4S_h WHERE NoS4S = ?";
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, noS4S); // Set the noS4S parameter
 
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
-                        String noSPKasal = rs.getString("NoSPK");
+                        String noSPKasal = rs.getString("NoSPKAsal");
 
                         SPKAsal spkAsal = new SPKAsal (noSPKasal); // Assuming SPK class has a constructor that accepts noSPK
                         spkAsalList.add(spkAsal);
