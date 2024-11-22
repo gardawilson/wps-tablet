@@ -44,6 +44,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
+import com.itextpdf.kernel.geom.AffineTransform;
 import android.print.PrintManager;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
@@ -449,122 +450,129 @@ public class SawnTimber extends AppCompatActivity {
                     return;
                 }
 
-                try {
-                    // Ambil data dari form dengan validasi null
-                    String noST = NoST.getText() != null ? NoST.getText().toString().trim() : "";
-                    String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
-                    String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "";
-                    String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
-                    String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
-                    String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
-                    String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
-                    String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
-                    String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
-                    String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
-                    String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
-                    String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
-                    String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
+                // Cek status HasBeenPrinted di database
+                String noST = NoST.getText().toString().trim();
+                checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
+                    @Override
+                    public void onResult(boolean hasBeenPrinted) {
+                        try {
+                            // Ambil data dari form dengan validasi null
+                            String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
+                            String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "";
+                            String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
+                            String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
+                            String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
+                            String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
+                            String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
+                            String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
+                            String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
+                            String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
+                            String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
+                            String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
 
-                    // Buat PDF
-                    Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
-                            temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton);
+                            // Buat PDF dengan parameter hasBeenPrinted
+                            Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
+                                    temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
+                                    hasBeenPrinted); // Parameter baru untuk watermark
 
-                    if (pdfUri != null) {
-                        // Siapkan PrintManager
-                        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                        String jobName = getString(R.string.app_name) + " Document";
+                            if (pdfUri != null) {
+                                // Siapkan PrintManager
+                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                                String jobName = getString(R.string.app_name) + " Document";
 
-                        // Buat PrintDocumentAdapter
-                        PrintDocumentAdapter pda = new PrintDocumentAdapter() {
-                            private PrintJob currentPrintJob = null;
+                                // Buat PrintDocumentAdapter
+                                PrintDocumentAdapter pda = new PrintDocumentAdapter() {
+                                    @Override
+                                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                                         CancellationSignal cancellationSignal,
+                                                         LayoutResultCallback callback, Bundle extras) {
+                                        if (cancellationSignal.isCanceled()) {
+                                            callback.onLayoutCancelled();
+                                            return;
+                                        }
 
-                            @Override
-                            public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
-                                                 CancellationSignal cancellationSignal,
-                                                 LayoutResultCallback callback, Bundle extras) {
-                                if (cancellationSignal.isCanceled()) {
-                                    callback.onLayoutCancelled();
-                                    return;
-                                }
+                                        PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
+                                                .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                                                .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
+                                                .build();
 
-                                PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
-                                        .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                                        .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
+                                        callback.onLayoutFinished(info, true);
+                                    }
+
+                                    @Override
+                                    public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                                        CancellationSignal cancellationSignal,
+                                                        WriteResultCallback callback) {
+                                        try {
+                                            InputStream input = getContentResolver().openInputStream(pdfUri);
+                                            OutputStream output = new FileOutputStream(destination.getFileDescriptor());
+
+                                            byte[] buf = new byte[1024];
+                                            int bytesRead;
+
+                                            while ((bytesRead = input.read(buf)) > 0) {
+                                                output.write(buf, 0, bytesRead);
+                                            }
+
+                                            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
+
+                                            input.close();
+                                            output.close();
+                                        } catch (Exception e) {
+                                            callback.onWriteFailed(e.getMessage());
+                                        }
+                                    }
+                                };
+
+                                // Mulai proses pencetakan
+                                PrintAttributes attributes = new PrintAttributes.Builder()
+                                        .setMediaSize(new PrintAttributes.MediaSize("CUSTOM", "Custom Roll Paper", 72, 3000)) // 72mm lebar
+                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                                         .build();
 
-                                callback.onLayoutFinished(info, true);
-                            }
-
-                            @Override
-                            public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
-                                                CancellationSignal cancellationSignal,
-                                                WriteResultCallback callback) {
                                 try {
-                                    InputStream input = getContentResolver().openInputStream(pdfUri);
-                                    OutputStream output = new FileOutputStream(destination.getFileDescriptor());
+                                    // Dapatkan PrintJob
+                                    PrintJob printJob = printManager.print(jobName, pda, attributes);
 
-                                    byte[] buf = new byte[1024];
-                                    int bytesRead;
+                                    // Monitor status PrintJob
+                                    new Thread(() -> {
+                                        boolean isPrinting = true;
+                                        while (isPrinting) {
+                                            if (printJob.isCompleted()) {
+                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
+                                                if (!hasBeenPrinted) {
+                                                    updatePrintStatus(noST);
+                                                }
+                                                isPrinting = false;
+                                            } else if (printJob.isFailed() || printJob.isCancelled()) {
+                                                isPrinting = false;
+                                            }
 
-                                    while ((bytesRead = input.read(buf)) > 0) {
-                                        output.write(buf, 0, bytesRead);
-                                    }
+                                            try {
+                                                Thread.sleep(1000); // Check setiap 1 detik
+                                            } catch (InterruptedException e) {
+                                                Thread.currentThread().interrupt();
+                                                break;
+                                            }
+                                        }
+                                    }).start();
 
-                                    callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
-
-                                    input.close();
-                                    output.close();
                                 } catch (Exception e) {
-                                    callback.onWriteFailed(e.getMessage());
+                                    Toast.makeText(SawnTimber.this,
+                                            "Error printing: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
                                 }
                             }
-                        };
-
-                        // Mulai proses pencetakan
-                        PrintAttributes attributes = new PrintAttributes.Builder()
-                                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                                .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                .build();
-
-                        try {
-                            // Dapatkan PrintJob
-                            PrintJob printJob = printManager.print(jobName, pda, attributes);
-
-                            // Monitor status PrintJob
-                            new Thread(() -> {
-                                boolean isPrinting = true;
-                                while (isPrinting) {
-                                    if (printJob.isCompleted()) {
-                                        // Update database hanya jika printing selesai
-                                        updatePrintStatus(noST);
-                                        isPrinting = false;
-                                    } else if (printJob.isFailed() || printJob.isCancelled()) {
-                                        isPrinting = false;
-                                    }
-
-                                    try {
-                                        Thread.sleep(1000); // Check setiap 1 detik
-                                    } catch (InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                        break;
-                                    }
-                                }
-                            }).start();
-
                         } catch (Exception e) {
+                            e.printStackTrace();
+                            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
                             Toast.makeText(SawnTimber.this,
-                                    "Error printing: " + e.getMessage(),
+                                    "Terjadi kesalahan: " + errorMessage,
                                     Toast.LENGTH_LONG).show();
                         }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
-                    Toast.makeText(SawnTimber.this,
-                            "Terjadi kesalahan: " + errorMessage,
-                            Toast.LENGTH_LONG).show();
-                }
+                });
             }
         });
 
@@ -588,49 +596,95 @@ public class SawnTimber extends AppCompatActivity {
         return con;
     }
 
-    // Fungsi untuk mengupdate status cetak di database
-    private void updatePrintStatus(String noST) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
+    // Interface untuk callback
+    interface HasBeenPrintedCallback {
+        void onResult(boolean hasBeenPrinted);
+    }
 
-        try {
-            connection = ConnectionClass();
-            if (connection != null) {
-                Log.d("PrintStatus", "Updating print status for ST: " + noST);
-
-                String query = "UPDATE ST_h SET HasBeenPrinted = 1 WHERE NoST = ?";
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setString(1, noST);
-
-                int rowsAffected = preparedStatement.executeUpdate();
-
-                runOnUiThread(() -> {
-                    if (rowsAffected > 0) {
-                        Log.d("PrintStatus", "Print status updated successfully");
-                        Toast.makeText(SawnTimber.this,
-                                "Status cetak berhasil diupdate",
-                                Toast.LENGTH_SHORT).show();
-                    } else {
-                        Log.w("PrintStatus", "No rows updated");
-                    }
-                });
-            }
-        } catch (SQLException e) {
-            final String errorMessage = e.getMessage();
-            Log.e("PrintStatus", "Database error: " + errorMessage);
-            runOnUiThread(() -> {
-                Toast.makeText(SawnTimber.this,
-                        "Gagal mengupdate status cetak: " + errorMessage,
-                        Toast.LENGTH_SHORT).show();
-            });
-        } finally {
+    // Method untuk mengecek status HasBeenPrinted secara asynchronous
+    private void checkHasBeenPrinted(String noST, HasBeenPrintedCallback callback) {
+        new Thread(() -> {
+            boolean hasBeenPrinted = false;
+            Connection connection = null;
             try {
-                if (preparedStatement != null) preparedStatement.close();
-                if (connection != null) connection.close();
+                // Mendapatkan koneksi dari method ConnectionClass
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "SELECT HasBeenPrinted FROM ST_h WHERE NoST = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noST);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                Integer printStatus = rs.getInt("HasBeenPrinted");
+                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                            }
+                        }
+                    }
+                } else {
+                    Log.e("Database", "Koneksi database gagal");
+                }
             } catch (SQLException e) {
-                Log.e("PrintStatus", "Error closing connection", e);
+                e.printStackTrace();
+                Log.e("Database", "Error checking HasBeenPrinted status: " + e.getMessage());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+
+            final boolean finalHasBeenPrinted = hasBeenPrinted;
+            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+        }).start();
+    }
+
+    // Method untuk mengupdate status HasBeenPrinted
+    private void updatePrintStatus(String noST) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                // Mendapatkan koneksi dari method ConnectionClass
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "UPDATE ST_h SET HasBeenPrinted = 1 WHERE NoST = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noST);
+                        int rowsAffected = stmt.executeUpdate();
+
+                        if (rowsAffected > 0) {
+                            runOnUiThread(() -> Toast.makeText(SawnTimber.this,
+                                    "Status cetak berhasil diupdate",
+                                    Toast.LENGTH_SHORT).show());
+                        } else {
+                            runOnUiThread(() -> Toast.makeText(SawnTimber.this,
+                                    "Tidak ada data yang diupdate",
+                                    Toast.LENGTH_SHORT).show());
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(SawnTimber.this,
+                            "Koneksi database gagal",
+                            Toast.LENGTH_SHORT).show());
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Log.e("Database", "Error updating HasBeenPrinted status: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(SawnTimber.this,
+                        "Gagal mengupdate status cetak: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
     }
 
     private boolean validateKayuLatSelection() {
@@ -875,9 +929,77 @@ public class SawnTimber extends AppCompatActivity {
         table.addCell(valueCell);
     }
 
+    private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
+        for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
+            PdfPage page = pdfDocument.getPage(i);
+            // Menggunakan newContentStreamBefore() untuk menempatkan watermark di belakang
+            PdfCanvas canvas = new PdfCanvas(
+                    page.newContentStreamBefore(),
+                    page.getResources(),
+                    pdfDocument
+            );
+
+            Rectangle pageSize = page.getPageSize();
+            float width = pageSize.getWidth();
+            float height = pageSize.getHeight();
+
+            canvas.saveState();
+
+            String watermarkText = "COPY";
+            float fontSize = 125;
+            float textWidth = font.getWidth(watermarkText, fontSize);
+            float textHeight = 175;
+
+            // Posisi watermark di tengah halaman
+            float centerX = width / 2;
+            float centerY = height / 2;
+
+            // Rotasi 45 derajat
+            double angle = Math.toRadians(45);
+            float cos = (float) Math.cos(angle);
+            float sin = (float) Math.sin(angle);
+
+            // Terapkan matriks transformasi untuk rotasi
+            canvas.concatMatrix(cos, sin, -sin, cos, centerX, centerY);
+
+            // Gambar teks watermark
+            canvas.setFontAndSize(font, fontSize);
+            canvas.setFillColor(ColorConstants.BLACK);
+
+            float textX = (-textWidth / 2) + 25; // Offset teks ke tengah setelah rotasi
+            float textY = (-textHeight / 2) + 50;
+
+            canvas.beginText();
+            canvas.setTextMatrix(textX, textY);
+            canvas.showText(watermarkText);
+            canvas.endText();
+
+            // Pattern dithering (opsional, jika tetap ingin digunakan)
+            float boxWidth = textWidth + 200;
+            float boxHeight = textHeight + 200;
+            float dotSize = 1.4f;
+            float dotSpacing = 1f;
+
+            canvas.setFillColor(ColorConstants.WHITE);
+
+            for (float x = -boxWidth / 2; x < boxWidth / 2; x += dotSpacing) {
+                for (float y = -boxHeight / 2; y < boxHeight / 2; y += dotSpacing) {
+                    if ((Math.round(x) + Math.round(y)) % 4 == 0) {
+                        canvas.circle(x, y, dotSize);
+                        canvas.fill();
+                    }
+                }
+            }
+
+            canvas.restoreState();
+        }
+    }
+
+
     private Uri createPdf(String noST, String jenisKayu, String tglStickBundle, String tellyBy, String noSPK,
-                          String stickBy, String platTruk, List<DataRow> temporaryDataListDetail, String noKayuBulat, String namaSupplier, String noTruk,
-                          String jumlahPcs, String m3, String ton) throws IOException {
+                          String stickBy, String platTruk, List<DataRow> temporaryDataListDetail, String noKayuBulat,
+                          String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
+                          boolean hasBeenPrinted) throws IOException {
         // Validasi parameter wajib
         if (noST == null || noST.trim().isEmpty()) {
             throw new IOException("Nomor ST tidak boleh kosong");
@@ -901,7 +1023,6 @@ public class SawnTimber extends AppCompatActivity {
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
         ton = (ton != null) ? ton.trim() : "-";
-
 
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
@@ -933,10 +1054,17 @@ public class SawnTimber extends AppCompatActivity {
                 PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
-                Document document = new Document(pdfDocument);
 
-                // Set ukuran halaman dan margin
-                pdfDocument.setDefaultPageSize(PageSize.A6);
+                // Ukuran kertas yang disesuaikan secara manual
+                float baseHeight = 450; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float rowHeight = 15; // Tinggi rata-rata per baris data
+                float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
+
+                // Tetapkan ukuran halaman dinamis
+                Rectangle pageSize = new Rectangle( PageSize.A6.getWidth(), totalHeight);
+                pdfDocument.setDefaultPageSize(new PageSize(pageSize));
+
+                Document document = new Document(pdfDocument);
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
@@ -947,17 +1075,16 @@ public class SawnTimber extends AppCompatActivity {
                         .setTextAlignment(TextAlignment.CENTER);
 
                 // Hitung lebar yang tersedia
-                float pageWidth = PageSize.A6.getWidth() - 20; // Kurangi margin kiri dan kanan
-                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2}; // Dua kolom utama
+                float pageWidth = PageSize.A6.getWidth() - 20;
+                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
 
-                // Buat tabel utama untuk 2 kolom
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
                         .setMarginTop(10)
-                        .setBorder(Border.NO_BORDER);                ;
+                        .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{50, 5, 80}; // Label, Colon, Value untuk sub-tabel
+                float[] infoColumnWidths = new float[]{50, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
@@ -997,11 +1124,6 @@ public class SawnTimber extends AppCompatActivity {
                 mainTable.addCell(leftCell);
                 mainTable.addCell(rightCell);
 
-                // Garis pemisah
-                Paragraph garis = new Paragraph("---------------------------------------------------------------")
-                        .setTextAlignment(TextAlignment.CENTER)
-                        .setFont(timesNewRoman);
-
                 // Format bulan
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
                 Paragraph bulanParagraf;
@@ -1011,13 +1133,12 @@ public class SawnTimber extends AppCompatActivity {
                         SimpleDateFormat monthFormat = new SimpleDateFormat("M", Locale.US);
                         String monthNumber = monthFormat.format(date);
 
-                        // Buat tabel dengan 2 kolom untuk monthFormat dan A
-                        float[] columnWidths = {30f, 30f}; // Sesuaikan lebar kolom sesuai kebutuhan
-                        Table containerTable = new Table(columnWidths)
+                        float[] containerWidths = {30f, 30f};
+                        Table containerTable = new Table(containerWidths)
                                 .setMarginLeft(25)
+                                .setMarginTop(-35)
                                 .setBorder(Border.NO_BORDER);
 
-                        // Cell untuk angka bulan (sebelah kiri)
                         Cell monthCell = new Cell()
                                 .setBorder(Border.NO_BORDER)
                                 .setPadding(0);
@@ -1025,12 +1146,11 @@ public class SawnTimber extends AppCompatActivity {
                         Paragraph monthParagraph = new Paragraph(monthNumber)
                                 .setFont(timesNewRoman)
                                 .setFontSize(50)
-                                .setTextAlignment(TextAlignment.RIGHT) // Rata kanan agar dekat dengan A
-                                .setMarginRight(5);  // Jarak dengan huruf A
+                                .setTextAlignment(TextAlignment.RIGHT)
+                                .setMarginRight(5);
 
                         monthCell.add(monthParagraph);
 
-                        // Cell untuk huruf A (sebelah kanan)
                         Cell aCell = new Cell()
                                 .setBorder(Border.NO_BORDER)
                                 .setPadding(0);
@@ -1044,14 +1164,11 @@ public class SawnTimber extends AppCompatActivity {
 
                         aCell.add(aParagraph);
 
-                        // Tambahkan cells secara horizontal (bersebelahan)
                         containerTable.addCell(monthCell);
                         containerTable.addCell(aCell);
 
-                        // Jadikan sebagai bulanParagraf
                         bulanParagraf = new Paragraph()
                                 .add(containerTable);
-
                     } else {
                         bulanParagraf = new Paragraph(" - A")
                                 .setFont(timesNewRoman)
@@ -1071,7 +1188,6 @@ public class SawnTimber extends AppCompatActivity {
                             .setMarginTop(15)
                             .setMarginBottom(15);
                 }
-
 
                 // Tabel data
                 float[] width = {60f, 60f, 60f, 60f};
@@ -1102,7 +1218,7 @@ public class SawnTimber extends AppCompatActivity {
                     table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                 }
 
-                // Detail  Pcs, Ton, M3
+                // Detail Pcs, Ton, M3
                 float[] columnWidths = {50f, 5f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
@@ -1122,75 +1238,35 @@ public class SawnTimber extends AppCompatActivity {
                 sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
                 sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
 
+                Paragraph qrCodeID = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noST).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 0).setFont(timesNewRoman);
 
-                // QR Code
                 BarcodeQRCode qrCode = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject)
-                        .setWidth(75)
-                        .setHorizontalAlignment(HorizontalAlignment.LEFT)
-                        .setMargins(0, 0, 0, 0);
+                Image qrCodeImage = new Image(qrCodeObject).setWidth(60).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(0, 0, 0, 0);
 
-                BarcodeQRCode qrCode2 = new BarcodeQRCode(noST);
-                PdfFormXObject qrCodeObject2 = qrCode2.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage2 = new Image(qrCodeObject2)
-                        .setWidth(60)
-                        .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMargins(0, 0, 0, 0);
+                BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noST);
+                PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(60).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(0, 0, 0, 0);
 
-                // Nomor ST
-                Paragraph St = new Paragraph(noST)
-                        .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(8)
-                        .setMargins(15, 0, 0, 25)
-                        .setFont(timesNewRoman);
-                Paragraph St2 = new Paragraph(noST)
-                        .setTextAlignment(TextAlignment.RIGHT)
-                        .setFontSize(8)
-                        .setMargins(0, 10, 0, 0)
-                        .setFont(timesNewRoman);
-
+                Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
+
+
                 document.add(judul);
+                if (hasBeenPrinted) {
+                    addTextDitheringWatermark(pdfDocument, timesNewRoman);
+                }
                 document.add(mainTable);
                 document.add(table);
                 document.add(sumTable);
                 document.add(bulanParagraf);
-//                document.add(St);
-//                document.add(qrCodeImage);
-//                document.add(garis);
-//                document.add(St2);
-//                document.add(qrCodeImage2);
-
-                // Tambahkan watermark
-                for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
-                    PdfPage page = pdfDocument.getPage(i);
-                    PdfCanvas canvas = new PdfCanvas(page);
-                    canvas.saveState();
-
-                    // Set transparansi
-                    PdfExtGState gs1 = new PdfExtGState();
-                    gs1.setFillOpacity(0.5f);
-                    canvas.setExtGState(gs1);
-
-                    // Siapkan font dan watermark
-                    canvas.beginText();
-                    canvas.setFontAndSize(timesNewRoman, 60);
-                    canvas.setFillColor(ColorConstants.LIGHT_GRAY);
-
-                    // Menggunakan posisi absolut yang sudah ditentukan (sesuaikan dengan ukuran A6)
-                    float watermarkX = 100;  // posisi x dari kiri
-                    float watermarkY = 200;  // posisi y dari bawah
-
-                    // Rotasi dan posisi teks
-                    canvas.setTextMatrix(1, 0, 0, 1, watermarkX, watermarkY);
-                    canvas.showText("COPY");
-                    canvas.endText();
-
-                    canvas.restoreState();
-                }
-
+                document.add(qrCodeID);
+                document.add(qrCodeImage);
+                document.add(bottomLine);
+                document.add(qrCodeIDbottom);
+                document.add(qrCodeBottomImage);
 
                 document.close();
                 pdfUri = uri;
