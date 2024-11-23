@@ -313,7 +313,6 @@ public class SawnTimber extends AppCompatActivity {
                 resetGradeData();
                 resetDetailData();
                 BtnSimpanST.setEnabled(false);
-
             }
         });
 
@@ -1238,16 +1237,16 @@ public class SawnTimber extends AppCompatActivity {
                 sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
                 sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
 
-                Paragraph qrCodeID = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noST).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeID = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(0, 0, 0, 24).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noST).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(0, 20, 0, 0).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(60).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(0, 0, 0, 0);
+                Image qrCodeImage = new Image(qrCodeObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-5, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(60).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(0, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-5, 0, 0, 0);
 
                 Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
 

@@ -1,14 +1,13 @@
 package com.example.myapplication;
 
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -27,30 +26,46 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
+import android.view.Gravity;
+import android.graphics.Color;
+import android.content.Context;
+import android.print.PrintManager;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintDocumentInfo;
+import android.print.PageRange;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import android.print.PrintJob;
+import com.itextpdf.kernel.geom.AffineTransform;
+import android.print.PrintManager;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintDocumentInfo;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import android.os.Bundle;
+import android.app.TimePickerDialog;
+import android.widget.TimePicker;
+
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
-import com.itextpdf.barcodes.BarcodeQRCode;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.HorizontalAlignment;
-import com.itextpdf.layout.properties.TextAlignment;
+import org.bouncycastle.cms.PasswordRecipientId;
+import org.bouncycastle.jcajce.provider.symmetric.Serpent;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -61,11 +76,53 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.text.DecimalFormat;
 import java.util.Locale;
 
-import java.text.DecimalFormat;
-import android.view.Gravity;
-import android.widget.TableRow;
+
+
+
+import com.itextpdf.layout.element.LineSeparator;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.barcodes.BarcodeQRCode;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.xobject.PdfFormXObject;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.LineSeparator;
+import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
+import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
+import com.itextpdf.layout.properties.VerticalAlignment;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import android.text.TextUtils;
+import com.itextpdf.layout.element.Paragraph;
+import java.math.RoundingMode;
 
 public class FingerJoint extends AppCompatActivity {
     private EditText NoFJ;
@@ -146,7 +203,6 @@ public class FingerJoint extends AppCompatActivity {
         Tabel = findViewById(R.id.Tabel);
         radioGroupFJ = findViewById(R.id.radioGroupFJ);
 
-        BtnPrintFJ.setEnabled(false);
 
         radioButtonMesinFJ.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -193,7 +249,6 @@ public class FingerJoint extends AppCompatActivity {
 
             BtnSimpanFJ.setEnabled(true);
             new SetAndSaveNoFJoinTaskFJ().execute();
-            BtnPrintFJ.setEnabled(false);
             BtnBatalFJ.setEnabled(true);
             radioButtonMesinFJ.setEnabled(true);
             radioButtonBSusunFJ.setEnabled(true);
@@ -410,54 +465,150 @@ public class FingerJoint extends AppCompatActivity {
 
         });
 
-//        BtnPrintFJ.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                try {
-//                    String noFJ = NoFJ.getText() != null ? NoFJ.getText().toString() : "";
-//                    String Kayu = SpinKayuFJ.getSelectedItem() != null ? SpinKayuFJ.getSelectedItem().toString() : "";
-//                    String Grade = SpinGradeFJ.getSelectedItem() != null ? SpinGradeFJ.getSelectedItem().toString() : "";
-//                    String Fisik = SpinFisikFJ.getSelectedItem() != null ? SpinFisikFJ.getSelectedItem().toString() : "";
-//                    String Tanggal = DateFJ.getText() != null ? DateFJ.getText().toString() : "";
-//                    String Waktu = TimeFJ.getText() != null ? TimeFJ.getText().toString() : "";
-//                    String Telly = SpinTellyFJ.getSelectedItem() != null ? SpinTellyFJ.getSelectedItem().toString() : "";
-//                    String Mesin = SpinMesinFJ.getSelectedItem() != null ? SpinMesinFJ.getSelectedItem().toString() : "";
-//                    String noSPK = SpinSPKFJ.getSelectedItem() != null ? SpinSPKFJ.getSelectedItem().toString() : "";
-//                    String jlh = JumlahPcsFJ.getText() != null ? JumlahPcsFJ.getText().toString() : "";
-//                    String m3 = M3FJ.getText() != null ? M3FJ.getText().toString() : "";
-//                    String Susun = SpinSusunFJ.getSelectedItem() != null ? SpinSusunFJ.getSelectedItem().toString() : "";
-//
-//                    Uri pdfUri = createPdfFJ(noFJ, Kayu, Grade, Fisik, Tanggal, Waktu, Telly, Mesin, Susun, noSPK, tebal, lebar, panjang, pcs, jlh, m3);
-//
-//                    if (pdfUri != null) {
-//                        Intent intent = new Intent(Intent.ACTION_VIEW);
-//                        intent.setDataAndType(pdfUri, "application/pdf");
-//                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//
-//                        intent.setPackage("com.mi.globalbrowser");
-//
-//                        try {
-//                            startActivity(intent);
-//                        } catch (ActivityNotFoundException e) {
-//                            Toast.makeText(FingerJoint.this, "Mi Browser not found. Please install Mi Browser or use another app to open the PDF.", Toast.LENGTH_LONG).show();
-//
-//                            Intent fallbackIntent = new Intent(Intent.ACTION_VIEW);
-//                            fallbackIntent.setDataAndType(pdfUri, "application/pdf");
-//                            fallbackIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//                            startActivity(Intent.createChooser(fallbackIntent, "Open PDF with"));
-//                        }
-//                    } else {
-//                        Toast.makeText(FingerJoint.this, "Error creating PDF", Toast.LENGTH_SHORT).show();
-//                    }
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                    Toast.makeText(FingerJoint.this, "Error creating PDF: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    Toast.makeText(FingerJoint.this, "Unexpected error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
+        BtnPrintFJ.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Validasi input terlebih dahulu
+                if (NoFJ.getText() == null || NoFJ.getText().toString().trim().isEmpty()) {
+                    Toast.makeText(FingerJoint.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Validasi apakah ada data yang akan dicetak
+                if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
+                    Toast.makeText(FingerJoint.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Cek status HasBeenPrinted di database
+                String noFJ = NoFJ.getText().toString().trim();
+                checkHasBeenPrinted(noFJ, new HasBeenPrintedCallback() {
+                    @Override
+                    public void onResult(boolean hasBeenPrinted) {
+                        try {
+                            // Ambil data dari form dengan validasi null
+                            String mesinSusun;
+                            String jenisKayu = SpinKayuFJ.getSelectedItem() != null ? SpinKayuFJ.getSelectedItem().toString().trim() : "";
+                            String date = DateFJ.getText() != null ? DateFJ.getText().toString().trim() : "";
+                            String time = TimeFJ.getText() != null ? TimeFJ.getText().toString().trim() : "";
+                            String tellyBy = SpinTellyFJ.getSelectedItem() != null ? SpinTellyFJ.getSelectedItem().toString().trim() : "";
+                            String noSPK = SpinSPKFJ.getSelectedItem() != null ? SpinSPKFJ.getSelectedItem().toString().trim() : "";
+                            String noSPKasal = SpinSPKAsalFJ.getSelectedItem() != null ? SpinSPKAsalFJ.getSelectedItem().toString().trim() : "";
+                            String grade = SpinGradeFJ.getSelectedItem() != null ? SpinGradeFJ.getSelectedItem().toString().trim() : "";
+                            String fisik = SpinFisikFJ.getSelectedItem() != null ? SpinFisikFJ.getSelectedItem().toString().trim() : "";
+                            String jumlahPcs = JumlahPcsFJ.getText() != null ? JumlahPcsFJ.getText().toString().trim() : "";
+                            String m3 = M3FJ.getText() != null ? M3FJ.getText().toString().trim() : "";
+                            if(radioButtonMesinFJ.isChecked()){
+                                mesinSusun = SpinMesinFJ.getSelectedItem() != null ? SpinMesinFJ.getSelectedItem().toString().trim() : "";
+                            }
+                            else{
+                                mesinSusun = SpinSusunFJ.getSelectedItem() != null ? SpinSusunFJ.getSelectedItem().toString().trim() : "";
+                            }
+
+                            // Buat PDF dengan parameter hasBeenPrinted
+                            Uri pdfUri = createPdf(noFJ, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
+                                    temporaryDataListDetail, jumlahPcs, m3, hasBeenPrinted, fisik);
+
+                            if (pdfUri != null) {
+                                // Siapkan PrintManager
+                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                                String jobName = getString(R.string.app_name) + " Document";
+
+                                // Buat PrintDocumentAdapter
+                                PrintDocumentAdapter pda = new PrintDocumentAdapter() {
+                                    @Override
+                                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                                         CancellationSignal cancellationSignal,
+                                                         LayoutResultCallback callback, Bundle extras) {
+                                        if (cancellationSignal.isCanceled()) {
+                                            callback.onLayoutCancelled();
+                                            return;
+                                        }
+
+                                        PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
+                                                .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                                                .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
+                                                .build();
+
+                                        callback.onLayoutFinished(info, true);
+                                    }
+
+                                    @Override
+                                    public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                                        CancellationSignal cancellationSignal,
+                                                        WriteResultCallback callback) {
+                                        try {
+                                            InputStream input = getContentResolver().openInputStream(pdfUri);
+                                            OutputStream output = new FileOutputStream(destination.getFileDescriptor());
+
+                                            byte[] buf = new byte[1024];
+                                            int bytesRead;
+
+                                            while ((bytesRead = input.read(buf)) > 0) {
+                                                output.write(buf, 0, bytesRead);
+                                            }
+
+                                            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
+
+                                            input.close();
+                                            output.close();
+                                        } catch (Exception e) {
+                                            callback.onWriteFailed(e.getMessage());
+                                        }
+                                    }
+                                };
+
+                                // Mulai proses pencetakan
+                                PrintAttributes attributes = new PrintAttributes.Builder()
+                                        .setMediaSize(new PrintAttributes.MediaSize("CUSTOM", "Custom Roll Paper", 72, 3000)) // 72mm lebar
+                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                        .build();
+
+                                try {
+                                    // Dapatkan PrintJob
+                                    PrintJob printJob = printManager.print(jobName, pda, attributes);
+
+                                    // Monitor status PrintJob
+                                    new Thread(() -> {
+                                        boolean isPrinting = true;
+                                        while (isPrinting) {
+                                            if (printJob.isCompleted()) {
+                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
+                                                if (!hasBeenPrinted) {
+                                                    updatePrintStatus(noFJ);
+                                                }
+                                                isPrinting = false;
+                                            } else if (printJob.isFailed() || printJob.isCancelled()) {
+                                                isPrinting = false;
+                                            }
+
+                                            try {
+                                                Thread.sleep(1000); // Check setiap 1 detik
+                                            } catch (InterruptedException e) {
+                                                Thread.currentThread().interrupt();
+                                                break;
+                                            }
+                                        }
+                                    }).start();
+
+                                } catch (Exception e) {
+                                    Toast.makeText(FingerJoint.this,
+                                            "Error printing: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+                            Toast.makeText(FingerJoint.this,
+                                    "Terjadi kesalahan: " + errorMessage,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        });
 
     }
 
@@ -479,6 +630,98 @@ public class FingerJoint extends AppCompatActivity {
 
         return con;
     }
+
+    // Interface untuk callback
+    interface HasBeenPrintedCallback {
+        void onResult(boolean hasBeenPrinted);
+    }
+
+    // Method untuk mengecek status HasBeenPrinted secara asynchronous
+    private void checkHasBeenPrinted(String noFJ, FingerJoint.HasBeenPrintedCallback callback) {
+        new Thread(() -> {
+            boolean hasBeenPrinted = false;
+            Connection connection = null;
+            try {
+                // Mendapatkan koneksi dari method ConnectionClass
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "SELECT HasBeenPrinted FROM FJ_h WHERE NoFJ = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noFJ);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                Integer printStatus = rs.getInt("HasBeenPrinted");
+                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                            }
+                        }
+                    }
+                } else {
+                    Log.e("Database", "Koneksi database gagal");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Log.e("Database", "Error checking HasBeenPrinted status: " + e.getMessage());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            final boolean finalHasBeenPrinted = hasBeenPrinted;
+            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+        }).start();
+    }
+
+    // Method untuk mengupdate status HasBeenPrinted
+    private void updatePrintStatus(String noFJ) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                // Mendapatkan koneksi dari method ConnectionClass
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "UPDATE FJ_h SET HasBeenPrinted = 1 WHERE NoFJ = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noFJ);
+                        int rowsAffected = stmt.executeUpdate();
+
+                        if (rowsAffected > 0) {
+                            runOnUiThread(() -> Toast.makeText(FingerJoint.this,
+                                    "Status cetak berhasil diupdate",
+                                    Toast.LENGTH_SHORT).show());
+                        } else {
+                            runOnUiThread(() -> Toast.makeText(FingerJoint.this,
+                                    "Tidak ada data yang diupdate",
+                                    Toast.LENGTH_SHORT).show());
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(FingerJoint.this,
+                            "Koneksi database gagal",
+                            Toast.LENGTH_SHORT).show());
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Log.e("Database", "Error updating HasBeenPrinted status: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(FingerJoint.this,
+                        "Gagal mengupdate status cetak: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
 
     private String getIdJenisKayuStr() {
         if (SpinKayuFJ.getSelectedItem() != null) {
@@ -1058,107 +1301,345 @@ public class FingerJoint extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-    private Uri createPdfFJ(String noFJ, String Kayu, String Grade, String Fisik, String Tanggal, String Waktu, String Telly, String Mesin, String Susun, String noSPK, String tebal, String lebar, String panjang, String pcs, String jlh, String m3) throws IOException {
-        Uri pdfUri = null;
-        ContentResolver resolver = getContentResolver();
-        String fileName = "myPDF.pdf";
-        String relativePath = Environment.DIRECTORY_DOWNLOADS;
+    // Helper method yang diperbarui untuk menangani wrap text
+    private void addInfoRow(Table table, String label, String value, PdfFont font) {
+        // Label Cell
+        Cell labelCell = new Cell()
+                .setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label)
+                        .setFont(font)
+                        .setFontSize(8)
+                        .setMargin(0)
+                        .setMultipliedLeading(1.2f)
+                        .setTextAlignment(TextAlignment.LEFT));
 
-        deleteExistingPdfFJ(fileName, relativePath);
+        // Colon Cell
+        Cell colonCell = new Cell()
+                .setBorder(Border.NO_BORDER)
+                .add(new Paragraph(":")
+                        .setFont(font)
+                        .setFontSize(8)
+                        .setMargin(0)
+                        .setMultipliedLeading(1.2f)
+                        .setTextAlignment(TextAlignment.CENTER));
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        // Value Cell with text wrapping
+        Cell valueCell = new Cell()
+                .setBorder(Border.NO_BORDER);
+
+        // Split panjang text jika melebihi batas
+        String[] words = value.split(" ");
+        StringBuilder line = new StringBuilder();
+        StringBuilder finalText = new StringBuilder();
+
+        for (String word : words) {
+            if (line.length() + word.length() > 20) { // Batas karakter per baris
+                finalText.append(line.toString().trim()).append("\n");
+                line = new StringBuilder();
+            }
+            line.append(word).append(" ");
         }
+        finalText.append(line.toString().trim());
 
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
-        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath);
+        valueCell.add(new Paragraph(finalText.toString())
+                .setFont(font)
+                .setFontSize(8)
+                .setMargin(0)
+                .setMultipliedLeading(1.2f)
+                .setTextAlignment(TextAlignment.LEFT));
 
-        Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
-        if (uri != null) {
-            OutputStream outputStream = resolver.openOutputStream(uri);
-            if (outputStream != null) {
-                try {
-                    PdfWriter writer = new PdfWriter(outputStream);
-                    PdfDocument pdfDocument = new PdfDocument(writer);
-                    Document document = new Document(pdfDocument);
+        // Set minimum height untuk konsistensi
+        float minHeight = 8f;
+        labelCell.setMinHeight(minHeight);
+        colonCell.setMinHeight(minHeight);
+        valueCell.setMinHeight(minHeight);
 
-                    pdfDocument.setDefaultPageSize(PageSize.A6);
-                    document.setMargins(0, 5, 0, 5);
+        // Tambahkan semua cell ke tabel
+        table.addCell(labelCell);
+        table.addCell(colonCell);
+        table.addCell(valueCell);
+    }
 
-                    String mesinAtauSusun;
-                    if (Mesin.isEmpty()) {
-                        mesinAtauSusun = Susun.isEmpty() ? "Mesin & Susun tidak tersedia" : "B.Susun : " + Susun;
-                    } else {
-                        mesinAtauSusun = "Mesin : " + Mesin;
+    private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
+        for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
+            PdfPage page = pdfDocument.getPage(i);
+            // Menggunakan newContentStreamBefore() untuk menempatkan watermark di belakang
+            PdfCanvas canvas = new PdfCanvas(
+                    page.newContentStreamBefore(),
+                    page.getResources(),
+                    pdfDocument
+            );
+
+            Rectangle pageSize = page.getPageSize();
+            float width = pageSize.getWidth();
+            float height = pageSize.getHeight();
+
+            canvas.saveState();
+
+            String watermarkText = "COPY";
+            float fontSize = 125;
+            float textWidth = font.getWidth(watermarkText, fontSize);
+            float textHeight = 175;
+
+            // Posisi watermark di tengah halaman
+            float centerX = width / 2;
+            float centerY = height / 2;
+
+            // Rotasi 45 derajat
+            double angle = Math.toRadians(45);
+            float cos = (float) Math.cos(angle);
+            float sin = (float) Math.sin(angle);
+
+            // Terapkan matriks transformasi untuk rotasi
+            canvas.concatMatrix(cos, sin, -sin, cos, centerX, centerY);
+
+            // Gambar teks watermark
+            canvas.setFontAndSize(font, fontSize);
+            canvas.setFillColor(ColorConstants.BLACK);
+
+            float textX = (-textWidth / 2) + 25; // Offset teks ke tengah setelah rotasi
+            float textY = (-textHeight / 2) + 50;
+
+            canvas.beginText();
+            canvas.setTextMatrix(textX, textY);
+            canvas.showText(watermarkText);
+            canvas.endText();
+
+            // Pattern dithering (opsional, jika tetap ingin digunakan)
+            float boxWidth = textWidth + 200;
+            float boxHeight = textHeight + 200;
+            float dotSize = 1.4f;
+            float dotSpacing = 1f;
+
+            canvas.setFillColor(ColorConstants.WHITE);
+
+            for (float x = -boxWidth / 2; x < boxWidth / 2; x += dotSpacing) {
+                for (float y = -boxHeight / 2; y < boxHeight / 2; y += dotSpacing) {
+                    if ((Math.round(x) + Math.round(y)) % 4 == 0) {
+                        canvas.circle(x, y, dotSize);
+                        canvas.fill();
                     }
-
-                    Paragraph judul = new Paragraph("LABEL FINGER JOIN\n").setBold().setFontSize(8).setTextAlignment(TextAlignment.CENTER);
-                    Paragraph isi = new Paragraph("").setFontSize(7)
-                            .add("No FJoin  : " + noFJ + "                                              ")
-                            .add("Tanggal : " + Tanggal + " " + Waktu + "\n")
-                            .add("Kayu    : " + Kayu + "                                                    ")
-                            .add("Telly   : " + Telly + "\n")
-                            .add("Grade   : " + Grade + "                                          ")
-                            .add(mesinAtauSusun + "\n")
-                            .add("Fisik   : " + Fisik + "                                                           ")
-                            .add("No SPK  : " + noSPK + "\n");
-
-                    float[] width = {50f, 50f, 50f, 50f};
-                    Table table = new Table(width);
-                    table.setHorizontalAlignment(HorizontalAlignment.CENTER).setFontSize(7);
-                    table.addCell(new Cell().add(new Paragraph("Tebal (mm)").setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph("Lebar (mm)").setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph("Panjang (mm)").setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph("Pcs").setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph(panjang).setTextAlignment(TextAlignment.CENTER)));
-                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER)));
-
-                    BarcodeQRCode qrCode = new BarcodeQRCode(noFJ);
-                    PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                    Image qrCodeImage = new Image(qrCodeObject).setWidth(45).setHorizontalAlignment(HorizontalAlignment.CENTER).setMarginBottom(0).setMarginTop(0);
-
-                    Paragraph pcsm3 = new Paragraph("").setFontSize(7).setTextAlignment(TextAlignment.RIGHT).setMarginRight(67)
-                            .add("Jmlh Pcs = " + jlh + "\t" + "\n")
-                            .add("m3 = " + m3 + "\n");
-
-                    Paragraph garis = new Paragraph("--------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER);
-                    Paragraph output = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(6).setMarginTop(0).setMarginBottom(0);
-                    Paragraph input = new Paragraph("Input").setTextAlignment(TextAlignment.CENTER).setFontSize(6).setMarginTop(0).setMarginBottom(0);
-                    Paragraph fjoin = new Paragraph(noFJ).setTextAlignment(TextAlignment.CENTER).setFontSize(6).setMarginTop(0).setMarginBottom(0);
-                    document.add(judul);
-                    document.add(isi);
-                    document.add(table);
-                    document.add(pcsm3);
-                    document.add(output);
-                    document.add(qrCodeImage);
-                    document.add(fjoin);
-                    document.add(garis);
-                    document.add(judul);
-                    document.add(isi);
-                    document.add(table);
-                    document.add(pcsm3);
-                    document.add(input);
-                    document.add(qrCodeImage);
-                    document.add(fjoin);
-
-                    document.close();
-
-                    pdfUri = uri;
-
-                    Toast.makeText(this, "PDF Created at " + uri.getPath(), Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new IOException("Failed to create PDF", e);
-                } finally {
-                    outputStream.close();
                 }
             }
+            canvas.restoreState();
+        }
+    }
+
+    private Uri createPdf(String noFJ, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, boolean hasBeenPrinted, String fisik) throws IOException {
+        // Validasi parameter wajib
+        if (noFJ == null || noFJ.trim().isEmpty()) {
+            throw new IOException("Nomor FingerJoint tidak boleh kosong");
+        }
+
+        if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
+            throw new IOException("Data tidak boleh kosong");
+        }
+
+        // Validasi dan set default value untuk parameter opsional
+        noFJ = (noFJ != null) ? noFJ.trim() : "-";
+        jenisKayu = (jenisKayu != null) ? jenisKayu.trim() : "-";
+        date = (date != null) ? date.trim() : "-";
+        time = (time != null) ? time.trim() : "-";
+        grade = (grade != null) ? grade.trim() : "-";
+        tellyBy = (tellyBy != null) ? tellyBy.trim() : "-";
+        noSPK = (noSPK != null) ? noSPK.trim() : "-";
+        jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
+        m3 = (m3 != null) ? m3.trim() : "-";
+
+        Uri pdfUri = null;
+        ContentResolver resolver = getContentResolver();
+        String fileName = "S4S_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        String relativePath = Environment.DIRECTORY_DOWNLOADS;
+
+        try {
+            // Hapus file yang sudah ada jika perlu
+            deleteExistingPdfFJ(fileName, relativePath);
+            Thread.sleep(500);
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath);
+
+            Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+            if (uri == null) {
+                throw new IOException("Gagal membuat file PDF");
+            }
+
+            OutputStream outputStream = resolver.openOutputStream(uri);
+            if (outputStream == null) {
+                throw new IOException("Gagal membuka output stream");
+            }
+
+            try {
+                // Inisialisasi font dan dokumen
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfWriter writer = new PdfWriter(outputStream);
+                PdfDocument pdfDocument = new PdfDocument(writer);
+
+                // Ukuran kertas yang disesuaikan secara manual
+                float baseHeight = 575; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float rowHeight = 34; // Tinggi rata-rata per baris data
+                float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
+
+                // Tetapkan ukuran halaman dinamis
+                Rectangle pageSize = new Rectangle( PageSize.A6.getWidth(), totalHeight);
+                pdfDocument.setDefaultPageSize(new PageSize(pageSize));
+
+                Document document = new Document(pdfDocument);
+                document.setMargins(0, 5, 0, 5);
+
+                // Header
+                Paragraph judul = new Paragraph("LABEL FINGER JOINT")
+                        .setUnderline()
+                        .setBold()
+                        .setFontSize(8)
+                        .setTextAlignment(TextAlignment.CENTER);
+
+                // Hitung lebar yang tersedia
+                float pageWidth = PageSize.A6.getWidth() - 20;
+                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
+
+                Table mainTable = new Table(mainColumnWidths)
+                        .setWidth(pageWidth)
+                        .setHorizontalAlignment(HorizontalAlignment.CENTER)
+                        .setMarginTop(10)
+                        .setBorder(Border.NO_BORDER);
+
+                float[] infoColumnWidths = new float[]{50, 5, 80};
+
+                // Buat tabel untuk kolom kiri
+                Table leftColumn = new Table(infoColumnWidths)
+                        .setWidth(pageWidth/2 - 5)
+                        .setBorder(Border.NO_BORDER);
+
+                // Isi kolom kiri
+                addInfoRow(leftColumn, "No FingerJoint", noFJ, timesNewRoman);
+                addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
+                addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
+                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
+
+                // Buat tabel untuk kolom kanan
+                Table rightColumn = new Table(infoColumnWidths)
+                        .setWidth(pageWidth/2 - 5)
+                        .setMarginLeft(20)
+                        .setBorder(Border.NO_BORDER);
+
+                // Isi kolom kanan
+                addInfoRow(rightColumn, "Tanggal", date + " (" + time + ")", timesNewRoman);
+                addInfoRow(rightColumn, "Telly", tellyBy, timesNewRoman);
+                addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
+                addInfoRow(rightColumn, "No SPK", noSPK, timesNewRoman);
+
+                // Tambahkan kolom kiri dan kanan ke tabel utama
+                Cell leftCell = new Cell()
+                        .add(leftColumn)
+                        .setBorder(Border.NO_BORDER)
+                        .setPadding(0);
+
+                Cell rightCell = new Cell()
+                        .add(rightColumn)
+                        .setBorder(Border.NO_BORDER)
+                        .setPadding(0);
+
+                mainTable.addCell(leftCell);
+                mainTable.addCell(rightCell);
+
+                // Tabel data
+                float[] width = {60f, 60f, 60f, 60f};
+                Table table = new Table(width)
+                        .setHorizontalAlignment(HorizontalAlignment.CENTER)
+                        .setMarginTop(10)
+                        .setFontSize(8);
+
+                // Header tabel
+                String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
+                for (String header : headers) {
+                    table.addCell(new Cell()
+                            .add(new Paragraph(header)
+                                    .setTextAlignment(TextAlignment.CENTER)
+                                    .setFont(timesNewRoman)));
+                }
+
+                // Isi tabel
+                for (DataRow row : temporaryDataListDetail) {
+                    String tebal = (row.tebal != null) ? row.tebal : "-";
+                    String lebar = (row.lebar != null) ? row.lebar : "-";
+                    String panjang = (row.panjang != null) ? row.panjang : "-";
+                    String pcs = (row.pcs != null) ? row.pcs : "-";
+
+                    table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(panjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                }
+
+                // Detail Pcs, Ton, M3
+                float[] columnWidths = {50f, 5f, 70f};
+                Table sumTable = new Table(columnWidths)
+                        .setHorizontalAlignment(HorizontalAlignment.RIGHT)
+                        .setMarginTop(10)
+                        .setFontSize(8)
+                        .setBorder(Border.NO_BORDER);
+
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+
+                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+
+                Paragraph qrCodeID = new Paragraph(noFJ).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(-5, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noFJ).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(-5, 20, 0, 0).setFont(timesNewRoman);
+
+                BarcodeQRCode qrCode = new BarcodeQRCode(noFJ);
+                PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
+                Image qrCodeImage = new Image(qrCodeObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-5, 0, 0, 0);
+
+                BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noFJ);
+                PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-5, 0, 0, 0);
+
+                Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
+                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 28, 0, 0).setFont(timesNewRoman);
+
+                // Tambahkan semua elemen ke dokumen
+
+
+                document.add(judul);
+                Log.d("DEBUG_TAG", "Value of hasBeenPrinted: " + hasBeenPrinted);
+                if (hasBeenPrinted) {
+                    addTextDitheringWatermark(pdfDocument, timesNewRoman);
+                }
+                document.add(mainTable);
+                document.add(table);
+                document.add(sumTable);
+                document.add(outputText);
+                document.add(qrCodeImage);
+                document.add(qrCodeID);
+                document.add(bottomLine);
+                document.add(mainTable);
+                document.add(table);
+                document.add(sumTable);
+                document.add(inputText);
+                document.add(qrCodeBottomImage);
+                document.add(qrCodeIDbottom);
+
+                document.close();
+                pdfUri = uri;
+
+                Toast.makeText(this, "PDF berhasil dibuat di " + uri.getPath(), Toast.LENGTH_LONG).show();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new IOException("Gagal membuat PDF: " + e.getMessage(), e);
+            } finally {
+                outputStream.close();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new IOException("Proses pembuatan PDF terganggu", e);
         }
 
         return pdfUri;
