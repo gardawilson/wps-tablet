@@ -10,6 +10,8 @@ appcompat = "1.7.0"
 material = "1.12.0"
 activity = "1.9.1"
 constraintlayout = "2.1.4"
+bouncycastle = "1.70"
+smbj = "0.11.5"
 
 [libraries]
 itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7Core" }
@@ -22,7 +24,8 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+smbj = { group = "com.hierynomus", name = "smbj", version.ref = "smbj" }
+bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk15on", version.ref = "bouncycastle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-

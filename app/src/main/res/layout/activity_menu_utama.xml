@@ -49,6 +49,14 @@
         app:layout_constraintVertical_bias="0.365"
         app:srcCompat="@android:drawable/ic_menu_save" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:visibility="gone" />
+
     <Button
         android:id="@+id/btnCheckUpdate"
         android:layout_width="wrap_content"
