@@ -719,24 +719,24 @@ public class S4S extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(String... params) {
             String noS4S = params[0];
-            String noSTAsal = NoSTAsal.getText().toString();
+//            String noSTAsal = NoSTAsal.getText().toString();
             Connection con = ConnectionClass();
             boolean hasData = false;
 
             if (con != null) {
                 try {
                     // Cek validitas NoSTAsal di tabel st_h
-                    String querySTAsal = "SELECT COUNT(*) FROM dbo.ST_h WHERE NoS4S = ?";
-                    PreparedStatement psSTAsal = con.prepareStatement(querySTAsal);
-                    psSTAsal.setString(1, noSTAsal);
-                    ResultSet rsSTAsal = psSTAsal.executeQuery();
-
-                    if (rsSTAsal.next() && rsSTAsal.getInt(1) > 0) {
-                        isNoSTAsalValid = true;
-                    }
-
-                    rsSTAsal.close();
-                    psSTAsal.close();
+//                    String querySTAsal = "SELECT COUNT(*) FROM dbo.ST_h WHERE NoS4S = ?";
+//                    PreparedStatement psSTAsal = con.prepareStatement(querySTAsal);
+//                    psSTAsal.setString(1, noSTAsal);
+//                    ResultSet rsSTAsal = psSTAsal.executeQuery();
+//
+//                    if (rsSTAsal.next() && rsSTAsal.getInt(1) > 0) {
+//                        isNoSTAsalValid = true;
+//                    }
+//
+//                    rsSTAsal.close();
+//                    psSTAsal.close();
 
                     // Cek di tabel S4SProduksiOutput
                     String queryMesin = "SELECT NoProduksi FROM dbo.S4SProduksiOutput WHERE NoS4S = ?";
@@ -776,10 +776,7 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean hasData) {
-            if (!isNoSTAsalValid) {
-                Toast.makeText(S4S.this, "NoS4S tidak valid.", Toast.LENGTH_SHORT).show();
-                BtnSimpan.setEnabled(false);
-            } else if (hasData) {
+            if (hasData) {
                 Toast.makeText(S4S.this,
                         "Data S4S ini sudah pernah disimpan di " + source + "!",
                         Toast.LENGTH_SHORT).show();
@@ -1626,9 +1623,9 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(S4S.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(S4S.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -1667,11 +1664,11 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(S4S.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(S4S.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(S4S.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(S4S.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
