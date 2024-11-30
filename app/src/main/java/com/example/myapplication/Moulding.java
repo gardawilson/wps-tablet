@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -105,6 +118,10 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -123,7 +140,7 @@ import java.math.RoundingMode;
 public class Moulding extends AppCompatActivity {
 
     //deklarasi semua item yang ada di xml yang akan digunakan
-    private EditText NoMoulding;
+    private SearchView NoMoulding;
     private EditText DateM;
     private EditText TimeM;
     private EditText NoSTAM;
@@ -156,10 +173,9 @@ public class Moulding extends AppCompatActivity {
     private Button BtnPrintM;
     private TextView M3M;
     private TextView JumlahPcsM;
-    private boolean isCBAfkirM, isCBLemburM;
-    private Button BtnSearchM;
     private int rowCount = 0;
     private TableLayout Tabel;
+    private boolean isCreateMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,9 +214,36 @@ public class Moulding extends AppCompatActivity {
         BtnPrintM = findViewById(R.id.BtnPrintM);
         M3M = findViewById(R.id.M3M);
         JumlahPcsM = findViewById(R.id.JumlahPcsM);
-        BtnSearchM = findViewById(R.id.BtnSearchM);
         Tabel = findViewById(R.id.Tabel);
         radioGroupM = findViewById(R.id.radioGroupM);
+
+
+
+        NoMoulding.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
+
 
 
         //mengatur fungsi RadioButtonMesin
@@ -230,36 +273,33 @@ public class Moulding extends AppCompatActivity {
 
         //fungsi button DataBaru
         BtnDataBaruM.setOnClickListener(v -> {
-            if (!isDataBaruClickedM) {
-                resetSpinners();
-                new LoadJenisKayuTask().execute();
-                new LoadTellyTask().execute();
-                new LoadSPKTask().execute();
-                new LoadSPKAsalTask().execute();
-                new LoadProfileTask().execute();
-                new LoadFisikTask().execute();
-                new LoadGradeTask().execute();
-                new LoadMesinTask().execute();
-                new LoadSusunTask().execute();
+            setCreateMode(true);
 
-                isDataBaruClickedM = true;
-                setCurrentDateTime();
-            } else {
-                Toast.makeText(Moulding.this, "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            }
-            BtnSimpanM.setEnabled(true);
             new SetAndSaveNoMouldingTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadTellyTask().execute();
+            new LoadSPKTask().execute();
+            new LoadSPKAsalTask().execute();
+            new LoadProfileTask().execute();
+            new LoadFisikTask().execute();
+            new LoadGradeTask().execute();
+            new LoadMesinTask().execute();
+            new LoadSusunTask().execute();
+
+            setCurrentDateTime();
+
+            BtnSimpanM.setEnabled(true);
             BtnBatalM.setEnabled(true);
             radioButtonMesinM.setEnabled(true);
             radioButtonBSusunM.setEnabled(true);
-            BtnDataBaruM.setEnabled(false);
+
             clearData();
             resetDetailData();
         });
 
         //fungsi button Simpan
         BtnSimpanM.setOnClickListener(v -> {
-            String noMoulding = NoMoulding.getText().toString();
+            String noMoulding = NoMoulding.getQuery().toString();
             String dateCreate = DateM.getText().toString();
             String time = TimeM.getText().toString();
 
@@ -295,18 +335,17 @@ public class Moulding extends AppCompatActivity {
                 idUOMPanjang = 3;
             }
 
-
             if (noMoulding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
                     selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
-                    selectedFisik == null ||
+                    selectedFisik == null || selectedFisik.getIdWarehouse().isEmpty() ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinM.isChecked() && !radioButtonBSusunM.isChecked()) ||
                     (radioButtonMesinM.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
-                    (radioButtonBSusunM.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+                    (radioButtonBSusunM.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty()))) {
 
 
                 Toast.makeText(Moulding.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
@@ -358,50 +397,11 @@ public class Moulding extends AppCompatActivity {
        BtnBatalM.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCurrentDateTime();
-                clearData();
+                setCreateMode(false);
                 resetDetailData();
+                resetAllForm();
                 BtnDataBaruM.setEnabled(true);
-            }
-        });
-
-
-        //fungsi button Search
-        BtnSearchM.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noMoulding = NoMoulding.getText().toString();
-
-
-                DetailLebarM.setText("");
-                DetailPanjangM.setText("");
-                DetailTebalM.setText("");
-                DetailPcsM.setText("");
-                NoMoulding.setText("");
-
-                if (!noMoulding.isEmpty()) {
-                    new LoadMesinTask2(noMoulding).execute();
-                    new LoadSusunTask2(noMoulding).execute();
-                    new LoadFisikTask2(noMoulding).execute();
-                    new LoadGradeTask2(noMoulding).execute();
-                    new LoadJenisKayuTask2(noMoulding).execute();
-                    new LoadTellyTask2(noMoulding).execute();
-                    new LoadSPKTask2(noMoulding).execute();
-                    new LoadProfileTask2(noMoulding).execute();
-                    new SearchAllDataTask(noMoulding).execute();
-
-                    radioButtonMesinM.setEnabled(true);
-                    SpinSPKM.setEnabled(true);
-                    radioButtonBSusunM.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "NoMoulding is empty");
-                    radioButtonMesinM.setEnabled(false);
-                    radioButtonBSusunM.setEnabled(false);
-                }
-
                 BtnSimpanM.setEnabled(false);
-                BtnBatalM.setEnabled(false);
-                BtnPrintM.setEnabled(true);
             }
         });
 
@@ -409,15 +409,19 @@ public class Moulding extends AppCompatActivity {
         SpinKayuM.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-                String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
-                new LoadGradeTask().execute(idJenisKayu);
-            }
+                // Hanya jalankan jika dalam mode create
+                if (isCreateMode) {
+                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
+                    new LoadGradeTask().execute(idJenisKayu);
 
+                }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
 
         //fungsi kolom tanggal
         DateM.setOnClickListener(v -> showDatePickerDialog());
@@ -427,7 +431,7 @@ public class Moulding extends AppCompatActivity {
 
         //fungsi button Input Detail
         BtnInputDetailM.setOnClickListener(v -> {
-            String noMoulding = NoMoulding.getText().toString();
+            String noMoulding = NoMoulding.getQuery().toString();
 
             if (!noMoulding.isEmpty()) {
                 addDataDetail(noMoulding);
@@ -447,7 +451,7 @@ public class Moulding extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoMoulding.getText() == null || NoMoulding.getText().toString().trim().isEmpty()) {
+                if (NoMoulding.getQuery() == null || NoMoulding.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(Moulding.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -459,7 +463,7 @@ public class Moulding extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noMoulding = NoMoulding.getText().toString().trim();
+                String noMoulding = NoMoulding.getQuery().toString().trim();
                 checkHasBeenPrinted(noMoulding, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -610,6 +614,284 @@ public class Moulding extends AppCompatActivity {
 
         return con;
     }
+    
+    
+    //METHOD MOULDING
+    
+    private void disableForm(){
+        DetailTebalM.setEnabled(false);
+        DetailLebarM.setEnabled(false);
+        DetailPanjangM.setEnabled(false);
+        DetailPcsM.setEnabled(false);
+        BtnHapusDetailM.setEnabled(false);
+        BtnInputDetailM.setEnabled(false);
+        DateM.setEnabled(false);
+        TimeM.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateM.setText("");
+        TimeM.setText("");
+        NoMoulding.setQuery("",false);
+        NoSTAM.setText("");
+
+//        setSpinnerValue(SpinKayuM, "-");
+        setSpinnerValue(SpinTellyM, "-");
+        setSpinnerValue(SpinSPKM, "-");
+        setSpinnerValue(SpinSPKAsalM, "-");
+        setSpinnerValue(SpinGradeM, "-");
+//        setSpinnerValue(SpinProfileM, "-");
+        setSpinnerValue(SpinFisikM, "-");
+//        setSpinnerValue(SpinMesinM, "-");
+//        setSpinnerValue(SpinSusunM, "-");
+
+        radioButtonBSusunM.setEnabled(false);
+        radioButtonMesinM.setEnabled(false);
+
+
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalM.setEnabled(true);
+        DetailTebalM.setEnabled(true);
+        DetailPanjangM.setEnabled(true);
+        DetailPcsM.setEnabled(true);
+        BtnHapusDetailM.setEnabled(true);
+        BtnInputDetailM.setEnabled(true);
+        DateM.setEnabled(true);
+        TimeM.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoMoulding.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noMoulding) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader = "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdGrade, " +
+                            "g.NamaGrade, " +
+                            "h.IdFJProfile, " +
+                            "h.IdFisik, " +
+                            "o.NoMoulding, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "w.NamaWarehouse, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis " +
+                            "FROM Moulding_h h " +
+                            "LEFT JOIN MouldingProduksiOutput o ON h.NoMoulding = o.NoMoulding " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN MouldingProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN BongkarSusunOutputMoulding s ON h.NoMoulding = s.NoMoulding " +
+                            "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE h.NoMoulding = ? ";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM Moulding_d " +
+                            "WHERE NoMoulding = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noMoulding);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaGrade = rs.getString("NamaGrade") != null ? rs.getString("NamaGrade") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noMoulding);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinM.setChecked(true);
+                                            radioButtonBSusunM.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunM.setChecked(true);
+                                            radioButtonMesinM.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateM.setText(dateCreate);
+                                        TimeM.setText(jam);
+                                        setSpinnerValue(SpinTellyM, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKM, noSPK);
+                                        setSpinnerValue(SpinSPKAsalM, noSPKAsal);
+                                        setSpinnerValue(SpinKayuM, namaKayu);
+                                        setSpinnerValue(SpinGradeM, namaGrade);
+                                        setSpinnerValue(SpinProfileM, namaProfile);
+                                        setSpinnerValue(SpinFisikM, namaWarehouse);
+                                        setSpinnerValue(SpinMesinM, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunM, noBongkarSusun);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoMoulding: " + noMoulding,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
 
     // Interface untuk callback
     interface HasBeenPrintedCallback {
@@ -702,93 +984,6 @@ public class Moulding extends AppCompatActivity {
         }).start();
     }
 
-    //class untuk fungsi pencarian database sesuai dengan nomor moulding nya
-    private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
-        private String noMoulding;
-
-        public SearchAllDataTask(String noMoulding) {
-            this.noMoulding = noMoulding;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoMoulding: " + noMoulding);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.Moulding_h AS h " +
-                            "INNER JOIN dbo.Moulding_d AS d ON h.NoMoulding = d.NoMoulding " +
-                            "WHERE h.NoMoulding = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noMoulding);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoMoulding.setText(noMoulding);
-                                DateM.setText(dateCreate != null ? dateCreate : "");
-                                TimeM.setText(jam != null ? jam : "");
-                                CBAfkirM.setChecked(isReject);
-                                CBLemburM.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoMoulding: " + noMoulding);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
-    }
 
     //Fungsi untuk add Data Detail
 
@@ -991,7 +1186,7 @@ public class Moulding extends AppCompatActivity {
     }
 
     private void clearData() {
-        NoMoulding.setText("");
+        NoMoulding.setQuery("", false);
         M3M.setText("");
         JumlahPcsM.setText("");
         CBAfkirM.setChecked(false);
@@ -1008,39 +1203,6 @@ public class Moulding extends AppCompatActivity {
         radioGroupM.clearCheck();
     }
 
-    //fungsi untuk mereset spinner kembali di tampilan awal
-    private void resetSpinners() {
-        if (SpinKayuM.getAdapter() != null) {
-            SpinKayuM.setSelection(0);
-        }
-        if (SpinMesinM.getAdapter() != null) {
-            SpinMesinM.setSelection(0);
-        }
-        if (SpinSusunM.getAdapter() != null) {
-            SpinSusunM.setSelection(0);
-        }
-        if (SpinTellyM.getAdapter() != null) {
-            SpinTellyM.setSelection(0);
-        }
-        if (SpinGradeM.getAdapter() != null) {
-            SpinGradeM.setSelection(0);
-        }
-        if (SpinProfileM.getAdapter() != null) {
-            SpinProfileM.setSelection(0);
-        }
-        if (SpinFisikM.getAdapter() != null) {
-            SpinFisikM.setSelection(0);
-        }
-        if (SpinSPKM.getAdapter() != null) {
-            SpinSPKM.setSelection(0);
-        }
-        if (SpinSPKAsalM.getAdapter() != null) {
-            SpinSPKAsalM.setSelection(0);
-        }
-
-        BtnDataBaruM.setEnabled(true);
-        isDataBaruClickedM = true;
-    }
 
     // fungsi menghitung dan menampilkan jumlah M3
     private void m3() {
@@ -1728,7 +1890,7 @@ public class Moulding extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoMoulding) {
             if (newNoMoulding != null) {
-                NoMoulding.setText(newNoMoulding);
+                NoMoulding.setQuery(newNoMoulding, true);
                 Toast.makeText(Moulding.this, "NoMoulding berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoMoulding.");

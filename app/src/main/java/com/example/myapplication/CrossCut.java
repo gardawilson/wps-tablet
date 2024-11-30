@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -105,6 +118,10 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -122,7 +139,7 @@ import java.math.RoundingMode;
 
 public class CrossCut extends AppCompatActivity {
 
-    private EditText NoCC;
+    private SearchView NoCC;
     private EditText DateCC;
     private EditText TimeCC;
     private EditText NoLaminatingAsal;
@@ -159,6 +176,7 @@ public class CrossCut extends AppCompatActivity {
     private Spinner SpinProfileCC;
     private int rowCount = 0;
     private TableLayout Tabel;
+    private boolean isCreateMode = false;
 
 
     @Override
@@ -197,10 +215,37 @@ public class CrossCut extends AppCompatActivity {
         BtnPrintCC = findViewById(R.id.BtnPrintCC);
         M3CC = findViewById(R.id.M3CC);
         JumlahPcsCC = findViewById(R.id.JumlahPcsCC);
-        BtnSearchCC = findViewById(R.id.BtnSearchCC);
         SpinProfileCC = findViewById(R.id.SpinProfileCC);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupCC = findViewById(R.id.RadioGroupCC);
+
+
+        NoCC.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
+
+
 
          radioButtonMesinCC.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -225,8 +270,8 @@ public class CrossCut extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruCC.setOnClickListener(v -> {
-            if (!isDataBaruClickedCC) {
-                resetSpinners();
+            setCreateMode(true);
+            new SetAndSaveNoCCTask().execute();
                 new LoadJenisKayuTask().execute();
                 new LoadTellyTask().execute();
                 new LoadSPKTask().execute();
@@ -237,13 +282,9 @@ public class CrossCut extends AppCompatActivity {
                 new LoadMesinTask().execute();
                 new LoadSusunTask().execute();
 
-                isDataBaruClickedCC = true;
                 setCurrentDateTime();
-            } else {
-                Toast.makeText(CrossCut.this, "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            }
             BtnSimpanCC.setEnabled(true);
-            new SetAndSaveNoCCTask().execute();
+
             BtnBatalCC.setEnabled(true);
             radioButtonMesinCC.setEnabled(true);
             radioButtonBSusunCC.setEnabled(true);
@@ -253,7 +294,7 @@ public class CrossCut extends AppCompatActivity {
 
 
         BtnSimpanCC.setOnClickListener(v -> {
-            String noCC = NoCC.getText().toString();
+            String noCC = NoCC.getQuery().toString();
             String dateCreate = DateCC.getText().toString();
             String time = TimeCC.getText().toString();
 
@@ -354,60 +395,26 @@ public class CrossCut extends AppCompatActivity {
         BtnBatalCC.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setCreateMode(false);
                 setCurrentDateTime();
                 resetDetailData();
-                clearData();
                 BtnDataBaruCC.setEnabled(true);
 
             }
         });
 
-        BtnSearchCC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noCC = NoCC.getText().toString();
-
-
-                DetailLebarCC.setText("");
-                DetailPanjangCC.setText("");
-                DetailTebalCC.setText("");
-                DetailPcsCC.setText("");
-                NoCC.setText("");
-
-                if (!noCC.isEmpty()) {
-                    new LoadMesinTask2(noCC).execute();
-                    new LoadSusunTask2(noCC).execute();
-                    new LoadFisikTask2(noCC).execute();
-                    new LoadGradeTask2(noCC).execute();
-                    new LoadJenisKayuTask2(noCC).execute();
-                    new LoadTellyTask2(noCC).execute();
-                    new LoadSPKTask2(noCC).execute();
-                    new LoadProfileTask2(noCC).execute();
-                    new SearchAllDataTask(noCC).execute();
-
-                    radioButtonMesinCC.setEnabled(true);
-                    SpinSPKCC.setEnabled(true);
-                    radioButtonBSusunCC.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "NoCC is empty");
-                    radioButtonMesinCC.setEnabled(false);
-                    radioButtonBSusunCC.setEnabled(false);
-                }
-
-                BtnSimpanCC.setEnabled(false);
-                BtnBatalCC.setEnabled(false);
-                BtnPrintCC.setEnabled(true);
-            }
-        });
 
         SpinKayuCC.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-                String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
-                new LoadGradeTask().execute(idJenisKayu);
-            }
+                // Hanya jalankan jika dalam mode create
+                if (isCreateMode) {
+                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
+                    new LoadGradeTask().execute(idJenisKayu);
 
+                }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
@@ -419,7 +426,7 @@ public class CrossCut extends AppCompatActivity {
         TimeCC.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailCC.setOnClickListener(v -> {
-            String noCC = NoCC.getText().toString();
+            String noCC = NoCC.getQuery().toString();
 
             if (!noCC.isEmpty()) {
                 addDataDetail(noCC);
@@ -434,7 +441,7 @@ public class CrossCut extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoCC.getText() == null || NoCC.getText().toString().trim().isEmpty()) {
+                if (NoCC.getQuery() == null || NoCC.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(CrossCut.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -446,7 +453,7 @@ public class CrossCut extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noCC = NoCC.getText().toString().trim();
+                String noCC = NoCC.getQuery().toString().trim();
                 checkHasBeenPrinted(noCC, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -597,6 +604,305 @@ public class CrossCut extends AppCompatActivity {
         return con;
     }
 
+
+    //METHOD CROSSCUT
+
+    private void disableForm(){
+        DetailTebalCC.setEnabled(false);
+        DetailLebarCC.setEnabled(false);
+        DetailPanjangCC.setEnabled(false);
+        DetailPcsCC.setEnabled(false);
+        BtnHapusDetailCC.setEnabled(false);
+        BtnInputDetailCC.setEnabled(false);
+        DateCC.setEnabled(false);
+        TimeCC.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateCC.setText("");
+        TimeCC.setText("");
+        NoCC.setQuery("",false);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        SpinKayuCC.setAdapter(adapter);
+        SpinTellyCC.setAdapter(adapter);
+        SpinSPKCC.setAdapter(adapter);
+        SpinSPKAsalCC.setAdapter(adapter);
+        SpinGradeCC.setAdapter(adapter);
+        SpinProfileCC.setAdapter(adapter);
+        SpinFisikCC.setAdapter(adapter);
+        SpinMesinCC.setAdapter(adapter);
+        SpinSusunCC.setAdapter(adapter);
+
+        SpinKayuCC.setSelection(0);
+        SpinTellyCC.setSelection(0);
+        SpinSPKCC.setSelection(0);
+        SpinSPKAsalCC.setSelection(0);
+        SpinGradeCC.setSelection(0);
+        SpinProfileCC.setSelection(0);
+        SpinFisikCC.setSelection(0);
+        SpinMesinCC.setSelection(0);
+        SpinSusunCC.setSelection(0);
+
+        radioButtonBSusunCC.setEnabled(false);
+        radioButtonMesinCC.setEnabled(false);
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalCC.setEnabled(true);
+        DetailLebarCC.setEnabled(true);
+        DetailPanjangCC.setEnabled(true);
+        DetailPcsCC.setEnabled(true);
+        BtnHapusDetailCC.setEnabled(true);
+        BtnInputDetailCC.setEnabled(true);
+        DateCC.setEnabled(true);
+        TimeCC.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoCC.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noCC) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader =  "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdGrade, " +
+                            "g.NamaGrade, " +
+                            "h.IdFJProfile, " +
+                            "h.IdFisik, " +
+                            "h.NoCCAkhir, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "w.NamaWarehouse, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis " +
+                            "FROM " +
+                            "CCAKhir_h h " +
+                            "LEFT JOIN " +
+                            "CCAKhirProduksiOutput o ON h.NoCCAkhir = o.NoCCAkhir " +
+                            "LEFT JOIN " +
+                            "MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN " +
+                            "CCAKhirProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN " +
+                            "BongkarSusunOutputCCAKhir s ON h.NoCCAkhir = s.NoCCAkhir " +
+                            "LEFT JOIN " +
+                            "MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN " +
+                            "MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN " +
+                            "MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN " +
+                            "MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN " +
+                            "MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE " +
+                            "h.NoCCAKhir = ?";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM CCAkhir_d " +
+                            "WHERE NoCCAkhir = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noCC);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaGrade = rs.getString("NamaGrade") != null ? rs.getString("NamaGrade") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noCC);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinCC.setChecked(true);
+                                            radioButtonBSusunCC.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunCC.setChecked(true);
+                                            radioButtonMesinCC.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateCC.setText(dateCreate);
+                                        TimeCC.setText(jam);
+                                        setSpinnerValue(SpinTellyCC, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKCC, noSPK);
+                                        setSpinnerValue(SpinSPKAsalCC, noSPKAsal);
+                                        setSpinnerValue(SpinKayuCC, namaKayu);
+                                        setSpinnerValue(SpinGradeCC, namaGrade);
+                                        setSpinnerValue(SpinProfileCC, namaProfile);
+                                        setSpinnerValue(SpinFisikCC, namaWarehouse);
+                                        setSpinnerValue(SpinMesinCC, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunCC, noBongkarSusun);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoCC: " + noCC,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
+
     // Interface untuk callback
     interface HasBeenPrintedCallback {
         void onResult(boolean hasBeenPrinted);
@@ -687,94 +993,6 @@ public class CrossCut extends AppCompatActivity {
             }
         }).start();
     }
-
-    private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
-        private String noCC;
-
-        public SearchAllDataTask(String noCC) {
-            this.noCC = noCC;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoCCAkhir: " + noCC);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.CCAkhir_h AS h " +
-                            "INNER JOIN dbo.CCAkhir_d AS d ON h.NoCCAkhir = d.NoCCAkhir " +
-                            "WHERE h.NoCCAkhir = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noCC);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoCC.setText(noCC);
-                                DateCC.setText(dateCreate != null ? dateCreate : "");
-                                TimeCC.setText(jam != null ? jam : "");
-                                CBAfkirCC.setChecked(isReject);
-                                CBLemburCC.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoCCAkhir: " + noCC);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
-    }
-
 
     //Fungsi untuk add Data Detail
 
@@ -978,7 +1196,7 @@ public class CrossCut extends AppCompatActivity {
 
 
     private void clearData() {
-        NoCC.setText("");
+        NoCC.setQuery("", false);
         M3CC.setText("");
         JumlahPcsCC.setText("");
         CBAfkirCC.setChecked(false);
@@ -994,36 +1212,6 @@ public class CrossCut extends AppCompatActivity {
         RadioGroupCC.clearCheck();
     }
 
-
-    private void resetSpinners() {
-        if (SpinKayuCC.getAdapter() != null) {
-            SpinKayuCC.setSelection(0);
-        }
-        if (SpinMesinCC.getAdapter() != null) {
-            SpinMesinCC.setSelection(0);
-        }
-        if (SpinSusunCC.getAdapter() != null) {
-            SpinSusunCC.setSelection(0);
-        }
-        if (SpinTellyCC.getAdapter() != null) {
-            SpinTellyCC.setSelection(0);
-        }
-        if (SpinGradeCC.getAdapter() != null) {
-            SpinGradeCC.setSelection(0);
-        }
-        if (SpinProfileCC.getAdapter() != null) {
-            SpinProfileCC.setSelection(0);
-        }
-        if (SpinFisikCC.getAdapter() != null) {
-            SpinFisikCC.setSelection(0);
-        }
-        if (SpinSPKCC.getAdapter() != null) {
-            SpinSPKCC.setSelection(0);
-        }
-
-        BtnDataBaruCC.setEnabled(true);
-        isDataBaruClickedCC = true;
-    }
 
 
     private void m3() {
@@ -1279,7 +1467,7 @@ public class CrossCut extends AppCompatActivity {
 
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
-        String fileName = "S4S_" + noCC + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        String fileName = "CC_" + noCC + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         String relativePath = Environment.DIRECTORY_DOWNLOADS;
 
         try {
@@ -1706,7 +1894,7 @@ public class CrossCut extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoCC) {
             if (newNoCC != null) {
-                NoCC.setText(newNoCC);
+                NoCC.setQuery(newNoCC, false);
                 Toast.makeText(CrossCut.this, "NoCCAkhir berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoCCAkhir.");

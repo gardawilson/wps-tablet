@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -125,7 +138,7 @@ import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
 
 public class FingerJoint extends AppCompatActivity {
-    private EditText NoFJ;
+    private SearchView NoFJ;
     private EditText DateFJ;
     private EditText TimeFJ;
     private EditText NoSTAFJ;
@@ -159,9 +172,9 @@ public class FingerJoint extends AppCompatActivity {
     private TextView M3FJ;
     private TextView JumlahPcsFJ;
     private boolean isCBAfkirFJ, isCBLemburFJ;
-    private Button BtnSearchFJ;
     private int rowCount = 0;
     private TableLayout Tabel;
+    private boolean isCreateMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -199,9 +212,34 @@ public class FingerJoint extends AppCompatActivity {
         BtnPrintFJ = findViewById(R.id.BtnPrintFJ);
         M3FJ = findViewById(R.id.M3FJ);
         JumlahPcsFJ = findViewById(R.id.JumlahPcsFJ);
-        BtnSearchFJ = findViewById(R.id.BtnSearchFJ);
         Tabel = findViewById(R.id.Tabel);
         radioGroupFJ = findViewById(R.id.radioGroupFJ);
+
+
+        NoFJ.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
 
 
         radioButtonMesinFJ.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -227,6 +265,7 @@ public class FingerJoint extends AppCompatActivity {
         setCurrentDateTimeFJ();
 
         BtnDataBaruFJ.setOnClickListener(v -> {
+            isCreateMode = true;
             if (!isDataBaruFJClicked) {
                 resetSpinnersFJ();
                 new LoadJenisKayuTaskFJ().execute();
@@ -257,7 +296,7 @@ public class FingerJoint extends AppCompatActivity {
         });
 
         BtnSimpanFJ.setOnClickListener(v -> {
-            String noFJ = NoFJ.getText().toString();
+            String noFJ = NoFJ.getQuery().toString();
             String dateCreate = DateFJ.getText().toString();
             String time = TimeFJ.getText().toString();
 
@@ -374,59 +413,9 @@ public class FingerJoint extends AppCompatActivity {
         BtnBatalFJ.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                clearData();
+                resetAllForm();
                 resetDetailData();
                 Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        BtnSearchFJ.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noFJ = NoFJ.getText().toString();
-
-                if (SpinFisikFJ.getAdapter() != null) {
-                    SpinFisikFJ.setSelection(0);
-                }
-                if (SpinKayuFJ.getAdapter() != null) {
-                    SpinKayuFJ.setSelection(0);
-                }
-                if (SpinSPKFJ.getAdapter() != null) {
-                    SpinSPKFJ.setSelection(0);
-                }
-                if (SpinSPKAsalFJ.getAdapter() != null) {
-                    SpinSPKAsalFJ.setSelection(0);
-                }
-                if (SpinTellyFJ.getAdapter() != null) {
-                    SpinTellyFJ.setSelection(0);
-                }
-                if (SpinProfileFJ.getAdapter() != null) {
-                    SpinProfileFJ.setSelection(0);
-                }
-
-                if (!noFJ.isEmpty()) {
-                    new LoadJenisKayuTask2FJ(noFJ).execute();
-                    new LoadTellyTask2FJ(noFJ).execute();
-                    new LoadSPKTask2FJ(noFJ).execute();
-                    new LoadProfileTask2FJ(noFJ).execute();
-                    new SearchAllDataTaskFJ(noFJ).execute();
-                    new LoadGradeTask2FJ(noFJ).execute();
-                    new LoadMesinTask2FJ(noFJ).execute();
-                    new LoadSusunTask2FJ(noFJ).execute();
-                    new LoadFisikTask2FJ(noFJ).execute();
-
-                    radioButtonMesinFJ.setEnabled(true);
-                    SpinSPKFJ.setEnabled(true);
-                    SpinSPKAsalFJ.setEnabled(true);
-                    radioButtonBSusunFJ.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "No Finger Join is empty");
-                    radioButtonMesinFJ.setEnabled(false);
-                    radioButtonBSusunFJ.setEnabled(false);
-                }
-                BtnSimpanFJ.setEnabled(false);
-                BtnBatalFJ.setEnabled(false);
-                BtnPrintFJ.setEnabled(true);
             }
         });
 
@@ -434,11 +423,14 @@ public class FingerJoint extends AppCompatActivity {
         SpinKayuFJ.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                JenisKayuFJ selectedJenisKayu = (JenisKayuFJ) parent.getItemAtPosition(position);
-                String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
-                new LoadGradeTaskFJ().execute(idJenisKayu);
-            }
+                // Hanya jalankan jika dalam mode create
+                if (isCreateMode) {
+                    JenisKayuFJ selectedJenisKayu = (JenisKayuFJ) parent.getItemAtPosition(position);
+                    String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
+                    new LoadGradeTaskFJ().execute(idJenisKayu);
 
+                }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
@@ -449,7 +441,7 @@ public class FingerJoint extends AppCompatActivity {
         TimeFJ.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailFJ.setOnClickListener(v -> {
-            String noFJ = NoFJ.getText().toString();
+            String noFJ = NoFJ.getQuery().toString();
 
             if (!noFJ.isEmpty()) {
                 addDataDetail(noFJ);
@@ -469,7 +461,7 @@ public class FingerJoint extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoFJ.getText() == null || NoFJ.getText().toString().trim().isEmpty()) {
+                if (NoFJ.getQuery() == null || NoFJ.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(FingerJoint.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -481,7 +473,7 @@ public class FingerJoint extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noFJ = NoFJ.getText().toString().trim();
+                String noFJ = NoFJ.getQuery().toString().trim();
                 checkHasBeenPrinted(noFJ, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -630,6 +622,297 @@ public class FingerJoint extends AppCompatActivity {
 
         return con;
     }
+
+    //Method FingerJoint
+
+    private void disableForm(){
+        DetailTebalFJ.setEnabled(false);
+        DetailLebarFJ.setEnabled(false);
+        DetailPanjangFJ.setEnabled(false);
+        DetailPcsFJ.setEnabled(false);
+        BtnHapusDetailFJ.setEnabled(false);
+        BtnInputDetailFJ.setEnabled(false);
+        DateFJ.setEnabled(false);
+        TimeFJ.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateFJ.setText("");
+        TimeFJ.setText("");
+        NoFJ.setQuery("",false);
+        NoSTAFJ.setText("");
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        SpinKayuFJ.setAdapter(adapter);
+        SpinTellyFJ.setAdapter(adapter);
+        SpinSPKFJ.setAdapter(adapter);
+        SpinSPKAsalFJ.setAdapter(adapter);
+        SpinGradeFJ.setAdapter(adapter);
+        SpinGradeFJ.setAdapter(adapter);
+        SpinProfileFJ.setAdapter(adapter);
+        SpinFisikFJ.setAdapter(adapter);
+        SpinMesinFJ.setAdapter(adapter);
+        SpinSusunFJ.setAdapter(adapter);
+
+        SpinKayuFJ.setSelection(0);
+        SpinTellyFJ.setSelection(0);
+        SpinSPKFJ.setSelection(0);
+        SpinSPKAsalFJ.setSelection(0);
+        SpinGradeFJ.setSelection(0);
+        SpinProfileFJ.setSelection(0);
+        SpinFisikFJ.setSelection(0);
+        SpinMesinFJ.setSelection(0);
+        SpinSusunFJ.setSelection(0);
+
+        radioButtonBSusunFJ.setEnabled(false);
+        radioButtonMesinFJ.setEnabled(false);
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalFJ.setEnabled(true);
+        DetailTebalFJ.setEnabled(true);
+        DetailPanjangFJ.setEnabled(true);
+        DetailPcsFJ.setEnabled(true);
+        BtnHapusDetailFJ.setEnabled(true);
+        BtnInputDetailFJ.setEnabled(true);
+        DateFJ.setEnabled(true);
+        TimeFJ.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoFJ.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noFJ) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader = "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdGrade, " +
+                            "g.NamaGrade, " +
+                            "h.IdFJProfile, " +
+                            "h.IdFisik, " +
+                            "o.NoFJ, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "w.NamaWarehouse, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis " +
+                            "FROM FJ_H h " +
+                            "LEFT JOIN FJProduksiOutput o ON h.NoFJ = o.NoFJ " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN FJProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN BongkarSusunOutputFJ s ON h.NoFJ = s.NoFJ " +
+                            "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE h.NoFJ = ? ";
+
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM FJ_d " +
+                            "WHERE NoFJ = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noFJ);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaGrade = rs.getString("NamaGrade") != null ? rs.getString("NamaGrade") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noFJ);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinFJ.setChecked(true);
+                                            radioButtonBSusunFJ.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunFJ.setChecked(true);
+                                            radioButtonMesinFJ.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateFJ.setText(dateCreate);
+                                        TimeFJ.setText(jam);
+                                        setSpinnerValue(SpinTellyFJ, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKFJ, noSPK);
+                                        setSpinnerValue(SpinSPKAsalFJ, noSPKAsal);
+                                        setSpinnerValue(SpinKayuFJ, namaKayu);
+                                        setSpinnerValue(SpinGradeFJ, namaGrade);
+                                        setSpinnerValue(SpinProfileFJ, namaProfile);
+                                        setSpinnerValue(SpinFisikFJ, namaWarehouse);
+                                        setSpinnerValue(SpinMesinFJ, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunFJ, noBongkarSusun);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoS4S: " + noFJ,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
+
 
     // Interface untuk callback
     interface HasBeenPrintedCallback {
@@ -858,93 +1141,7 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-
-    private class SearchAllDataTaskFJ extends AsyncTask<String, Void, Boolean> {
-        private String noFJ;
-
-        public SearchAllDataTaskFJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoFJ: " + noFJ);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.FJ_h AS h " +
-                            "INNER JOIN dbo.FJ_d AS d ON h.NoFJ = d.NoFJ " +
-                            "WHERE h.NoFJ = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoFJ.setText(noFJ);
-                                DateFJ.setText(dateCreate != null ? dateCreate : "");
-                                TimeFJ.setText(jam != null ? jam : "");
-                                CBAfkirFJ.setChecked(isReject);
-                                CBLemburFJ.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoFJ: " + noFJ);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
-    }
+    
 
     //Fungsi untuk add Data Detail
 
@@ -1146,7 +1343,7 @@ public class FingerJoint extends AppCompatActivity {
     }
 
     private void clearData() {
-        NoFJ.setText("");
+        NoFJ.setQuery("", false);
         M3FJ.setText("");
         JumlahPcsFJ.setText("");
         CBAfkirFJ.setChecked(false);
@@ -1912,7 +2109,7 @@ public class FingerJoint extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoJoin) {
             if (newNoJoin != null) {
-                NoFJ.setText(newNoJoin);
+                NoFJ.setQuery(newNoJoin, true);
                 Toast.makeText(FingerJoint.this, "NoFJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoFJ.");

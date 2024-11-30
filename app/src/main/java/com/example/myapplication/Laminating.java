@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -105,6 +118,10 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -119,10 +136,9 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
-
 public class Laminating extends AppCompatActivity {
 
-    private EditText NoLaminating;
+    private SearchView NoLaminating;
     private EditText DateL;
     private EditText TimeL;
     private EditText NoSTAL;
@@ -159,6 +175,7 @@ public class Laminating extends AppCompatActivity {
     private Button BtnSearchL;
     private int rowCount = 0;
     private TableLayout Tabel;
+    private boolean isCreateMode = false;
 
 
     @Override
@@ -198,9 +215,35 @@ public class Laminating extends AppCompatActivity {
         BtnPrintL = findViewById(R.id.BtnPrintL);
         M3L = findViewById(R.id.M3L);
         JumlahPcsL = findViewById(R.id.JumlahPcsL);
-        BtnSearchL = findViewById(R.id.BtnSearchL);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupL = findViewById(R.id.radioGroupL);
+
+
+        NoLaminating.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
+
 
 
         radioButtonMesinL.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -226,8 +269,8 @@ public class Laminating extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruL.setOnClickListener(v -> {
-            if (!isDataBaruClickedL) {
-                resetSpinners();
+            setCreateMode(true);
+            new SetAndSaveNoLaminatingTask().execute();
                 new LoadJenisKayuTask().execute();
                 new LoadTellyTask().execute();
                 new LoadSPKTask().execute();
@@ -238,22 +281,18 @@ public class Laminating extends AppCompatActivity {
                 new LoadMesinTask().execute();
                 new LoadSusunTask().execute();
 
-                isDataBaruClickedL = true;
                 setCurrentDateTime();
-            } else {
-                Toast.makeText(Laminating.this, "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            }
             BtnSimpanL.setEnabled(true);
-            new SetAndSaveNoLaminatingTask().execute();
+
             BtnBatalL.setEnabled(true);
             radioButtonMesinL.setEnabled(true);
             radioButtonBSusunL.setEnabled(true);
-            setCurrentDateTime();
             BtnDataBaruL.setEnabled(false);
         });
 
         BtnSimpanL.setOnClickListener(v -> {
-            String noLaminating = NoLaminating.getText().toString();
+
+            String noLaminating = NoLaminating.getQuery().toString();
             String dateCreate = DateL.getText().toString();
             String time = TimeL.getText().toString();
 
@@ -350,57 +389,27 @@ public class Laminating extends AppCompatActivity {
         BtnBatalL.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCurrentDateTime();
-                clearData();
                 resetDetailData();
+                disableForm();
+
+                isCreateMode = false;
                 BtnDataBaruL.setEnabled(true);
-            }
-        });
-        BtnSearchL.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noLaminating = NoLaminating.getText().toString();
-
-                DetailLebarL.setText("");
-                DetailPanjangL.setText("");
-                DetailTebalL.setText("");
-                DetailPcsL.setText("");
-                NoLaminating.setText("");
-
-                if (!noLaminating.isEmpty()) {
-                    new LoadMesinTask2(noLaminating).execute();
-                    new LoadSusunTask2(noLaminating).execute();
-                    new LoadFisikTask2(noLaminating).execute();
-                    new LoadGradeTask2(noLaminating).execute();
-                    new LoadJenisKayuTask2(noLaminating).execute();
-                    new LoadTellyTask2(noLaminating).execute();
-                    new LoadSPKTask2(noLaminating).execute();
-                    new LoadProfileTask2(noLaminating).execute();
-                    new SearchAllDataTask(noLaminating).execute();
-
-                    radioButtonMesinL.setEnabled(true);
-                    SpinSPKL.setEnabled(true);
-                    radioButtonBSusunL.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "NoLaminating is empty");
-                    radioButtonMesinL.setEnabled(false);
-                    radioButtonBSusunL.setEnabled(false);
-                }
-
                 BtnSimpanL.setEnabled(false);
-                BtnBatalL.setEnabled(false);
-                BtnPrintL.setEnabled(true);
+                Toast.makeText(Laminating.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
 
         SpinKayuL.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-                String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
-                new LoadGradeTask().execute(idJenisKayu);
-            }
+                // Hanya jalankan jika dalam mode create
+                if (isCreateMode) {
+                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
+                    new LoadGradeTask().execute(idJenisKayu);
 
+                }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
@@ -412,7 +421,7 @@ public class Laminating extends AppCompatActivity {
         TimeL.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailL.setOnClickListener(v -> {
-            String noLaminating = NoLaminating.getText().toString();
+            String noLaminating = NoLaminating.getQuery().toString();
 
             if (!noLaminating.isEmpty()) {
                 addDataDetail(noLaminating);
@@ -432,7 +441,7 @@ public class Laminating extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoLaminating.getText() == null || NoLaminating.getText().toString().trim().isEmpty()) {
+                if (NoLaminating.getQuery() == null || NoLaminating.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(Laminating.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -444,7 +453,7 @@ public class Laminating extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noLaminating = NoLaminating.getText().toString().trim();
+                String noLaminating = NoLaminating.getQuery().toString().trim();
                 checkHasBeenPrinted(noLaminating, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -597,6 +606,305 @@ public class Laminating extends AppCompatActivity {
         return con;
     }
 
+    //METHOD LAMINATING
+    private void disableForm(){
+        DetailTebalL.setEnabled(false);
+        DetailLebarL.setEnabled(false);
+        DetailPanjangL.setEnabled(false);
+        DetailPcsL.setEnabled(false);
+        BtnHapusDetailL.setEnabled(false);
+        BtnInputDetailL.setEnabled(false);
+        DateL.setEnabled(false);
+        TimeL.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateL.setText("");
+        TimeL.setText("");
+        NoLaminating.setQuery("",false);
+        NoSTAL.setText("");
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        SpinKayuL.setAdapter(adapter);
+        SpinTellyL.setAdapter(adapter);
+        SpinSPKL.setAdapter(adapter);
+        SpinSPKAsalL.setAdapter(adapter);
+        SpinGradeL.setAdapter(adapter);
+        SpinProfileL.setAdapter(adapter);
+        SpinFisikL.setAdapter(adapter);
+        SpinMesinL.setAdapter(adapter);
+        SpinSusunL.setAdapter(adapter);
+
+        SpinKayuL.setSelection(0);
+        SpinTellyL.setSelection(0);
+        SpinSPKL.setSelection(0);
+        SpinSPKAsalL.setSelection(0);
+        SpinGradeL.setSelection(0);
+        SpinProfileL.setSelection(0);
+        SpinFisikL.setSelection(0);
+        SpinMesinL.setSelection(0);
+        SpinSusunL.setSelection(0);
+
+        radioButtonBSusunL.setEnabled(false);
+        radioButtonMesinL.setEnabled(false);
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalL.setEnabled(true);
+        DetailLebarL.setEnabled(true);
+        DetailPanjangL.setEnabled(true);
+        DetailPcsL.setEnabled(true);
+        BtnHapusDetailL.setEnabled(true);
+        BtnInputDetailL.setEnabled(true);
+        DateL.setEnabled(true);
+        TimeL.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoLaminating.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noS4S) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader =  "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdGrade, " +
+                            "g.NamaGrade, " +
+                            "h.IdFJProfile, " +
+                            "h.IdFisik, " +
+                            "o.NoLaminating, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "w.NamaWarehouse, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis " +
+                            "FROM " +
+                            "Laminating_h h " +
+                            "LEFT JOIN " +
+                            "LaminatingProduksiOutput o ON h.NoLaminating = o.NoLaminating " +
+                            "LEFT JOIN " +
+                            "MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN " +
+                            "LaminatingProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN " +
+                            "BongkarSusunOutputLaminating s ON h.NoLaminating = s.NoLaminating " +
+                            "LEFT JOIN " +
+                            "MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN " +
+                            "MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN " +
+                            "MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN " +
+                            "MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN " +
+                            "MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE " +
+                            "h.NoLaminating = ?";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM Laminating_d " +
+                            "WHERE NoLaminating = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noS4S);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaGrade = rs.getString("NamaGrade") != null ? rs.getString("NamaGrade") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noS4S);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinL.setChecked(true);
+                                            radioButtonBSusunL.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunL.setChecked(true);
+                                            radioButtonMesinL.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateL.setText(dateCreate);
+                                        TimeL.setText(jam);
+                                        setSpinnerValue(SpinTellyL, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKL, noSPK);
+                                        setSpinnerValue(SpinSPKAsalL, noSPKAsal);
+                                        setSpinnerValue(SpinKayuL, namaKayu);
+                                        setSpinnerValue(SpinGradeL, namaGrade);
+                                        setSpinnerValue(SpinProfileL, namaProfile);
+                                        setSpinnerValue(SpinFisikL, namaWarehouse);
+                                        setSpinnerValue(SpinMesinL, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunL, noBongkarSusun);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoLaminating: " + noS4S,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
+
+
     // Interface untuk callback
     interface HasBeenPrintedCallback {
         void onResult(boolean hasBeenPrinted);
@@ -689,7 +997,7 @@ public class Laminating extends AppCompatActivity {
     }
 
     private void clearData() {
-        NoLaminating.setText("");
+        NoLaminating.setQuery("", false);
         M3L.setText("");
         JumlahPcsL.setText("");
         CBAfkirL.setChecked(false);
@@ -705,93 +1013,7 @@ public class Laminating extends AppCompatActivity {
         SpinSusunL.setEnabled(false);
         RadioGroupL.clearCheck();
     }
-
-    private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
-        private String noLaminating;
-
-        public SearchAllDataTask(String noLaminating) {
-            this.noLaminating = noLaminating;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoLaminating: " + noLaminating);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.Laminating_h AS h " +
-                            "INNER JOIN dbo.Laminating_d AS d ON h.NoLaminating = d.NoLaminating " +
-                            "WHERE h.NoLaminating = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noLaminating);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoLaminating.setText(noLaminating);
-                                DateL.setText(dateCreate != null ? dateCreate : "");
-                                TimeL.setText(jam != null ? jam : "");
-                                CBAfkirL.setChecked(isReject);
-                                CBLemburL.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoLaminating: " + noLaminating);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
-    }
+    
 
     //Fungsi untuk add Data Detail
 
@@ -1793,7 +2015,7 @@ public class Laminating extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoLaminating) {
             if (newNoLaminating!= null) {
-                NoLaminating.setText(newNoLaminating);
+                NoLaminating.setQuery(newNoLaminating, true);
                 Toast.makeText(Laminating.this, "NoLaminating berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoLaminating.");
@@ -1839,6 +2061,7 @@ public class Laminating extends AppCompatActivity {
             JenisKayu dummyKayu = new JenisKayu("", "PILIH");
             jenisKayuList.add(0, dummyKayu);
 
+
             ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Laminating.this, android.R.layout.simple_spinner_item, jenisKayuList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
@@ -1846,61 +2069,7 @@ public class Laminating extends AppCompatActivity {
             SpinKayuL.setSelection(0);
         }
     }
-    public class LoadJenisKayuTask2 extends AsyncTask<String, Void, List<JenisKayu>> {
-        private String noLaminating;
 
-        public LoadJenisKayuTask2(String noLaminating) {
-            this.noLaminating = noLaminating;
-        }
-
-        @Override
-        protected List<JenisKayu> doInBackground(String... params) {
-            List<JenisKayu> jenisKayuList = new ArrayList<>();
-            Connection con = ConnectionClass(); // Ensure this method establishes a database connection
-
-            if (con != null) {
-                try {
-
-                    String query = "SELECT j.IdJenisKayu, j.Jenis " +
-                            "FROM dbo.MstJenisKayu AS j " +
-                            "INNER JOIN dbo.Laminating_h AS h ON h.IdJenisKayu = j.IdJenisKayu " +
-                            "WHERE h.NoLaminating = ? AND j.enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noLaminating);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idJenisKayu = rs.getString("IdJenisKayu");
-                        String namaJenisKayu = rs.getString("Jenis");
-
-                        JenisKayu jenisKayu = new JenisKayu(idJenisKayu, namaJenisKayu);
-                        jenisKayuList.add(jenisKayu);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return jenisKayuList;
-        }
-
-        @Override
-        protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Laminating.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuL.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
-        }
-    }
 
     private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         @Override

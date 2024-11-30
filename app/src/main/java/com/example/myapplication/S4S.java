@@ -180,6 +180,7 @@ public class S4S extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_s4_s);
 
+
         NoSTAsal = findViewById(R.id.NoSTAsal);
         NoS4S = findViewById(R.id.NoS4S);
         Date = findViewById(R.id.Date);
@@ -652,7 +653,6 @@ public class S4S extends AppCompatActivity {
         SpinSPK.setAdapter(adapter);
         SpinSPKAsal.setAdapter(adapter);
         SpinGrade.setAdapter(adapter);
-        SpinGrade.setAdapter(adapter);
         SpinProfile.setAdapter(adapter);
         SpinFisik.setAdapter(adapter);
         SpinMesin.setAdapter(adapter);
@@ -676,7 +676,7 @@ public class S4S extends AppCompatActivity {
 
     private void enableForm(){
         DetailTebalS4S.setEnabled(true);
-        DetailTebalS4S.setEnabled(true);
+        DetailLebarS4S.setEnabled(true);
         DetailPanjangS4S.setEnabled(true);
         DetailPcsS4S.setEnabled(true);
         BtnHapusDetail.setEnabled(true);
@@ -1095,94 +1095,7 @@ public class S4S extends AppCompatActivity {
             }
         }
     }
-
-    private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
-        private String noS4S;
-
-        public SearchAllDataTask(String noS4S) {
-            this.noS4S = noS4S;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoS4S: " + noS4S);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.S4S_h AS h " +
-                            "INNER JOIN dbo.S4S_d AS d ON h.NoS4S = d.NoS4S " +
-                            "WHERE h.NoS4S = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noS4S);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoS4S.setQuery(noS4S, true);
-                                Date.setText(dateCreate != null ? dateCreate : "");
-                                Time.setText(jam != null ? jam : "");
-                                CBAfkir.setChecked(isReject);
-                                CBLembur.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoS4S: " + noS4S);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
-    }
-
+    
 
     //Fungsi untuk add Data Detail
 
