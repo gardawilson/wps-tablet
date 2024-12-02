@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -105,6 +118,10 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -122,7 +139,7 @@ import java.math.RoundingMode;
 
 
 public class Sanding extends AppCompatActivity {
-    private EditText NoSanding;
+    private SearchView NoSanding;
     private EditText DateS;
     private EditText TimeS;
     private EditText NoMouldingAsal;
@@ -159,6 +176,7 @@ public class Sanding extends AppCompatActivity {
     private Button BtnSearchS;
     private int rowCount = 0;
     private TableLayout Tabel;
+    boolean isCreateMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,9 +214,34 @@ public class Sanding extends AppCompatActivity {
         BtnPrintS = findViewById(R.id.BtnPrintS);
         M3S = findViewById(R.id.M3S);
         JumlahPcsS = findViewById(R.id.JumlahPcsS);
-        BtnSearchS = findViewById(R.id.BtnSearchS);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupS = findViewById(R.id.RadioGroupS);
+
+
+        NoSanding.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
 
         radioButtonMesinS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -223,33 +266,36 @@ public class Sanding extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruS.setOnClickListener(v -> {
-            if (!isDataBaruClickedS) {
-                new LoadJenisKayuTask().execute();
-                new LoadTellyTask().execute();
-                new LoadSPKTask().execute();
-                new LoadSPKAsalTask().execute();
-                new LoadProfileTask().execute();
-                new LoadFisikTask().execute();
-                new LoadGradeTask().execute();
-                new LoadMesinTask().execute();
-                new LoadSusunTask().execute();
 
-                isDataBaruClickedS = true;
-                setCurrentDateTime();
-            } else {
-                Toast.makeText(Sanding.this, "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            }
-            BtnSimpanS.setEnabled(true);
+            setCurrentDateTime();
+            setCreateMode(true);
+
             new SetAndSaveNoSandingTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadTellyTask().execute();
+            new LoadSPKTask().execute();
+            new LoadSPKAsalTask().execute();
+            new LoadProfileTask().execute();
+            new LoadFisikTask().execute();
+            new LoadGradeTask().execute();
+            new LoadMesinTask().execute();
+            new LoadSusunTask().execute();
+
+            BtnSimpanS.setEnabled(true);
             BtnBatalS.setEnabled(true);
             radioButtonMesinS.setEnabled(true);
             radioButtonBSusunS.setEnabled(true);
-            setCurrentDateTime();
             BtnDataBaruS.setEnabled(false);
+
+            clearData();
+            resetDetailData();
+            enableForm();
+
+
         });
 
         BtnSimpanS.setOnClickListener(v -> {
-            String noSanding = NoSanding.getText().toString();
+            String noSanding = NoSanding.getQuery().toString();
             String dateCreate = DateS.getText().toString();
             String time = TimeS.getText().toString();
 
@@ -346,59 +392,28 @@ public class Sanding extends AppCompatActivity {
         BtnBatalS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCurrentDateTime();
+                setCreateMode(false);
                 resetDetailData();
-                clearData();
+                resetAllForm();
+                disableForm();
+
                 BtnDataBaruS.setEnabled(true);
-            }
-        });
-
-        BtnSearchS.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noSanding = NoSanding.getText().toString();
-
-
-                DetailLebarS.setText("");
-                DetailPanjangS.setText("");
-                DetailTebalS.setText("");
-                DetailPcsS.setText("");
-                NoSanding.setText("");
-
-                if (!noSanding.isEmpty()) {
-                    new LoadMesinTask2(noSanding).execute();
-                    new LoadSusunTask2(noSanding).execute();
-                    new LoadFisikTask2(noSanding).execute();
-                    new LoadGradeTask2(noSanding).execute();
-                    new LoadJenisKayuTask2(noSanding).execute();
-                    new LoadTellyTask2(noSanding).execute();
-                    new LoadSPKTask2(noSanding).execute();
-                    new LoadProfileTask2(noSanding).execute();
-                    new SearchAllDataTask(noSanding).execute();
-
-                    radioButtonMesinS.setEnabled(true);
-                    SpinSPKS.setEnabled(true);
-                    radioButtonBSusunS.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "NoSanding is empty");
-                    radioButtonMesinS.setEnabled(false);
-                    radioButtonBSusunS.setEnabled(false);
-                }
-
                 BtnSimpanS.setEnabled(false);
-                BtnBatalS.setEnabled(false);
-                BtnPrintS.setEnabled(true);
+                Toast.makeText(Sanding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
 
         SpinKayuS.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-                String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
-                new LoadGradeTask().execute(idJenisKayu);
-            }
+                // Hanya jalankan jika dalam mode create
+                if (isCreateMode) {
+                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
+                    new LoadGradeTask().execute(idJenisKayu);
 
+                }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
@@ -410,7 +425,7 @@ public class Sanding extends AppCompatActivity {
         TimeS.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailS.setOnClickListener(v -> {
-            String noSanding = NoSanding.getText().toString();
+            String noSanding = NoSanding.getQuery().toString();
 
             if (!noSanding.isEmpty()) {
                 addDataDetail(noSanding);
@@ -429,7 +444,7 @@ public class Sanding extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoSanding.getText() == null || NoSanding.getText().toString().trim().isEmpty()) {
+                if (NoSanding.getQuery() == null || NoSanding.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(Sanding.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -441,7 +456,7 @@ public class Sanding extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noSanding = NoSanding.getText().toString().trim();
+                String noSanding = NoSanding.getQuery().toString().trim();
                 checkHasBeenPrinted(noSanding, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -592,6 +607,279 @@ public class Sanding extends AppCompatActivity {
         return con;
     }
 
+    //METHOD SANDING
+    private void disableForm(){
+        DetailTebalS.setEnabled(false);
+        DetailLebarS.setEnabled(false);
+        DetailPanjangS.setEnabled(false);
+        DetailPcsS.setEnabled(false);
+        BtnHapusDetailS.setEnabled(false);
+        BtnInputDetailS.setEnabled(false);
+        DateS.setEnabled(false);
+        TimeS.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateS.setText("");
+        TimeS.setText("");
+        NoSanding.setQuery("",false);
+        NoMouldingAsal.setText("");
+
+        setSpinnerValue(SpinKayuS, "-");
+        setSpinnerValue(SpinTellyS, "-");
+        setSpinnerValue(SpinSPKS, "-");
+        setSpinnerValue(SpinSPKAsalS, "-");
+        setSpinnerValue(SpinGradeS, "-");
+        setSpinnerValue(SpinProfileS, "-");
+        setSpinnerValue(SpinFisikS, "-");
+        setSpinnerValue(SpinMesinS, "-");
+        setSpinnerValue(SpinSusunS, "-");
+
+        radioButtonBSusunS.setEnabled(false);
+        radioButtonMesinS.setEnabled(false);
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalS.setEnabled(true);
+        DetailLebarS.setEnabled(true);
+        DetailPanjangS.setEnabled(true);
+        DetailPcsS.setEnabled(true);
+        BtnHapusDetailS.setEnabled(true);
+        BtnInputDetailS.setEnabled(true);
+        DateS.setEnabled(true);
+        TimeS.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoSanding.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noSanding) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader = "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdGrade, " +
+                            "g.NamaGrade, " +
+                            "h.IdFJProfile, " +
+                            "h.IdFisik, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "w.NamaWarehouse, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis " +
+                            "FROM Sanding_h h " +
+                            "LEFT JOIN SandingProduksiOutput o ON h.NoSanding = o.NoSanding " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN SandingProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN BongkarSusunOutputSanding s ON h.NoSanding = s.NoSanding " +
+                            "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE h.NoSanding = ?";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM Sanding_d " +
+                            "WHERE NoSanding = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noSanding);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaGrade = rs.getString("NamaGrade") != null ? rs.getString("NamaGrade") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noSanding);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinS.setChecked(true);
+                                            radioButtonBSusunS.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunS.setChecked(true);
+                                            radioButtonMesinS.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateS.setText(dateCreate);
+                                        TimeS.setText(jam);
+                                        setSpinnerValue(SpinTellyS, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKS, noSPK);
+                                        setSpinnerValue(SpinSPKAsalS, noSPKAsal);
+                                        setSpinnerValue(SpinKayuS, namaKayu);
+                                        setSpinnerValue(SpinGradeS, namaGrade);
+                                        setSpinnerValue(SpinProfileS, namaProfile);
+                                        setSpinnerValue(SpinFisikS, namaWarehouse);
+                                        setSpinnerValue(SpinMesinS, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunS, noBongkarSusun);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoSanding: " + noSanding,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
     // Interface untuk callback
     interface HasBeenPrintedCallback {
         void onResult(boolean hasBeenPrinted);
@@ -681,93 +969,6 @@ public class Sanding extends AppCompatActivity {
                 }
             }
         }).start();
-    }
-
-    private class SearchAllDataTask extends AsyncTask<String, Void, Boolean> {
-        private String noSanding;
-
-        public SearchAllDataTask(String noSanding) {
-            this.noSanding = noSanding;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d("SearchAllDataTask", "Searching for NoSanding: " + noSanding);
-            Connection con = ConnectionClass();
-            boolean isDataFound = false;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT h.DateCreate, h.Jam, " +
-                            "d.Lebar, d.Panjang, d.Tebal, d.JmlhBatang, d.NoUrut, " +
-                            "h.IsReject, h.IsLembur " +
-                            "FROM dbo.Sanding_h AS h " +
-                            "INNER JOIN dbo.Sanding_d AS d ON h.NoSanding = d.NoSanding " +
-                            "WHERE h.NoSanding = ?";
-
-                    Log.d("SearchAllDataTask", "Preparing statement: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noSanding);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        final String dateCreate = rs.getString("DateCreate");
-                        final int no = rs.getInt("NoUrut");
-                        final String jam = rs.getString("Jam");
-                        final int lebar = rs.getInt("Lebar");
-                        final int panjang = rs.getInt("Panjang");
-                        final int tebal = rs.getInt("Tebal");
-                        final int jmlhBatang = rs.getInt("JmlhBatang");
-                        final boolean isReject = rs.getInt("IsReject") == 1;
-                        final boolean isLembur = rs.getInt("IsLembur") == 1;
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                NoSanding.setText(noSanding);
-                                DateS.setText(dateCreate != null ? dateCreate : "");
-                                TimeS.setText(jam != null ? jam : "");
-                                CBAfkirS.setChecked(isReject);
-                                CBLemburS.setChecked(isLembur);
-
-                                m3();
-                                jumlahpcs();
-                            }
-                        });
-
-                        isDataFound = true;
-                    } else {
-                        Log.e("SearchAllDataTask", "No data found for NoSanding: " + noSanding);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Exception: " + e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e("General Error", e.getMessage());
-                    if (con != null) {
-                        try {
-                            con.close();
-                        } catch (SQLException e1) {
-                            Log.e("Connection Close Error", e1.getMessage());
-                        }
-                    }
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return isDataFound;
-        }
     }
 
     //Fungsi untuk add Data Detail
@@ -971,7 +1172,7 @@ public class Sanding extends AppCompatActivity {
     }
 
     private void clearData() {
-        NoSanding.setText("");
+        NoSanding.setQuery("", false);
         M3S.setText("");
         JumlahPcsS.setText("");
         NoMouldingAsal.setText("");
@@ -1752,7 +1953,7 @@ public class Sanding extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoSanding) {
             if (newNoSanding != null) {
-                NoSanding.setText(newNoSanding);
+                NoSanding.setQuery(newNoSanding, true);
                 Toast.makeText(Sanding.this, "NoSanding berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoSanding.");
@@ -2374,7 +2575,6 @@ public class Sanding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Grade> gradeList) {
-            if (!gradeList.isEmpty()) {
                 if (!gradeList.isEmpty()) {
                     Grade dummyGrade = new Grade("", "PILIH");
                     gradeList.add(0, dummyGrade);
@@ -2382,14 +2582,13 @@ public class Sanding extends AppCompatActivity {
                 } else {
                     Log.e("Error", "Tidak ada grade");
                     gradeList = new ArrayList<>();
-                    gradeList.add(new Grade(null, "GRADE TIDAK TERSEDIA"));
+                    gradeList.add(new Grade("", "GRADE TIDAK TERSEDIA"));
                 }
 
                 ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, gradeList);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinGradeS.setAdapter(adapter);
                 SpinGradeS.setSelection(0);
-            }
         }
     }
 
@@ -2515,6 +2714,7 @@ public class Sanding extends AppCompatActivity {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinMesinS.setAdapter(adapter);
             } else {
+                SpinMesinS.setAdapter(null);
                 Log.e("Error", "Failed to load mesin data.");
             }
         }
@@ -2626,6 +2826,7 @@ public class Sanding extends AppCompatActivity {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Sanding.this, android.R.layout.simple_spinner_item, susunList);
                 SpinSusunS.setAdapter(adapter);
             } else {
+                SpinSusunS.setAdapter(null);
                 Log.e("Error", "Failed to load susun data");
             }
         }

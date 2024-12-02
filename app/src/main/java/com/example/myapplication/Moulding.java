@@ -273,6 +273,7 @@ public class Moulding extends AppCompatActivity {
 
         //fungsi button DataBaru
         BtnDataBaruM.setOnClickListener(v -> {
+            setCurrentDateTime();
             setCreateMode(true);
 
             new SetAndSaveNoMouldingTask().execute();
@@ -286,7 +287,6 @@ public class Moulding extends AppCompatActivity {
             new LoadMesinTask().execute();
             new LoadSusunTask().execute();
 
-            setCurrentDateTime();
 
             BtnSimpanM.setEnabled(true);
             BtnBatalM.setEnabled(true);
@@ -295,6 +295,7 @@ public class Moulding extends AppCompatActivity {
 
             clearData();
             resetDetailData();
+            enableForm();
         });
 
         //fungsi button Simpan
@@ -635,15 +636,15 @@ public class Moulding extends AppCompatActivity {
         NoMoulding.setQuery("",false);
         NoSTAM.setText("");
 
-//        setSpinnerValue(SpinKayuM, "-");
+        setSpinnerValue(SpinKayuM, "-");
         setSpinnerValue(SpinTellyM, "-");
         setSpinnerValue(SpinSPKM, "-");
         setSpinnerValue(SpinSPKAsalM, "-");
         setSpinnerValue(SpinGradeM, "-");
-//        setSpinnerValue(SpinProfileM, "-");
+        setSpinnerValue(SpinProfileM, "-");
         setSpinnerValue(SpinFisikM, "-");
-//        setSpinnerValue(SpinMesinM, "-");
-//        setSpinnerValue(SpinSusunM, "-");
+        setSpinnerValue(SpinMesinM, "-");
+        setSpinnerValue(SpinSusunM, "-");
 
         radioButtonBSusunM.setEnabled(false);
         radioButtonMesinM.setEnabled(false);
@@ -655,7 +656,7 @@ public class Moulding extends AppCompatActivity {
 
     private void enableForm(){
         DetailTebalM.setEnabled(true);
-        DetailTebalM.setEnabled(true);
+        DetailLebarM.setEnabled(true);
         DetailPanjangM.setEnabled(true);
         DetailPcsM.setEnabled(true);
         BtnHapusDetailM.setEnabled(true);
@@ -2657,6 +2658,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
                 SpinMesinM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load mesin data.");
+                SpinMesinM.setAdapter(null);
             }
         }
     }
@@ -2769,6 +2771,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
                 SpinSusunM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load susun data");
+                SpinSusunM.setAdapter(null);
             }
         }
     }

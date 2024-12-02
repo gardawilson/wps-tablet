@@ -265,37 +265,34 @@ public class FingerJoint extends AppCompatActivity {
         setCurrentDateTimeFJ();
 
         BtnDataBaruFJ.setOnClickListener(v -> {
-            isCreateMode = true;
-            if (!isDataBaruFJClicked) {
-                resetSpinnersFJ();
-                new LoadJenisKayuTaskFJ().execute();
-                new LoadTellyTaskFJ().execute();
-                new LoadSPKTaskFJ().execute();
-                new LoadSPKAsalTaskFJ().execute();
-                new LoadProfileTaskFJ().execute();
-                new LoadFisikTaskFJ().execute();
-                new LoadGradeTaskFJ().execute();
-                new LoadMesinTaskFJ().execute();
-                new LoadSusunTaskFJ().execute();
+            setCurrentDateTime();
+            setCreateMode(true);
 
-                isDataBaruFJClicked = true;
-                setCurrentDateTimeFJ();
-            } else {
-                Toast.makeText(FingerJoint.this,
-                        "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.",
-                        Toast.LENGTH_SHORT).show();
-            }
+            new SetAndSaveNoFJoinTaskFJ().execute();
+            new LoadJenisKayuTaskFJ().execute();
+            new LoadTellyTaskFJ().execute();
+            new LoadSPKTaskFJ().execute();
+            new LoadSPKAsalTaskFJ().execute();
+            new LoadProfileTaskFJ().execute();
+            new LoadFisikTaskFJ().execute();
+            new LoadGradeTaskFJ().execute();
+            new LoadMesinTaskFJ().execute();
+            new LoadSusunTaskFJ().execute();
 
             BtnSimpanFJ.setEnabled(true);
-            new SetAndSaveNoFJoinTaskFJ().execute();
             BtnBatalFJ.setEnabled(true);
             radioButtonMesinFJ.setEnabled(true);
             radioButtonBSusunFJ.setEnabled(true);
-            setCurrentDateTimeFJ();
             BtnDataBaruFJ.setEnabled(false);
+
+            clearData();
+            resetDetailData();
+            enableForm();
+
         });
 
         BtnSimpanFJ.setOnClickListener(v -> {
+
             String noFJ = NoFJ.getQuery().toString();
             String dateCreate = DateFJ.getText().toString();
             String time = TimeFJ.getText().toString();
@@ -413,8 +410,13 @@ public class FingerJoint extends AppCompatActivity {
         BtnBatalFJ.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resetAllForm();
                 resetDetailData();
+                resetAllForm();
+                disableForm();
+
+                isCreateMode = false;
+                BtnDataBaruFJ.setEnabled(true);
+                BtnSimpanFJ.setEnabled(false);
                 Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -642,28 +644,15 @@ public class FingerJoint extends AppCompatActivity {
         NoFJ.setQuery("",false);
         NoSTAFJ.setText("");
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        SpinKayuFJ.setAdapter(adapter);
-        SpinTellyFJ.setAdapter(adapter);
-        SpinSPKFJ.setAdapter(adapter);
-        SpinSPKAsalFJ.setAdapter(adapter);
-        SpinGradeFJ.setAdapter(adapter);
-        SpinGradeFJ.setAdapter(adapter);
-        SpinProfileFJ.setAdapter(adapter);
-        SpinFisikFJ.setAdapter(adapter);
-        SpinMesinFJ.setAdapter(adapter);
-        SpinSusunFJ.setAdapter(adapter);
-
-        SpinKayuFJ.setSelection(0);
-        SpinTellyFJ.setSelection(0);
-        SpinSPKFJ.setSelection(0);
-        SpinSPKAsalFJ.setSelection(0);
-        SpinGradeFJ.setSelection(0);
-        SpinProfileFJ.setSelection(0);
-        SpinFisikFJ.setSelection(0);
-        SpinMesinFJ.setSelection(0);
-        SpinSusunFJ.setSelection(0);
+        setSpinnerValue(SpinKayuFJ, "-");
+        setSpinnerValue(SpinTellyFJ, "-");
+        setSpinnerValue(SpinSPKFJ, "-");
+        setSpinnerValue(SpinSPKAsalFJ, "-");
+        setSpinnerValue(SpinGradeFJ, "-");
+        setSpinnerValue(SpinProfileFJ, "-");
+        setSpinnerValue(SpinFisikFJ, "-");
+        setSpinnerValue(SpinMesinFJ, "-");
+        setSpinnerValue(SpinSusunFJ, "-");
 
         radioButtonBSusunFJ.setEnabled(false);
         radioButtonMesinFJ.setEnabled(false);
@@ -673,7 +662,7 @@ public class FingerJoint extends AppCompatActivity {
 
     private void enableForm(){
         DetailTebalFJ.setEnabled(true);
-        DetailTebalFJ.setEnabled(true);
+        DetailLebarFJ.setEnabled(true);
         DetailPanjangFJ.setEnabled(true);
         DetailPcsFJ.setEnabled(true);
         BtnHapusDetailFJ.setEnabled(true);
@@ -696,14 +685,19 @@ public class FingerJoint extends AppCompatActivity {
 
     // Method untuk set single value ke spinner
     private void setSpinnerValue(Spinner spinner, String value) {
-        if (spinner != null) {
-            String displayValue = value != null ? value : "-";
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                    android.R.layout.simple_spinner_item,
-                    Collections.singletonList(displayValue));
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinner.setAdapter(adapter);
-        }
+        if (spinner == null) return;
+        runOnUiThread(() -> {
+            try {
+                String displayValue = value != null ? value : "-";
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                        android.R.layout.simple_spinner_item,
+                        Collections.singletonList(displayValue));
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinner.setAdapter(adapter);
+            } catch (Exception e) {
+                Log.e("Spinner Error", "Error setting spinner value: " + e.getMessage());
+            }
+        });
     }
 
     private void loadSubmittedData(String noFJ) {
@@ -1360,38 +1354,6 @@ public class FingerJoint extends AppCompatActivity {
         radioGroupFJ.clearCheck();
     }
 
-    private void resetSpinnersFJ() {
-        if (SpinKayuFJ.getAdapter() != null) {
-            SpinKayuFJ.setSelection(0);
-        }
-        if (SpinMesinFJ.getAdapter() != null) {
-            SpinMesinFJ.setSelection(0);
-        }
-        if (SpinSusunFJ.getAdapter() != null) {
-            SpinSusunFJ.setSelection(0);
-        }
-        if (SpinTellyFJ.getAdapter() != null) {
-            SpinTellyFJ.setSelection(0);
-        }
-        if (SpinGradeFJ.getAdapter() != null) {
-            SpinGradeFJ.setSelection(0);
-        }
-        if (SpinProfileFJ.getAdapter() != null) {
-            SpinProfileFJ.setSelection(0);
-        }
-        if (SpinFisikFJ.getAdapter() != null) {
-            SpinFisikFJ.setSelection(0);
-        }
-        if (SpinSPKFJ.getAdapter() != null) {
-            SpinSPKFJ.setSelection(0);
-        }
-        if (SpinSPKAsalFJ.getAdapter() != null) {
-            SpinSPKAsalFJ.setSelection(0);
-        }
-
-        BtnDataBaruFJ.setEnabled(true);
-        isDataBaruFJClicked = true;
-    }
 
     private void m3() {
         try {
@@ -1645,7 +1607,7 @@ public class FingerJoint extends AppCompatActivity {
 
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
-        String fileName = "S4S_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        String fileName = "FJ_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         String relativePath = Environment.DIRECTORY_DOWNLOADS;
 
         try {
@@ -2812,12 +2774,9 @@ public class FingerJoint extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<MesinFJ> mesinList) {
             if (!mesinList.isEmpty()) {
-                ArrayAdapter<MesinFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, mesinList);
+                ArrayAdapter<MesinFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, mesinList);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinMesinFJ.setAdapter(adapter);
-
-                Log.d("LoadMesinTask", "Loaded " + mesinList.size() + " items");
             } else {
                 Log.d("LoadMesinTask", "No data found");
                 SpinMesinFJ.setAdapter(null);
@@ -2825,70 +2784,7 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private class LoadMesinTask2FJ extends AsyncTask<Void, Void, List<MesinFJ>> {
-        private String noFJ;
 
-        public LoadMesinTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<MesinFJ> doInBackground(Void... params) {
-            List<MesinFJ> mesinList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT b.NoProduksi, d.NamaMesin FROM FJ_h a " +
-                            "INNER JOIN FJProduksiOutput b ON b.NoFJ = a.NoFJ " +
-                            "INNER JOIN FJProduksi_h c ON c.NoProduksi = b.NoProduksi " +
-                            "INNER JOIN MstMesin d ON d.IdMesin = c.IdMesin " +
-                            "WHERE a.NoFJ = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorProduksi = rs.getString("NoProduksi");
-                        String namaMesin = rs.getString("NamaMesin");
-
-                        MesinFJ mesin = new MesinFJ(nomorProduksi, namaMesin);
-                        mesinList.add(mesin);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return mesinList;
-        }
-
-        @Override
-        protected void onPostExecute(List<MesinFJ> mesinList) {
-            if (!mesinList.isEmpty()) {
-                ArrayAdapter<MesinFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, mesinList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinMesinFJ.setAdapter(adapter);
-
-                radioButtonMesinFJ.setEnabled(true);
-                radioButtonBSusunFJ.setEnabled(false);
-            } else {
-                Log.e("Error", "Failed to load mesin data.");
-                radioButtonMesinFJ.setEnabled(false);
-                radioButtonBSusunFJ.setEnabled(false);
-
-                Toast.makeText(FingerJoint.this, "Tidak ada data mesin yang ditemukan.", Toast.LENGTH_SHORT).show();
-                SpinMesinFJ.setAdapter(null);
-            }
-        }
-    }
 
 
     private class LoadSusunTaskFJ extends AsyncTask<String, Void, List<SusunFJ>> {
@@ -2932,67 +2828,12 @@ public class FingerJoint extends AppCompatActivity {
                 SpinSusunFJ.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load susun data");
-            }
-        }
-    }
-
-    private class LoadSusunTask2FJ extends AsyncTask<Void, Void, List<SusunFJ>> {
-        private String noFJ;
-
-        public LoadSusunTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<SusunFJ> doInBackground(Void... params) {
-            List<SusunFJ> susunList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputFJ WHERE NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorBongkarSusun = rs.getString("NoBongkarSusun");
-
-                        SusunFJ susun = new SusunFJ(nomorBongkarSusun);
-                        susunList.add(susun);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return susunList;
-        }
-
-        @Override
-        protected void onPostExecute(List<SusunFJ> susunList) {
-            if (!susunList.isEmpty()) {
-                ArrayAdapter<SusunFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, susunList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSusunFJ.setAdapter(adapter);
-
-                radioButtonMesinFJ.setEnabled(false);
-                radioButtonBSusunFJ.setEnabled(true);
-            } else {
-                Log.e("Error", "Failed to load susun data.");
-                radioButtonMesinFJ.setEnabled(false);
-                radioButtonBSusunFJ.setEnabled(false);
-
-                Toast.makeText(FingerJoint.this, "Tidak ada data susun yang ditemukan.", Toast.LENGTH_SHORT).show();
                 SpinSusunFJ.setAdapter(null);
+
             }
         }
     }
+
 
     public class JenisKayuFJ {
         private String idJenisKayu;

@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -52,6 +53,14 @@ import android.print.PrintDocumentInfo;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
+import android.app.TimePickerDialog;
+import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
+
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -75,6 +84,13 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+
+
 
 
 
@@ -126,14 +142,13 @@ public class SawnTimber extends AppCompatActivity {
     private Button BtnSimpanST;
     private Button BtnBatalST;
     private Button BtnDataBaruST;
-    private Button BtnSearchST;
     private Button BtnHapusDetailST;
     private Button BtnPrintST;
     private Button BtnTambahStickST;
     private Button BtnHapusStickST;
     private Button BtnHapusSemuaStickST;
-    private EditText NoST;
-    private EditText NoKayuBulat;
+    private SearchView NoST;
+    private SearchView NoKayuBulat;
     private EditText Supplier;
     private EditText NoTruk;
     private EditText NoPlatTruk;
@@ -170,7 +185,7 @@ public class SawnTimber extends AppCompatActivity {
     private RadioGroup radioBagusKulit;
     private RadioButton radioBagus;
     private RadioButton radioKulit;
-
+    boolean isCreateMode = false;
 
 
     @Override
@@ -179,7 +194,6 @@ public class SawnTimber extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_sawn_timber);
 
-        BtnSearchST = findViewById(R.id.BtnSearchST);
         BtnBatalST = findViewById(R.id.BtnBatalST);
         BtnDataBaruST = findViewById(R.id.BtnDataBaruST);
         BtnPrintST = findViewById(R.id.BtnPrintST);
@@ -224,37 +238,77 @@ public class SawnTimber extends AppCompatActivity {
         Ton = findViewById(R.id.Ton);
 
 
-        BtnSearchST.setOnClickListener(v -> {
-            String noKayuBulat = NoKayuBulat.getText().toString();
+        NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadKayuBulat(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
 
-            if (noKayuBulat.isEmpty()) {
-                Toast.makeText(SawnTimber.this, "Masukkan NoKayuBulat terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            } else {
-                new SearchKayuBulatTask(noKayuBulat).execute();
-                new LoadSupplierTask(noKayuBulat).execute();
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadKayuBulat(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
             }
         });
 
-        BtnDataBaruST.setOnClickListener(v -> {
-            if (!isDataBaruClickedST) {
-                new LoadSPKTask().execute();
-                new LoadTellyTask().execute();
-                new LoadStickByTask().execute();
-                new LoadJenisKayuTask().execute();
-                new LoadGradeStickTask().execute();
-                new LoadLokasiTask().execute();
-                isDataBaruClickedST = true;
-                setCurrentDateTime();
+        NoST.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSawnTimber(query);
+                    closeKeyboard();
+                }
+                return true;
             }
-            new SetAndSaveNoSTTask().execute();
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSawnTimber(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
+
+
+
+
+        BtnDataBaruST.setOnClickListener(v -> {
+            setCreateMode(true);
             setCurrentDateTime();
+            new SetAndSaveNoSTTask().execute();
+            new LoadSPKTask().execute();
+            new LoadTellyTask().execute();
+            new LoadStickByTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadGradeStickTask().execute();
+            new LoadLokasiTask().execute();
+
             BtnBatalST.setEnabled(true);
             BtnSimpanST.setEnabled(true);
             clearTableData();
         });
 
         BtnInputDetailST.setOnClickListener(view -> {
-            String noST = NoST.getText().toString();
+            String noST = NoST.getQuery().toString();
 
             if (!noST.isEmpty()) {
                 addDataDetail(noST);
@@ -268,7 +322,7 @@ public class SawnTimber extends AppCompatActivity {
         });
 
         BtnTambahStickST.setOnClickListener(view -> {
-            String noST = NoST.getText().toString();
+            String noST = NoST.getQuery().toString();
             if (!noST.isEmpty()) {
                 addDataGrade(noST);
             } else {
@@ -304,11 +358,7 @@ public class SawnTimber extends AppCompatActivity {
         BtnBatalST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noST = NoST.getText().toString().trim();
-
-                if (!noST.isEmpty()) {
-                    new DeleteDataTask().execute(noST);
-                }
+                setCreateMode(false);
                 clearTableData();
                 resetGradeData();
                 resetDetailData();
@@ -319,8 +369,8 @@ public class SawnTimber extends AppCompatActivity {
         BtnSimpanST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noST = NoST.getText().toString().trim();
-                String noKayuBulat = NoKayuBulat.getText().toString().trim();
+                String noST = NoST.getQuery().toString().trim();
+                String noKayuBulat = NoKayuBulat.getQuery().toString().trim();
                 JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
                 String jenisKayu = selectedJenisKayu.getIdJenisKayu();
                 String noSPK = SpinSPK.getSelectedItem().toString();
@@ -378,8 +428,8 @@ public class SawnTimber extends AppCompatActivity {
         SpinKayu.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(isCreateMode){
                 JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-
                 if (selectedJenisKayu.getIsUpah() == 1) {
                     CBUpah.setChecked(true);
                 } else {
@@ -398,6 +448,7 @@ public class SawnTimber extends AppCompatActivity {
                     radioKulit.setChecked(false);
                 }
             }
+            }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
 
@@ -412,7 +463,7 @@ public class SawnTimber extends AppCompatActivity {
         BtnHapusStickST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noST = NoST.getText().toString().trim();
+                String noST = NoST.getQuery().toString().trim();
                 if(!noST.isEmpty()) {
                     resetGradeData(); // Tambahkan pemanggilan fungsi reset
                 } else {
@@ -423,7 +474,7 @@ public class SawnTimber extends AppCompatActivity {
         BtnHapusDetailST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noST = NoST.getText().toString().trim();
+                String noST = NoST.getQuery().toString().trim();
 
                 if (!noST.isEmpty()) {
                     resetDetailData();
@@ -438,7 +489,7 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoST.getText() == null || NoST.getText().toString().trim().isEmpty()) {
+                if (NoST.getQuery() == null || NoST.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(SawnTimber.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -450,7 +501,7 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noST = NoST.getText().toString().trim();
+                String noST = NoST.getQuery().toString().trim();
                 checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -462,7 +513,7 @@ public class SawnTimber extends AppCompatActivity {
                             String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
                             String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
                             String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
-                            String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
+                            String noKayuBulat = NoKayuBulat.getQuery() != null ? NoKayuBulat.getQuery().toString().trim() : "";
                             String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
                             String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
                             String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
@@ -594,6 +645,385 @@ public class SawnTimber extends AppCompatActivity {
         }
         return con;
     }
+
+
+    //METHOD SAWN TIMBER
+
+    private void disableForm(){
+        DetailTebalST.setEnabled(false);
+        DetailLebarST.setEnabled(false);
+        DetailPanjangST.setEnabled(false);
+        DetailPcsST.setEnabled(false);
+        BtnHapusDetailST.setEnabled(false);
+        BtnInputDetailST.setEnabled(false);
+        TglStickBundel.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        TglStickBundel.setText("");
+        NoKayuBulat.setQuery("",false);
+
+        setSpinnerValue(SpinKayu, "-");
+        setSpinnerValue(SpinTelly, "-");
+        setSpinnerValue(SpinSPK, "-");
+        setSpinnerValue(SpinGrade, "-");
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalST.setEnabled(true);
+        DetailLebarST.setEnabled(true);
+        DetailPanjangST.setEnabled(true);
+        DetailPcsST.setEnabled(true);
+        BtnHapusDetailST.setEnabled(true);
+        BtnInputDetailST.setEnabled(true);
+        TglStickBundel.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoKayuBulat.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+
+    private void loadKayuBulat(String noKayuBulat) {
+        // Tampilkan progress dialog
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk KayuBulat
+                    String queryKayuBulat = "SELECT " +
+                            "s.NmSupplier, " +
+                            "h.NoTruk, " +
+                            "h.NoPlat, " +
+                            "h.Suket, " +
+                            "k.Jenis " +
+                            "FROM KayuBulat_h h " +
+                            "LEFT JOIN MstSupplier s ON h.IdSupplier = s.IdSupplier " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE h.NoKayuBulat = ?";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryKayuBulat)) {
+                        stmt.setString(1, noKayuBulat);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data KayuBulat
+                                final String namaSupplier = rs.getString("NmSupplier") != null ? rs.getString("NmSupplier") : "-";
+                                final String noTruk = rs.getString("NoTruk") != null ? rs.getString("NoTruk") : "-";
+                                final String noPlat = rs.getString("NoPlat") != null ? rs.getString("NoPlat") : "-";
+                                final String noSuket = rs.getString("Suket") != null ? rs.getString("Suket") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        // Update  fields
+                                        Supplier.setText(namaSupplier);
+                                        NoTruk.setText(noTruk);
+                                        NoPlatTruk.setText(noPlat);
+                                        NoSuket.setText(noSuket);
+                                        JenisKayuKB.setText(namaKayu);
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoKayuBulat: " + noS4S,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void loadSawnTimber(String noST) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        resetGradeData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader = "SELECT " +
+                            "h.NoKayuBulat, " +
+                            "k.Jenis, " +
+                            "s.NamaStickBy, " +
+                            "h.NoSPK, " +
+                            "h.DateCreate, " +
+                            "t.NamaOrgTelly " +
+                            "FROM ST_h h " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "LEFT JOIN MstStickBy s ON h.IdStickBy = s.IdStickBy " +
+                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "WHERE h.NoST = ?";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM ST_d " +
+                            "WHERE NoST = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Query untuk detail
+                    String queryGrade = "SELECT " +
+                            "s.IdGradeStick, " +
+                            "s.JumlahStick, " +
+                            "m.NamaGradeStick " +
+                            "FROM STStick s " +
+                            "INNER JOIN MstGradeStick m ON m.IdGradeStick = s.IdGradeStick " +
+                            "WHERE NoST = ?" +
+                            "ORDER BY IdGradeStick";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noST);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noKayuBulat = rs.getString("NoKayuBulat") != null ? rs.getString("NoKayuBulat") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+                                final String namaStickBy = rs.getString("NamaStickBy") != null ? rs.getString("NamaStickBy") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String tglStickBundel = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noST);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                try (PreparedStatement stmtGrade = connection.prepareStatement(queryGrade)) {
+                                    stmtGrade.setString(1, noST);
+                                    try (ResultSet rsGrade = stmtGrade.executeQuery()) {
+                                        while (rsGrade.next()) {
+                                            int idGradeStick = rsGrade.getInt("IdGradeStick");
+                                            String namaGradeStick = rsGrade.getString("NamaGradeStick");
+                                            String jumlahGradeStick = rsGrade.getString("JumlahStick");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow2 newRow = new DataRow2(idGradeStick, namaGradeStick, jumlahGradeStick);
+                                            temporaryDataListGrade.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        // Update header fields
+                                        NoKayuBulat.setQuery(noKayuBulat, true);
+                                        setSpinnerValue(SpinKayu, namaKayu);
+                                        setSpinnerValue(SpinStickBy, namaStickBy);
+                                        setSpinnerValue(SpinSPK, noSPK);
+                                        setSpinnerValue(SpinTelly, namaOrgTelly);
+                                        TglStickBundel.setText(tglStickBundel);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryDataDetail();
+                                        updateTableFromTemporaryDataGrade();
+                                        m3();
+                                        ton();
+                                        jumlahPcsST();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+                                    Toast.makeText(getApplicationContext(),
+                                            "Data tidak ditemukan untuk NoS4S: " + noST,
+                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+//     Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryDataDetail() {
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
+    private void updateTableFromTemporaryDataGrade() {
+        // Perbarui rowCount
+        rowCount = 0;
+
+        for (DataRow2 data : temporaryDataListGrade) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(data.gradeId), 1f);
+            addTextViewToRowWithWeight(newRow, data.gradeName, 1f);
+            addTextViewToRowWithWeight(newRow, data.jumlah, 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel2.addView(newRow);
+        }
+    }
+
+
 
     // Interface untuk callback
     interface HasBeenPrintedCallback {
@@ -731,8 +1161,8 @@ public class SawnTimber extends AppCompatActivity {
     }
 
     private void clearTableData() {
-        NoST.setText("");
-        NoKayuBulat.setText("");
+        NoST.setQuery("", false);
+        NoKayuBulat.setQuery("", false);
         Supplier.setText("");
         NoTruk.setText("");
         NoPlatTruk.setText("");
@@ -1796,7 +2226,7 @@ public class SawnTimber extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoST) {
             if (newNoST != null) {
-                NoST.setText(newNoST);
+                NoST.setQuery(newNoST, true);
                 Toast.makeText(SawnTimber.this, "NoST berhasil dibuat: " + newNoST, Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(SawnTimber.this, "Gagal membuat NoST baru.", Toast.LENGTH_SHORT).show();
@@ -1844,86 +2274,6 @@ public class SawnTimber extends AppCompatActivity {
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             SpinKayu.setAdapter(adapter);
             SpinKayu.setSelection(0);
-        }
-    }
-    private class SearchKayuBulatTask extends AsyncTask<String, Void, KayuBulat> {
-        private String noKayuBulat;
-        private String errorMessage = null;
-        private String jenisKayu = null;
-
-        public SearchKayuBulatTask(String noKayuBulat) {
-            this.noKayuBulat = noKayuBulat;
-        }
-
-        @Override
-        protected KayuBulat doInBackground(String... params) {
-            Connection con = ConnectionClass();
-            KayuBulat kayuBulat = null;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT NoPlat, NoTruk, Suket, IdJenisKayu FROM dbo.KayuBulat_h WHERE NoKayuBulat = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noKayuBulat);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        String noPlat = rs.getString("NoPlat");
-                        String noTruk = rs.getString("NoTruk");
-                        String noSuket = rs.getString("Suket");
-                        int idJenisKayu = rs.getInt("IdJenisKayu");
-
-                        kayuBulat = new KayuBulat(noPlat, noTruk, noSuket);
-
-                        String queryJenisKayu = "SELECT Jenis FROM dbo.MstJenisKayu WHERE IdJenisKayu = ?";
-                        PreparedStatement psJenisKayu = con.prepareStatement(queryJenisKayu);
-                        psJenisKayu.setInt(1, idJenisKayu);
-                        ResultSet rsJenisKayu = psJenisKayu.executeQuery();
-
-                        if (rsJenisKayu.next()) {
-                            jenisKayu = rsJenisKayu.getString("Jenis");
-                        }
-
-                        rsJenisKayu.close();
-                        psJenisKayu.close();
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    errorMessage = "SQL Error: " + e.getMessage();
-                    Log.e("Database Error", errorMessage);
-                } catch (Exception e) {
-                    errorMessage = "General Error: " + e.getMessage();
-                    Log.e("Database Error", errorMessage);
-                }
-            } else {
-                errorMessage = "Failed to connect to the database.";
-                Log.e("Connection Error", errorMessage);
-            }
-
-            return kayuBulat;
-        }
-
-        @Override
-        protected void onPostExecute(KayuBulat kayuBulat) {
-            if (kayuBulat != null) {
-                NoPlatTruk.setText(kayuBulat.getNoPlat());
-                NoTruk.setText(kayuBulat.getNoTruk());
-                NoSuket.setText(kayuBulat.getNoSuket());
-
-                if (jenisKayu != null) {
-                    EditText jenisKayuTextView = findViewById(R.id.JenisKayuKB);
-                    jenisKayuTextView.setText(jenisKayu);
-                } else {
-                    Toast.makeText(SawnTimber.this, "Jenis kayu tidak ditemukan.", Toast.LENGTH_LONG).show();
-                }
-
-                Toast.makeText(SawnTimber.this, "Data ditemukan.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SawnTimber.this, "Data tidak ditemukan atau NoKayuBulat salah.", Toast.LENGTH_LONG).show();
-            }
         }
     }
 
@@ -2110,55 +2460,7 @@ public class SawnTimber extends AppCompatActivity {
         }
     }
 
-    private class LoadSupplierTask extends AsyncTask<String, Void, String> {
-        private String noKayuBulat;
 
-        public LoadSupplierTask(String noKayuBulat) {
-            this.noKayuBulat = noKayuBulat;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            Connection con = ConnectionClass();
-            String namaSupplier = null;
-
-            if (con != null) {
-                try {
-                    String query = "SELECT kb.IdSupplier, ms.NmSupplier " +
-                            "FROM dbo.KayuBulat_h kb " +
-                            "JOIN dbo.MstSupplier ms ON kb.IdSupplier = ms.IdSupplier " +
-                            "WHERE kb.NoKayuBulat = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noKayuBulat);
-                    ResultSet rs = ps.executeQuery();
-
-                    if (rs.next()) {
-                        namaSupplier = rs.getString("NmSupplier");
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return namaSupplier;
-        }
-
-        @Override
-        protected void onPostExecute(String namaSupplier) {
-            if (namaSupplier != null) {
-                Supplier.setText(namaSupplier);
-            } else {
-                Toast.makeText(SawnTimber.this, "Supplier tidak ditemukan untuk NoKayuBulat ini.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
     private class LoadStickByTask extends AsyncTask<Void, Void, List<StickBy>> {
         @Override
         protected List<StickBy> doInBackground(Void... voids) {

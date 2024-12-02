@@ -646,27 +646,15 @@ public class S4S extends AppCompatActivity {
         NoS4S.setQuery("",false);
         NoSTAsal.setText("");
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        SpinKayu.setAdapter(adapter);
-        SpinTelly.setAdapter(adapter);
-        SpinSPK.setAdapter(adapter);
-        SpinSPKAsal.setAdapter(adapter);
-        SpinGrade.setAdapter(adapter);
-        SpinProfile.setAdapter(adapter);
-        SpinFisik.setAdapter(adapter);
-        SpinMesin.setAdapter(adapter);
-        SpinSusun.setAdapter(adapter);
-
-        SpinKayu.setSelection(0);
-        SpinTelly.setSelection(0);
-        SpinSPK.setSelection(0);
-        SpinSPKAsal.setSelection(0);
-        SpinGrade.setSelection(0);
-        SpinProfile.setSelection(0);
-        SpinFisik.setSelection(0);
-        SpinMesin.setSelection(0);
-        SpinSusun.setSelection(0);
+        setSpinnerValue(SpinKayu, "-");
+        setSpinnerValue(SpinTelly, "-");
+        setSpinnerValue(SpinSPK, "-");
+        setSpinnerValue(SpinSPKAsal, "-");
+        setSpinnerValue(SpinGrade, "-");
+        setSpinnerValue(SpinProfile, "-");
+        setSpinnerValue(SpinFisik, "-");
+        setSpinnerValue(SpinMesin, "-");
+        setSpinnerValue(SpinSusun, "-");
 
         radioButtonBSusun.setEnabled(false);
         radioButtonMesin.setEnabled(false);

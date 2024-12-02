@@ -389,6 +389,7 @@ public class Laminating extends AppCompatActivity {
         BtnBatalL.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                resetAllForm();
                 resetDetailData();
                 disableForm();
 
@@ -624,27 +625,15 @@ public class Laminating extends AppCompatActivity {
         NoLaminating.setQuery("",false);
         NoSTAL.setText("");
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        SpinKayuL.setAdapter(adapter);
-        SpinTellyL.setAdapter(adapter);
-        SpinSPKL.setAdapter(adapter);
-        SpinSPKAsalL.setAdapter(adapter);
-        SpinGradeL.setAdapter(adapter);
-        SpinProfileL.setAdapter(adapter);
-        SpinFisikL.setAdapter(adapter);
-        SpinMesinL.setAdapter(adapter);
-        SpinSusunL.setAdapter(adapter);
-
-        SpinKayuL.setSelection(0);
-        SpinTellyL.setSelection(0);
-        SpinSPKL.setSelection(0);
-        SpinSPKAsalL.setSelection(0);
-        SpinGradeL.setSelection(0);
-        SpinProfileL.setSelection(0);
-        SpinFisikL.setSelection(0);
-        SpinMesinL.setSelection(0);
-        SpinSusunL.setSelection(0);
+        setSpinnerValue(SpinKayuL, "-");
+        setSpinnerValue(SpinTellyL, "-");
+        setSpinnerValue(SpinSPKL, "-");
+        setSpinnerValue(SpinSPKAsalL, "-");
+        setSpinnerValue(SpinGradeL, "-");
+        setSpinnerValue(SpinProfileL, "-");
+        setSpinnerValue(SpinFisikL, "-");
+        setSpinnerValue(SpinMesinL, "-");
+        setSpinnerValue(SpinSusunL, "-");
 
         radioButtonBSusunL.setEnabled(false);
         radioButtonMesinL.setEnabled(false);
@@ -2717,6 +2706,7 @@ public class Laminating extends AppCompatActivity {
                 SpinMesinL.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load mesin data.");
+                SpinMesinL.setAdapter(null);
             }
         }
     }
@@ -2827,6 +2817,7 @@ public class Laminating extends AppCompatActivity {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Laminating.this, android.R.layout.simple_spinner_item, susunList);
                 SpinSusunL.setAdapter(adapter);
             } else {
+                SpinSusunL.setAdapter(null);
                 Log.e("Error", "Failed to load susun data");
             }
         }

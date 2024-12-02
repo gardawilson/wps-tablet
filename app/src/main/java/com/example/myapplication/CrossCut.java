@@ -396,7 +396,7 @@ public class CrossCut extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 setCreateMode(false);
-                setCurrentDateTime();
+                resetAllForm();
                 resetDetailData();
                 BtnDataBaruCC.setEnabled(true);
 
@@ -623,27 +623,15 @@ public class CrossCut extends AppCompatActivity {
         TimeCC.setText("");
         NoCC.setQuery("",false);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"-"});
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        SpinKayuCC.setAdapter(adapter);
-        SpinTellyCC.setAdapter(adapter);
-        SpinSPKCC.setAdapter(adapter);
-        SpinSPKAsalCC.setAdapter(adapter);
-        SpinGradeCC.setAdapter(adapter);
-        SpinProfileCC.setAdapter(adapter);
-        SpinFisikCC.setAdapter(adapter);
-        SpinMesinCC.setAdapter(adapter);
-        SpinSusunCC.setAdapter(adapter);
-
-        SpinKayuCC.setSelection(0);
-        SpinTellyCC.setSelection(0);
-        SpinSPKCC.setSelection(0);
-        SpinSPKAsalCC.setSelection(0);
-        SpinGradeCC.setSelection(0);
-        SpinProfileCC.setSelection(0);
-        SpinFisikCC.setSelection(0);
-        SpinMesinCC.setSelection(0);
-        SpinSusunCC.setSelection(0);
+        setSpinnerValue(SpinKayuCC, "-");
+        setSpinnerValue(SpinTellyCC, "-");
+        setSpinnerValue(SpinSPKCC, "-");
+        setSpinnerValue(SpinSPKAsalCC, "-");
+        setSpinnerValue(SpinGradeCC, "-");
+        setSpinnerValue(SpinProfileCC, "-");
+        setSpinnerValue(SpinFisikCC, "-");
+        setSpinnerValue(SpinMesinCC, "-");
+        setSpinnerValue(SpinSusunCC, "-");
 
         radioButtonBSusunCC.setEnabled(false);
         radioButtonMesinCC.setEnabled(false);
@@ -2649,6 +2637,7 @@ public class CrossCut extends AppCompatActivity {
                 SpinMesinCC.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load mesin data.");
+                SpinMesinCC.setAdapter(null);
             }
         }
     }
@@ -2759,6 +2748,7 @@ public class CrossCut extends AppCompatActivity {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, susunList);
                 SpinSusunCC.setAdapter(adapter);
             } else {
+                SpinSusunCC.setAdapter(null);
                 Log.e("Error", "Failed to load susun data");
             }
         }

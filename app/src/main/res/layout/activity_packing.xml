@@ -35,20 +35,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.878" />
 
-    <Button
-            android:id="@+id/BtnSearchP"
-            android:layout_width="111dp"
-            android:layout_height="41dp"
-            android:backgroundTint="@color/hijau"
-            android:text="Search"
-            android:textSize="13sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.309"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.101" />
-
     <RadioGroup
         android:id="@+id/radioGroupUOMPanjang"
         android:layout_width="150dp"
@@ -262,21 +248,19 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.431" />
 
-    <EditText
-            android:id="@+id/NoBarangJadi"
-            android:layout_width="108dp"
-            android:layout_height="24dp"
-            android:background="#E8EBE9"
-            android:backgroundTint="#E8EBE9"
-            android:text=""
-            android:textColor="#000000"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.195"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.114" />
+    <SearchView
+        android:id="@+id/NoBarangJadi"
+        android:layout_width="225dp"
+        android:layout_height="24dp"
+        android:background="#E8EBE9"
+        app:iconifiedByDefault="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.22"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.118"
+        app:queryBackground="@null" />
 
     <Spinner
         android:id="@+id/SpinBarangJadiP"

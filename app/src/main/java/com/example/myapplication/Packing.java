@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -54,6 +55,11 @@ import android.os.ParcelFileDescriptor;
 import android.os.Bundle;
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
+import android.widget.AutoCompleteTextView;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -78,8 +84,11 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
-
-
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 
 import com.itextpdf.layout.element.LineSeparator;
@@ -105,6 +114,10 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
+
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -122,7 +135,7 @@ import java.math.RoundingMode;
 
 public class Packing extends AppCompatActivity {
 
-    private EditText NoBarangJadi;
+    private SearchView NoBarangJadi;
     private EditText DateP;
     private EditText TimeP;
     private EditText NoWIP;
@@ -158,6 +171,7 @@ public class Packing extends AppCompatActivity {
     private Button BtnSearchP;
     private int rowCount = 0;
     private TableLayout Tabel;
+    boolean isCreateMode = false;
 
 
     @Override
@@ -165,7 +179,6 @@ public class Packing extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_packing);
-
 
         NoWIP = findViewById(R.id.NoWIP);
         NoBarangJadi = findViewById(R.id.NoBarangJadi);
@@ -196,9 +209,35 @@ public class Packing extends AppCompatActivity {
         BtnPrintP = findViewById(R.id.BtnPrintP);
         M3P = findViewById(R.id.M3P);
         JumlahPcsP = findViewById(R.id.JumlahPcsP);
-        BtnSearchP = findViewById(R.id.BtnSearchP);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupP = findViewById(R.id.RadioGroupP);
+
+
+        NoBarangJadi.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (!isCreateMode) {
+                    loadSubmittedData(query);
+                    closeKeyboard();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isCreateMode) {
+                    if(!newText.isEmpty()){
+                        disableForm();
+                        loadSubmittedData(newText);
+                    }
+                    else{
+                        enableForm();
+                    }
+                }
+                return true;
+            }
+        });
+
 
         radioButtonMesinP.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -223,33 +262,32 @@ public class Packing extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruP.setOnClickListener(v -> {
-            if (!isDataBaruClickedP) {
-                new LoadJenisKayuTask().execute();
-                new LoadTellyTask().execute();
-                new LoadSPKTask().execute();
-                new LoadSPKAsalTask().execute();
-                new LoadProfileTask().execute();
-                new LoadFisikTask().execute();
-                new LoadMesinTask().execute();
-                new LoadSusunTask().execute();
+            setCurrentDateTime();
+            setCreateMode(true);
 
-                isDataBaruClickedP = true;
-                setCurrentDateTime();
-            } else {
-                Toast.makeText(Packing.this, "Tombol Data Baru sudah diklik. Klik Simpan terlebih dahulu.", Toast.LENGTH_SHORT).show();
-            }
+            new SetAndSaveNoBJTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadTellyTask().execute();
+            new LoadSPKTask().execute();
+            new LoadSPKAsalTask().execute();
+            new LoadProfileTask().execute();
+            new LoadFisikTask().execute();
+            new LoadMesinTask().execute();
+            new LoadSusunTask().execute();
+
             BtnSimpanP.setEnabled(true);
-            new SetAndSaveNoS4STask().execute();
             BtnBatalP.setEnabled(true);
             radioButtonMesinP.setEnabled(true);
             radioButtonBSusunP.setEnabled(true);
-            setCurrentDateTime();
             BtnDataBaruP.setEnabled(false);
+
+            clearData();
+            resetDetailData();
+            enableForm();
         });
 
-
         BtnSimpanP.setOnClickListener(v -> {
-            String noBarangJadi = NoBarangJadi.getText().toString();
+            String noBarangJadi = NoBarangJadi.getQuery().toString();
             String dateCreate = DateP.getText().toString();
             String time = TimeP.getText().toString();
 
@@ -343,56 +381,23 @@ public class Packing extends AppCompatActivity {
         BtnBatalP.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCurrentDateTime();
-                clearData();
+                setCreateMode(false);
                 resetDetailData();
-                BtnSimpanP.setEnabled(true);
-            }
-        });
+                resetAllForm();
+                disableForm();
 
-        BtnSearchP.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noBarangJadi = NoBarangJadi.getText().toString();
-
-
-                DetailLebarP.setText("");
-                DetailPanjangP.setText("");
-                DetailTebalP.setText("");
-                DetailPcsP.setText("");
-                NoBarangJadi.setText("");
-                NoWIP.setText("");
-
-                if (!noBarangJadi.isEmpty()) {
-                    new LoadMesinTask2(noBarangJadi).execute();
-                    new LoadSusunTask2(noBarangJadi).execute();
-//                    new LoadFisikTask2(noBarangJadi).execute();
-
-                    new LoadJenisKayuTask2(noBarangJadi).execute();
-                    new LoadTellyTask2(noBarangJadi).execute();
-                    new LoadSPKTask2(noBarangJadi).execute();
-                    new LoadProfileTask2(noBarangJadi).execute();
-                    new SearchAllDataTask(noBarangJadi).execute();
-
-                    radioButtonMesinP.setEnabled(true);
-                    SpinSPKP.setEnabled(true);
-                    radioButtonBSusunP.setEnabled(true);
-                } else {
-                    Log.e("Input Error", "NoBarangJadi is empty");
-                    radioButtonMesinP.setEnabled(false);
-                    radioButtonBSusunP.setEnabled(false);
-                }
-
+                BtnDataBaruP.setEnabled(true);
                 BtnSimpanP.setEnabled(false);
-                BtnBatalP.setEnabled(false);
+                Toast.makeText(Packing.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
+
         DateP.setOnClickListener(v -> showDatePickerDialog());
 
         TimeP.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailP.setOnClickListener(v -> {
-            String noBarangJadi = NoBarangJadi.getText().toString();
+            String noBarangJadi = NoBarangJadi.getQuery().toString();
 
             if (!noBarangJadi.isEmpty()) {
                 addDataDetail(noBarangJadi);
@@ -411,7 +416,7 @@ public class Packing extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoBarangJadi.getText() == null || NoBarangJadi.getText().toString().trim().isEmpty()) {
+                if (NoBarangJadi.getQuery() == null || NoBarangJadi.getQuery().toString().trim().isEmpty()) {
                     Toast.makeText(Packing.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -423,7 +428,7 @@ public class Packing extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noBarangJadi = NoBarangJadi.getText().toString().trim();
+                String noBarangJadi = NoBarangJadi.getQuery().toString().trim();
                 checkHasBeenPrinted(noBarangJadi, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(boolean hasBeenPrinted) {
@@ -572,6 +577,274 @@ public class Packing extends AppCompatActivity {
         return con;
     }
 
+    //METHOD PACKING
+    private void disableForm(){
+        DetailTebalP.setEnabled(false);
+        DetailLebarP.setEnabled(false);
+        DetailPanjangP.setEnabled(false);
+        DetailPcsP.setEnabled(false);
+        BtnHapusDetailP.setEnabled(false);
+        BtnInputDetailP.setEnabled(false);
+        DateP.setEnabled(false);
+        TimeP.setEnabled(false);
+    }
+
+    private void resetAllForm() {
+        DateP.setText("");
+        TimeP.setText("");
+        NoBarangJadi.setQuery("",false);
+        NoWIP.setText("");
+
+        setSpinnerValue(SpinKayuP, "-");
+        setSpinnerValue(SpinTellyP, "-");
+        setSpinnerValue(SpinSPKP, "-");
+        setSpinnerValue(SpinSPKAsalP, "-");
+        setSpinnerValue(SpinProfileP, "-");
+        setSpinnerValue(SpinMesinP, "-");
+        setSpinnerValue(SpinSusunP, "-");
+
+        radioButtonBSusunP.setEnabled(false);
+        radioButtonMesinP.setEnabled(false);
+
+    }
+
+
+    private void enableForm(){
+        DetailTebalP.setEnabled(true);
+        DetailLebarP.setEnabled(true);
+        DetailPanjangP.setEnabled(true);
+        DetailPcsP.setEnabled(true);
+        BtnHapusDetailP.setEnabled(true);
+        BtnInputDetailP.setEnabled(true);
+        DateP.setEnabled(true);
+        TimeP.setEnabled(true);
+    }
+
+    private void closeKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(NoBarangJadi.getWindowToken(), 0);
+        }
+    }
+
+    //SET false jika ingin search data
+    private void setCreateMode(boolean isCreate) {
+        this.isCreateMode = isCreate;
+    }
+
+    // Method untuk set single value ke spinner
+    private void setSpinnerValue(Spinner spinner, String value) {
+        if (spinner != null) {
+            String displayValue = value != null ? value : "-";
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    Collections.singletonList(displayValue));
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+        }
+    }
+
+    private void loadSubmittedData(String noBarangJadi) {
+        // Tampilkan progress dialog
+        resetDetailData();
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk header
+                    String queryHeader = "SELECT " +
+                            "o.NoProduksi, " +
+                            "h.DateCreate, " +
+                            "h.Jam, " +
+                            "h.IdOrgTelly, " +
+                            "t.NamaOrgTelly, " +
+                            "h.NoSPK, " +
+                            "h.NoSPKAsal, " +
+                            "h.IdFJProfile, " +
+                            "p.IdMesin, " +
+                            "m.NamaMesin, " +
+                            "s.NoBongkarSusun, " +
+                            "f.Profile, " +
+                            "h.IdJenisKayu, " +
+                            "k.Jenis, " +
+                            "h.IdBarangJadi, " +
+                            "j.NamaBarangJadi " +
+                            "FROM BarangJadi_h h " +
+                            "LEFT JOIN PackingProduksiOutput o ON h.NoBJ = o.NoBJ " +
+                            "LEFT JOIN PackingProduksi_h p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN BongkarSusunOutputBarangJadi s ON h.NoBJ = s.NoBJ " +
+                            "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "LEFT JOIN MstBarangJadi j ON h.IdBarangJadi = j.IdBarangJadi " +
+                            "WHERE h.NoBJ = ?";
+
+                    // Query untuk detail
+                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                            "FROM BarangJadi_d " +
+                            "WHERE NoBJ = ? " +
+                            "ORDER BY NoUrut";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
+                        stmt.setString(1, noBarangJadi);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data header
+                                final String noProduksi = rs.getString("NoProduksi") != null ? rs.getString("NoProduksi") : "-";
+                                final String dateCreate = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
+                                final String jam = rs.getString("Jam") != null ? rs.getString("Jam") : "-";
+                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
+                                final String noSPKAsal = rs.getString("NoSPKAsal") != null ? rs.getString("NoSPKAsal") : "-";
+                                final String namaMesin = rs.getString("NamaMesin") != null ? rs.getString("NamaMesin") : "-";
+                                final String noBongkarSusun = rs.getString("NoBongkarSusun") != null ? rs.getString("NoBongkarSusun") : "-";
+                                final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
+                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
+                                final String namaBarangJadi = rs.getString("NamaBarangJadi") != null ? rs.getString("NamaBarangJadi") : "-";
+
+
+
+
+                                // Mengambil data detail
+                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
+                                    stmtDetail.setString(1, noBarangJadi);
+                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
+                                        while (rsDetail.next()) {
+                                            String tebal = rsDetail.getString("Tebal");
+                                            String lebar = rsDetail.getString("Lebar");
+                                            String panjang = rsDetail.getString("Panjang");
+                                            String pcs = rsDetail.getString("JmlhBatang");
+
+                                            // Buat objek DataRow baru dan tambahkan ke list
+                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
+                                            temporaryDataListDetail.add(newRow);
+                                        }
+                                    }
+                                }
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        if (!namaMesin.equals("-")) {
+                                            radioButtonMesinP.setChecked(true);
+                                            radioButtonBSusunP.setEnabled(false);
+                                        } else {
+                                            radioButtonBSusunP.setChecked(true);
+                                            radioButtonMesinP.setEnabled(false);
+                                        }
+                                        // Update header fields
+                                        DateP.setText(dateCreate);
+                                        TimeP.setText(jam);
+                                        setSpinnerValue(SpinTellyP, namaOrgTelly);
+                                        setSpinnerValue(SpinSPKP, noSPK);
+                                        setSpinnerValue(SpinSPKAsalP, noSPKAsal);
+                                        setSpinnerValue(SpinKayuP, namaKayu);
+                                        setSpinnerValue(SpinProfileP, namaProfile);
+                                        setSpinnerValue(SpinMesinP, namaMesin + " - " + noProduksi);
+                                        setSpinnerValue(SpinSusunP, noBongkarSusun);
+                                        setSpinnerValue(SpinBarangJadiP, namaBarangJadi);
+
+                                        // Update tabel detail
+                                        updateTableFromTemporaryData();
+                                        m3();
+                                        jumlahpcs();
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoBarangJadi: " + noBarangJadi,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    // Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryData() {
+        // Reset tabel terlebih dahulu (hapus semua baris kecuali header)
+
+        // Perbarui rowCount
+        rowCount = 0;
+
+        // Tambahkan setiap data ke tabel
+        DecimalFormat df = new DecimalFormat("#,###.##");
+
+        for (DataRow data : temporaryDataListDetail) {
+            TableRow newRow = new TableRow(this);
+            newRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT));
+
+            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+
+            // Tambahkan tombol hapus
+            Button deleteButton = new Button(this);
+            deleteButton.setText("");
+            deleteButton.setTextSize(12);
+
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            buttonParams.setMargins(5, 5, 5, 5);
+            deleteButton.setLayoutParams(buttonParams);
+            deleteButton.setPadding(10, 5, 10, 5);
+            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+            deleteButton.setTextColor(Color.BLACK);
+
+            newRow.addView(deleteButton);
+            Tabel.addView(newRow);
+        }
+    }
+
+
     // Interface untuk callback
     interface HasBeenPrintedCallback {
         void onResult(boolean hasBeenPrinted);
@@ -704,7 +977,7 @@ public class Packing extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                NoBarangJadi.setText(noBarangJadi);
+                                NoBarangJadi.setQuery(noBarangJadi, true);
                                 DateP.setText(dateCreate != null ? dateCreate : "");
                                 TimeP.setText(jam != null ? jam : "");
                                 CBAfkirP.setChecked(isReject);
@@ -952,7 +1225,7 @@ public class Packing extends AppCompatActivity {
 
 
     private void clearData() {
-        NoBarangJadi.setText("");
+        NoBarangJadi.setQuery("", false);
         M3P.setText("");
         JumlahPcsP.setText("");
         NoWIP.setText("");
@@ -1741,7 +2014,7 @@ public class Packing extends AppCompatActivity {
 //        }
 //    }
 
-    private class SetAndSaveNoS4STask extends AsyncTask<Void, Void, String> {
+    private class SetAndSaveNoBJTask extends AsyncTask<Void, Void, String> {
         @Override
         protected String doInBackground(Void... voids) {
             Connection con = ConnectionClass();
@@ -1788,7 +2061,7 @@ public class Packing extends AppCompatActivity {
         @Override
         protected void onPostExecute(String newNoBarangJadi) {
             if (newNoBarangJadi != null) {
-                NoBarangJadi.setText(newNoBarangJadi);
+                NoBarangJadi.setQuery(newNoBarangJadi, true);
                 Toast.makeText(Packing.this, "NoBJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoBJ.");
@@ -2387,6 +2660,7 @@ public class Packing extends AppCompatActivity {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinMesinP.setAdapter(adapter);
             } else {
+                SpinMesinP.setAdapter(null);
                 Log.e("Error", "Failed to load mesin data.");
             }
         }
@@ -2498,6 +2772,7 @@ public class Packing extends AppCompatActivity {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, susunList);
                 SpinSusunP.setAdapter(adapter);
             } else {
+                SpinSusunP.setAdapter(null);
                 Log.e("Error", "Failed to load susun data");
             }
         }
