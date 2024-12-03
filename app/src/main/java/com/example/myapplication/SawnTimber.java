@@ -58,6 +58,8 @@ import android.widget.TimePicker;
 import android.widget.AutoCompleteTextView;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
+import android.content.SharedPreferences;
+
 
 
 
@@ -139,6 +141,7 @@ import java.math.RoundingMode;
 
 public class SawnTimber extends AppCompatActivity {
 
+    private String username;
     private Button BtnSimpanST;
     private Button BtnBatalST;
     private Button BtnDataBaruST;
@@ -241,24 +244,14 @@ public class SawnTimber extends AppCompatActivity {
         NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                if (!isCreateMode) {
-                    loadKayuBulat(query);
-                    closeKeyboard();
-                }
+                loadKayuBulat(query);
+                closeKeyboard();
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if (!isCreateMode) {
-                    if(!newText.isEmpty()){
-                        disableForm();
-                        loadKayuBulat(newText);
-                    }
-                    else{
-                        enableForm();
-                    }
-                }
+                loadKayuBulat(newText);
                 return true;
             }
         });
@@ -289,11 +282,10 @@ public class SawnTimber extends AppCompatActivity {
         });
 
 
-
-
         BtnDataBaruST.setOnClickListener(v -> {
             setCreateMode(true);
             setCurrentDateTime();
+
             new SetAndSaveNoSTTask().execute();
             new LoadSPKTask().execute();
             new LoadTellyTask().execute();
@@ -304,7 +296,6 @@ public class SawnTimber extends AppCompatActivity {
 
             BtnBatalST.setEnabled(true);
             BtnSimpanST.setEnabled(true);
-            clearTableData();
         });
 
         BtnInputDetailST.setOnClickListener(view -> {
@@ -385,31 +376,30 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
                 if (!noST.isEmpty() && !noKayuBulat.isEmpty() && !jenisKayu.isEmpty() && !noSPK.equals("PILIH") && !telly.isEmpty() && !stickBy.isEmpty() && (radioMillimeter.isChecked() || radioInch.isChecked()) && !temporaryDataListDetail.isEmpty() && !temporaryDataListGrade.isEmpty()) {
+                checkKayuBulatExists(noKayuBulat, exists -> {
+                    if(exists) {
+                        int isBagusKulit = 0;
 
-                    int isBagusKulit = 0;
+                        if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                            isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+                        }
 
-                    JenisKayu selectedKayu = (JenisKayu) SpinKayu.getSelectedItem();
+                        int isSticked = CBStick.isChecked() ? 1 : 0;
+                        int startKering = CBKering.isChecked() ? 1 : 0;
 
-                    if (selectedKayu != null && selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-                        isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
-                    }
+                        new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, idLokasi, dateCreate);
+                        new UpdateCheckboxDataTask().execute(noST, isBagusKulit, isSticked, startKering);
 
-                    int isSticked = CBStick.isChecked() ? 1 : 0;
-                    int startKering = CBKering.isChecked() ? 1 : 0;
+                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                            DataRow dataRow = temporaryDataListDetail.get(i);
+                            saveDataToDatabase(noST, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                                    Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                        }
 
-                    new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, idLokasi, dateCreate);
-                    new UpdateCheckboxDataTask().execute(noST, isBagusKulit, isSticked, startKering);
-
-                    for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                        DataRow dataRow = temporaryDataListDetail.get(i);
-                        saveDataToDatabase(noST, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                                Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                    }
-
-                    for (int i = 0; i < temporaryDataListGrade.size(); i++) {
-                        DataRow2 dataRow2 = temporaryDataListGrade.get(i);
-                        saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
-                    }
+                        for (int i = 0; i < temporaryDataListGrade.size(); i++) {
+                            DataRow2 dataRow2 = temporaryDataListGrade.get(i);
+                            saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
+                        }
 
 //                    BtnSimpanST.setEnabled(false);
 //                    BtnBatalST.setEnabled(false);
@@ -418,7 +408,12 @@ public class SawnTimber extends AppCompatActivity {
 //                    resetDetailData();
 //                    resetGradeData();
 
-                    Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+                    }else{
+                        Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
                 } else {
                     Toast.makeText(SawnTimber.this, "Semua field harus diisi.", Toast.LENGTH_SHORT).show();
                 }
@@ -519,11 +514,13 @@ public class SawnTimber extends AppCompatActivity {
                             String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
                             String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
                             String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
+                            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                            username = prefs.getString("username", "");
 
                             // Buat PDF dengan parameter hasBeenPrinted
                             Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
                                     temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
-                                    hasBeenPrinted); // Parameter baru untuk watermark
+                                    hasBeenPrinted, username); // Parameter baru untuk watermark
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
@@ -649,6 +646,49 @@ public class SawnTimber extends AppCompatActivity {
 
     //METHOD SAWN TIMBER
 
+    private void checkKayuBulatExists(String noKayuBulat, KayuBulatExistsCallback callback) {
+        new Thread(() -> {
+            boolean exists = false;
+            Connection connection = null;
+            try {
+                // Mendapatkan koneksi dari method ConnectionClass
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "SELECT COUNT(*) as count FROM KayuBulat_h WHERE NoKayuBulat = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noKayuBulat);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                int count = rs.getInt("count");
+                                exists = (count > 0);
+                            }
+                        }
+                    }
+                } else {
+                    Log.e("Database", "Koneksi database gagal");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Log.e("Database", "Error checking nokayubulat existence: " + e.getMessage());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            final boolean kayuBulatExists = exists;
+            runOnUiThread(() -> callback.onResult(kayuBulatExists));
+        }).start();
+    }
+
+    interface KayuBulatExistsCallback {
+        void onResult(boolean exists);
+    }
+
     private void disableForm(){
         DetailTebalST.setEnabled(false);
         DetailLebarST.setEnabled(false);
@@ -657,17 +697,6 @@ public class SawnTimber extends AppCompatActivity {
         BtnHapusDetailST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
         TglStickBundel.setEnabled(false);
-    }
-
-    private void resetAllForm() {
-        TglStickBundel.setText("");
-        NoKayuBulat.setQuery("",false);
-
-        setSpinnerValue(SpinKayu, "-");
-        setSpinnerValue(SpinTelly, "-");
-        setSpinnerValue(SpinSPK, "-");
-        setSpinnerValue(SpinGrade, "-");
-
     }
 
 
@@ -1173,10 +1202,11 @@ public class SawnTimber extends AppCompatActivity {
         CBStick.setChecked(false);
         CBKering.setChecked(false);
         CBUpah.setChecked(false);
-        SpinKayu.setSelection(0);
-        SpinStickBy.setSelection(0);
         SpinSPK.setSelection(0);
-        SpinTelly.setSelection(0);
+        TglStickBundel.setText("");
+        setSpinnerValue(SpinKayu, "-");
+        setSpinnerValue(SpinStickBy, "-");
+        setSpinnerValue(SpinTelly, "-");
 
     }
 
@@ -1428,7 +1458,7 @@ public class SawnTimber extends AppCompatActivity {
     private Uri createPdf(String noST, String jenisKayu, String tglStickBundle, String tellyBy, String noSPK,
                           String stickBy, String platTruk, List<DataRow> temporaryDataListDetail, String noKayuBulat,
                           String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
-                          boolean hasBeenPrinted) throws IOException {
+                          boolean hasBeenPrinted, String username) throws IOException {
         // Validasi parameter wajib
         if (noST == null || noST.trim().isEmpty()) {
             throw new IOException("Nomor ST tidak boleh kosong");
@@ -1535,7 +1565,7 @@ public class SawnTimber extends AppCompatActivity {
 
                 // Isi kolom kanan
                 addInfoRow(rightColumn, "Telly By", tellyBy, timesNewRoman);
-                addInfoRow(rightColumn, "Print By", "-", timesNewRoman);
+                addInfoRow(rightColumn, "Print By", username, timesNewRoman);
                 addInfoRow(rightColumn, "Tanggal", tglStickBundle, timesNewRoman);
                 addInfoRow(rightColumn, "Plat Truk", platTruk, timesNewRoman);
 
@@ -2403,7 +2433,6 @@ public class SawnTimber extends AppCompatActivity {
                 ArrayAdapter<Lokasi> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, lokasiList);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinLokasi.setAdapter(adapter);
-                SpinLokasi.setEnabled(false);
             } else {
                 Log.e("Error", "Tidak ada grade ditemukan");
             }

@@ -15,6 +15,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import android.content.SharedPreferences;
+import android.content.Context;
+
 
 import java.io.File;
 import java.security.MessageDigest;
@@ -82,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (isLoginSuccessful) {
+                        saveUsername(username);
                         Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(MainActivity.this, MenuUtama.class);
                         startActivity(intent);
@@ -318,6 +322,13 @@ public class MainActivity extends AppCompatActivity {
             Log.e("Connection Error", "Failed to connect to the database.");
         }
         return isValid;
+    }
+
+    private void saveUsername(String username) {
+        SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("username", username);
+        editor.apply();
     }
 
     private String hashPassword(String password) {
