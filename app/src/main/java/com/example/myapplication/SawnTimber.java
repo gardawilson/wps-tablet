@@ -432,9 +432,11 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
                 if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-
                     radioBagus.setEnabled(true);
                     radioKulit.setEnabled(true);
+                    radioKulit.setChecked(true);
+                    radioBagus.setChecked(true);
+
 
                 } else {
                     radioBagus.setEnabled(false);
@@ -447,11 +449,6 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
 
-                CBUpah.setChecked(false);
-                radioBagus.setEnabled(false);
-                radioKulit.setEnabled(false);
-                radioBagus.setChecked(false);
-                radioKulit.setChecked(false);
             }
         });
 
@@ -855,7 +852,7 @@ public class SawnTimber extends AppCompatActivity {
                             "WHERE NoST = ? " +
                             "ORDER BY NoUrut";
 
-                    // Query untuk detail
+                    // Query untuk grade
                     String queryGrade = "SELECT " +
                             "s.IdGradeStick, " +
                             "s.JumlahStick, " +
@@ -983,31 +980,35 @@ public class SawnTimber extends AppCompatActivity {
         // Perbarui rowCount
         rowCount = 0;
 
-        // Tambahkan setiap data ke tabel
         DecimalFormat df = new DecimalFormat("#,###.##");
 
         for (DataRow data : temporaryDataListDetail) {
             TableRow newRow = new TableRow(this);
-            newRow.setLayoutParams(new TableRow.LayoutParams(
+            TableRow.LayoutParams rowParams = new TableRow.LayoutParams(
                     TableRow.LayoutParams.MATCH_PARENT,
-                    TableRow.LayoutParams.WRAP_CONTENT));
+                    TableRow.LayoutParams.WRAP_CONTENT);
+            newRow.setLayoutParams(rowParams);
 
-            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
+            // Set background warna untuk baris alternate (opsional)
+            if (rowCount % 2 == 0) {
+                newRow.setBackgroundColor(Color.parseColor("#f5f5f5"));
+            }
+
+            // Tambahkan kolom-kolom
             addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
 
-            // Tambahkan tombol hapus
+            // Tambahkan tombol hapus dengan lebar tetap
             Button deleteButton = new Button(this);
             deleteButton.setText("");
             deleteButton.setTextSize(12);
 
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT);
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(48, 48);
             buttonParams.setMargins(5, 5, 5, 5);
+            buttonParams.gravity = Gravity.CENTER;
             deleteButton.setLayoutParams(buttonParams);
             deleteButton.setPadding(10, 5, 10, 5);
             deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
@@ -1147,12 +1148,11 @@ public class SawnTimber extends AppCompatActivity {
 
     private boolean validateKayuLatSelection() {
         JenisKayu selectedKayu = (JenisKayu) SpinKayu.getSelectedItem();
-        if (selectedKayu != null &&
-                selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-            if (!radioBagus.isChecked() && !radioKulit.isChecked()) {
-                Toast.makeText(this, "Silahkan pilih (Bagus/Kulit)", Toast.LENGTH_SHORT).show();
-                return false;
-            }
+        if (selectedKayu != null && selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+//            if (!radioBagus.isChecked() && !radioKulit.isChecked()) {
+//                Toast.makeText(this, "Silahkan pilih (Bagus/Kulit)", Toast.LENGTH_SHORT).show();
+//                return false;
+//            }
         }
         return true;
     }
@@ -1774,50 +1774,6 @@ public class SawnTimber extends AppCompatActivity {
             }
         } else {
             Log.d("Delete PDF", "File not found in file system: " + file.getPath());
-        }
-    }
-
-    private class DeleteDataTask extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noST = params[0];
-            Connection con = ConnectionClass();
-            boolean success = false;
-
-            if (con != null) {
-                try {
-                    Log.d("DeleteDataTask", "Koneksi berhasil. Memulai penghapusan data...");
-
-                    String query = "DELETE FROM dbo.ST_h WHERE NoST = ?";
-                    Log.d("DeleteDataTask", "Query yang dieksekusi: " + query);
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noST);
-
-                    int rowsAffected = ps.executeUpdate();
-                    Log.d("DeleteDataTask", "Jumlah baris yang dihapus: " + rowsAffected);
-
-                    success = rowsAffected > 0;
-
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Error: " + e.getMessage());
-                } catch (Exception e) {
-                    Log.e("Database Error", "General Error: " + e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(SawnTimber.this, "Data berhasil dihapus.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SawnTimber.this, "Gagal menghapus data.", Toast.LENGTH_SHORT).show();
-            }
         }
     }
 

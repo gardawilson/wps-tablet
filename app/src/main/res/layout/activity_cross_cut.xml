@@ -526,7 +526,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.156" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailTebalCC"
         android:layout_width="123dp"
         android:layout_height="29dp"
@@ -535,12 +535,12 @@
         android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.728"
+        app:layout_constraintHorizontal_bias="0.725"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.057" />
+        app:layout_constraintVertical_bias="0.055" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailPanjangCC"
         android:layout_width="123dp"
         android:layout_height="29dp"
@@ -554,7 +554,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.158" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailLebarCC"
         android:layout_width="123dp"
         android:layout_height="29dp"

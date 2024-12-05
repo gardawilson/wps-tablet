@@ -496,7 +496,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.156" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailTebalM"
         android:layout_width="123dp"
         android:layout_height="29dp"
@@ -510,7 +510,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.057" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailPanjangM"
         android:layout_width="123dp"
         android:layout_height="29dp"
@@ -524,7 +524,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.158" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/DetailLebarM"
         android:layout_width="123dp"
         android:layout_height="29dp"

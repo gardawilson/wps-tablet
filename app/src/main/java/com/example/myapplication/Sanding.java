@@ -58,8 +58,8 @@ import android.widget.TimePicker;
 import android.widget.AutoCompleteTextView;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
-
-
+import android.os.Handler;
+import android.os.Looper;
 
 
 import androidx.activity.EdgeToEdge;
@@ -89,11 +89,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-
-
-
-
-
 
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
@@ -164,9 +159,9 @@ public class Sanding extends AppCompatActivity {
     private CheckBox CBAfkirS;
     private CheckBox CBLemburS;
     private Button BtnInputDetailS;
-    private EditText DetailLebarS;
-    private EditText DetailTebalS;
-    private EditText DetailPanjangS;
+    private AutoCompleteTextView DetailLebarS;
+    private AutoCompleteTextView DetailTebalS;
+    private AutoCompleteTextView DetailPanjangS;
     private EditText DetailPcsS;
     private static int currentNumber = 1;
     private Button BtnPrintS;
@@ -177,6 +172,8 @@ public class Sanding extends AppCompatActivity {
     private int rowCount = 0;
     private TableLayout Tabel;
     boolean isCreateMode = false;
+    private Handler handler = new Handler(Looper.getMainLooper());
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -419,22 +416,119 @@ public class Sanding extends AppCompatActivity {
             }
         });
 
+        SpinSPKS.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (isCreateMode) {
+                    resetDetailData();
+                    String selectedSPK = parent.getItemAtPosition(position) != null ?
+                            parent.getItemAtPosition(position).toString() : "";
+
+                    // Pindahkan operasi berat ke thread terpisah
+                    new Thread(() -> {
+                        // Pengecekan sinkron apakah SPK terkunci
+                        boolean isLocked = isSPKLocked(selectedSPK);
+
+                        // Ambil rekomendasi dari database (operasi berat)
+                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(selectedSPK);
+
+                        // Update UI di main thread
+                        handler.post(() -> {
+                            // Buat adapter untuk masing-masing AutoCompleteTextView
+                            ArrayAdapter<String> tebalAdapter = new ArrayAdapter<>(
+                                    Sanding.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("tebal")
+                            );
+                            ArrayAdapter<String> lebarAdapter = new ArrayAdapter<>(
+                                    Sanding.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("lebar")
+                            );
+                            ArrayAdapter<String> panjangAdapter = new ArrayAdapter<>(
+                                    Sanding.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("panjang")
+                            );
+
+                            // Set adapter untuk masing-masing AutoCompleteTextView
+                            DetailTebalS.setAdapter(tebalAdapter);
+                            DetailLebarS.setAdapter(lebarAdapter);
+                            DetailPanjangS.setAdapter(panjangAdapter);
+
+                            // Set threshold untuk semua AutoCompleteTextView
+                            DetailTebalS.setThreshold(0);
+                            DetailLebarS.setThreshold(0);
+                            DetailPanjangS.setThreshold(0);
+
+                            // Tampilkan status lock
+                            if (isLocked) {
+                                Toast.makeText(Sanding.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(Sanding.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }).start();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                DetailTebalS.setText("");
+                DetailPanjangS.setText("");
+                DetailLebarS.setText("");
+                DetailTebalS.setAdapter(null);
+                DetailPanjangS.setAdapter(null);
+                DetailLebarS.setAdapter(null);
+            }
+        });
+
 
         DateS.setOnClickListener(v -> showDatePickerDialog());
 
         TimeS.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailS.setOnClickListener(v -> {
-            String noSanding = NoSanding.getQuery().toString();
+            // Ambil input dari AutoCompleteTextView
+            String noS4S = NoSanding.getQuery().toString();
+            String tebal = DetailTebalS.getText().toString().trim();
+            String lebar = DetailLebarS.getText().toString().trim();
+            String panjang = DetailPanjangS.getText().toString().trim();
 
-            if (!noSanding.isEmpty()) {
-                addDataDetail(noSanding);
-            } else {
-                Toast.makeText(Sanding.this, "NoSanding tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+            SPK selectedSPK = (SPK) SpinSPKS.getSelectedItem();
+            Grade selectedGrade = (Grade) SpinGradeS.getSelectedItem();
+            JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuS.getSelectedItem();
+
+            String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+            String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+            String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+            // Validasi input kosong
+            if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                Toast.makeText(Sanding.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                return;
             }
-            jumlahpcs();
-            m3();
+
+            // Jalankan validasi
+            new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                @Override
+                protected void onPostExecute(String result) {
+                    super.onPostExecute(result);
+
+                    if (result.equals("SUCCESS")) {
+                        // Jika validasi berhasil, tambahkan data ke daftar
+                        addDataDetail(noS4S);
+                        jumlahpcs();
+                        m3();
+                        Toast.makeText(Sanding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Tampilkan pesan error
+                        Toast.makeText(Sanding.this, result, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }.execute();
         });
+
 
         BtnHapusDetailS.setOnClickListener(v -> {
             resetDetailData();
@@ -608,6 +702,193 @@ public class Sanding extends AppCompatActivity {
     }
 
     //METHOD SANDING
+
+    // Deklarasi CheckSPKDataTask di level class
+    private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
+        private final String noSPK;
+        private final String tebal;
+        private final String lebar;
+        private final String panjang;
+        private final String idJenisKayu;
+        private final String idGrade;
+
+        public CheckSPKDataTask(String noSPK, String tebal, String lebar, String panjang, String idJenisKayu, String idGrade) {
+            this.noSPK = noSPK;
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.idJenisKayu = idJenisKayu;
+            this.idGrade = idGrade;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            Connection connection = null;
+            try {
+                // Cek apakah SPK terkunci
+                if (!isSPKLocked(noSPK)) {
+                    return "SUCCESS"; // Tidak perlu pengecekan jika tidak terkunci
+                }
+
+                connection = ConnectionClass();
+                if (connection == null) {
+                    return "Koneksi database gagal";
+                }
+
+                // Query untuk validasi data
+                String query = "SELECT * FROM MstSPK_dSanding WHERE NoSPK = ?";
+                PreparedStatement stmt = connection.prepareStatement(query);
+                stmt.setString(1, noSPK);
+                ResultSet rs = stmt.executeQuery();
+
+                boolean matchFound = false;
+                while (rs.next()) {
+                    // Bandingkan setiap kolom
+                    if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
+                            Double.parseDouble(lebar) == rs.getDouble("Lebar") &&
+                            Double.parseDouble(panjang) == rs.getDouble("Panjang") &&
+                            idJenisKayu.equals(rs.getString("IdJenisKayu")) &&
+                            idGrade.equals(rs.getString("IdGrade"))) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+
+                if (!matchFound) {
+                    // Tentukan kolom yang tidak sesuai
+                    StringBuilder mismatchMessage = new StringBuilder("Data Tidak Sesuai: ");
+                    if (!columnMatches(connection, "Tebal", noSPK, tebal)) {
+                        mismatchMessage.append("Tebal, ");
+                    }
+                    if (!columnMatches(connection, "Lebar", noSPK, lebar)) {
+                        mismatchMessage.append("Lebar, ");
+                    }
+                    if (!columnMatches(connection, "Panjang", noSPK, panjang)) {
+                        mismatchMessage.append("Panjang, ");
+                    }
+                    if (!columnMatches(connection, "IdJenisKayu", noSPK, idJenisKayu)) {
+                        mismatchMessage.append("Jenis Kayu, ");
+                    }
+                    if (!columnMatches(connection, "IdGrade", noSPK, idGrade)) {
+                        mismatchMessage.append("Grade, ");
+                    }
+
+                    // Hapus koma terakhir
+                    if (mismatchMessage.toString().endsWith(", ")) {
+                        mismatchMessage.setLength(mismatchMessage.length() - 2);
+                    }
+                    return mismatchMessage.toString();
+                }
+                return "SUCCESS";
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return "Error database: " + e.getMessage();
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean columnMatches(Connection connection, String columnName, String noSPK, String value) throws SQLException {
+        String query = "SELECT " + columnName + " FROM MstSPK_dSanding WHERE NoSPK = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, noSPK);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    if (columnName.equalsIgnoreCase("Tebal") || columnName.equalsIgnoreCase("Lebar") || columnName.equalsIgnoreCase("Panjang")) {
+                        return Double.parseDouble(value) == rs.getDouble(columnName);
+                    } else {
+                        return value.equals(rs.getString(columnName));
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // Method untuk mengambil semua data dimensi dari database
+    private Map<String, List<String>> listSPKDetailRecommendation(String noSPK) {
+        Map<String, List<String>> dimensionData = new HashMap<>();
+        dimensionData.put("tebal", new ArrayList<>());
+        dimensionData.put("lebar", new ArrayList<>());
+        dimensionData.put("panjang", new ArrayList<>());
+
+        Connection connection = null;
+
+        try {
+            connection = ConnectionClass();
+            if (connection != null) {
+                String query = "SELECT DISTINCT Tebal, Lebar, Panjang FROM MstSPK_dSanding WHERE NoSPK = ?";
+                PreparedStatement stmt = connection.prepareStatement(query);
+                stmt.setString(1, noSPK);
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    dimensionData.get("tebal").add(rs.getString("Tebal"));
+                    dimensionData.get("lebar").add(rs.getString("Lebar"));
+                    dimensionData.get("panjang").add(rs.getString("Panjang"));
+                }
+            } else {
+                Log.e("Database", "Koneksi database gagal");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Log.e("Database", "Error fetching dimension data: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return dimensionData;
+    }
+
+    private boolean isSPKLocked(String noSPK) {
+        Connection connection = null;
+        boolean isLocked = false;
+        try {
+            connection = ConnectionClass();
+            if (connection != null) {
+                String query = "SELECT LockDimensionSAND FROM MstSPK_h WHERE NoSPK = ?";
+                try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                    stmt.setString(1, noSPK);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            Integer lockDimension = rs.getInt("LockDimensionSAND");
+                            isLocked = (lockDimension != null && lockDimension == 1);
+                        }
+                    }
+                }
+            } else {
+                Log.e("Database", "Koneksi database gagal");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Log.e("Database", "Error checking lock dimension: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return isLocked;
+    }
+
+
     private void disableForm(){
         DetailTebalS.setEnabled(false);
         DetailLebarS.setEnabled(false);

@@ -58,6 +58,9 @@ import android.widget.TimePicker;
 import android.widget.AutoCompleteTextView;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+
 
 
 
@@ -163,9 +166,9 @@ public class FingerJoint extends AppCompatActivity {
     private CheckBox CBAfkirFJ;
     private CheckBox CBLemburFJ;
     private Button BtnInputDetailFJ;
-    private EditText DetailLebarFJ;
-    private EditText DetailTebalFJ;
-    private EditText DetailPanjangFJ;
+    private AutoCompleteTextView DetailLebarFJ;
+    private AutoCompleteTextView DetailTebalFJ;
+    private AutoCompleteTextView DetailPanjangFJ;
     private EditText DetailPcsFJ;
     private static int currentNumber = 1;
     private Button BtnPrintFJ;
@@ -175,6 +178,7 @@ public class FingerJoint extends AppCompatActivity {
     private int rowCount = 0;
     private TableLayout Tabel;
     private boolean isCreateMode = false;
+    private Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -348,63 +352,52 @@ public class FingerJoint extends AppCompatActivity {
             BtnDataBaruFJ.setEnabled(true);
             BtnPrintFJ.setEnabled(true);
 
+            // Update database utama
+            new UpdateDatabaseTaskFJ(
+                    noFJ,
+                    dateCreate,
+                    time,
+                    idTelly,
+                    noSPK,
+                    noSPKasal,
+                    idGrade,
+                    idJenisKayu,
+                    idProfile,
+                    isReject,
+                    isLembur,
+                    idUOMTblLebar,
+                    idUOMPanjang
+            ).execute();
 
-            // Jalankan pengecekan sebelum menyimpan
-            new CheckNoFJDataTask() {
-                @Override
-                protected void onPostExecute(Boolean hasData) {
-                    super.onPostExecute(hasData);
-
-                    if (!hasData) {
-                        // Update database utama
-                        new UpdateDatabaseTaskFJ(
-                                noFJ,
-                                dateCreate,
-                                time,
-                                idTelly,
-                                noSPK,
-                                noSPKasal,
-                                idGrade,
-                                idJenisKayu,
-                                idProfile,
-                                isReject,
-                                isLembur,
-                                idUOMTblLebar,
-                                idUOMPanjang
-                        ).execute();
-
-                        // Simpan sesuai pilihan radio button
-                        if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
-                            new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
-                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                                saveDataDetailToDatabase(noFJ, i + 1,
-                                        Double.parseDouble(dataRow.tebal),
-                                        Double.parseDouble(dataRow.lebar),
-                                        Double.parseDouble(dataRow.panjang),
-                                        Integer.parseInt(dataRow.pcs));
-                            }
-                        } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
-                            new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
-                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                                saveDataDetailToDatabase(noFJ, i + 1,
-                                        Double.parseDouble(dataRow.tebal),
-                                        Double.parseDouble(dataRow.lebar),
-                                        Double.parseDouble(dataRow.panjang),
-                                        Integer.parseInt(dataRow.pcs));
-                            }
-                        }
-
-                        // Update UI
-                        BtnDataBaruFJ.setEnabled(true);
-                        BtnPrintFJ.setEnabled(true);
-                        BtnSimpanFJ.setEnabled(false);
-
-                        Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
-                    }
+            // Simpan sesuai pilihan radio button
+            if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
+                new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noFJ, i + 1,
+                            Double.parseDouble(dataRow.tebal),
+                            Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang),
+                            Integer.parseInt(dataRow.pcs));
                 }
-            }.execute(noFJ);
+            } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
+                new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
+                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                    FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                    saveDataDetailToDatabase(noFJ, i + 1,
+                            Double.parseDouble(dataRow.tebal),
+                            Double.parseDouble(dataRow.lebar),
+                            Double.parseDouble(dataRow.panjang),
+                            Integer.parseInt(dataRow.pcs));
+                }
+            }
+
+            // Update UI
+            BtnDataBaruFJ.setEnabled(true);
+            BtnPrintFJ.setEnabled(true);
+            BtnSimpanFJ.setEnabled(false);
+
+            Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
         });
 
         BtnBatalFJ.setOnClickListener(new View.OnClickListener() {
@@ -438,20 +431,117 @@ public class FingerJoint extends AppCompatActivity {
             }
         });
 
+        SpinSPKFJ.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (isCreateMode) {
+                    resetDetailData();
+                    String selectedSPK = parent.getItemAtPosition(position) != null ?
+                            parent.getItemAtPosition(position).toString() : "";
+
+                    // Pindahkan operasi berat ke thread terpisah
+                    new Thread(() -> {
+                        // Pengecekan sinkron apakah SPK terkunci
+                        boolean isLocked = isSPKLocked(selectedSPK);
+
+                        // Ambil rekomendasi dari database (operasi berat)
+                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(selectedSPK);
+
+                        // Update UI di main thread
+                        handler.post(() -> {
+                            // Buat adapter untuk masing-masing AutoCompleteTextView
+                            ArrayAdapter<String> tebalAdapter = new ArrayAdapter<>(
+                                    FingerJoint.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("tebal")
+                            );
+                            ArrayAdapter<String> lebarAdapter = new ArrayAdapter<>(
+                                    FingerJoint.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("lebar")
+                            );
+                            ArrayAdapter<String> panjangAdapter = new ArrayAdapter<>(
+                                    FingerJoint.this,
+                                    android.R.layout.simple_dropdown_item_1line,
+                                    dimensionData.get("panjang")
+                            );
+
+                            // Set adapter untuk masing-masing AutoCompleteTextView
+                            DetailTebalFJ.setAdapter(tebalAdapter);
+                            DetailLebarFJ.setAdapter(lebarAdapter);
+                            DetailPanjangFJ.setAdapter(panjangAdapter);
+
+                            // Set threshold untuk semua AutoCompleteTextView
+                            DetailTebalFJ.setThreshold(0);
+                            DetailLebarFJ.setThreshold(0);
+                            DetailPanjangFJ.setThreshold(0);
+
+                            // Tampilkan status lock
+                            if (isLocked) {
+                                Toast.makeText(FingerJoint.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(FingerJoint.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }).start();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                DetailTebalFJ.setText("");
+                DetailPanjangFJ.setText("");
+                DetailLebarFJ.setText("");
+                DetailTebalFJ.setAdapter(null);
+                DetailPanjangFJ.setAdapter(null);
+                DetailLebarFJ.setAdapter(null);
+            }
+        });
+
+
         DateFJ.setOnClickListener(v -> showDatePickerDialog());
 
         TimeFJ.setOnClickListener(v -> showTimePickerDialog());
 
         BtnInputDetailFJ.setOnClickListener(v -> {
-            String noFJ = NoFJ.getQuery().toString();
+            // Ambil input dari AutoCompleteTextView
+            String noS4S = NoFJ.getQuery().toString();
+            String tebal = DetailTebalFJ.getText().toString().trim();
+            String lebar = DetailLebarFJ.getText().toString().trim();
+            String panjang = DetailPanjangFJ.getText().toString().trim();
 
-            if (!noFJ.isEmpty()) {
-                addDataDetail(noFJ);
-            } else {
-                Toast.makeText(FingerJoint.this, "NoFJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+            SPKFJ selectedSPK = (SPKFJ) SpinSPKFJ.getSelectedItem();
+            GradeFJ selectedGrade = (GradeFJ) SpinGradeFJ.getSelectedItem();
+            JenisKayuFJ selectedJenisKayu = (JenisKayuFJ) SpinKayuFJ.getSelectedItem();
+
+            String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+            String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+            String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+            // Validasi input kosong
+            if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                Toast.makeText(FingerJoint.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                return;
             }
-            jumlahpcs();
-            m3();
+
+            // Jalankan validasi
+            new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                @Override
+                protected void onPostExecute(String result) {
+                    super.onPostExecute(result);
+
+                    if (result.equals("SUCCESS")) {
+                        // Jika validasi berhasil, tambahkan data ke daftar
+                        addDataDetail(noS4S);
+                        jumlahpcs();
+                        m3();
+                        Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Tampilkan pesan error
+                        Toast.makeText(FingerJoint.this, result, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }.execute();
         });
 
         BtnHapusDetailFJ.setOnClickListener(v -> {
@@ -626,6 +716,192 @@ public class FingerJoint extends AppCompatActivity {
     }
 
     //Method FingerJoint
+
+
+    private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
+        private final String noSPK;
+        private final String tebal;
+        private final String lebar;
+        private final String panjang;
+        private final String idJenisKayu;
+        private final String idGrade;
+
+        public CheckSPKDataTask(String noSPK, String tebal, String lebar, String panjang, String idJenisKayu, String idGrade) {
+            this.noSPK = noSPK;
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.idJenisKayu = idJenisKayu;
+            this.idGrade = idGrade;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            Connection connection = null;
+            try {
+                // Cek apakah SPK terkunci
+                if (!isSPKLocked(noSPK)) {
+                    return "SUCCESS"; // Tidak perlu pengecekan jika tidak terkunci
+                }
+
+                connection = ConnectionClass();
+                if (connection == null) {
+                    return "Koneksi database gagal";
+                }
+
+                // Query untuk validasi data
+                String query = "SELECT * FROM MstSPK_dFJ WHERE NoSPK = ?";
+                PreparedStatement stmt = connection.prepareStatement(query);
+                stmt.setString(1, noSPK);
+                ResultSet rs = stmt.executeQuery();
+
+                boolean matchFound = false;
+                while (rs.next()) {
+                    // Bandingkan setiap kolom
+                    if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
+                            Double.parseDouble(lebar) == rs.getDouble("Lebar") &&
+                            Double.parseDouble(panjang) == rs.getDouble("Panjang") &&
+                            idJenisKayu.equals(rs.getString("IdJenisKayu")) &&
+                            idGrade.equals(rs.getString("IdGrade"))) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+
+                if (!matchFound) {
+                    // Tentukan kolom yang tidak sesuai
+                    StringBuilder mismatchMessage = new StringBuilder("Data Tidak Sesuai: ");
+                    if (!columnMatches(connection, "Tebal", noSPK, tebal)) {
+                        mismatchMessage.append("Tebal, ");
+                    }
+                    if (!columnMatches(connection, "Lebar", noSPK, lebar)) {
+                        mismatchMessage.append("Lebar, ");
+                    }
+                    if (!columnMatches(connection, "Panjang", noSPK, panjang)) {
+                        mismatchMessage.append("Panjang, ");
+                    }
+                    if (!columnMatches(connection, "IdJenisKayu", noSPK, idJenisKayu)) {
+                        mismatchMessage.append("Jenis Kayu, ");
+                    }
+                    if (!columnMatches(connection, "IdGrade", noSPK, idGrade)) {
+                        mismatchMessage.append("Grade, ");
+                    }
+
+                    // Hapus koma terakhir
+                    if (mismatchMessage.toString().endsWith(", ")) {
+                        mismatchMessage.setLength(mismatchMessage.length() - 2);
+                    }
+                    return mismatchMessage.toString();
+                }
+                return "SUCCESS";
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return "Error database: " + e.getMessage();
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean columnMatches(Connection connection, String columnName, String noSPK, String value) throws SQLException {
+        String query = "SELECT " + columnName + " FROM MstSPK_dFJ WHERE NoSPK = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, noSPK);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    if (columnName.equalsIgnoreCase("Tebal") || columnName.equalsIgnoreCase("Lebar") || columnName.equalsIgnoreCase("Panjang")) {
+                        return Double.parseDouble(value) == rs.getDouble(columnName);
+                    } else {
+                        return value.equals(rs.getString(columnName));
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // Method untuk mengambil semua data dimensi dari database
+    private Map<String, List<String>> listSPKDetailRecommendation(String noSPK) {
+        Map<String, List<String>> dimensionData = new HashMap<>();
+        dimensionData.put("tebal", new ArrayList<>());
+        dimensionData.put("lebar", new ArrayList<>());
+        dimensionData.put("panjang", new ArrayList<>());
+
+        Connection connection = null;
+
+        try {
+            connection = ConnectionClass();
+            if (connection != null) {
+                String query = "SELECT DISTINCT Tebal, Lebar, Panjang FROM MstSPK_dFJ WHERE NoSPK = ?";
+                PreparedStatement stmt = connection.prepareStatement(query);
+                stmt.setString(1, noSPK);
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    dimensionData.get("tebal").add(rs.getString("Tebal"));
+                    dimensionData.get("lebar").add(rs.getString("Lebar"));
+                    dimensionData.get("panjang").add(rs.getString("Panjang"));
+                }
+            } else {
+                Log.e("Database", "Koneksi database gagal");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Log.e("Database", "Error fetching dimension data: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return dimensionData;
+    }
+
+    private boolean isSPKLocked(String noSPK) {
+        Connection connection = null;
+        boolean isLocked = false;
+        try {
+            connection = ConnectionClass();
+            if (connection != null) {
+                String query = "SELECT LockDimensionFJ FROM MstSPK_h WHERE NoSPK = ?";
+                try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                    stmt.setString(1, noSPK);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            Integer lockDimension = rs.getInt("LockDimensionFJ");
+                            isLocked = (lockDimension != null && lockDimension == 1);
+                        }
+                    }
+                }
+            } else {
+                Log.e("Database", "Koneksi database gagal");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Log.e("Database", "Error checking lock dimension: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return isLocked;
+    }
+
 
     private void disableForm(){
         DetailTebalFJ.setEnabled(false);
@@ -2178,7 +2454,6 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-
     private class LoadTellyTaskFJ extends AsyncTask<Void, Void, List<TellyFJ>> {
         @Override
         protected List<TellyFJ> doInBackground(Void... voids) {
@@ -2636,7 +2911,7 @@ public class FingerJoint extends AppCompatActivity {
             } else {
                 Log.e("Error", "Tidak ada grade");
                 gradeList = new ArrayList<>();
-                gradeList.add(new GradeFJ(null, "GRADE TIDAK TERSEDIA"));
+                gradeList.add(new GradeFJ("", "GRADE TIDAK TERSEDIA"));
             }
 
             ArrayAdapter<GradeFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, gradeList);
