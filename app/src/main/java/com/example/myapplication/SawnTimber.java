@@ -24,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.LinearLayout;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -38,6 +39,7 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintDocumentInfo;
 import android.print.PageRange;
+import android.widget.ImageView;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
@@ -189,6 +191,8 @@ public class SawnTimber extends AppCompatActivity {
     private RadioButton radioBagus;
     private RadioButton radioKulit;
     boolean isCreateMode = false;
+    private EditText NoST_display;
+    private EditText NoKB_display;
 
 
     @Override
@@ -239,6 +243,12 @@ public class SawnTimber extends AppCompatActivity {
         radioBagusKulit = findViewById(R.id.radioGroupBagusKulit);
         M3 = findViewById(R.id.M3ST);
         Ton = findViewById(R.id.Ton);
+        NoST_display = findViewById(R.id.NoST_display);
+        NoKB_display = findViewById(R.id.NoKB_display);
+
+        NoST_display.setVisibility(View.GONE);
+        SpinLokasi.setEnabled(false);
+        disableForm();
 
 
         NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -274,7 +284,7 @@ public class SawnTimber extends AppCompatActivity {
                         loadSawnTimber(newText);
                     }
                     else{
-                        enableForm();
+//                        enableForm();
                     }
                 }
                 return true;
@@ -285,6 +295,7 @@ public class SawnTimber extends AppCompatActivity {
         BtnDataBaruST.setOnClickListener(v -> {
             setCreateMode(true);
             setCurrentDateTime();
+            enableForm();
 
             new SetAndSaveNoSTTask().execute();
             new LoadSPKTask().execute();
@@ -296,6 +307,11 @@ public class SawnTimber extends AppCompatActivity {
 
             BtnBatalST.setEnabled(true);
             BtnSimpanST.setEnabled(true);
+            BtnTambahStickST.setEnabled(true);
+            BtnHapusStickST.setEnabled(true);
+            BtnHapusSemuaStickST.setEnabled(true);
+            BtnInputDetailST.setEnabled(true);
+            BtnHapusDetailST.setEnabled(true);
         });
 
         BtnInputDetailST.setOnClickListener(view -> {
@@ -350,10 +366,10 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 setCreateMode(false);
+                disableForm();
                 clearTableData();
                 resetGradeData();
                 resetDetailData();
-                BtnSimpanST.setEnabled(false);
             }
         });
 
@@ -401,13 +417,12 @@ public class SawnTimber extends AppCompatActivity {
                             saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
                         }
 
-//                    BtnSimpanST.setEnabled(false);
-//                    BtnBatalST.setEnabled(false);
-//                    BtnPrintST.setEnabled(true);
-//                    clearTableData();
-//                    resetDetailData();
-//                    resetGradeData();
-
+                        NoKB_display.setText(noKayuBulat);
+                        NoKayuBulat.setVisibility(View.GONE);
+                        NoKB_display.setVisibility(View.VISIBLE);
+                        NoKB_display.setEnabled(false);
+                        disableForm();
+                        BtnPrintST.setEnabled(true);
                         Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
                     }else{
                         Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
@@ -643,6 +658,10 @@ public class SawnTimber extends AppCompatActivity {
 
     //METHOD SAWN TIMBER
 
+    private void disableButton(){
+
+    }
+
     private void checkKayuBulatExists(String noKayuBulat, KayuBulatExistsCallback callback) {
         new Thread(() -> {
             boolean exists = false;
@@ -687,17 +706,33 @@ public class SawnTimber extends AppCompatActivity {
     }
 
     private void disableForm(){
+        SpinKayu.setEnabled(false);
+        SpinGrade.setEnabled(false);
+        SpinSPK.setEnabled(false);
+        SpinTelly.setEnabled(false);
+        SpinStickBy.setEnabled(false);
+        JumlahStick.setEnabled(false);
         DetailTebalST.setEnabled(false);
         DetailLebarST.setEnabled(false);
+        BtnTambahStickST.setEnabled(false);
+        BtnHapusStickST.setEnabled(false);
+        BtnHapusSemuaStickST.setEnabled(false);
         DetailPanjangST.setEnabled(false);
         DetailPcsST.setEnabled(false);
         BtnHapusDetailST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
         TglStickBundel.setEnabled(false);
+        BtnSimpanST.setEnabled(false);
+        BtnPrintST.setEnabled(false);
     }
 
-
     private void enableForm(){
+        SpinKayu.setEnabled(true);
+        SpinGrade.setEnabled(true);
+        SpinSPK.setEnabled(true);
+        SpinTelly.setEnabled(true);
+        SpinStickBy.setEnabled(true);
+        JumlahStick.setEnabled(true);
         DetailTebalST.setEnabled(true);
         DetailLebarST.setEnabled(true);
         DetailPanjangST.setEnabled(true);
@@ -705,7 +740,12 @@ public class SawnTimber extends AppCompatActivity {
         BtnHapusDetailST.setEnabled(true);
         BtnInputDetailST.setEnabled(true);
         TglStickBundel.setEnabled(true);
+        NoKB_display.setVisibility(View.GONE);
+        NoKayuBulat.setVisibility(View.VISIBLE);
     }
+
+
+
 
     private void closeKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -772,6 +812,12 @@ public class SawnTimber extends AppCompatActivity {
                                         NoPlatTruk.setText(noPlat);
                                         NoSuket.setText(noSuket);
                                         JenisKayuKB.setText(namaKayu);
+
+                                        Supplier.setEnabled(false);
+                                        NoTruk.setEnabled(false);
+                                        NoPlatTruk.setEnabled(false);
+                                        NoSuket.setEnabled(false);
+                                        JenisKayuKB.setEnabled(false);
 
                                         Toast.makeText(getApplicationContext(),
                                                 "Data berhasil dimuat",
@@ -1207,6 +1253,8 @@ public class SawnTimber extends AppCompatActivity {
         setSpinnerValue(SpinKayu, "-");
         setSpinnerValue(SpinStickBy, "-");
         setSpinnerValue(SpinTelly, "-");
+
+        NoST_display.setVisibility(View.GONE);
 
     }
 
@@ -2213,12 +2261,19 @@ public class SawnTimber extends AppCompatActivity {
         protected void onPostExecute(String newNoST) {
             if (newNoST != null) {
                 NoST.setQuery(newNoST, true);
+                NoST_display.setText(newNoST);
+                NoST_display.setVisibility(View.VISIBLE);
+                NoST_display.setEnabled(false);
+
+
+
                 Toast.makeText(SawnTimber.this, "NoST berhasil dibuat: " + newNoST, Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(SawnTimber.this, "Gagal membuat NoST baru.", Toast.LENGTH_SHORT).show();
             }
         }
     }
+
     public class LoadJenisKayuTask extends AsyncTask<Void, Void, List<JenisKayu>> {
         @Override
         protected List<JenisKayu> doInBackground(Void... voids) {

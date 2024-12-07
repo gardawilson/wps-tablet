@@ -1148,11 +1148,11 @@ public class CrossCut extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 0);
 
             // Tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1324,11 +1324,11 @@ public class CrossCut extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);

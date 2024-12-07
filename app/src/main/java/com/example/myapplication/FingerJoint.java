@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -179,6 +181,7 @@ public class FingerJoint extends AppCompatActivity {
     private TableLayout Tabel;
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoFJ_display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -218,6 +221,51 @@ public class FingerJoint extends AppCompatActivity {
         JumlahPcsFJ = findViewById(R.id.JumlahPcsFJ);
         Tabel = findViewById(R.id.Tabel);
         radioGroupFJ = findViewById(R.id.radioGroupFJ);
+        NoFJ_display = findViewById(R.id.NoFJ_display);
+
+        // Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalFJ.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarFJ.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangFJ.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalFJ.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarFJ.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarFJ.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangFJ.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangFJ.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsFJ.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoFJ_display.setVisibility(View.GONE);
+        disableForm();
 
 
         NoFJ.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -285,9 +333,8 @@ public class FingerJoint extends AppCompatActivity {
 
             BtnSimpanFJ.setEnabled(true);
             BtnBatalFJ.setEnabled(true);
-            radioButtonMesinFJ.setEnabled(true);
-            radioButtonBSusunFJ.setEnabled(true);
             BtnDataBaruFJ.setEnabled(false);
+            BtnPrintFJ.setEnabled(false);
 
             clearData();
             resetDetailData();
@@ -396,6 +443,7 @@ public class FingerJoint extends AppCompatActivity {
             BtnDataBaruFJ.setEnabled(true);
             BtnPrintFJ.setEnabled(true);
             BtnSimpanFJ.setEnabled(false);
+            disableForm();
 
             Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
         });
@@ -403,13 +451,14 @@ public class FingerJoint extends AppCompatActivity {
         BtnBatalFJ.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setCreateMode(false);
                 resetDetailData();
                 resetAllForm();
                 disableForm();
-
-                isCreateMode = false;
                 BtnDataBaruFJ.setEnabled(true);
                 BtnSimpanFJ.setEnabled(false);
+                NoFJ.setVisibility(View.VISIBLE);
+                NoFJ_display.setVisibility(View.GONE);
                 Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -902,16 +951,46 @@ public class FingerJoint extends AppCompatActivity {
         return isLocked;
     }
 
+    private void enableForm(){
+        DateFJ.setEnabled(true);
+        TimeFJ.setEnabled(true);
+        SpinKayuFJ.setEnabled((true));
+        radioButtonMesinFJ.setEnabled(true);
+        radioButtonBSusunFJ.setEnabled(true);
+        SpinMesinFJ.setEnabled(true);
+        SpinSusunFJ.setEnabled(true);
+        SpinTellyFJ.setEnabled(true);
+        SpinSPKFJ.setEnabled(true);
+        SpinSPKAsalFJ.setEnabled(true);
+        SpinGradeFJ.setEnabled(true);
+        SpinProfileFJ.setEnabled(true);
+        DetailTebalFJ.setEnabled(true);
+        DetailLebarFJ.setEnabled(true);
+        DetailPanjangFJ.setEnabled(true);
+        DetailPcsFJ.setEnabled(true);
+        BtnHapusDetailFJ.setEnabled(true);
+        BtnInputDetailFJ.setEnabled(true);
+    }
 
     private void disableForm(){
+        DateFJ.setEnabled(false);
+        TimeFJ.setEnabled(false);
+        SpinKayuFJ.setEnabled(false);
+        radioButtonMesinFJ.setEnabled(false);
+        radioButtonBSusunFJ.setEnabled(false);
+        SpinMesinFJ.setEnabled(false);
+        SpinSusunFJ.setEnabled(false);
+        SpinTellyFJ.setEnabled(false);
+        SpinSPKFJ.setEnabled(false);
+        SpinSPKAsalFJ.setEnabled(false);
+        SpinGradeFJ.setEnabled(false);
+        SpinProfileFJ.setEnabled(false);
         DetailTebalFJ.setEnabled(false);
         DetailLebarFJ.setEnabled(false);
         DetailPanjangFJ.setEnabled(false);
         DetailPcsFJ.setEnabled(false);
         BtnHapusDetailFJ.setEnabled(false);
         BtnInputDetailFJ.setEnabled(false);
-        DateFJ.setEnabled(false);
-        TimeFJ.setEnabled(false);
     }
 
     private void resetAllForm() {
@@ -930,21 +1009,6 @@ public class FingerJoint extends AppCompatActivity {
         setSpinnerValue(SpinMesinFJ, "-");
         setSpinnerValue(SpinSusunFJ, "-");
 
-        radioButtonBSusunFJ.setEnabled(false);
-        radioButtonMesinFJ.setEnabled(false);
-
-    }
-
-
-    private void enableForm(){
-        DetailTebalFJ.setEnabled(true);
-        DetailLebarFJ.setEnabled(true);
-        DetailPanjangFJ.setEnabled(true);
-        DetailPcsFJ.setEnabled(true);
-        BtnHapusDetailFJ.setEnabled(true);
-        BtnInputDetailFJ.setEnabled(true);
-        DateFJ.setEnabled(true);
-        TimeFJ.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1157,11 +1221,11 @@ public class FingerJoint extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 0);
 
             // Tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1472,11 +1536,11 @@ public class FingerJoint extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1997,11 +2061,13 @@ public class FingerJoint extends AppCompatActivity {
                 }
 
                 // Isi tabel
+                DecimalFormat df = new DecimalFormat("#,###.##");
+
                 for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2348,6 +2414,10 @@ public class FingerJoint extends AppCompatActivity {
         protected void onPostExecute(String newNoJoin) {
             if (newNoJoin != null) {
                 NoFJ.setQuery(newNoJoin, true);
+                NoFJ.setVisibility(View.GONE);
+                NoFJ_display.setVisibility(View.VISIBLE);
+                NoFJ_display.setText(newNoJoin);
+                NoFJ_display.setEnabled(false);
                 Toast.makeText(FingerJoint.this, "NoFJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoFJ.");

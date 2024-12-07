@@ -7,13 +7,14 @@ import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class MenuUtama extends AppCompatActivity {
 
-    private ImageView InputProduksi;
+    private CardView InputProduksi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

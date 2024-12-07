@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -180,7 +182,7 @@ public class Moulding extends AppCompatActivity {
     private TableLayout Tabel;
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
-
+    private EditText NoMoulding_display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -221,8 +223,51 @@ public class Moulding extends AppCompatActivity {
         JumlahPcsM = findViewById(R.id.JumlahPcsM);
         Tabel = findViewById(R.id.Tabel);
         radioGroupM = findViewById(R.id.radioGroupM);
+        NoMoulding_display = findViewById(R.id.NoMoulding_display);
 
+        // Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalM.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarM.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangM.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalM.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarM.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarM.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangM.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangM.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsM.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoMoulding_display.setVisibility(View.GONE);
+        disableForm();
 
         NoMoulding.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -248,8 +293,6 @@ public class Moulding extends AppCompatActivity {
                 return true;
             }
         });
-
-
 
         //mengatur fungsi RadioButtonMesin
         radioButtonMesinM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -295,8 +338,7 @@ public class Moulding extends AppCompatActivity {
 
             BtnSimpanM.setEnabled(true);
             BtnBatalM.setEnabled(true);
-            radioButtonMesinM.setEnabled(true);
-            radioButtonBSusunM.setEnabled(true);
+            BtnPrintM.setEnabled(false);
 
             clearData();
             resetDetailData();
@@ -394,7 +436,10 @@ public class Moulding extends AppCompatActivity {
                 Toast.makeText(Moulding.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            BtnDataBaruM.setEnabled(true);
+            BtnPrintM.setEnabled(true);
+            BtnSimpanM.setEnabled(false);
+            disableForm();
             Toast.makeText(Moulding.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
 
         });
@@ -406,8 +451,12 @@ public class Moulding extends AppCompatActivity {
                 setCreateMode(false);
                 resetDetailData();
                 resetAllForm();
+                disableForm();
+                NoMoulding.setVisibility(View.VISIBLE);
+                NoMoulding_display.setVisibility(View.GONE);
                 BtnDataBaruM.setEnabled(true);
                 BtnSimpanM.setEnabled(false);
+                BtnPrintM.setEnabled(true);
             }
         });
 
@@ -906,16 +955,47 @@ public class Moulding extends AppCompatActivity {
         return isLocked;
     }
 
+    private void enableForm(){
+        DateM.setEnabled(true);
+        TimeM.setEnabled(true);
+        SpinKayuM.setEnabled((true));
+        radioButtonMesinM.setEnabled(true);
+        radioButtonBSusunM.setEnabled(true);
+        SpinMesinM.setEnabled(true);
+        SpinSusunM.setEnabled(true);
+        SpinTellyM.setEnabled(true);
+        SpinSPKM.setEnabled(true);
+        SpinSPKAsalM.setEnabled(true);
+        SpinGradeM.setEnabled(true);
+        SpinProfileM.setEnabled(true);
+        DetailTebalM.setEnabled(true);
+        DetailLebarM.setEnabled(true);
+        DetailPanjangM.setEnabled(true);
+        DetailPcsM.setEnabled(true);
+        BtnHapusDetailM.setEnabled(true);
+        BtnInputDetailM.setEnabled(true);
+    }
+
     
     private void disableForm(){
+        DateM.setEnabled(false);
+        TimeM.setEnabled(false);
+        SpinKayuM.setEnabled((false));
+        radioButtonMesinM.setEnabled(false);
+        radioButtonBSusunM.setEnabled(false);
+        SpinMesinM.setEnabled(false);
+        SpinSusunM.setEnabled(false);
+        SpinTellyM.setEnabled(false);
+        SpinSPKM.setEnabled(false);
+        SpinSPKAsalM.setEnabled(false);
+        SpinGradeM.setEnabled(false);
+        SpinProfileM.setEnabled(false);
         DetailTebalM.setEnabled(false);
         DetailLebarM.setEnabled(false);
         DetailPanjangM.setEnabled(false);
         DetailPcsM.setEnabled(false);
         BtnHapusDetailM.setEnabled(false);
         BtnInputDetailM.setEnabled(false);
-        DateM.setEnabled(false);
-        TimeM.setEnabled(false);
     }
 
     private void resetAllForm() {
@@ -939,18 +1019,6 @@ public class Moulding extends AppCompatActivity {
 
 
 
-    }
-
-
-    private void enableForm(){
-        DetailTebalM.setEnabled(true);
-        DetailLebarM.setEnabled(true);
-        DetailPanjangM.setEnabled(true);
-        DetailPcsM.setEnabled(true);
-        BtnHapusDetailM.setEnabled(true);
-        BtnInputDetailM.setEnabled(true);
-        DateM.setEnabled(true);
-        TimeM.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1157,11 +1225,11 @@ public class Moulding extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 0);
 
             // Tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1333,11 +1401,11 @@ public class Moulding extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1861,11 +1929,13 @@ public class Moulding extends AppCompatActivity {
                 }
 
                 // Isi tabel
+                DecimalFormat df = new DecimalFormat("#,###.##");
+
                 for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2180,6 +2250,10 @@ public class Moulding extends AppCompatActivity {
         protected void onPostExecute(String newNoMoulding) {
             if (newNoMoulding != null) {
                 NoMoulding.setQuery(newNoMoulding, true);
+                NoMoulding.setVisibility(View.GONE);
+                NoMoulding_display.setVisibility(View.VISIBLE);
+                NoMoulding_display.setText(newNoMoulding);
+                NoMoulding_display.setEnabled(false);
                 Toast.makeText(Moulding.this, "NoMoulding berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoMoulding.");

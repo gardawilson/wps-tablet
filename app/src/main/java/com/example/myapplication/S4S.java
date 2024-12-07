@@ -15,6 +15,10 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
+import android.widget.TextView;
+import android.view.inputmethod.EditorInfo; // Pastikan EditorInfo diimpor
+import android.view.KeyEvent;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -169,6 +173,7 @@ public class S4S extends AppCompatActivity {
     private TableLayout Tabel;
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoS4S_display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -209,9 +214,53 @@ public class S4S extends AppCompatActivity {
         JumlahPcs = findViewById(R.id.JumlahPcs);
         Tabel = findViewById(R.id.Tabel);
         radioGroup = findViewById(R.id.radioGroup);
+        NoS4S_display = findViewById(R.id.NoS4S_display);
 
 
 
+// Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+
+// Menangani aksi 'Enter' pada keyboard
+        DetailTebalS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarS4S.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangS4S.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsS4S.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoS4S_display.setVisibility(View.GONE);
+        disableForm();
 
         NoS4S.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -229,6 +278,7 @@ public class S4S extends AppCompatActivity {
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
+                        BtnPrint.setEnabled(true);
                     }
                     else{
                         enableForm();
@@ -278,6 +328,7 @@ public class S4S extends AppCompatActivity {
             radioButtonMesin.setEnabled(true);
             radioButtonBSusun.setEnabled(true);
             BtnDataBaru.setEnabled(false);
+            BtnPrint.setEnabled(false);
 
             clearData();
             resetDetailData();
@@ -388,6 +439,7 @@ public class S4S extends AppCompatActivity {
             BtnDataBaru.setEnabled(true);
             BtnPrint.setEnabled(true);
             BtnSimpan.setEnabled(false);
+            disableForm();
 
             Toast.makeText(S4S.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
         });
@@ -402,6 +454,9 @@ public class S4S extends AppCompatActivity {
                 isCreateMode = false;
                 BtnDataBaru.setEnabled(true);
                 BtnSimpan.setEnabled(false);
+                BtnPrint.setEnabled(false);
+                NoS4S.setVisibility(View.VISIBLE);
+                NoS4S_display.setVisibility(View.GONE);
                 Toast.makeText(S4S.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -896,17 +951,46 @@ public class S4S extends AppCompatActivity {
         return isLocked;
     }
 
-
+    private void enableForm(){
+        Date.setEnabled(true);
+        Time.setEnabled(true);
+        SpinKayu.setEnabled((true));
+        radioGroup.setEnabled(true);
+        SpinMesin.setEnabled(true);
+        SpinSusun.setEnabled(true);
+        SpinTelly.setEnabled(true);
+        SpinSPK.setEnabled(true);
+        SpinSPKAsal.setEnabled(true);
+        SpinGrade.setEnabled(true);
+        NoSTAsal.setEnabled(true);
+        SpinProfile.setEnabled(true);
+        DetailTebalS4S.setEnabled(true);
+        DetailLebarS4S.setEnabled(true);
+        DetailPanjangS4S.setEnabled(true);
+        DetailPcsS4S.setEnabled(true);
+        BtnHapusDetail.setEnabled(true);
+        BtnInputDetail.setEnabled(true);
+    }
 
     private void disableForm(){
+        Date.setEnabled(false);
+        Time.setEnabled(false);
+        SpinKayu.setEnabled((false));
+        radioGroup.setEnabled(false);
+        SpinMesin.setEnabled(false);
+        SpinSusun.setEnabled(false);
+        SpinTelly.setEnabled(false);
+        SpinSPK.setEnabled(false);
+        SpinSPKAsal.setEnabled(false);
+        SpinGrade.setEnabled(false);
+        NoSTAsal.setEnabled(false);
+        SpinProfile.setEnabled(false);
         DetailTebalS4S.setEnabled(false);
         DetailLebarS4S.setEnabled(false);
         DetailPanjangS4S.setEnabled(false);
         DetailPcsS4S.setEnabled(false);
         BtnHapusDetail.setEnabled(false);
         BtnInputDetail.setEnabled(false);
-        Date.setEnabled(false);
-        Time.setEnabled(false);
     }
 
     private void resetAllForm() {
@@ -928,18 +1012,6 @@ public class S4S extends AppCompatActivity {
         radioButtonBSusun.setEnabled(false);
         radioButtonMesin.setEnabled(false);
 
-    }
-
-
-    private void enableForm(){
-        DetailTebalS4S.setEnabled(true);
-        DetailLebarS4S.setEnabled(true);
-        DetailPanjangS4S.setEnabled(true);
-        DetailPcsS4S.setEnabled(true);
-        BtnHapusDetail.setEnabled(true);
-        BtnInputDetail.setEnabled(true);
-        Date.setEnabled(true);
-        Time.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1146,11 +1218,11 @@ public class S4S extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 0);
 
             // Tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1413,11 +1485,11 @@ public class S4S extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1946,11 +2018,13 @@ public class S4S extends AppCompatActivity {
                 }
 
                 // Isi tabel
+                DecimalFormat df = new DecimalFormat("#,###.##");
+
                 for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2260,6 +2334,10 @@ public class S4S extends AppCompatActivity {
         protected void onPostExecute(String newNoS4S) {
             if (newNoS4S != null) {
                 NoS4S.setQuery(newNoS4S, true);
+                NoS4S.setVisibility(View.GONE);
+                NoS4S_display.setVisibility(View.VISIBLE);
+                NoS4S_display.setText(newNoS4S);
+                NoS4S_display.setEnabled(false);
                 Toast.makeText(S4S.this, "NoS4S berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoS4S.");

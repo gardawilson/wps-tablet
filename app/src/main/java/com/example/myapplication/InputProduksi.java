@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -18,14 +19,14 @@ import java.sql.DriverManager;
 
 public class InputProduksi extends AppCompatActivity {
 
-private TextView S4S;
-private TextView FingerJoin;
-private TextView Moulding;
-private TextView Laminating;
-private TextView CrossCut;
-private TextView Sanding;
-private TextView Packing;
-private TextView SawnTimber;
+private CardView S4S;
+private CardView FingerJoin;
+private CardView Moulding;
+private CardView Laminating;
+private CardView CrossCut;
+private CardView Sanding;
+private CardView Packing;
+private CardView SawnTimber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

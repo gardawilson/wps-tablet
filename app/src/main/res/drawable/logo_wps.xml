@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="340dp" android:viewportHeight="340.16" android:viewportWidth="524.41" android:width="524.1633dp">
+      
+    <path android:fillColor="#00000000" android:pathData="M301.12,94.42a39.81,39.81 0,0 1,40 39.93,39.81 39.81,0 0,1 -40,39.92H238.43V248.4h-5.94V168.33h68.63a33,33 0,0 0,24.09 -9.9,34 34,0 0,0 0,-48.17 33,33 0,0 0,-24.09 -9.9H232.49V94.42Z" android:strokeColor="#57ba17" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="13.34"/>
+      
+    <path android:fillColor="#00000000" android:pathData="M170,91.75a2.65,2.65 0,0 0,-2.67 2.63v145L96.56,169a2.68,2.68 0,0 0,-3.73 -0.06L17,239.67V94.38a2.67,2.67 0,0 0,-5.33 0v151.4a2.63,2.63 0,0 0,1.62 2.41,2.7 2.7,0 0,0 2.88,-0.51L94.6,174.47l73.48,73.15a2.68,2.68 0,0 0,2.91 0.58,2.62 2.62,0 0,0 1.66,-2.42V94.38A2.65,2.65 0,0 0,170 91.75Z" android:strokeColor="#57ba17" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="13.34"/>
+      
+    <path android:fillColor="#00000000" android:pathData="M11.66,278.73l0,47.31l493.78,0l0,-47.31" android:strokeColor="#57ba17" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="13.34"/>
+      
+    <path android:fillColor="#00000000" android:pathData="M11.66,61.43l0,-47.32l493.78,0l0,47.32" android:strokeColor="#57ba17" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="13.34"/>
+      
+    <path android:fillColor="#00000000" android:pathData="M461.17,168.55q18.48,0 31.38,11.66t12.9,28.27q0,16.61 -12.9,28.26T461.17,248.4H385.26v-5.94h75.91a38.34,38.34 0,0 0,26.64 -10q11.07,-10 11.07,-24.08t-11.07,-24a38.61,38.61 0,0 0,-26.64 -9.9H429.54q-18.5,0 -31.39,-11.77t-12.89,-28.37q0,-16.6 12.89,-28.27t31.39,-11.66h65.69v5.94H429.54a38.33,38.33 0,0 0,-26.64 10q-11.08,10 -11.07,24.09t11.07,24.08a38.29,38.29 0,0 0,26.64 10Z" android:strokeColor="#57ba17" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="13.34"/>
+    
+</vector>

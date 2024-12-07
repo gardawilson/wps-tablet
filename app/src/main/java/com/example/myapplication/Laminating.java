@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -181,6 +183,7 @@ public class Laminating extends AppCompatActivity {
     private TableLayout Tabel;
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoLaminating_display;
 
 
 
@@ -223,8 +226,51 @@ public class Laminating extends AppCompatActivity {
         JumlahPcsL = findViewById(R.id.JumlahPcsL);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupL = findViewById(R.id.radioGroupL);
+        NoLaminating_display = findViewById(R.id.NoLaminating_display);
 
+        // Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalL.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarL.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangL.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalL.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarL.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarL.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangL.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangL.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsL.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoLaminating_display.setVisibility(View.GONE);
+        disableForm();
 
         NoLaminating.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -251,8 +297,6 @@ public class Laminating extends AppCompatActivity {
             }
         });
 
-
-
         radioButtonMesinL.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -277,24 +321,24 @@ public class Laminating extends AppCompatActivity {
 
         BtnDataBaruL.setOnClickListener(v -> {
             setCreateMode(true);
+            setCurrentDateTime();
+            enableForm();
+
             new SetAndSaveNoLaminatingTask().execute();
-                new LoadJenisKayuTask().execute();
-                new LoadTellyTask().execute();
-                new LoadSPKTask().execute();
-                new LoadSPKAsalTask().execute();
-                new LoadProfileTask().execute();
-                new LoadFisikTask().execute();
-                new LoadGradeTask().execute();
-                new LoadMesinTask().execute();
-                new LoadSusunTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadTellyTask().execute();
+            new LoadSPKTask().execute();
+            new LoadSPKAsalTask().execute();
+            new LoadProfileTask().execute();
+            new LoadFisikTask().execute();
+            new LoadGradeTask().execute();
+            new LoadMesinTask().execute();
+            new LoadSusunTask().execute();
 
-                setCurrentDateTime();
-            BtnSimpanL.setEnabled(true);
-
-            BtnBatalL.setEnabled(true);
-            radioButtonMesinL.setEnabled(true);
-            radioButtonBSusunL.setEnabled(true);
             BtnDataBaruL.setEnabled(false);
+            BtnSimpanL.setEnabled(true);
+            BtnBatalL.setEnabled(true);
+            BtnPrintL.setEnabled(false);
         });
 
         BtnSimpanL.setOnClickListener(v -> {
@@ -388,21 +432,24 @@ public class Laminating extends AppCompatActivity {
                 Toast.makeText(Laminating.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            BtnDataBaruL.setEnabled(true);
+            BtnPrintL.setEnabled(true);
+            BtnSimpanL.setEnabled(false);
+            disableForm();
             Toast.makeText(Laminating.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-
         });
 
         BtnBatalL.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resetAllForm();
+                setCreateMode(false);
                 resetDetailData();
+                resetAllForm();
                 disableForm();
-
-                isCreateMode = false;
                 BtnDataBaruL.setEnabled(true);
                 BtnSimpanL.setEnabled(false);
+                NoLaminating.setVisibility(View.VISIBLE);
+                NoLaminating_display.setVisibility(View.GONE);
                 Toast.makeText(Laminating.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -897,15 +944,46 @@ public class Laminating extends AppCompatActivity {
         return isLocked;
     }
 
+    private void enableForm(){
+        DateL.setEnabled(true);
+        TimeL.setEnabled(true);
+        SpinKayuL.setEnabled(true);
+        radioButtonMesinL.setEnabled(true);
+        radioButtonBSusunL.setEnabled(true);
+        SpinMesinL.setEnabled(true);
+        SpinSusunL.setEnabled(true);
+        SpinTellyL.setEnabled(true);
+        SpinSPKL.setEnabled(true);
+        SpinSPKAsalL.setEnabled(true);
+        SpinGradeL.setEnabled(true);
+        SpinProfileL.setEnabled(true);
+        DetailTebalL.setEnabled(true);
+        DetailLebarL.setEnabled(true);
+        DetailPanjangL.setEnabled(true);
+        DetailPcsL.setEnabled(true);
+        BtnHapusDetailL.setEnabled(true);
+        BtnInputDetailL.setEnabled(true);
+    }
+
     private void disableForm(){
+        DateL.setEnabled(false);
+        TimeL.setEnabled(false);
+        SpinKayuL.setEnabled((false));
+        radioButtonMesinL.setEnabled(false);
+        radioButtonBSusunL.setEnabled(false);
+        SpinMesinL.setEnabled(false);
+        SpinSusunL.setEnabled(false);
+        SpinTellyL.setEnabled(false);
+        SpinSPKL.setEnabled(false);
+        SpinSPKAsalL.setEnabled(false);
+        SpinGradeL.setEnabled(false);
+        SpinProfileL.setEnabled(false);
         DetailTebalL.setEnabled(false);
         DetailLebarL.setEnabled(false);
         DetailPanjangL.setEnabled(false);
         DetailPcsL.setEnabled(false);
         BtnHapusDetailL.setEnabled(false);
         BtnInputDetailL.setEnabled(false);
-        DateL.setEnabled(false);
-        TimeL.setEnabled(false);
     }
 
     private void resetAllForm() {
@@ -927,18 +1005,6 @@ public class Laminating extends AppCompatActivity {
         radioButtonBSusunL.setEnabled(false);
         radioButtonMesinL.setEnabled(false);
 
-    }
-
-
-    private void enableForm(){
-        DetailTebalL.setEnabled(true);
-        DetailLebarL.setEnabled(true);
-        DetailPanjangL.setEnabled(true);
-        DetailPcsL.setEnabled(true);
-        BtnHapusDetailL.setEnabled(true);
-        BtnInputDetailL.setEnabled(true);
-        DateL.setEnabled(true);
-        TimeL.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1156,11 +1222,11 @@ public class Laminating extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 0);
 
             // Tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1352,11 +1418,11 @@ public class Laminating extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1893,11 +1959,13 @@ public class Laminating extends AppCompatActivity {
                 }
 
                 // Isi tabel
+                DecimalFormat df = new DecimalFormat("#,###.##");
+
                 for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2294,6 +2362,10 @@ public class Laminating extends AppCompatActivity {
         protected void onPostExecute(String newNoLaminating) {
             if (newNoLaminating!= null) {
                 NoLaminating.setQuery(newNoLaminating, true);
+                NoLaminating.setVisibility(View.GONE);
+                NoLaminating_display.setVisibility(View.VISIBLE);
+                NoLaminating_display.setText(newNoLaminating);
+                NoLaminating_display.setEnabled(false);
                 Toast.makeText(Laminating.this, "NoLaminating berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoLaminating.");
