@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -62,6 +64,9 @@ import android.os.Handler;
 import android.os.Looper;
 
 
+
+
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -89,6 +94,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+
+
+
+
+
 
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
@@ -173,6 +183,7 @@ public class Sanding extends AppCompatActivity {
     private TableLayout Tabel;
     boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoSanding_display;
 
 
     @Override
@@ -213,6 +224,47 @@ public class Sanding extends AppCompatActivity {
         JumlahPcsS = findViewById(R.id.JumlahPcsS);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupS = findViewById(R.id.RadioGroupS);
+        NoSanding_display = findViewById(R.id.NoSanding_display);
+
+
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalS.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarS.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarS.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangS.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangS.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsS.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoSanding_display.setVisibility(View.GONE);
+        disableForm();
 
 
         NoSanding.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -263,7 +315,6 @@ public class Sanding extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruS.setOnClickListener(v -> {
-
             setCurrentDateTime();
             setCreateMode(true);
 
@@ -280,15 +331,12 @@ public class Sanding extends AppCompatActivity {
 
             BtnSimpanS.setEnabled(true);
             BtnBatalS.setEnabled(true);
-            radioButtonMesinS.setEnabled(true);
-            radioButtonBSusunS.setEnabled(true);
             BtnDataBaruS.setEnabled(false);
+            BtnPrintS.setEnabled(false);
 
             clearData();
             resetDetailData();
             enableForm();
-
-
         });
 
         BtnSimpanS.setOnClickListener(v -> {
@@ -381,8 +429,12 @@ public class Sanding extends AppCompatActivity {
                 Toast.makeText(Sanding.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            Toast.makeText(Sanding.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+            // Update UI
+            BtnDataBaruS.setEnabled(true);
+            BtnPrintS.setEnabled(true);
+            BtnSimpanS.setEnabled(false);
+            disableForm();
+            Toast.makeText(Sanding.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
 
         });
 
@@ -393,9 +445,10 @@ public class Sanding extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
-
                 BtnDataBaruS.setEnabled(true);
                 BtnSimpanS.setEnabled(false);
+                NoSanding.setVisibility(View.VISIBLE);
+                NoSanding_display.setVisibility(View.GONE);
                 Toast.makeText(Sanding.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -408,7 +461,6 @@ public class Sanding extends AppCompatActivity {
                     JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
                     String idJenisKayu = selectedJenisKayu.getIdJenisKayu();
                     new LoadGradeTask().execute(idJenisKayu);
-
                 }
             }
             @Override
@@ -888,16 +940,61 @@ public class Sanding extends AppCompatActivity {
         return isLocked;
     }
 
+    private void enableForm(){
+        DateS.setEnabled(true);
+        TimeS.setEnabled(true);
+        SpinKayuS.setEnabled(true);
+        radioButtonMesinS.setEnabled(true);
+        radioButtonBSusunS.setEnabled(true);
+        SpinMesinS.setEnabled(true);
+        SpinSusunS.setEnabled(true);
+        SpinTellyS.setEnabled(true);
+        SpinSPKS.setEnabled(true);
+        SpinSPKAsalS.setEnabled(true);
+        SpinGradeS.setEnabled(true);
+        SpinProfileS.setEnabled(true);
+        DetailTebalS.setEnabled(true);
+        DetailLebarS.setEnabled(true);
+        DetailPanjangS.setEnabled(true);
+        DetailPcsS.setEnabled(true);
+        BtnHapusDetailS.setEnabled(true);
+        BtnInputDetailS.setEnabled(true);
+    }
 
     private void disableForm(){
+        DateS.setEnabled(false);
+        TimeS.setEnabled(false);
+        SpinKayuS.setEnabled(false);
+        radioButtonMesinS.setEnabled(false);
+        radioButtonBSusunS.setEnabled(false);
+        SpinMesinS.setEnabled(false);
+        SpinSusunS.setEnabled(false);
+        SpinTellyS.setEnabled(false);
+        SpinSPKS.setEnabled(false);
+        SpinSPKAsalS.setEnabled(false);
+        SpinGradeS.setEnabled(false);
+        SpinProfileS.setEnabled(false);
         DetailTebalS.setEnabled(false);
         DetailLebarS.setEnabled(false);
         DetailPanjangS.setEnabled(false);
         DetailPcsS.setEnabled(false);
         BtnHapusDetailS.setEnabled(false);
         BtnInputDetailS.setEnabled(false);
-        DateS.setEnabled(false);
-        TimeS.setEnabled(false);
+        BtnSimpanS.setEnabled(false);
+
+        // Disable semua tombol hapus yang ada di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View row = Tabel.getChildAt(i);
+            if (row instanceof TableRow) {
+                TableRow tableRow = (TableRow) row;
+                for (int j = 0; j < tableRow.getChildCount(); j++) {
+                    View view = tableRow.getChildAt(j);
+                    if (view instanceof Button) {
+                        view.setEnabled(false);
+                    }
+                }
+            }
+        }
     }
 
     private void resetAllForm() {
@@ -919,18 +1016,6 @@ public class Sanding extends AppCompatActivity {
         radioButtonBSusunS.setEnabled(false);
         radioButtonMesinS.setEnabled(false);
 
-    }
-
-
-    private void enableForm(){
-        DetailTebalS.setEnabled(true);
-        DetailLebarS.setEnabled(true);
-        DetailPanjangS.setEnabled(true);
-        DetailPcsS.setEnabled(true);
-        BtnHapusDetailS.setEnabled(true);
-        BtnInputDetailS.setEnabled(true);
-        DateS.setEnabled(true);
-        TimeS.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1315,7 +1400,7 @@ public class Sanding extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -2235,6 +2320,10 @@ public class Sanding extends AppCompatActivity {
         protected void onPostExecute(String newNoSanding) {
             if (newNoSanding != null) {
                 NoSanding.setQuery(newNoSanding, true);
+                NoSanding.setVisibility(View.GONE);
+                NoSanding_display.setVisibility(View.VISIBLE);
+                NoSanding_display.setText(newNoSanding);
+                NoSanding_display.setEnabled(false);
                 Toast.makeText(Sanding.this, "NoSanding berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoSanding.");

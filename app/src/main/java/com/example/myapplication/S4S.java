@@ -17,7 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
-import android.view.inputmethod.EditorInfo; // Pastikan EditorInfo diimpor
+import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -591,7 +591,6 @@ public class S4S extends AppCompatActivity {
         });
 
 
-
         BtnHapusDetail.setOnClickListener(v -> {
             resetDetailData();
         });
@@ -991,6 +990,22 @@ public class S4S extends AppCompatActivity {
         DetailPcsS4S.setEnabled(false);
         BtnHapusDetail.setEnabled(false);
         BtnInputDetail.setEnabled(false);
+        BtnSimpan.setEnabled(false);
+
+
+        // Disable semua tombol hapus yang ada di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View row = Tabel.getChildAt(i);
+            if (row instanceof TableRow) {
+                TableRow tableRow = (TableRow) row;
+                for (int j = 0; j < tableRow.getChildCount(); j++) {
+                    View view = tableRow.getChildAt(j);
+                    if (view instanceof Button) {
+                        view.setEnabled(false);
+                    }
+                }
+            }
+        }
     }
 
     private void resetAllForm() {
@@ -1489,7 +1504,7 @@ public class S4S extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1764,7 +1779,7 @@ public class S4S extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -1774,7 +1789,7 @@ public class S4S extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -1794,12 +1809,13 @@ public class S4S extends AppCompatActivity {
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
+
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(8)
+                .setFontSize(10)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -1934,7 +1950,7 @@ public class S4S extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 550; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 650; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 34; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
@@ -1949,7 +1965,7 @@ public class S4S extends AppCompatActivity {
                 Paragraph judul = new Paragraph("LABEL S4S")
                         .setUnderline()
                         .setBold()
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setTextAlignment(TextAlignment.CENTER);
 
                 // Hitung lebar yang tersedia
@@ -1982,7 +1998,7 @@ public class S4S extends AppCompatActivity {
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kanan
-                addInfoRow(rightColumn, "Tanggal", date + "(" + time + ")", timesNewRoman);
+                addInfoRow(rightColumn, "Tanggal", date + " (" + time + ")", timesNewRoman);
                 addInfoRow(rightColumn, "Telly", tellyBy, timesNewRoman);
                 addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
                 addInfoRow(rightColumn, "No SPK", noSPK, timesNewRoman);
@@ -2049,7 +2065,7 @@ public class S4S extends AppCompatActivity {
                 sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
 
                 Paragraph qrCodeID = new Paragraph(noS4S).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(-5, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noS4S).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(0, 13, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noS4S).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(0, 20, 0, 0).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noS4S);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
@@ -2057,11 +2073,11 @@ public class S4S extends AppCompatActivity {
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noS4S);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(60).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
 
                 Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
                 Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 20, 0, 0).setFont(timesNewRoman);
+                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 30, 0, 0).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
 

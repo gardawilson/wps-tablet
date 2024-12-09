@@ -29,7 +29,7 @@
             android:layout_marginBottom="40dp"
             android:src="@drawable/logo_wps"
             android:contentDescription="Logo"
-            app:tint="@color/white" />
+ />
 
         <!-- Title -->
         <TextView
@@ -143,6 +143,7 @@
                 android:layout_marginTop="8dp"
                 android:text="Registrasi"
                 android:textSize="14sp"
+                android:enabled="false"
                 app:backgroundTint="@color/accent_green"
                 app:cornerRadius="8dp" />
 

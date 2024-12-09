@@ -1888,7 +1888,7 @@ public class SawnTimber extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);

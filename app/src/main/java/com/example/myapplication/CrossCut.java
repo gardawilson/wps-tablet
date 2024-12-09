@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -60,6 +62,9 @@ import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+
+
+
 
 
 import androidx.activity.EdgeToEdge;
@@ -119,6 +124,9 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
+
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -133,7 +141,6 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
-
 
 public class CrossCut extends AppCompatActivity {
 
@@ -176,6 +183,8 @@ public class CrossCut extends AppCompatActivity {
     private TableLayout Tabel;
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoCC_display;
+    private Button deleteButton;
 
 
 
@@ -218,6 +227,52 @@ public class CrossCut extends AppCompatActivity {
         SpinProfileCC = findViewById(R.id.SpinProfileCC);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupCC = findViewById(R.id.RadioGroupCC);
+        NoCC_display = findViewById(R.id.NoCC_display);
+
+
+        // Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalCC.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarCC.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangCC.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalCC.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarCC.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarCC.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangCC.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangCC.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsCC.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoCC_display.setVisibility(View.GONE);
+        disableForm();
 
 
         NoCC.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -270,26 +325,28 @@ public class CrossCut extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruCC.setOnClickListener(v -> {
-            setCreateMode(true);
-            new SetAndSaveNoCCTask().execute();
-                new LoadJenisKayuTask().execute();
-                new LoadTellyTask().execute();
-                new LoadSPKTask().execute();
-                new LoadSPKAsalTask().execute();
-                new LoadProfileTask().execute();
-                new LoadFisikTask().execute();
-                new LoadGradeTask().execute();
-                new LoadMesinTask().execute();
-                new LoadSusunTask().execute();
-
-                setCurrentDateTime();
-            BtnSimpanCC.setEnabled(true);
-
-            BtnBatalCC.setEnabled(true);
-            radioButtonMesinCC.setEnabled(true);
-            radioButtonBSusunCC.setEnabled(true);
             setCurrentDateTime();
+            setCreateMode(true);
+
+            new SetAndSaveNoCCTask().execute();
+            new LoadJenisKayuTask().execute();
+            new LoadTellyTask().execute();
+            new LoadSPKTask().execute();
+            new LoadSPKAsalTask().execute();
+            new LoadProfileTask().execute();
+            new LoadFisikTask().execute();
+            new LoadGradeTask().execute();
+            new LoadMesinTask().execute();
+            new LoadSusunTask().execute();
+
+            BtnSimpanCC.setEnabled(true);
+            BtnBatalCC.setEnabled(true);
             BtnDataBaruCC.setEnabled(false);
+            BtnPrintCC.setEnabled(false);
+
+            clearData();
+            resetDetailData();
+            enableForm();
         });
 
 
@@ -382,7 +439,10 @@ public class CrossCut extends AppCompatActivity {
                 Toast.makeText(CrossCut.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            BtnDataBaruCC.setEnabled(true);
+            BtnPrintCC.setEnabled(true);
+            BtnSimpanCC.setEnabled(false);
+            disableForm();
             Toast.makeText(CrossCut.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
 
         });
@@ -396,9 +456,14 @@ public class CrossCut extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 setCreateMode(false);
-                resetAllForm();
                 resetDetailData();
+                resetAllForm();
+                disableForm();
                 BtnDataBaruCC.setEnabled(true);
+                BtnSimpanCC.setEnabled(false);
+                NoCC.setVisibility(View.VISIBLE);
+                NoCC_display.setVisibility(View.GONE);
+                Toast.makeText(CrossCut.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -888,17 +953,63 @@ public class CrossCut extends AppCompatActivity {
         return isLocked;
     }
 
-
+    private void enableForm(){
+        DateCC.setEnabled(true);
+        TimeCC.setEnabled(true);
+        SpinKayuCC.setEnabled(true);
+        radioButtonMesinCC.setEnabled(true);
+        radioButtonBSusunCC.setEnabled(true);
+        SpinMesinCC.setEnabled(true);
+        SpinSusunCC.setEnabled(true);
+        SpinTellyCC.setEnabled(true);
+        SpinSPKCC.setEnabled(true);
+        SpinSPKAsalCC.setEnabled(true);
+        SpinGradeCC.setEnabled(true);
+        SpinProfileCC.setEnabled(true);
+        DetailTebalCC.setEnabled(true);
+        DetailLebarCC.setEnabled(true);
+        DetailPanjangCC.setEnabled(true);
+        DetailPcsCC.setEnabled(true);
+        BtnHapusDetailCC.setEnabled(true);
+        BtnInputDetailCC.setEnabled(true);
+        SpinFisikCC.setEnabled(true);
+    }
 
     private void disableForm(){
+        DateCC.setEnabled(false);
+        TimeCC.setEnabled(false);
+        SpinKayuCC.setEnabled(false);
+        radioButtonMesinCC.setEnabled(false);
+        radioButtonBSusunCC.setEnabled(false);
+        SpinMesinCC.setEnabled(false);
+        SpinSusunCC.setEnabled(false);
+        SpinTellyCC.setEnabled(false);
+        SpinSPKCC.setEnabled(false);
+        SpinSPKAsalCC.setEnabled(false);
+        SpinGradeCC.setEnabled(false);
+        SpinProfileCC.setEnabled(false);
         DetailTebalCC.setEnabled(false);
         DetailLebarCC.setEnabled(false);
         DetailPanjangCC.setEnabled(false);
         DetailPcsCC.setEnabled(false);
         BtnHapusDetailCC.setEnabled(false);
         BtnInputDetailCC.setEnabled(false);
-        DateCC.setEnabled(false);
-        TimeCC.setEnabled(false);
+        SpinFisikCC.setEnabled(false);
+        BtnSimpanCC.setEnabled(false);
+
+        // Disable semua tombol hapus yang ada di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View row = Tabel.getChildAt(i);
+            if (row instanceof TableRow) {
+                TableRow tableRow = (TableRow) row;
+                for (int j = 0; j < tableRow.getChildCount(); j++) {
+                    View view = tableRow.getChildAt(j);
+                    if (view instanceof Button) {
+                        view.setEnabled(false);
+                    }
+                }
+            }
+        }
     }
 
     private void resetAllForm() {
@@ -919,18 +1030,6 @@ public class CrossCut extends AppCompatActivity {
         radioButtonBSusunCC.setEnabled(false);
         radioButtonMesinCC.setEnabled(false);
 
-    }
-
-
-    private void enableForm(){
-        DetailTebalCC.setEnabled(true);
-        DetailLebarCC.setEnabled(true);
-        DetailPanjangCC.setEnabled(true);
-        DetailPcsCC.setEnabled(true);
-        BtnHapusDetailCC.setEnabled(true);
-        BtnInputDetailCC.setEnabled(true);
-        DateCC.setEnabled(true);
-        TimeCC.setEnabled(true);
     }
 
     private void closeKeyboard() {
@@ -1328,7 +1427,7 @@ public class CrossCut extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -2166,6 +2265,10 @@ public class CrossCut extends AppCompatActivity {
         protected void onPostExecute(String newNoCC) {
             if (newNoCC != null) {
                 NoCC.setQuery(newNoCC, false);
+                NoCC.setVisibility(View.GONE);
+                NoCC_display.setVisibility(View.VISIBLE);
+                NoCC_display.setText(newNoCC);
+                NoCC_display.setEnabled(false);
                 Toast.makeText(CrossCut.this, "NoCCAkhir berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoCCAkhir.");

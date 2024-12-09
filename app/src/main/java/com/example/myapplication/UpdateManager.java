@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class UpdateManager {
     private static final String TAG = "UpdateManager";
     private static final String SERVER_IP = "192.168.10.100";
-    private static final String SHARE_NAME = "Temp";
+    private static final String SHARE_NAME = "IS Department";
     private static final String UPDATE_PATH = "updateAndroid";
     private static final String USERNAME = "garda";
     private static final String PASSWORD = "Ljpqstu9q";
@@ -126,15 +126,19 @@ public class UpdateManager {
                     Log.d(TAG, "Checking for updates...");
                     String versionFilePath = UPDATE_PATH + "/version.txt";
 
+                    // Dapatkan versi aplikasi saat ini
+                    String currentVersion = context.getPackageManager()
+                            .getPackageInfo(context.getPackageName(), 0).versionName;
+
                     if (!share.fileExists(versionFilePath)) {
                         throw new IOException("version.txt not found in SMB directory");
                     }
 
-                    String version = null;
+                    // Baca versi dari server
+                    String serverVersion = null;
                     String apkFileName = null;
                     StringBuilder changelog = new StringBuilder();
 
-                    // Membaca file version.txt
                     File versionFile = share.openFile(
                             versionFilePath,
                             EnumSet.of(AccessMask.GENERIC_READ),
@@ -146,30 +150,24 @@ public class UpdateManager {
 
                     try (InputStream in = versionFile.getInputStream()) {
                         java.util.Scanner scanner = new java.util.Scanner(in, "UTF-8");
-                        // Membaca versi dari baris pertama
                         if (scanner.hasNextLine()) {
-                            version = scanner.nextLine().trim();
+                            serverVersion = scanner.nextLine().trim();
                         }
-                        // Membaca nama file APK dari baris kedua
                         if (scanner.hasNextLine()) {
                             apkFileName = scanner.nextLine().trim();
                         }
-                        // Membaca changelog dari sisa baris
                         while (scanner.hasNextLine()) {
                             changelog.append(scanner.nextLine()).append("\n");
                         }
                     }
 
-                    if (apkFileName == null || !apkFileName.endsWith(".apk")) {
-                        throw new IOException("Invalid APK file name in version.txt");
+                    // Bandingkan versi
+                    if (compareVersions(serverVersion, currentVersion) <= 0) {
+                        // Versi server sama atau lebih lama
+                        return null;
                     }
 
-                    String apkFilePath = UPDATE_PATH + "/" + apkFileName;
-                    if (!share.fileExists(apkFilePath)) {
-                        throw new IOException("APK file does not exist: " + apkFileName);
-                    }
-
-                    return new UpdateInfo(version, changelog.toString().trim(), apkFileName);
+                    return new UpdateInfo(serverVersion, changelog.toString().trim(), apkFileName);
 
                 } catch (Exception e) {
                     Log.e(TAG, "Error checking for updates: " + e.getMessage());
@@ -186,6 +184,22 @@ public class UpdateManager {
                 }
             }
         }.execute();
+    }
+
+    // Fungsi untuk membandingkan versi
+    private int compareVersions(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        int length = Math.max(parts1.length, parts2.length);
+
+        for (int i = 0; i < length; i++) {
+            int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (part1 < part2) return -1;
+            if (part1 > part2) return 1;
+        }
+        return 0;
     }
 
     public void downloadUpdate(final String fileName, final DownloadCallback callback) {

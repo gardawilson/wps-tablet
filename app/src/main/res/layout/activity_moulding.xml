@@ -419,6 +419,7 @@
         android:layout_width="225dp"
         android:layout_height="24dp"
         android:background="#E8EBE9"
+        android:inputType="textCapCharacters"
         app:iconifiedByDefault="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

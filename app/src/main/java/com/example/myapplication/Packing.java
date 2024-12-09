@@ -14,7 +14,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -62,6 +64,9 @@ import android.os.Handler;
 import android.os.Looper;
 
 
+
+
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -90,6 +95,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
+
+
+
+
+
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -115,6 +125,8 @@ import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
 
+
+
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -129,6 +141,7 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+
 public class Packing extends AppCompatActivity {
 
     private SearchView NoBarangJadi;
@@ -169,6 +182,7 @@ public class Packing extends AppCompatActivity {
     private TableLayout Tabel;
     boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private EditText NoBarangJadi_display;
 
 
 
@@ -209,6 +223,52 @@ public class Packing extends AppCompatActivity {
         JumlahPcsP = findViewById(R.id.JumlahPcsP);
         Tabel = findViewById(R.id.Tabel);
         RadioGroupP = findViewById(R.id.RadioGroupP);
+        NoBarangJadi_display = findViewById(R.id.NoBarangJadi_display);
+
+        // Set imeOptions untuk memungkinkan pindah fokus
+        DetailTebalP.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebarP.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjangP.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalP.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarP.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarP.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangP.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangP.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsP.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        NoBarangJadi_display.setVisibility(View.GONE);
+        disableForm();
+
 
 
         NoBarangJadi.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -275,9 +335,8 @@ public class Packing extends AppCompatActivity {
 
             BtnSimpanP.setEnabled(true);
             BtnBatalP.setEnabled(true);
-            radioButtonMesinP.setEnabled(true);
-            radioButtonBSusunP.setEnabled(true);
             BtnDataBaruP.setEnabled(false);
+            BtnPrintP.setEnabled(false);
 
             clearData();
             resetDetailData();
@@ -370,7 +429,10 @@ public class Packing extends AppCompatActivity {
                 Toast.makeText(Packing.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            BtnDataBaruP.setEnabled(true);
+            BtnPrintP.setEnabled(true);
+            BtnSimpanP.setEnabled(false);
+            disableForm();
             Toast.makeText(Packing.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
 
         });
@@ -382,9 +444,10 @@ public class Packing extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
-
                 BtnDataBaruP.setEnabled(true);
                 BtnSimpanP.setEnabled(false);
+                NoBarangJadi.setVisibility(View.VISIBLE);
+                NoBarangJadi_display.setVisibility(View.GONE);
                 Toast.makeText(Packing.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -865,16 +928,61 @@ public class Packing extends AppCompatActivity {
         return isLocked;
     }
 
+    private void enableForm(){
+        DateP.setEnabled(true);
+        TimeP.setEnabled(true);
+        SpinKayuP.setEnabled(true);
+        radioButtonMesinP.setEnabled(true);
+        radioButtonBSusunP.setEnabled(true);
+        SpinMesinP.setEnabled(true);
+        SpinSusunP.setEnabled(true);
+        SpinTellyP.setEnabled(true);
+        SpinSPKP.setEnabled(true);
+        SpinSPKAsalP.setEnabled(true);
+        SpinProfileP.setEnabled(true);
+        DetailTebalP.setEnabled(true);
+        DetailLebarP.setEnabled(true);
+        DetailPanjangP.setEnabled(true);
+        DetailPcsP.setEnabled(true);
+        BtnHapusDetailP.setEnabled(true);
+        BtnInputDetailP.setEnabled(true);
+        SpinBarangJadiP.setEnabled(true);
+    }
 
     private void disableForm(){
+        DateP.setEnabled(false);
+        TimeP.setEnabled(false);
+        SpinKayuP.setEnabled(false);
+        radioButtonMesinP.setEnabled(false);
+        radioButtonBSusunP.setEnabled(false);
+        SpinMesinP.setEnabled(false);
+        SpinSusunP.setEnabled(false);
+        SpinTellyP.setEnabled(false);
+        SpinSPKP.setEnabled(false);
+        SpinSPKAsalP.setEnabled(false);
+        SpinProfileP.setEnabled(false);
         DetailTebalP.setEnabled(false);
         DetailLebarP.setEnabled(false);
         DetailPanjangP.setEnabled(false);
         DetailPcsP.setEnabled(false);
         BtnHapusDetailP.setEnabled(false);
         BtnInputDetailP.setEnabled(false);
-        DateP.setEnabled(false);
-        TimeP.setEnabled(false);
+        SpinBarangJadiP.setEnabled(false);
+        BtnSimpanP.setEnabled(false);
+
+        // Disable semua tombol hapus yang ada di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View row = Tabel.getChildAt(i);
+            if (row instanceof TableRow) {
+                TableRow tableRow = (TableRow) row;
+                for (int j = 0; j < tableRow.getChildCount(); j++) {
+                    View view = tableRow.getChildAt(j);
+                    if (view instanceof Button) {
+                        view.setEnabled(false);
+                    }
+                }
+            }
+        }
     }
 
     private void resetAllForm() {
@@ -896,17 +1004,6 @@ public class Packing extends AppCompatActivity {
 
     }
 
-
-    private void enableForm(){
-        DetailTebalP.setEnabled(true);
-        DetailLebarP.setEnabled(true);
-        DetailPanjangP.setEnabled(true);
-        DetailPcsP.setEnabled(true);
-        BtnHapusDetailP.setEnabled(true);
-        BtnInputDetailP.setEnabled(true);
-        DateP.setEnabled(true);
-        TimeP.setEnabled(true);
-    }
 
     private void closeKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -1374,7 +1471,7 @@ public class Packing extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -2350,6 +2447,10 @@ public class Packing extends AppCompatActivity {
         protected void onPostExecute(String newNoBarangJadi) {
             if (newNoBarangJadi != null) {
                 NoBarangJadi.setQuery(newNoBarangJadi, true);
+                NoBarangJadi.setVisibility(View.GONE);
+                NoBarangJadi_display.setVisibility(View.VISIBLE);
+                NoBarangJadi_display.setText(newNoBarangJadi);
+                NoBarangJadi_display.setEnabled(false);
                 Toast.makeText(Packing.this, "NoBJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e("Error", "Failed to set or save NoBJ.");
@@ -2712,7 +2813,7 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile";
+                    String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 

@@ -996,6 +996,21 @@ public class Moulding extends AppCompatActivity {
         DetailPcsM.setEnabled(false);
         BtnHapusDetailM.setEnabled(false);
         BtnInputDetailM.setEnabled(false);
+        BtnSimpanM.setEnabled(false);
+
+        // Disable semua tombol hapus yang ada di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View row = Tabel.getChildAt(i);
+            if (row instanceof TableRow) {
+                TableRow tableRow = (TableRow) row;
+                for (int j = 0; j < tableRow.getChildCount(); j++) {
+                    View view = tableRow.getChildAt(j);
+                    if (view instanceof Button) {
+                        view.setEnabled(false);
+                    }
+                }
+            }
+        }
     }
 
     private void resetAllForm() {
@@ -1405,7 +1420,7 @@ public class Moulding extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 0);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 0);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
