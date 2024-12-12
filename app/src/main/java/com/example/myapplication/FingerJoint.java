@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -69,6 +70,7 @@ import android.os.Looper;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -143,6 +145,8 @@ import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
 
 public class FingerJoint extends AppCompatActivity {
+
+    private String username;
     private SearchView NoFJ;
     private EditText DateFJ;
     private EditText TimeFJ;
@@ -186,6 +190,17 @@ public class FingerJoint extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+
+                new DeleteLatestNoFJTask().execute();
+
+                finish();
+            }
+        });
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_finger_joint);
 
@@ -284,6 +299,7 @@ public class FingerJoint extends AppCompatActivity {
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
+                        BtnPrintFJ.setEnabled(true);
                     }
                     else{
                         enableForm();
@@ -454,11 +470,14 @@ public class FingerJoint extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
+
+                new DeleteLatestNoFJTask().execute();
+
                 BtnDataBaruFJ.setEnabled(true);
                 BtnSimpanFJ.setEnabled(false);
                 NoFJ.setVisibility(View.VISIBLE);
                 NoFJ_display.setVisibility(View.GONE);
-                Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(FingerJoint.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -525,11 +544,11 @@ public class FingerJoint extends AppCompatActivity {
                             DetailPanjangFJ.setThreshold(0);
 
                             // Tampilkan status lock
-                            if (isLocked) {
-                                Toast.makeText(FingerJoint.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(FingerJoint.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-                            }
+//                            if (isLocked) {
+//                                Toast.makeText(FingerJoint.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
+//                            } else {
+//                                Toast.makeText(FingerJoint.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
+//                            }
                         });
                     }).start();
                 }
@@ -552,7 +571,7 @@ public class FingerJoint extends AppCompatActivity {
 
         BtnInputDetailFJ.setOnClickListener(v -> {
             // Ambil input dari AutoCompleteTextView
-            String noS4S = NoFJ.getQuery().toString();
+            String noFJ = NoFJ.getQuery().toString();
             String tebal = DetailTebalFJ.getText().toString().trim();
             String lebar = DetailLebarFJ.getText().toString().trim();
             String panjang = DetailPanjangFJ.getText().toString().trim();
@@ -567,7 +586,7 @@ public class FingerJoint extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
 
             // Validasi input kosong
-            if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+            if (noFJ.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                 Toast.makeText(FingerJoint.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -580,7 +599,7 @@ public class FingerJoint extends AppCompatActivity {
 
                     if (result.equals("SUCCESS")) {
                         // Jika validasi berhasil, tambahkan data ke daftar
-                        addDataDetail(noS4S);
+                        addDataDetail(noFJ);
                         jumlahpcs();
                         m3();
                         Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
@@ -600,13 +619,13 @@ public class FingerJoint extends AppCompatActivity {
         BtnPrintFJ.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Validasi input terlebih dahulu
+                // Validasi input
                 if (NoFJ.getQuery() == null || NoFJ.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(FingerJoint.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FingerJoint.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Validasi apakah ada data yang akan dicetak
+                // Validasi apakah ada data untuk dicetak
                 if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
                     Toast.makeText(FingerJoint.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
                     return;
@@ -616,9 +635,12 @@ public class FingerJoint extends AppCompatActivity {
                 String noFJ = NoFJ.getQuery().toString().trim();
                 checkHasBeenPrinted(noFJ, new HasBeenPrintedCallback() {
                     @Override
-                    public void onResult(boolean hasBeenPrinted) {
+                    public void onResult(int printCount) {
+                        // Menggunakan printCount untuk menentukan jumlah print sebelumnya
+                        // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
+
                         try {
-                            // Ambil data dari form dengan validasi null
+                            // Ambil data dari form
                             String mesinSusun;
                             String jenisKayu = SpinKayuFJ.getSelectedItem() != null ? SpinKayuFJ.getSelectedItem().toString().trim() : "";
                             String date = DateFJ.getText() != null ? DateFJ.getText().toString().trim() : "";
@@ -630,16 +652,15 @@ public class FingerJoint extends AppCompatActivity {
                             String fisik = SpinFisikFJ.getSelectedItem() != null ? SpinFisikFJ.getSelectedItem().toString().trim() : "";
                             String jumlahPcs = JumlahPcsFJ.getText() != null ? JumlahPcsFJ.getText().toString().trim() : "";
                             String m3 = M3FJ.getText() != null ? M3FJ.getText().toString().trim() : "";
-                            if(radioButtonMesinFJ.isChecked()){
+                            if (radioButtonMesinFJ.isChecked()) {
                                 mesinSusun = SpinMesinFJ.getSelectedItem() != null ? SpinMesinFJ.getSelectedItem().toString().trim() : "";
-                            }
-                            else{
+                            } else {
                                 mesinSusun = SpinSusunFJ.getSelectedItem() != null ? SpinSusunFJ.getSelectedItem().toString().trim() : "";
                             }
 
-                            // Buat PDF dengan parameter hasBeenPrinted
+                            // Buat PDF dengan parameter printCount
                             Uri pdfUri = createPdf(noFJ, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
-                                    temporaryDataListDetail, jumlahPcs, m3, hasBeenPrinted, fisik);
+                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik);
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
@@ -706,10 +727,8 @@ public class FingerJoint extends AppCompatActivity {
                                         boolean isPrinting = true;
                                         while (isPrinting) {
                                             if (printJob.isCompleted()) {
-                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
-                                                if (!hasBeenPrinted) {
-                                                    updatePrintStatus(noFJ);
-                                                }
+                                                // Update database setiap kali print selesai
+                                                updatePrintStatus(noFJ); // Update nilai HasBeenPrinted setelah print selesai
                                                 isPrinting = false;
                                             } else if (printJob.isFailed() || printJob.isCancelled()) {
                                                 isPrinting = false;
@@ -741,7 +760,6 @@ public class FingerJoint extends AppCompatActivity {
                 });
             }
         });
-
     }
 
     private Connection ConnectionClass() {
@@ -764,6 +782,42 @@ public class FingerJoint extends AppCompatActivity {
     }
 
     //Method FingerJoint
+
+    private class DeleteLatestNoFJTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            String noFJ = NoFJ_display.getText().toString().trim();
+            boolean success = false;
+            if (con != null) {
+                try {
+                    String query = "DELETE FROM dbo.FJ_h WHERE NoFJ = ?";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, noFJ);
+                    int rowsAffected = ps.executeUpdate();
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+//            if (success) {
+//                Toast.makeText(FingerJoint.this, "NoFJ terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Log.e("Error", "Failed to delete the latest NoS4S.");
+//                Toast.makeText(FingerJoint.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//            }
+        }
+    }
 
 
     private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
@@ -1183,7 +1237,7 @@ public class FingerJoint extends AppCompatActivity {
                                 runOnUiThread(() -> {
 
 //                                    Toast.makeText(getApplicationContext(),
-//                                            "Data tidak ditemukan untuk NoS4S: " + noFJ,
+//                                            "Data tidak ditemukan untuk NoFJ: " + noFJ,
 //                                            Toast.LENGTH_SHORT).show();
                                 });
                             }
@@ -1262,27 +1316,26 @@ public class FingerJoint extends AppCompatActivity {
 
 
 
-    // Interface untuk callback
     interface HasBeenPrintedCallback {
-        void onResult(boolean hasBeenPrinted);
+        void onResult(int count);  // Callback menerima count
     }
 
-    // Method untuk mengecek status HasBeenPrinted secara asynchronous
+    // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noFJ, FingerJoint.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            boolean hasBeenPrinted = false;
+            int count = 0;
             Connection connection = null;
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
+                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
                     String query = "SELECT HasBeenPrinted FROM FJ_h WHERE NoFJ = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noFJ);
                         try (ResultSet rs = stmt.executeQuery()) {
                             if (rs.next()) {
-                                Integer printStatus = rs.getInt("HasBeenPrinted");
-                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                                count = rs.getInt(1);  // Ambil hasil hitungan
                             }
                         }
                     }
@@ -1302,12 +1355,12 @@ public class FingerJoint extends AppCompatActivity {
                 }
             }
 
-            final boolean finalHasBeenPrinted = hasBeenPrinted;
-            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+            final int finalCount = count;
+            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
         }).start();
     }
 
-    // Method untuk mengupdate status HasBeenPrinted
+    // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noFJ) {
         new Thread(() -> {
             Connection connection = null;
@@ -1315,7 +1368,8 @@ public class FingerJoint extends AppCompatActivity {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    String query = "UPDATE FJ_h SET HasBeenPrinted = 1 WHERE NoFJ = ?";
+                    // Query untuk menambah 1 pada nilai HasBeenPrinted
+                    String query = "UPDATE FJ_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1 WHERE NoFJ = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noFJ);
                         int rowsAffected = stmt.executeUpdate();
@@ -1351,15 +1405,6 @@ public class FingerJoint extends AppCompatActivity {
                 }
             }
         }).start();
-    }
-
-
-    private String getIdJenisKayuStr() {
-        if (SpinKayuFJ.getSelectedItem() != null) {
-            JenisKayuFJ selectedJenisKayu = (JenisKayuFJ) SpinKayuFJ.getSelectedItem();
-            return selectedJenisKayu.getIdJenisKayu();
-        }
-        return "";
     }
 
 
@@ -1821,7 +1866,7 @@ public class FingerJoint extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -1831,7 +1876,7 @@ public class FingerJoint extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -1846,17 +1891,18 @@ public class FingerJoint extends AppCompatActivity {
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            if (line.length() + word.length() > 20) { // Batas karakter per baris
+            if (line.length() + word.length() > 30) { // Batas karakter per baris
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
+
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(8)
+                .setFontSize(9)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -1866,6 +1912,15 @@ public class FingerJoint extends AppCompatActivity {
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
+
+        float pageWidth = PageSize.A6.getWidth() - 20;
+        float tableWidth = table.getWidth().getValue();
+
+        if (tableWidth == pageWidth * 0.4f) { // Kolom kiri
+            valueCell.setWidth(pageWidth * 0.4f - 5);
+        } else if (tableWidth == pageWidth * 0.6f) { // Kolom kanan lebih lebar
+            valueCell.setWidth(pageWidth * 0.6f);
+        }
 
         // Tambahkan semua cell ke tabel
         table.addCell(labelCell);
@@ -1890,16 +1945,16 @@ public class FingerJoint extends AppCompatActivity {
             canvas.saveState();
 
             String watermarkText = "COPY";
-            float fontSize = 125;
+            float fontSize = 95;
             float textWidth = font.getWidth(watermarkText, fontSize);
             float textHeight = 175;
 
             // Posisi watermark di tengah halaman
-            float centerX = width / 2;
+            float centerX = width / 2 - 25;
             float centerY = height / 2;
 
-            // Rotasi 45 derajat
-            double angle = Math.toRadians(45);
+            // Rotasi derajat
+            double angle = Math.toRadians(0);
             float cos = (float) Math.cos(angle);
             float sin = (float) Math.sin(angle);
 
@@ -1938,7 +1993,7 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private Uri createPdf(String noFJ, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, boolean hasBeenPrinted, String fisik) throws IOException {
+    private Uri createPdf(String noFJ, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
         // Validasi parameter wajib
         if (noFJ == null || noFJ.trim().isEmpty()) {
             throw new IOException("Nomor FingerJoint tidak boleh kosong");
@@ -1991,8 +2046,8 @@ public class FingerJoint extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 575; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
-                float rowHeight = 34; // Tinggi rata-rata per baris data
+                float baseHeight = 300; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
                 // Tetapkan ukuran halaman dinamis
@@ -2011,7 +2066,7 @@ public class FingerJoint extends AppCompatActivity {
 
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.4f, pageWidth * 0.6f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
@@ -2023,19 +2078,18 @@ public class FingerJoint extends AppCompatActivity {
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
+                        .setWidth(pageWidth * 0.4f - 5)
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No FingerJoint", noFJ, timesNewRoman);
+                addInfoRow(leftColumn, "No FJ", noFJ, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
                 addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
-                        .setMarginLeft(20)
+                        .setWidth(pageWidth * 0.6f)
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kanan
@@ -2122,25 +2176,25 @@ public class FingerJoint extends AppCompatActivity {
 
                 // Tambahkan semua elemen ke dokumen
 
-
                 document.add(judul);
-                Log.d("DEBUG_TAG", "Value of hasBeenPrinted: " + hasBeenPrinted);
-                if (hasBeenPrinted) {
+                if (printCount > 1) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
+
                 document.add(mainTable);
                 document.add(table);
                 document.add(sumTable);
-                document.add(outputText);
-                document.add(qrCodeImage);
-                document.add(qrCodeID);
-                document.add(bottomLine);
-                document.add(mainTable);
-                document.add(table);
-                document.add(sumTable);
-                document.add(inputText);
-                document.add(qrCodeBottomImage);
-                document.add(qrCodeIDbottom);
+
+                if(printCount % 2 != 0) {
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
+                }
+                else{
+                    document.add(outputText);
+                    document.add(qrCodeImage);
+                    document.add(qrCodeID);
+                }
 
                 document.close();
                 pdfUri = uri;
@@ -2234,9 +2288,9 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(FingerJoint.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(FingerJoint.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -2447,7 +2501,7 @@ public class FingerJoint extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE enable = 1";
+                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE Enable = 1 AND IsInternal = 1 AND IsNonST = 1";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -2542,11 +2596,20 @@ public class FingerJoint extends AppCompatActivity {
         @Override
         protected List<TellyFJ> doInBackground(Void... voids) {
             List<TellyFJ> tellyList = new ArrayList<>();
+
+            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+            username = prefs.getString("username", "");
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdOrgTelly, NamaOrgTelly FROM dbo.MstOrgTelly WHERE enable = 1";
+                    String query =  "SELECT t.IdOrgTelly, t.NamaOrgTelly " +
+                                    "FROM dbo.MstOrgTelly t " +
+                                    "INNER JOIN MstUsername u ON t.NamaOrgTelly = u.Username " +
+                                    "WHERE t.enable = 1 AND u.Username = ?";
                     PreparedStatement ps = con.prepareStatement(query);
+
+                    ps.setString(1, username);
+
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
@@ -2571,9 +2634,6 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<TellyFJ> tellyList) {
-            // Tambahkan elemen dummy di awal
-            TellyFJ dummyTelly = new TellyFJ("", "PILIH");
-            tellyList.add(0, dummyTelly);
 
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<TellyFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, tellyList);
@@ -2582,8 +2642,6 @@ public class FingerJoint extends AppCompatActivity {
             // Set adapter ke spinner
             SpinTellyFJ.setAdapter(adapter);
 
-            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
-            SpinTellyFJ.setSelection(0);
         }
     }
 
@@ -2650,14 +2708,19 @@ public class FingerJoint extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query = "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPK = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPKFJ spk = new SPKFJ(noSPK);
+                        // Buat objek SPKFJ dengan kedua nilai
+                        SPKFJ spk = new SPKFJ(noSPK, buyer);
                         spkList.add(spk);
                     }
 
@@ -2675,14 +2738,19 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKFJ> spkList) {
+            // Tambahkan item PILIH di awal list
             SPKFJ dummySPK = new SPKFJ("PILIH");
             spkList.add(0, dummySPK);
 
-            ArrayAdapter<SPKFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkList);
+            ArrayAdapter<SPKFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
+                    android.R.layout.simple_spinner_item, spkList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKFJ.setAdapter(adapter);
             SpinSPKFJ.setSelection(0);
+
+            // Optional: Log untuk debugging
+            Log.d("SPKFJ_DEBUG", "Loaded " + (spkList.size() - 1) + " SPK FJ items");
         }
     }
 
@@ -2693,14 +2761,19 @@ public class FingerJoint extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query = "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
-                        String noSPKasal = rs.getString("NoSPK");
+                        String noSPKAsal = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPKAsalFJ spkAsal = new SPKAsalFJ(noSPKasal);
+                        // Buat objek SPKAsalFJ dengan kedua nilai
+                        SPKAsalFJ spkAsal = new SPKAsalFJ(noSPKAsal, buyer);
                         spkAsalList.add(spkAsal);
                     }
 
@@ -2718,73 +2791,21 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPKAsalFJ> spkAsalList) {
+            // Tambahkan item PILIH di awal list
             SPKAsalFJ dummySPKAsal = new SPKAsalFJ("PILIH");
             spkAsalList.add(0, dummySPKAsal);
 
-            ArrayAdapter<SPKAsalFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkAsalList);
+            ArrayAdapter<SPKAsalFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
+                    android.R.layout.simple_spinner_item, spkAsalList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKAsalFJ.setAdapter(adapter);
             SpinSPKAsalFJ.setSelection(0);
+
+            // Optional: Log untuk debugging
+            Log.d("SPKAsalFJ_DEBUG", "Loaded " + (spkAsalList.size() - 1) + " SPK Asal FJ items");
         }
     }
-
-    private class LoadSPKTask2FJ extends AsyncTask<Void, Void, List<SPKFJ>> {
-        private String noFJ;
-
-        public LoadSPKTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<SPKFJ> doInBackground(Void... params) {
-            List<SPKFJ> spkList = new ArrayList<>();
-            Connection con = ConnectionClass(); // Ensure this method establishes a database connection
-
-            if (con != null) {
-                try {
-                    String query = "SELECT NoSPK FROM dbo.FJ_h WHERE NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String noSPK = rs.getString("NoSPK");
-
-                        SPKFJ spk = new SPKFJ(noSPK);
-                        spkList.add(spk);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return spkList;
-        }
-
-        @Override
-        protected void onPostExecute(List<SPKFJ> spkList) {
-            if (!spkList.isEmpty()) {
-                ArrayAdapter<SPKFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSPKFJ.setAdapter(adapter);
-
-                SpinSPKFJ.setEnabled(true);
-            } else {
-                Log.e("Error", "No SPK data found for the provided NoFJ.");
-                SpinSPKFJ.setAdapter(null);
-                SpinSPKFJ.setEnabled(false);
-                Toast.makeText(FingerJoint.this, "Tidak ada data SPK yang ditemukan.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
 
     private class LoadProfileTaskFJ extends AsyncTask<Void, Void, List<ProfileFJ>> {
         @Override
@@ -3245,35 +3266,65 @@ public class FingerJoint extends AppCompatActivity {
 
     public class SPKFJ {
         private String noSPK;
+        private String buyer;
 
+        public SPKFJ(String noSPK, String buyer) {
+            this.noSPK = noSPK;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
         public SPKFJ(String noSPK) {
             this.noSPK = noSPK;
+            this.buyer = "";
         }
 
         public String getNoSPK() {
             return noSPK;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
         @Override
         public String toString() {
-            return noSPK;
+            if (buyer.isEmpty()) {
+                return noSPK; // Untuk item "PILIH"
+            }
+            return noSPK + " - " + buyer;
         }
     }
 
     public class SPKAsalFJ {
-        private String noSPKasal;
+        private String noSPKAsal;
+        private String buyer;
 
-        public SPKAsalFJ(String noSPKasal) {
-            this.noSPKasal = noSPKasal;
+        public SPKAsalFJ(String noSPKAsal, String buyer) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
+        public SPKAsalFJ(String noSPKAsal) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = "";
         }
 
         public String getNoSPKAsal() {
-            return noSPKasal;
+            return noSPKAsal;
+        }
+
+        public String getBuyer() {
+            return buyer;
         }
 
         @Override
         public String toString() {
-            return noSPKasal;
+            if (buyer.isEmpty()) {
+                return noSPKAsal; // Untuk item "PILIH"
+            }
+            return noSPKAsal + " - " + buyer;
         }
     }
 

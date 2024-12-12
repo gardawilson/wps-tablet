@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -63,12 +64,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-
-
-
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -144,6 +142,7 @@ import java.math.RoundingMode;
 
 public class Packing extends AppCompatActivity {
 
+    private String username;
     private SearchView NoBarangJadi;
     private EditText DateP;
     private EditText TimeP;
@@ -189,6 +188,17 @@ public class Packing extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+
+                new DeleteLatestNoBJTask().execute();
+
+                finish();
+            }
+        });
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_packing);
 
@@ -287,6 +297,7 @@ public class Packing extends AppCompatActivity {
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
+                        BtnPrintP.setEnabled(true);
                     }
                     else{
                         enableForm();
@@ -379,13 +390,13 @@ public class Packing extends AppCompatActivity {
                 idUOMPanjang = 1;
             }
 
+
             if (noBarangJadi.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
-                    NoWIP.getText().toString().isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
                     selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
-                    selectedFisik == null || selectedFisik.getIdBarangJadi().equals("PILIH") ||
+                    selectedFisik == null || selectedFisik.getIdBarangJadi().equals("") ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinP.isChecked() && !radioButtonBSusunP.isChecked()) ||
                     (radioButtonMesinP.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
@@ -444,11 +455,13 @@ public class Packing extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
+
+                new DeleteLatestNoBJTask().execute();
+
                 BtnDataBaruP.setEnabled(true);
                 BtnSimpanP.setEnabled(false);
                 NoBarangJadi.setVisibility(View.VISIBLE);
                 NoBarangJadi_display.setVisibility(View.GONE);
-                Toast.makeText(Packing.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -502,11 +515,11 @@ public class Packing extends AppCompatActivity {
                             DetailPanjangP.setThreshold(0);
 
                             // Tampilkan status lock
-                            if (isLocked) {
-                                Toast.makeText(Packing.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(Packing.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-                            }
+//                            if (isLocked) {
+//                                Toast.makeText(Packing.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
+//                            } else {
+//                                Toast.makeText(Packing.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
+//                            }
                         });
                     }).start();
                 }
@@ -524,7 +537,7 @@ public class Packing extends AppCompatActivity {
 
         BtnInputDetailP.setOnClickListener(v -> {
             // Ambil input dari AutoCompleteTextView
-            String noS4S = NoBarangJadi.getQuery().toString();
+            String noBarangJadi = NoBarangJadi.getQuery().toString();
             String tebal = DetailTebalP.getText().toString().trim();
             String lebar = DetailLebarP.getText().toString().trim();
             String panjang = DetailPanjangP.getText().toString().trim();
@@ -539,7 +552,7 @@ public class Packing extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
 
             // Validasi input kosong
-            if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+            if (noBarangJadi.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                 Toast.makeText(Packing.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -552,7 +565,7 @@ public class Packing extends AppCompatActivity {
 
                     if (result.equals("SUCCESS")) {
                         // Jika validasi berhasil, tambahkan data ke daftar
-                        addDataDetail(noS4S);
+                        addDataDetail(noBarangJadi);
                         jumlahpcs();
                         m3();
                         Toast.makeText(Packing.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
@@ -571,13 +584,13 @@ public class Packing extends AppCompatActivity {
         BtnPrintP.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Validasi input terlebih dahulu
+                // Validasi input
                 if (NoBarangJadi.getQuery() == null || NoBarangJadi.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(Packing.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Packing.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Validasi apakah ada data yang akan dicetak
+                // Validasi apakah ada data untuk dicetak
                 if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
                     Toast.makeText(Packing.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
                     return;
@@ -585,11 +598,14 @@ public class Packing extends AppCompatActivity {
 
                 // Cek status HasBeenPrinted di database
                 String noBarangJadi = NoBarangJadi.getQuery().toString().trim();
-                checkHasBeenPrinted(noBarangJadi, new HasBeenPrintedCallback() {
+                checkHasBeenPrinted(noBarangJadi, new Packing.HasBeenPrintedCallback() {
                     @Override
-                    public void onResult(boolean hasBeenPrinted) {
+                    public void onResult(int printCount) {
+                        // Menggunakan printCount untuk menentukan jumlah print sebelumnya
+                        // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
+
                         try {
-                            // Ambil data dari form dengan validasi null
+                            // Ambil data dari form
                             String mesinSusun;
                             String jenisKayu = SpinKayuP.getSelectedItem() != null ? SpinKayuP.getSelectedItem().toString().trim() : "";
                             String date = DateP.getText() != null ? DateP.getText().toString().trim() : "";
@@ -607,9 +623,10 @@ public class Packing extends AppCompatActivity {
                                 mesinSusun = SpinSusunP.getSelectedItem() != null ? SpinSusunP.getSelectedItem().toString().trim() : "";
                             }
 
-                            // Buat PDF dengan parameter hasBeenPrinted
+                            // Buat PDF dengan parameter printCount
                             Uri pdfUri = createPdf(noBarangJadi, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal,
-                                    temporaryDataListDetail, jumlahPcs, m3, hasBeenPrinted, namaBJ);
+                                    temporaryDataListDetail, jumlahPcs, m3, printCount, namaBJ);
+
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
@@ -676,10 +693,8 @@ public class Packing extends AppCompatActivity {
                                         boolean isPrinting = true;
                                         while (isPrinting) {
                                             if (printJob.isCompleted()) {
-                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
-                                                if (!hasBeenPrinted) {
-                                                    updatePrintStatus(noBarangJadi);
-                                                }
+                                                // Update database setiap kali print selesai
+                                                updatePrintStatus(noBarangJadi); // Update nilai HasBeenPrinted setelah print selesai
                                                 isPrinting = false;
                                             } else if (printJob.isFailed() || printJob.isCancelled()) {
                                                 isPrinting = false;
@@ -734,6 +749,43 @@ public class Packing extends AppCompatActivity {
     }
 
     //METHOD PACKING
+
+    private class DeleteLatestNoBJTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            String noBJ = NoBarangJadi_display.getText().toString().trim();
+            boolean success = false;
+            if (con != null) {
+                try {
+                    String query = "DELETE FROM dbo.BarangJadi_h WHERE NoBJ = ?";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, noBJ);
+                    int rowsAffected = ps.executeUpdate();
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+//            if (success) {
+//                Toast.makeText(Packing.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//            } else {
+//                Log.e("Error", "Failed to delete the latest NoS4S.");
+//                Toast.makeText(Packing.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//            }
+        }
+    }
 
     // Deklarasi CheckSPKDataTask di level class
     private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
@@ -1004,7 +1056,6 @@ public class Packing extends AppCompatActivity {
 
     }
 
-
     private void closeKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
@@ -1229,28 +1280,26 @@ public class Packing extends AppCompatActivity {
         }
     }
 
-
-    // Interface untuk callback
     interface HasBeenPrintedCallback {
-        void onResult(boolean hasBeenPrinted);
+        void onResult(int count);  // Callback menerima count
     }
 
-    // Method untuk mengecek status HasBeenPrinted secara asynchronous
+    // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noBarangJadi, Packing.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            boolean hasBeenPrinted = false;
+            int count = 0;
             Connection connection = null;
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
+                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
                     String query = "SELECT HasBeenPrinted FROM BarangJadi_h WHERE NoBJ = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noBarangJadi);
                         try (ResultSet rs = stmt.executeQuery()) {
                             if (rs.next()) {
-                                Integer printStatus = rs.getInt("HasBeenPrinted");
-                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                                count = rs.getInt(1);  // Ambil hasil hitungan
                             }
                         }
                     }
@@ -1270,12 +1319,12 @@ public class Packing extends AppCompatActivity {
                 }
             }
 
-            final boolean finalHasBeenPrinted = hasBeenPrinted;
-            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+            final int finalCount = count;
+            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
         }).start();
     }
 
-    // Method untuk mengupdate status HasBeenPrinted
+    // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noBarangJadi) {
         new Thread(() -> {
             Connection connection = null;
@@ -1283,7 +1332,8 @@ public class Packing extends AppCompatActivity {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    String query = "UPDATE BarangJadi_h SET HasBeenPrinted = 1 WHERE NoBJ = ?";
+                    // Query untuk menambah 1 pada nilai HasBeenPrinted
+                    String query = "UPDATE BarangJadi_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1 WHERE NoBJ = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noBarangJadi);
                         int rowsAffected = stmt.executeUpdate();
@@ -1600,11 +1650,11 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
-            } else {
-                Log.e("DB_INSERT", "Data gagal disimpan");
-            }
+//            if (success) {
+//                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
+//            } else {
+//                Log.e("DB_INSERT", "Data gagal disimpan");
+//            }
         }
     }
 
@@ -1740,7 +1790,7 @@ public class Packing extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -1750,7 +1800,7 @@ public class Packing extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -1765,17 +1815,18 @@ public class Packing extends AppCompatActivity {
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            if (line.length() + word.length() > 20) { // Batas karakter per baris
+            if (line.length() + word.length() > 30) { // Batas karakter per baris
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
+
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(8)
+                .setFontSize(9)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -1785,6 +1836,15 @@ public class Packing extends AppCompatActivity {
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
+
+        float pageWidth = PageSize.A6.getWidth() - 20;
+        float tableWidth = table.getWidth().getValue();
+
+        if (tableWidth == pageWidth * 0.4f) { // Kolom kiri
+            valueCell.setWidth(pageWidth * 0.4f - 5);
+        } else if (tableWidth == pageWidth * 0.6f) { // Kolom kanan lebih lebar
+            valueCell.setWidth(pageWidth * 0.6f);
+        }
 
         // Tambahkan semua cell ke tabel
         table.addCell(labelCell);
@@ -1809,16 +1869,16 @@ public class Packing extends AppCompatActivity {
             canvas.saveState();
 
             String watermarkText = "COPY";
-            float fontSize = 125;
+            float fontSize = 95;
             float textWidth = font.getWidth(watermarkText, fontSize);
             float textHeight = 175;
 
             // Posisi watermark di tengah halaman
-            float centerX = width / 2;
+            float centerX = width / 2 - 25;
             float centerY = height / 2;
 
-            // Rotasi 45 derajat
-            double angle = Math.toRadians(45);
+            // Rotasi derajat
+            double angle = Math.toRadians(0);
             float cos = (float) Math.cos(angle);
             float sin = (float) Math.sin(angle);
 
@@ -1857,7 +1917,7 @@ public class Packing extends AppCompatActivity {
         }
     }
 
-    private Uri createPdf(String noBarangJadi, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, boolean hasBeenPrinted, String namaBJ) throws IOException {
+    private Uri createPdf(String noBarangJadi, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String namaBJ) throws IOException {
         // Validasi parameter wajib
         if (noBarangJadi == null || noBarangJadi.trim().isEmpty()) {
             throw new IOException("Nomor Packing tidak boleh kosong");
@@ -1905,12 +1965,12 @@ public class Packing extends AppCompatActivity {
 
             try {
                 // Inisialisasi font dan dokumen
-                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 375; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 300; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
@@ -1930,7 +1990,7 @@ public class Packing extends AppCompatActivity {
 
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.4f, pageWidth * 0.6f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
@@ -1938,22 +1998,22 @@ public class Packing extends AppCompatActivity {
                         .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{50, 5, 80};
+                float[] infoColumnWidths = new float[]{60, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
+                        .setWidth(pageWidth * 0.4f - 5)
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kiri
                 addInfoRow(leftColumn, "No BJ", noBarangJadi, timesNewRoman);
-                addInfoRow(leftColumn, "Jenis Kayu", jenisKayu, timesNewRoman);
+                addInfoRow(leftColumn, "J. Kayu", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Nama BJ", namaBJ, timesNewRoman);
 //                addInfoRow(leftColumn, "Fisik", "-", timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
+                        .setWidth(pageWidth * 0.6f)
                         .setMarginLeft(20)
                         .setBorder(Border.NO_BORDER);
 
@@ -1994,11 +2054,13 @@ public class Packing extends AppCompatActivity {
                 }
 
                 // Isi tabel
+                DecimalFormat df = new DecimalFormat("#,###.##");
+
                 for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2041,9 +2103,6 @@ public class Packing extends AppCompatActivity {
                         .setFontSize(8)
                         .setBorder(Border.NO_BORDER);
 
-
-
-
                 qrTable.addCell(new Cell().add(new Paragraph("Input")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setPaddings(0, 0, -10, 30));
                 qrTable.addCell(new Cell().add(new Paragraph("Input")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setPaddings(0, 30, -10, 0));
 
@@ -2058,18 +2117,23 @@ public class Packing extends AppCompatActivity {
 
                 // Tambahkan semua elemen ke dokumen
                 document.add(judul);
-                Log.d("DEBUG_TAG", "Value of hasBeenPrinted: " + hasBeenPrinted);
-                if (hasBeenPrinted) {
+                if (printCount > 1) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
+
                 document.add(mainTable);
                 document.add(table);
                 document.add(sumTable);
-                document.add(qrTable);
-                document.add(bottomLine);
-                document.add(outputTextBottom);
-                document.add(qrCodeBottomImage);
-                document.add(qrCodeIDbottom);
+
+                if(printCount % 2 != 0) {
+                    document.add(qrTable);
+                }
+                else{
+                    document.add(outputTextBottom);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
+                }
+
 
                 document.close();
                 pdfUri = uri;
@@ -2121,8 +2185,6 @@ public class Packing extends AppCompatActivity {
         }
     }
 
-
-
     private String getIdJenisKayu(String namaJenisKayu) {
         if (namaJenisKayu != null) {
             return "IdJenisKayu";
@@ -2165,9 +2227,9 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(Packing.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(Packing.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -2205,11 +2267,11 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(Packing.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(Packing.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(Packing.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(Packing.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -2306,13 +2368,13 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Log.d("UpdateDatabase", "Successfully updated BarangJadi_h");
-                Toast.makeText(Packing.this, "Data header berhasil diupdate.", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.e("UpdateDatabase", "Failed to update BarangJadi_h");
-                Toast.makeText(Packing.this, "Gagal mengupdate data header.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Log.d("UpdateDatabase", "Successfully updated BarangJadi_h");
+//                Toast.makeText(Packing.this, "Data header berhasil diupdate.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Log.e("UpdateDatabase", "Failed to update BarangJadi_h");
+//                Toast.makeText(Packing.this, "Gagal mengupdate data header.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -2466,7 +2528,7 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE enable = 1";
+                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE Enable = 1 AND IsInternal = 1 AND IsNonST = 1";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -2561,11 +2623,20 @@ public class Packing extends AppCompatActivity {
         @Override
         protected List<Telly> doInBackground(Void... voids) {
             List<Telly> tellyList = new ArrayList<>();
+
+            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+            username = prefs.getString("username", "");
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdOrgTelly, NamaOrgTelly FROM dbo.MstOrgTelly WHERE enable = 1";
+                    String query =  "SELECT t.IdOrgTelly, t.NamaOrgTelly " +
+                            "FROM dbo.MstOrgTelly t " +
+                            "INNER JOIN MstUsername u ON t.NamaOrgTelly = u.Username " +
+                            "WHERE t.enable = 1 AND u.Username = ?";
                     PreparedStatement ps = con.prepareStatement(query);
+
+                    ps.setString(1, username);
+
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
@@ -2591,19 +2662,12 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            // Tambahkan elemen dummy di awal
-            Telly dummyTelly = new Telly("", "PILIH");
-            tellyList.add(0, dummyTelly);
-
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, tellyList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             // Set adapter ke spinner
             SpinTellyP.setAdapter(adapter);
-
-            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
-            SpinTellyP.setSelection(0);
         }
     }
 
@@ -2670,14 +2734,19 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query = "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPK = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPK spk = new SPK(noSPK);
+                        // Buat objek SPK dengan kedua nilai
+                        SPK spk = new SPK(noSPK, buyer);
                         spkList.add(spk);
                     }
 
@@ -2695,10 +2764,12 @@ public class Packing extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
+            // Tambahkan item PILIH di awal list
             SPK dummySPK = new SPK("PILIH");
             spkList.add(0, dummySPK);
 
-            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Packing.this, android.R.layout.simple_spinner_item, spkList);
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Packing.this,
+                    android.R.layout.simple_spinner_item, spkList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKP.setAdapter(adapter);
@@ -2713,14 +2784,18 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query =  "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPKasal = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPKAsal spkAsal = new SPKAsal(noSPKasal);
+                        SPKAsal spkAsal = new SPKAsal(noSPKasal, buyer);
                         spkAsalList.add(spkAsal);
                     }
 
@@ -2745,10 +2820,11 @@ public class Packing extends AppCompatActivity {
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKAsalP.setAdapter(adapter);
+
             SpinSPKAsalP.setSelection(0);
         }
     }
-
+    
     private class LoadSPKTask2 extends AsyncTask<Void, Void, List<SPK>> {
         private String noBarajangJadi;
 
@@ -3142,7 +3218,6 @@ public class Packing extends AppCompatActivity {
                         Susun susun = new Susun(nomorBongkarSusun);
                         susunList.add(susun);
                     }
-
                     rs.close();
                     ps.close();
                     con.close();
@@ -3180,7 +3255,7 @@ public class Packing extends AppCompatActivity {
 
             if (con != null) {
                 try {
-                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputBarangJadi WHERE NoBJ = ?"; // Filter by noS4S
+                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputBarangJadi WHERE NoBJ = ?"; // Filter by noBarangJadi
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, noBarangJadi);
                     ResultSet rs = ps.executeQuery();
@@ -3273,38 +3348,69 @@ public class Packing extends AppCompatActivity {
         }
     }
 
-
     public class SPK {
         private String noSPK;
+        private String buyer;
 
+        public SPK(String noSPK, String buyer) {
+            this.noSPK = noSPK;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
         public SPK(String noSPK) {
             this.noSPK = noSPK;
+            this.buyer = "";
         }
 
         public String getNoSPK() {
             return noSPK;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
+        // Override toString untuk tampilan di spinner
         @Override
         public String toString() {
-            return noSPK;
+            if (buyer.isEmpty()) {
+                return noSPK;
+            }
+            return noSPK + " - " + buyer;
         }
     }
 
     public class SPKAsal {
-        private String noSPKasal;
+        private String noSPKAsal;
+        private String buyer;
 
-        public SPKAsal(String noSPKasal) {
-            this.noSPKasal = noSPKasal;
+        public SPKAsal(String noSPKAsal, String buyer) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
+        public SPKAsal(String noSPKAsal) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = "";
         }
 
         public String getNoSPKAsal() {
-            return noSPKasal;
+            return noSPKAsal;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
+        // Override toString untuk tampilan di spinner
         @Override
         public String toString() {
-            return noSPKasal;
+            if (buyer.isEmpty()) {
+                return noSPKAsal; // Untuk item "PILIH"
+            }
+            return noSPKAsal + " - " + buyer;
         }
     }
 

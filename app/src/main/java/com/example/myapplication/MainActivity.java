@@ -29,6 +29,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -299,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
         boolean isValid = false;
         Connection con = ConnectionClass();
         if (con != null) {
-            String query = "SELECT COUNT(*) FROM dbo.MstUsername WHERE Username = ? AND PassMobile = ?";
+            String query = "SELECT COUNT(*) FROM dbo.MstUsername WHERE Username = ? AND Password = ?";
             try (PreparedStatement ps = con.prepareStatement(query)) {
                 ps.setString(1, username);
                 ps.setString(2, hashPassword(password));
@@ -333,16 +336,32 @@ public class MainActivity extends AppCompatActivity {
 
     private String hashPassword(String password) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = md.digest(password.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            Log.e("Hashing Error", "Hash algorithm not found", e);
+            // Membuat objek MessageDigest dengan algoritma MD5
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+
+            // Menghitung hash MD5 dari password
+            byte[] keyBytes = md5.digest(password.getBytes());
+
+            // Membuat objek SecretKeySpec dengan key MD5
+            SecretKeySpec key = new SecretKeySpec(keyBytes, "DESede");
+
+            // Membuat objek Cipher dengan algoritma TripleDES
+            Cipher cipher = Cipher.getInstance("DESede/ECB/PKCS5Padding");
+
+            // Menginisialisasi Cipher dengan mode enkripsi dan key
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+
+            // Mengenkripsi password
+            byte[] encryptedBytes = cipher.doFinal(password.getBytes());
+
+            // Mengonversi hasil enkripsi menjadi Base64
+            String encodedHash = Base64.getEncoder().encodeToString(encryptedBytes);
+
+            // Mengembalikan hash yang telah dienkripsi dan di-encode
+            return encodedHash;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 }

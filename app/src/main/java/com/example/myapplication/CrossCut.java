@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -69,6 +70,7 @@ import android.os.Looper;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -144,6 +146,7 @@ import java.math.RoundingMode;
 
 public class CrossCut extends AppCompatActivity {
 
+    private String username;
     private SearchView NoCC;
     private EditText DateCC;
     private EditText TimeCC;
@@ -191,6 +194,17 @@ public class CrossCut extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+
+                new DeleteLatestNoCCTask().execute();
+
+                finish();
+            }
+        });
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_cross_cut);
 
@@ -291,6 +305,8 @@ public class CrossCut extends AppCompatActivity {
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
+                        BtnPrintCC.setEnabled(true);
+
                     }
                     else{
                         enableForm();
@@ -443,7 +459,7 @@ public class CrossCut extends AppCompatActivity {
             BtnPrintCC.setEnabled(true);
             BtnSimpanCC.setEnabled(false);
             disableForm();
-            Toast.makeText(CrossCut.this, "Data berhasil disimpan dan tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(CrossCut.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
 
         });
 
@@ -459,12 +475,13 @@ public class CrossCut extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
+
+                new DeleteLatestNoCCTask().execute();
+
                 BtnDataBaruCC.setEnabled(true);
                 BtnSimpanCC.setEnabled(false);
                 NoCC.setVisibility(View.VISIBLE);
                 NoCC_display.setVisibility(View.GONE);
-                Toast.makeText(CrossCut.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
-
             }
         });
 
@@ -530,12 +547,12 @@ public class CrossCut extends AppCompatActivity {
                             DetailLebarCC.setThreshold(0);
                             DetailPanjangCC.setThreshold(0);
 
-                            // Tampilkan status lock
-                            if (isLocked) {
-                                Toast.makeText(CrossCut.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(CrossCut.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-                            }
+//                            // Tampilkan status lock
+//                            if (isLocked) {
+//                                Toast.makeText(CrossCut.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
+//                            } else {
+//                                Toast.makeText(CrossCut.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
+//                            }
                         });
                     }).start();
                 }
@@ -558,7 +575,7 @@ public class CrossCut extends AppCompatActivity {
 
         BtnInputDetailCC.setOnClickListener(v -> {
             // Ambil input dari AutoCompleteTextView
-            String noS4S = NoCC.getQuery().toString();
+            String noCC = NoCC.getQuery().toString();
             String tebal = DetailTebalCC.getText().toString().trim();
             String lebar = DetailLebarCC.getText().toString().trim();
             String panjang = DetailPanjangCC.getText().toString().trim();
@@ -573,7 +590,7 @@ public class CrossCut extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
 
             // Validasi input kosong
-            if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+            if (noCC.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                 Toast.makeText(CrossCut.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -586,7 +603,7 @@ public class CrossCut extends AppCompatActivity {
 
                     if (result.equals("SUCCESS")) {
                         // Jika validasi berhasil, tambahkan data ke daftar
-                        addDataDetail(noS4S);
+                        addDataDetail(noCC);
                         jumlahpcs();
                         m3();
                         Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
@@ -601,13 +618,13 @@ public class CrossCut extends AppCompatActivity {
         BtnPrintCC.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Validasi input terlebih dahulu
+                // Validasi input
                 if (NoCC.getQuery() == null || NoCC.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(CrossCut.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CrossCut.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Validasi apakah ada data yang akan dicetak
+                // Validasi apakah ada data untuk dicetak
                 if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
                     Toast.makeText(CrossCut.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
                     return;
@@ -617,9 +634,12 @@ public class CrossCut extends AppCompatActivity {
                 String noCC = NoCC.getQuery().toString().trim();
                 checkHasBeenPrinted(noCC, new HasBeenPrintedCallback() {
                     @Override
-                    public void onResult(boolean hasBeenPrinted) {
+                    public void onResult(int printCount) {
+                        // Menggunakan printCount untuk menentukan jumlah print sebelumnya
+                        // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
+
                         try {
-                            // Ambil data dari form dengan validasi null
+                            // Ambil data dari form
                             String mesinSusun;
                             String jenisKayu = SpinKayuCC.getSelectedItem() != null ? SpinKayuCC.getSelectedItem().toString().trim() : "";
                             String date = DateCC.getText() != null ? DateCC.getText().toString().trim() : "";
@@ -631,21 +651,21 @@ public class CrossCut extends AppCompatActivity {
                             String fisik = SpinFisikCC.getSelectedItem() != null ? SpinFisikCC.getSelectedItem().toString().trim() : "";
                             String jumlahPcs = JumlahPcsCC.getText() != null ? JumlahPcsCC.getText().toString().trim() : "";
                             String m3 = M3CC.getText() != null ? M3CC.getText().toString().trim() : "";
-                            if(radioButtonMesinCC.isChecked()){
+                            if (radioButtonMesinCC.isChecked()) {
                                 mesinSusun = SpinMesinCC.getSelectedItem() != null ? SpinMesinCC.getSelectedItem().toString().trim() : "";
-                            }
-                            else{
+                            } else {
                                 mesinSusun = SpinSusunCC.getSelectedItem() != null ? SpinSusunCC.getSelectedItem().toString().trim() : "";
                             }
 
-                            // Buat PDF dengan parameter hasBeenPrinted
+
+                            // Buat PDF dengan parameter printCount
                             Uri pdfUri = createPdf(noCC, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
-                                    temporaryDataListDetail, jumlahPcs, m3, hasBeenPrinted, fisik);
+                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik);
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
                                 PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                                String jobName = getString(R.string.app_name) + " Document";
+                                String jobName = getString(R.string.app_name) + " Documents";
 
                                 // Buat PrintDocumentAdapter
                                 PrintDocumentAdapter pda = new PrintDocumentAdapter() {
@@ -707,10 +727,8 @@ public class CrossCut extends AppCompatActivity {
                                         boolean isPrinting = true;
                                         while (isPrinting) {
                                             if (printJob.isCompleted()) {
-                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
-                                                if (!hasBeenPrinted) {
-                                                    updatePrintStatus(noCC);
-                                                }
+                                                // Update database setiap kali print selesai
+                                                updatePrintStatus(noCC); // Update nilai HasBeenPrinted setelah print selesai
                                                 isPrinting = false;
                                             } else if (printJob.isFailed() || printJob.isCancelled()) {
                                                 isPrinting = false;
@@ -767,6 +785,43 @@ public class CrossCut extends AppCompatActivity {
 
 
     //METHOD CROSSCUT
+
+    private class DeleteLatestNoCCTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            String noCC = NoCC_display.getText().toString().trim();
+            boolean success = false;
+            if (con != null) {
+                try {
+                    String query = "DELETE FROM dbo.CCAkhir_h WHERE NoCCAkhir = ?";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, noCC);
+                    int rowsAffected = ps.executeUpdate();
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+//            if (success) {
+//                Toast.makeText(CrossCut.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//            } else {
+//                Log.e("Error", "Failed to delete the latest NoS4S.");
+//                Toast.makeText(CrossCut.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//            }
+        }
+    }
 
     // Deklarasi CheckSPKDataTask di level class
     private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
@@ -1272,28 +1327,26 @@ public class CrossCut extends AppCompatActivity {
         }
     }
 
-
-    // Interface untuk callback
     interface HasBeenPrintedCallback {
-        void onResult(boolean hasBeenPrinted);
+        void onResult(int count);  // Callback menerima count
     }
 
-    // Method untuk mengecek status HasBeenPrinted secara asynchronous
+    // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noCC, CrossCut.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            boolean hasBeenPrinted = false;
+            int count = 0;
             Connection connection = null;
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
+                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
                     String query = "SELECT HasBeenPrinted FROM CCAkhir_h WHERE NoCCAkhir = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noCC);
                         try (ResultSet rs = stmt.executeQuery()) {
                             if (rs.next()) {
-                                Integer printStatus = rs.getInt("HasBeenPrinted");
-                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                                count = rs.getInt(1);  // Ambil hasil hitungan
                             }
                         }
                     }
@@ -1313,12 +1366,12 @@ public class CrossCut extends AppCompatActivity {
                 }
             }
 
-            final boolean finalHasBeenPrinted = hasBeenPrinted;
-            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+            final int finalCount = count;
+            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
         }).start();
     }
 
-    // Method untuk mengupdate status HasBeenPrinted
+    // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noCC) {
         new Thread(() -> {
             Connection connection = null;
@@ -1326,7 +1379,8 @@ public class CrossCut extends AppCompatActivity {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    String query = "UPDATE CCAkhir_h SET HasBeenPrinted = 1 WHERE NoCCAkhir = ?";
+                    // Query untuk menambah 1 pada nilai HasBeenPrinted
+                    String query = "UPDATE CCAkhir_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1 WHERE NoCCAkhir = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noCC);
                         int rowsAffected = stmt.executeUpdate();
@@ -1697,7 +1751,7 @@ public class CrossCut extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -1707,7 +1761,7 @@ public class CrossCut extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(9)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -1722,17 +1776,18 @@ public class CrossCut extends AppCompatActivity {
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            if (line.length() + word.length() > 20) { // Batas karakter per baris
+            if (line.length() + word.length() > 30) { // Batas karakter per baris
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
+
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(8)
+                .setFontSize(9)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -1742,6 +1797,15 @@ public class CrossCut extends AppCompatActivity {
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
+
+        float pageWidth = PageSize.A6.getWidth() - 20;
+        float tableWidth = table.getWidth().getValue();
+
+        if (tableWidth == pageWidth * 0.4f) { // Kolom kiri
+            valueCell.setWidth(pageWidth * 0.4f - 5);
+        } else if (tableWidth == pageWidth * 0.6f) { // Kolom kanan lebih lebar
+            valueCell.setWidth(pageWidth * 0.6f);
+        }
 
         // Tambahkan semua cell ke tabel
         table.addCell(labelCell);
@@ -1766,16 +1830,16 @@ public class CrossCut extends AppCompatActivity {
             canvas.saveState();
 
             String watermarkText = "COPY";
-            float fontSize = 125;
+            float fontSize = 95;
             float textWidth = font.getWidth(watermarkText, fontSize);
             float textHeight = 175;
 
             // Posisi watermark di tengah halaman
-            float centerX = width / 2;
+            float centerX = width / 2 - 25;
             float centerY = height / 2;
 
-            // Rotasi 45 derajat
-            double angle = Math.toRadians(45);
+            // Rotasi derajat
+            double angle = Math.toRadians(0);
             float cos = (float) Math.cos(angle);
             float sin = (float) Math.sin(angle);
 
@@ -1814,7 +1878,7 @@ public class CrossCut extends AppCompatActivity {
         }
     }
 
-    private Uri createPdf(String noCC, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, boolean hasBeenPrinted, String fisik) throws IOException {
+    private Uri createPdf(String noCC, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
         // Validasi parameter wajib
         if (noCC == null || noCC.trim().isEmpty()) {
             throw new IOException("Nomor CrossCut tidak boleh kosong");
@@ -1862,13 +1926,13 @@ public class CrossCut extends AppCompatActivity {
 
             try {
                 // Inisialisasi font dan dokumen
-                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 575; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
-                float rowHeight = 34; // Tinggi rata-rata per baris data
+                float baseHeight = 300; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
                 // Tetapkan ukuran halaman dinamis
@@ -1879,15 +1943,15 @@ public class CrossCut extends AppCompatActivity {
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
-                Paragraph judul = new Paragraph("LABEL CROSS CUT")
+                Paragraph judul = new Paragraph("LABEL CROSSCUT")
                         .setUnderline()
                         .setBold()
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setTextAlignment(TextAlignment.CENTER);
 
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.4f, pageWidth * 0.6f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
@@ -1899,19 +1963,18 @@ public class CrossCut extends AppCompatActivity {
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
+                        .setWidth(pageWidth * 0.4f - 5)
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No CrossCut", noCC, timesNewRoman);
+                addInfoRow(leftColumn, "No CC", noCC, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
                 addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
-                        .setMarginLeft(20)
+                        .setWidth(pageWidth * 0.6f)
                         .setBorder(Border.NO_BORDER);
 
                 // Isi kolom kanan
@@ -1996,25 +2059,25 @@ public class CrossCut extends AppCompatActivity {
 
                 // Tambahkan semua elemen ke dokumen
 
-
                 document.add(judul);
-                Log.d("DEBUG_TAG", "Value of hasBeenPrinted: " + hasBeenPrinted);
-                if (hasBeenPrinted) {
+                if (printCount > 1) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
+
                 document.add(mainTable);
                 document.add(table);
                 document.add(sumTable);
-                document.add(outputText);
-                document.add(qrCodeImage);
-                document.add(qrCodeID);
-                document.add(bottomLine);
-                document.add(mainTable);
-                document.add(table);
-                document.add(sumTable);
-                document.add(inputText);
-                document.add(qrCodeBottomImage);
-                document.add(qrCodeIDbottom);
+
+                if(printCount % 2 != 0) {
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
+                }
+                else{
+                    document.add(outputText);
+                    document.add(qrCodeImage);
+                    document.add(qrCodeID);
+                }
 
                 document.close();
                 pdfUri = uri;
@@ -2110,9 +2173,9 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(CrossCut.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(CrossCut.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
@@ -2285,7 +2348,7 @@ public class CrossCut extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE enable = 1";
+                    String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu WHERE Enable = 1 AND IsInternal = 1 AND IsNonST = 1";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -2381,11 +2444,20 @@ public class CrossCut extends AppCompatActivity {
         @Override
         protected List<Telly> doInBackground(Void... voids) {
             List<Telly> tellyList = new ArrayList<>();
+
+            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+            username = prefs.getString("username", "");
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdOrgTelly, NamaOrgTelly FROM dbo.MstOrgTelly WHERE enable = 1";
+                    String query =  "SELECT t.IdOrgTelly, t.NamaOrgTelly " +
+                            "FROM dbo.MstOrgTelly t " +
+                            "INNER JOIN MstUsername u ON t.NamaOrgTelly = u.Username " +
+                            "WHERE t.enable = 1 AND u.Username = ?";
                     PreparedStatement ps = con.prepareStatement(query);
+
+                    ps.setString(1, username);
+
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
@@ -2411,19 +2483,12 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            // Tambahkan elemen dummy di awal
-            Telly dummyTelly = new Telly("", "PILIH");
-            tellyList.add(0, dummyTelly);
-
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<Telly> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, tellyList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             // Set adapter ke spinner
             SpinTellyCC.setAdapter(adapter);
-
-            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
-            SpinTellyCC.setSelection(0);
         }
     }
 
@@ -2483,21 +2548,26 @@ public class CrossCut extends AppCompatActivity {
         }
     }
 
-     private class LoadSPKTask extends AsyncTask<Void, Void, List<SPK>> {
+    private class LoadSPKTask extends AsyncTask<Void, Void, List<SPK>> {
         @Override
         protected List<SPK> doInBackground(Void... voids) {
             List<SPK> spkList = new ArrayList<>();
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query = "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPK = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPK spk = new SPK(noSPK);
+                        // Buat objek SPK dengan kedua nilai
+                        SPK spk = new SPK(noSPK, buyer);
                         spkList.add(spk);
                     }
 
@@ -2515,10 +2585,12 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
+            // Tambahkan item PILIH di awal list
             SPK dummySPK = new SPK("PILIH");
             spkList.add(0, dummySPK);
 
-            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, spkList);
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(CrossCut.this,
+                    android.R.layout.simple_spinner_item, spkList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKCC.setAdapter(adapter);
@@ -2533,14 +2605,18 @@ public class CrossCut extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query =  "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPKasal = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPKAsal spkAsal = new SPKAsal(noSPKasal);
+                        SPKAsal spkAsal = new SPKAsal(noSPKasal, buyer);
                         spkAsalList.add(spkAsal);
                     }
 
@@ -2565,6 +2641,7 @@ public class CrossCut extends AppCompatActivity {
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinSPKAsalCC.setAdapter(adapter);
+
             SpinSPKAsalCC.setSelection(0);
         }
     }
@@ -2730,7 +2807,7 @@ public class CrossCut extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NamaWarehouse FROM dbo.MstWarehouse";
+                    String query = "SELECT NamaWarehouse FROM dbo.MstWarehouse WHERE IdWarehouse = 8";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -2755,14 +2832,10 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Fisik> fisikList) {
-            Fisik dummyFisik = new Fisik("PILIH");
-            fisikList.add(0, dummyFisik);
-
             ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(CrossCut.this, android.R.layout.simple_spinner_item, fisikList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             SpinFisikCC.setAdapter(adapter);
-            SpinFisikCC.setSelection(0);
         }
     }
 
@@ -3247,38 +3320,69 @@ public class CrossCut extends AppCompatActivity {
 
     public class SPK {
         private String noSPK;
+        private String buyer;
 
+        public SPK(String noSPK, String buyer) {
+            this.noSPK = noSPK;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
         public SPK(String noSPK) {
             this.noSPK = noSPK;
+            this.buyer = "";
         }
 
         public String getNoSPK() {
             return noSPK;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
+        // Override toString untuk tampilan di spinner
         @Override
         public String toString() {
-            return noSPK;
+            if (buyer.isEmpty()) {
+                return noSPK;
+            }
+            return noSPK + " - " + buyer;
         }
     }
 
     public class SPKAsal {
-        private String noSPKasal;
+        private String noSPKAsal;
+        private String buyer;
 
-        public SPKAsal(String noSPKasal) {
-            this.noSPKasal = noSPKasal;
+        public SPKAsal(String noSPKAsal, String buyer) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
+        public SPKAsal(String noSPKAsal) {
+            this.noSPKAsal = noSPKAsal;
+            this.buyer = "";
         }
 
         public String getNoSPKAsal() {
-            return noSPKasal;
+            return noSPKAsal;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
+        // Override toString untuk tampilan di spinner
         @Override
         public String toString() {
-            return noSPKasal;
+            if (buyer.isEmpty()) {
+                return noSPKAsal; // Untuk item "PILIH"
+            }
+            return noSPKAsal + " - " + buyer;
         }
     }
-
     public class Profile {
         private String idFJProfile;
         private String namaProfile;

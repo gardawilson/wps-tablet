@@ -49,21 +49,23 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="16dp"
-                android:gravity="center_vertical">
-                
+                android:gravity="center_vertical"
+                android:enabled="false">
+
                 <ImageView
                     android:layout_width="48dp"  
                     android:layout_height="48dp"
                     android:layout_marginEnd="16dp"  
-                    android:src="@drawable/label"  
-                    android:contentDescription="Logo" />
+                    android:src="@drawable/label"
+                    android:contentDescription="Logo"
+                    app:tint="@color/gray" />
                 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="SawnTimber"
                     android:textAlignment="center"
-                    android:textColor="@color/text_brown"
+                    android:textColor="@color/gray"
                     android:textSize="16sp" />
             </LinearLayout>
             
