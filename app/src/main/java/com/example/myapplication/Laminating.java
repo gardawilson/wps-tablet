@@ -283,6 +283,60 @@ public class Laminating extends AppCompatActivity {
             }
         });
 
+        DetailPcsL.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noLaminating = NoLaminating.getQuery().toString();
+                    String tebal = DetailTebalL.getText().toString().trim();
+                    String lebar = DetailLebarL.getText().toString().trim();
+                    String panjang = DetailPanjangL.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPKL.getSelectedItem();
+                    Grade selectedGrade = (Grade) SpinGradeL.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuL.getSelectedItem();
+
+                    String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noLaminating.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(Laminating.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noLaminating);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(Laminating.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+
+                                // Sembunyikan keyboard setelah selesai
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(Laminating.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
         NoLaminating_display.setVisibility(View.GONE);
         disableForm();
 
@@ -399,7 +453,6 @@ public class Laminating extends AppCompatActivity {
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
-                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
@@ -761,7 +814,7 @@ public class Laminating extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -804,11 +857,11 @@ public class Laminating extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
 //            if (success) {
-//                Toast.makeText(Laminating.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//                Toast.makeText(Laminating.this, "NoLaminating terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoLaminating, jika diperlukan
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(Laminating.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoLaminating.");
+//                Toast.makeText(Laminating.this, "Gagal menghapus NoLaminating terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -1619,11 +1672,11 @@ public class Laminating extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
-            } else {
-                Log.e("DB_INSERT", "Data gagal disimpan");
-            }
+//            if (success) {
+//                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
+//            } else {
+//                Log.e("DB_INSERT", "Data gagal disimpan");
+//            }
         }
     }
 
@@ -2093,14 +2146,14 @@ public class Laminating extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                }
-                else{
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                }
+                else{
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
                 }
 
                 document.close();
@@ -2237,11 +2290,11 @@ public class Laminating extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(Laminating.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(Laminating.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(Laminating.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(Laminating.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
     private class InsertDatabaseTask extends AsyncTask<Void, Void, Boolean> {
@@ -2982,7 +3035,8 @@ public class Laminating extends AppCompatActivity {
                     String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                             "FROM MstGrade a " +
                             "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ?";
+                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                            "ORDER BY a.NamaGrade ASC";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setInt(1, idJenisKayu);

@@ -10,6 +10,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import android.widget.TextView;
+
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
@@ -173,9 +175,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void showUpdateDialog(UpdateManager.UpdateInfo updateInfo) {
         new AlertDialog.Builder(this)
-                .setTitle("Pembaruan Tersedia")
-                .setMessage("Versi " + updateInfo.version + " tersedia.\n\n" + "Changelog:\n" + updateInfo.changelog)
-                .setPositiveButton("Update Sekarang", (dialog, which) -> {
+                .setTitle("Pembaruan Tersedia!")
+                .setMessage("WPS Mobile Versi " + updateInfo.version + "\n\n" + "Rincian :\n" + updateInfo.changelog)
+                .setPositiveButton("Update", (dialog, which) -> {
                     dialog.dismiss();
                     startDownload(updateInfo.fileName);
                 })
@@ -189,20 +191,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startDownload(String fileName) {
-        progressBar.setVisibility(View.VISIBLE);
-        progressBar.setProgress(0);
-//        enableLoginControls(false);
+        // Membuat custom dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        View dialogView = getLayoutInflater().inflate(R.layout.progress_dialog, null);
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+        AlertDialog progressDialog = builder.create();
+        progressDialog.show();
+
+        // Referensi komponen dialog
+        ProgressBar progressBar = dialogView.findViewById(R.id.progress_bar);
+        TextView progressText = dialogView.findViewById(R.id.progress_text);
 
         updateManager.downloadUpdate(fileName, new UpdateManager.DownloadCallback() {
             @Override
             public void onDownloadProgress(int percentage) {
-                runOnUiThread(() -> progressBar.setProgress(percentage));
+                runOnUiThread(() -> {
+                    progressBar.setProgress(percentage);
+                    progressText.setText(percentage + "%");
+                });
             }
 
             @Override
             public void onDownloadComplete(File updateFile) {
                 runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
+                    progressDialog.dismiss();
                     installUpdate(updateFile);
                     cleanupUpdateManager();
                 });
@@ -211,8 +224,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDownloadFailed(String errorMessage) {
                 runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-//                    enableLoginControls(true);
+                    progressDialog.dismiss();
                     Toast.makeText(MainActivity.this,
                             "Gagal mengunduh pembaruan: " + errorMessage,
                             Toast.LENGTH_LONG).show();
@@ -221,6 +233,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
     private void installUpdate(File updateFile) {
         try {
@@ -285,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");

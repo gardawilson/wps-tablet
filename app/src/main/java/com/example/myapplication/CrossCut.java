@@ -285,6 +285,60 @@ public class CrossCut extends AppCompatActivity {
             }
         });
 
+        DetailPcsCC.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noCC = NoCC.getQuery().toString();
+                    String tebal = DetailTebalCC.getText().toString().trim();
+                    String lebar = DetailLebarCC.getText().toString().trim();
+                    String panjang = DetailPanjangCC.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPKCC.getSelectedItem();
+                    Grade selectedGrade = (Grade) SpinGradeCC.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuCC.getSelectedItem();
+
+                    String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noCC.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(CrossCut.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noCC);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+
+                                // Sembunyikan keyboard setelah selesai
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(CrossCut.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
         NoCC_display.setVisibility(View.GONE);
         disableForm();
 
@@ -407,7 +461,6 @@ public class CrossCut extends AppCompatActivity {
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
-                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null || selectedFisik.getNamaWarehouse().equals("PILIH") ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
@@ -770,7 +823,7 @@ public class CrossCut extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -814,11 +867,11 @@ public class CrossCut extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
 //            if (success) {
-//                Toast.makeText(CrossCut.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//                Toast.makeText(CrossCut.this, "NoCC terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoCC, jika diperlukan
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(CrossCut.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoCC.");
+//                Toast.makeText(CrossCut.this, "Gagal menghapus NoCC terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -2069,14 +2122,14 @@ public class CrossCut extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                }
-                else{
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                }
+                else{
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
                 }
 
                 document.close();
@@ -2249,7 +2302,7 @@ public class CrossCut extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.CCAkhir_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoCCAkhir = ?";
+                            "IdFJProfile = ?, IdFisik = 8, IdJenisKayu = ?, IdWarehouse = 8, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoCCAkhir = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -2921,7 +2974,8 @@ public class CrossCut extends AppCompatActivity {
                     String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                             "FROM MstGrade a " +
                             "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ?";
+                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                            "ORDER BY a.NamaGrade ASC";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setInt(1, idJenisKayu);

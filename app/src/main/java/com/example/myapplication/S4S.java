@@ -32,9 +32,11 @@ import android.widget.RadioGroup;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
+import android.widget.FrameLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.LinearLayout;
 import android.view.Gravity;
 import android.graphics.Color;
 import android.content.Context;
@@ -72,6 +74,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import com.itextpdf.io.font.PdfEncodings;
+import android.inputmethodservice.Keyboard;
+import android.inputmethodservice.KeyboardView;
+import android.view.inputmethod.InputConnection;
 
 
 
@@ -186,6 +191,7 @@ public class S4S extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoS4S_display;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -243,6 +249,7 @@ public class S4S extends AppCompatActivity {
         DetailLebarS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         DetailPanjangS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
+
 // Menangani aksi 'Enter' pada keyboard
         DetailTebalS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -278,6 +285,61 @@ public class S4S extends AppCompatActivity {
                 return false;
             }
         });
+
+        DetailPcsS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noS4S = NoS4S.getQuery().toString();
+                    String tebal = DetailTebalS4S.getText().toString().trim();
+                    String lebar = DetailLebarS4S.getText().toString().trim();
+                    String panjang = DetailPanjangS4S.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
+                    Grade selectedGrade = (Grade) SpinGrade.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
+
+                    String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noS4S.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(S4S.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noS4S);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(S4S.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+
+                                // Sembunyikan keyboard setelah selesai
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(S4S.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
 
         NoS4S_display.setVisibility(View.GONE);
         disableForm();
@@ -401,7 +463,6 @@ public class S4S extends AppCompatActivity {
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKasal == null || selectedSPKasal.getNoSPKAsal().equals("PILIH") ||
-                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
@@ -611,7 +672,6 @@ public class S4S extends AppCompatActivity {
             }.execute();
         });
 
-
         BtnHapusDetail.setOnClickListener(v -> {
             resetDetailData();
         });
@@ -770,7 +830,7 @@ public class S4S extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -784,6 +844,8 @@ public class S4S extends AppCompatActivity {
     }
 
     //METHOD S4S
+
+    // Menampilkan keyboard kustom
 
     private class DeleteLatestNoS4STask extends AsyncTask<Void, Void, Boolean> {
         @Override
@@ -1617,6 +1679,9 @@ public class S4S extends AppCompatActivity {
         // Reset temporary list detail
         temporaryDataListDetail.clear();
 
+        m3();
+        jumlahpcs();
+
         // Reset row counter
         rowCount = 0;
 
@@ -2145,14 +2210,14 @@ public class S4S extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                }
-                else{
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                }
+                else{
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
                 }
 
                 document.close();
@@ -3066,7 +3131,8 @@ public class S4S extends AppCompatActivity {
                     String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                             "FROM MstGrade a " +
                             "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ?";
+                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                            "ORDER BY a.NamaGrade ASC";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setInt(1, idJenisKayu);

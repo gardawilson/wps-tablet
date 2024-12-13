@@ -132,7 +132,7 @@ public class Registrasi extends AppCompatActivity {
     private Connection getDatabaseConnection() {
         String ip = "192.168.10.100";
         String port = "1433";
-        String db = "WPS_Test";
+        String db = "WPS";
         String user = "sa";
         String pass = "Utama1234";
         Connection con = null;

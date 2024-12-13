@@ -280,6 +280,60 @@ public class Moulding extends AppCompatActivity {
             }
         });
 
+        DetailPcsM.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noMoulding = NoMoulding.getQuery().toString();
+                    String tebal = DetailTebalM.getText().toString().trim();
+                    String lebar = DetailLebarM.getText().toString().trim();
+                    String panjang = DetailPanjangM.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPKM.getSelectedItem();
+                    Grade selectedGrade = (Grade) SpinGradeM.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuM.getSelectedItem();
+
+                    String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noMoulding.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(Moulding.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noMoulding);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(Moulding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+
+                                // Sembunyikan keyboard setelah selesai
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(Moulding.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
         NoMoulding_display.setVisibility(View.GONE);
         disableForm();
 
@@ -403,7 +457,6 @@ public class Moulding extends AppCompatActivity {
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
-                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
@@ -774,7 +827,7 @@ public class Moulding extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -2068,14 +2121,14 @@ public class Moulding extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                }
-                else{
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                }
+                else{
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
                 }
 
                 document.close();
@@ -2251,7 +2304,7 @@ public class Moulding extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.Moulding_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoMoulding = ?";
+                            "IdFJProfile = ?, IdFisik = 6, IdJenisKayu = ?, IdWarehouse = 6, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoMoulding = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -2938,7 +2991,8 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
                     String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                             "FROM MstGrade a " +
                             "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ?";
+                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                            "ORDER BY a.NamaGrade ASC";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setInt(1, idJenisKayu);

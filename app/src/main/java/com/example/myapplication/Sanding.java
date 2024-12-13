@@ -278,6 +278,60 @@ public class Sanding extends AppCompatActivity {
             }
         });
 
+        DetailPcsS.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noSanding = NoSanding.getQuery().toString();
+                    String tebal = DetailTebalS.getText().toString().trim();
+                    String lebar = DetailLebarS.getText().toString().trim();
+                    String panjang = DetailPanjangS.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPKS.getSelectedItem();
+                    Grade selectedGrade = (Grade) SpinGradeS.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuS.getSelectedItem();
+
+                    String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noSanding.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(Sanding.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idGrade) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noSanding);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(Sanding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+
+                                // Sembunyikan keyboard setelah selesai
+                                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(Sanding.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
         NoSanding_display.setVisibility(View.GONE);
         disableForm();
 
@@ -398,7 +452,6 @@ public class Sanding extends AppCompatActivity {
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
-                    selectedProfile == null || selectedProfile.getIdFJProfile().isEmpty() ||
                     selectedFisik == null || selectedFisik.getNamaWarehouse().equals("PILIH") ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
@@ -758,7 +811,7 @@ public class Sanding extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -801,11 +854,11 @@ public class Sanding extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
 //            if (success) {
-//                Toast.makeText(Sanding.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//                Toast.makeText(Sanding.this, "NoSanding terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoSanding, jika diperlukan
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(Sanding.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoSanding.");
+//                Toast.makeText(Sanding.this, "Gagal menghapus NoSanding terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -2044,14 +2097,14 @@ public class Sanding extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                }
-                else{
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                }
+                else{
+                    document.add(inputText);
+                    document.add(qrCodeBottomImage);
+                    document.add(qrCodeIDbottom);
                 }
 
                 document.close();
@@ -2991,7 +3044,8 @@ public class Sanding extends AppCompatActivity {
                     String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                             "FROM MstGrade a " +
                             "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ?";
+                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                            "ORDER BY a.NamaGrade ASC";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setInt(1, idJenisKayu);

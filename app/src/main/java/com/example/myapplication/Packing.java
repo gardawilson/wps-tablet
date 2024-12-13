@@ -276,6 +276,57 @@ public class Packing extends AppCompatActivity {
             }
         });
 
+        DetailPcsP.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String noBarangJadi = NoBarangJadi.getQuery().toString();
+                    String tebal = DetailTebalP.getText().toString().trim();
+                    String lebar = DetailLebarP.getText().toString().trim();
+                    String panjang = DetailPanjangP.getText().toString().trim();
+
+                    // Ambil data SPK, Jenis Kayu, dan Grade dari Spinner
+                    SPK selectedSPK = (SPK) SpinSPKP.getSelectedItem();
+                    Fisik selectedFisik = (Fisik) SpinBarangJadiP.getSelectedItem();
+                    JenisKayu selectedJenisKayu = (JenisKayu) SpinKayuP.getSelectedItem();
+
+                    String idBarangJadi = selectedFisik != null ? selectedFisik.getIdBarangJadi() : null;
+                    String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+                    String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
+
+                    // Validasi input kosong
+                    if (noBarangJadi.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(Packing.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    // Jalankan validasi
+                    new CheckSPKDataTask(noSPK, tebal, lebar, panjang, idJenisKayu, idBarangJadi) {
+                        @Override
+                        protected void onPostExecute(String result) {
+                            super.onPostExecute(result);
+
+                            if (result.equals("SUCCESS")) {
+                                // Jika validasi berhasil, tambahkan data ke daftar
+                                addDataDetail(noBarangJadi);
+                                jumlahpcs();
+                                m3();
+                                Toast.makeText(Packing.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+                                closeKeyboard();
+                            } else {
+                                // Tampilkan pesan error
+                                Toast.makeText(Packing.this, result, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }.execute();
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
         NoBarangJadi_display.setVisibility(View.GONE);
         disableForm();
 
@@ -735,7 +786,7 @@ public class Packing extends AppCompatActivity {
         String port = "1433";
         String username = "sa";
         String password = "Utama1234";
-        String databasename = "WPS_Test";
+        String databasename = "WPS";
 
         try {
             Class.forName("net.sourceforge.jtds.jdbc.Driver");
@@ -778,11 +829,11 @@ public class Packing extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
 //            if (success) {
-//                Toast.makeText(Packing.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//                Toast.makeText(Packing.this, "NoBarangJadi terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoBarangJadi, jika diperlukan
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(Packing.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoBarangJadi.");
+//                Toast.makeText(Packing.this, "Gagal menghapus NoBarangJadi terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -2126,12 +2177,13 @@ public class Packing extends AppCompatActivity {
                 document.add(sumTable);
 
                 if(printCount % 2 != 0) {
-                    document.add(qrTable);
-                }
-                else{
                     document.add(outputTextBottom);
                     document.add(qrCodeBottomImage);
                     document.add(qrCodeIDbottom);
+                }
+                else{
+                    document.add(qrTable);
+
                 }
 
 
@@ -2986,7 +3038,9 @@ public class Packing extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdBarangJadi, NamaBarangJadi FROM dbo.MstBarangJadi";
+                    String query =  "SELECT IdBarangJadi, NamaBarangJadi " +
+                            "FROM dbo.MstBarangJadi " +
+                            "ORDER BY NamaBarangJadi ASC";;
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
