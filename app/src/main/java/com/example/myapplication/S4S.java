@@ -823,30 +823,7 @@ public class S4S extends AppCompatActivity {
 
     }
 
-    @SuppressLint("NewApi")
-    private Connection ConnectionClass() {
-        Connection con = null;
-        String ip = "192.168.10.100";
-        String port = "1433";
-        String username = "sa";
-        String password = "Utama1234";
-        String databasename = "WPS";
-
-        try {
-            Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            String connectionUrl = "jdbc:jtds:sqlserver://" + ip + ":" + port + ";databasename=" + databasename + ";User=" + username + ";password=" + password + ";";
-            con = DriverManager.getConnection(connectionUrl);
-        } catch (Exception exception) {
-            Log.e("Error", exception.getMessage());
-        }
-
-        return con;
-    }
-
     //METHOD S4S
-
-    // Menampilkan keyboard kustom
-
     private class DeleteLatestNoS4STask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -2592,10 +2569,14 @@ public class S4S extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query =  "SELECT t.IdOrgTelly, t.NamaOrgTelly " +
-                            "FROM dbo.MstOrgTelly t " +
-                            "INNER JOIN MstUsername u ON t.NamaOrgTelly = u.Username " +
-                            "WHERE t.enable = 1 AND u.Username = ?";
+                    String query =  "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
+                                    "FROM MstOrgTelly A " +
+                                    "INNER JOIN ( " +
+                                    "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
+                                    "    FROM MstUsername " +
+                                    "    WHERE Username = ? " +
+                                    ") B ON B.NamaTelly = A.NamaOrgTelly " +
+                                    "WHERE A.Enable = 1";
                     PreparedStatement ps = con.prepareStatement(query);
 
                     ps.setString(1, username);
@@ -3498,6 +3479,8 @@ public class S4S extends AppCompatActivity {
 
 
 
+
+
     public class JenisKayu {
         private String idJenisKayu;
         private String namaJenisKayu;
@@ -3730,4 +3713,20 @@ public class S4S extends AppCompatActivity {
             return nomorBongkarSusun;
         }
     }
+
+    //Koneksi Database
+    @SuppressLint("NewApi")
+    private Connection ConnectionClass() {
+        Connection con = null;
+        try {
+            Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+        } catch (Exception exception) {
+            Log.e("Error", exception.getMessage());
+        }
+        return con;
+    }
 }
+
+
+

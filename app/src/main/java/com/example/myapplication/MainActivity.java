@@ -291,26 +291,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressLint("NewApi")
-    private Connection ConnectionClass() {
-        Connection con = null;
-        String ip = "192.168.10.100";
-        String port = "1433";
-        String username = "sa";
-        String password = "Utama1234";
-        String databasename = "WPS";
-
-        try {
-            Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            String connectionUrl = "jdbc:jtds:sqlserver://" + ip + ":" + port + ";databasename=" + databasename + ";User=" + username + ";password=" + password + ";";
-            con = DriverManager.getConnection(connectionUrl);
-        } catch (Exception exception) {
-            Log.e("Error", exception.getMessage());
-        }
-
-        return con;
-    }
-
     private boolean validateLogin(String username, String password) {
         boolean isValid = false;
         Connection con = ConnectionClass();
@@ -376,5 +356,18 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             return null;
         }
+    }
+
+    //Koneksi Database
+    @SuppressLint("NewApi")
+    private Connection ConnectionClass() {
+        Connection con = null;
+        try {
+            Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+        } catch (Exception exception) {
+            Log.e("Error", exception.getMessage());
+        }
+        return con;
     }
 }

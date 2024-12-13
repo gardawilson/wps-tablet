@@ -637,25 +637,6 @@ public class SawnTimber extends AppCompatActivity {
 
     }
 
-    @SuppressLint("NewApi")
-    private Connection ConnectionClass() {
-        Connection con = null;
-        String ip = "192.168.10.100";
-        String port = "1433";
-        String username = "sa";
-        String password = "Utama1234";
-        String databasename = "WPS";
-        try {
-            Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            String connectionUrl = "jdbc:jtds:sqlserver://" + ip + ":" + port + ";databasename=" + databasename + ";User=" + username + ";password=" + password + ";";
-            con = DriverManager.getConnection(connectionUrl);
-        } catch (Exception exception) {
-            Log.e("Error", exception.getMessage());
-        }
-        return con;
-    }
-
-
     //METHOD SAWN TIMBER
 
     private void disableButton(){
@@ -2848,6 +2829,19 @@ public class SawnTimber extends AppCompatActivity {
         public String toString() {
             return namaLokasi;
         }
+    }
+
+    //Koneksi Database
+    @SuppressLint("NewApi")
+    private Connection ConnectionClass() {
+        Connection con = null;
+        try {
+            Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+        } catch (Exception exception) {
+            Log.e("Error", exception.getMessage());
+        }
+        return con;
     }
 }
 
