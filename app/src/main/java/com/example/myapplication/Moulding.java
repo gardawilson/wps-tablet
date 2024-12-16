@@ -1062,6 +1062,8 @@ public class Moulding extends AppCompatActivity {
         DetailPcsM.setEnabled(true);
         BtnHapusDetailM.setEnabled(true);
         BtnInputDetailM.setEnabled(true);
+        CBLemburM.setEnabled(true);
+        CBAfkirM.setEnabled(true);
     }
 
     
@@ -1085,6 +1087,8 @@ public class Moulding extends AppCompatActivity {
         BtnHapusDetailM.setEnabled(false);
         BtnInputDetailM.setEnabled(false);
         BtnSimpanM.setEnabled(false);
+        CBAfkirM.setEnabled(false);
+        CBLemburM.setEnabled(false);
 
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
@@ -2087,6 +2091,12 @@ public class Moulding extends AppCompatActivity {
                 Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
                 Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 28, 0, 0).setFont(timesNewRoman);
 
+                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-40, 10, 0, 0).setFont(timesNewRoman);
+
+
+
                 // Tambahkan semua elemen ke dokumen
 
                 document.add(judul);
@@ -2098,16 +2108,27 @@ public class Moulding extends AppCompatActivity {
                 document.add(table);
                 document.add(sumTable);
 
+                if(CBAfkirM.isChecked()){
+                    document.add(afkirText);
+                }
+
                 if(printCount % 2 != 0) {
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                    if(CBLemburM.isChecked()){
+                        document.add(lemburTextOutput);
+                    }
                 }
                 else{
                     document.add(inputText);
                     document.add(qrCodeBottomImage);
                     document.add(qrCodeIDbottom);
+                    if(CBLemburM.isChecked()){
+                        document.add(lemburTextInput);
+                    }
                 }
+
 
                 document.close();
                 pdfUri = uri;

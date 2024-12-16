@@ -148,6 +148,19 @@
                 app:backgroundTint="@color/accent_green"
                 app:cornerRadius="8dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/LayoutTest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:text="Layout Test"
+                android:textSize="14sp"
+                app:backgroundTint="@color/accent_green"
+                app:cornerRadius="8dp"
+
+                />
+
         </LinearLayout>
 
     </androidx.cardview.widget.CardView>

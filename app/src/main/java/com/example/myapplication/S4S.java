@@ -693,6 +693,7 @@ public class S4S extends AppCompatActivity {
 
                 // Cek status HasBeenPrinted di database
                 String noS4S = NoS4S.getQuery().toString().trim();
+
                 checkHasBeenPrinted(noS4S, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
@@ -1066,6 +1067,8 @@ public class S4S extends AppCompatActivity {
         DetailPcsS4S.setEnabled(true);
         BtnHapusDetail.setEnabled(true);
         BtnInputDetail.setEnabled(true);
+        CBLembur.setEnabled(true);
+        CBAfkir.setEnabled(true);
     }
 
     private void disableForm(){
@@ -1088,6 +1091,8 @@ public class S4S extends AppCompatActivity {
         BtnHapusDetail.setEnabled(false);
         BtnInputDetail.setEnabled(false);
         BtnSimpan.setEnabled(false);
+        CBLembur.setEnabled(false);
+        CBAfkir.setEnabled(false);
 
 
         // Disable semua tombol hapus yang ada di tabel
@@ -2171,12 +2176,14 @@ public class S4S extends AppCompatActivity {
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
                 Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
 
-                Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
                 Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
                 Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 30, 0, 0).setFont(timesNewRoman);
 
-                // Tambahkan semua elemen ke dokumen
+                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-40, 10, 0, 0).setFont(timesNewRoman);
 
+                // Tambahkan semua elemen ke dokumen
                 document.add(judul);
                 if (printCount > 1) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
@@ -2186,15 +2193,25 @@ public class S4S extends AppCompatActivity {
                 document.add(table);
                 document.add(sumTable);
 
+                if(CBAfkir.isChecked()){
+                    document.add(afkirText);
+                }
+
                 if(printCount % 2 != 0) {
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                    if(CBLembur.isChecked()){
+                        document.add(lemburTextOutput);
+                    }
                 }
                 else{
                     document.add(inputText);
                     document.add(qrCodeBottomImage);
                     document.add(qrCodeIDbottom);
+                    if(CBLembur.isChecked()){
+                        document.add(lemburTextInput);
+                    }
                 }
 
                 document.close();

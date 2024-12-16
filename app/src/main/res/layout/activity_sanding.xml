@@ -5,840 +5,988 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/coklat"
+    android:background="@color/primary_dark"
     tools:context=".Sanding">
 
-    <TextView
-        android:id="@+id/textView10"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Label Sanding"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:textStyle="bold|italic"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.046"
+    <!-- CardView Kiri -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_left"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.041" />
-
-    <TextView
-        android:id="@+id/textView19"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. Sanding :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.073"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.115" />
+        app:layout_constraintWidth_percent="0.4"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="25dp"
+        android:backgroundTint="@color/white">
 
-    <TextView
-        android:id="@+id/textView13"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TGL/Jam :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.091"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.169" />
-
-    <TextView
-        android:id="@+id/textView17"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Grade :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.115"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.62" />
-
-    <TextView
-        android:id="@+id/textView11"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. Moulding Asal : "
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.021"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.683" />
-
-    <TextView
-        android:id="@+id/textView16"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="FJ Profile :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.094"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.747" />
-
-    <TextView
-        android:id="@+id/Textcutcrs"
-        android:layout_width="64dp"
-        android:layout_height="34dp"
-        android:text="Fisik   :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.115"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.823" />
-
-    <Spinner
-        android:id="@+id/SpinSPKS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.224"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Spinner
-        android:id="@+id/SpinSPKAsalS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.223"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.555" />
-
-    <EditText
-        android:id="@+id/DateS"
-        android:layout_width="108dp"
-        android:layout_height="24dp"
-        android:background="@color/hijau"
-        android:backgroundTint="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.198"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.172" />
-
-    <Spinner
-        android:id="@+id/SpinKayuS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="@color/hijau"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.226"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.232"
-        tools:visibility="visible" />
-
-    <Spinner
-        android:id="@+id/SpinMesinS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="#000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.227"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.297" />
-
-    <Spinner
-        android:id="@+id/SpinTellyS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.226"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.431" />
-
-    <EditText
-        android:id="@+id/NoMouldingAsal"
-        android:layout_width="108dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        android:enabled="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.197"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.68" />
-
-    <Spinner
-        android:id="@+id/SpinGradeS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.225"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.62" />
-
-    <Spinner
-        android:id="@+id/SpinFisikS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.224"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.82" />
-
-    <Spinner
-        android:id="@+id/SpinProfileS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.223"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.752" />
-
-    <SearchView
-        android:id="@+id/NoSanding"
-        android:layout_width="225dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        android:inputType="textCapCharacters"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.22"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.118"
-        app:queryBackground="@null" />
-
-    <EditText
-        android:id="@+id/NoSanding_display"
-        android:layout_width="225dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.22"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.118"
-        app:queryBackground="@null" />
-
-    <Spinner
-        android:id="@+id/SpinSusunS"
-        android:layout_width="256dp"
-        android:layout_height="31dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.226"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.362" />
-
-    <EditText
-        android:id="@+id/TimeS"
-        android:layout_width="108dp"
-        android:layout_height="24dp"
-        android:background="@color/hijau"
-        android:backgroundTint="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.308"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.172" />
-
-    <TextView
-        android:id="@+id/textView15a"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. SPK :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.099"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.498" />
-
-    <TextView
-        android:id="@+id/textView15b"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. SPK Asal :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.065"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.557" />
-
-    <TextView
-        android:id="@+id/textView14"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Orang Telly :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.08"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.437" />
-
-    <TextView
-        android:id="@+id/textView12"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jenis Kayu :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.085"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.231" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupUOMPanjang"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.859"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.052">
-
-        <RadioButton
-            android:id="@+id/radioCentimeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:enabled="false"
-            android:text="Centimeter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioMeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Meter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioFeet"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Feet"
-            android:textColor="@color/white" />
-    </RadioGroup>
-
-    <Button
-        android:id="@+id/BtnHapusDetailS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Hapus Detail"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.871"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.37" />
-
-    <Button
-        android:id="@+id/BtnInputDetailS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Input Detail"
-        android:textSize="20sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.696"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.37" />
-
-    <AutoCompleteTextView
-        android:id="@+id/DetailLebarS"
-        android:layout_width="123dp"
-        android:layout_height="29dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.694"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.094" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupUOMTblLebar"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.722"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.283">
-
-        <RadioButton
-            android:id="@+id/radioMillimeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Milimeter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioInch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Inch"
-            android:textColor="@color/white" />
-    </RadioGroup>
-
-    <AutoCompleteTextView
-        android:id="@+id/DetailPanjangS"
-        android:layout_width="123dp"
-        android:layout_height="29dp"
-        android:background="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.694"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.144" />
-
-    <AutoCompleteTextView
-        android:id="@+id/DetailTebalS"
-        android:layout_width="123dp"
-        android:layout_height="29dp"
-        android:background="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.696"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.043" />
-
-    <TextView
-        android:id="@+id/textView22"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lebar :"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.596"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.091" />
-
-    <EditText
-        android:id="@+id/DetailPcsS"
-        android:layout_width="123dp"
-        android:layout_height="29dp"
-        android:background="#E8EBE9"
-        android:inputType="number"
-        android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.694"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.202" />
-
-    <TextView
-        android:id="@+id/textView24"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pcs :"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.599"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.199" />
-
-    <TextView
-        android:id="@+id/textView23"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Panjang :"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.589"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.142" />
-
-    <TextView
-        android:id="@+id/textView21"
-        android:layout_width="64dp"
-        android:layout_height="29dp"
-        android:text="Tebal :"
-        android:textAlignment="viewEnd"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.592"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.042" />
-
-    <Button
-        android:id="@+id/BtnBatalS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Batal"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.27"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.929" />
-
-    <Button
-        android:id="@+id/BtnSimpanS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Simpan"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.157"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.929" />
-
-    <Button
-        android:id="@+id/BtnPrintS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Print"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.364"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.929" />
-
-    <Button
-        android:id="@+id/BtnDataBaruS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/hijau"
-        android:text="Data Baru"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.02"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.929" />
-
-
-    <CheckBox
-        android:id="@+id/CBAfkirS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Afkir/Reject"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.462"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.265" />
-
-    <CheckBox
-        android:id="@+id/CBLemburS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lembur"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.449"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.337" />
-
-    <RadioGroup
-        android:id="@+id/RadioGroupS"
-        android:layout_width="122dp"
-        android:layout_height="98dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.073"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.307"
-        tools:ignore="MissingConstraints">
-
-        <RadioButton
-            android:id="@+id/radioButtonMesinS"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Mesin    :"
-            android:textColor="@color/white"
-            android:textSize="20dp" />
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <RadioButton
-            android:id="@+id/radioButtonBSusunS"
+            <TextView
+                android:id="@+id/title_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="15dp"
+                android:text="LABEL SANDING"
+                android:textColor="@color/black"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <!-- Search Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. Sanding"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <SearchView
+                        android:id="@+id/NoSanding"
+                        android:layout_width="match_parent"
+                        android:layout_height="32dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        app:iconifiedByDefault="false"
+                        app:queryHint="Search here..."
+                        style="@style/Widget.AppCompat.SearchView.ActionBar" />
+
+                    <EditText
+                        android:id="@+id/NoSanding_display"
+                        android:layout_width="match_parent"
+                        android:layout_height="32dp"
+                        android:padding="6dp"
+                        android:textSize="14sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:visibility="gone"
+                        android:hint="NoS4S_display" />
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- EditText Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Tgl / Jam"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/DateS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:layout_marginRight="10dp"
+                    android:textSize="14sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Tanggal" />
+
+                <EditText
+                    android:id="@+id/TimeS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Jam" />
+            </LinearLayout>
+
+            <!-- Spinner 1 Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Jenis Kayu"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinKayuS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <!-- RadioGroup dengan RadioButton -->
+                <RadioGroup
+                    android:id="@+id/RadioGroupS"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radioButtonMesinS"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mesin"
+                        android:layout_marginEnd="4dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:layout_marginBottom="10dp"/>
+
+                    <RadioButton
+                        android:id="@+id/radioButtonBSusunS"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Susun"
+                        android:layout_marginEnd="4dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+                </RadioGroup>
+
+                <!-- Spinner di sebelah kanan RadioButton -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical">
+
+                    <Spinner
+                        android:id="@+id/SpinMesinS"
+                        android:layout_width="match_parent"
+                        android:layout_height="32dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:layout_marginBottom="10dp"/>
+
+                    <Spinner
+                        android:id="@+id/SpinSusunS"
+                        android:layout_width="match_parent"
+                        android:layout_height="32dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Telly"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinTellyS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No SPK"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinSPKS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No SPK Asal"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinSPKAsalS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Grade"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinGradeS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="FJ Profile"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinProfileS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Fisik"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/SpinFisikS"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No Mould Asal"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/NoMouldingAsal"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="-" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. Lam Asal"
+                    android:textSize="15sp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/NoLaminatingAsal"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="-" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_top_right"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:layout_constraintStart_toEndOf="@id/card_left"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/card_bottom_right"
+        app:layout_constraintHeight_percent="0.8"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+
+        android:layout_marginBottom="0dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/white">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="B.Susun :"
-            android:textColor="@color/white"
-            android:textSize="20dp" />
+            android:layout_height="match_parent"
+            android:padding="8dp">
 
-    </RadioGroup>
+            <!-- CardView Atas Kiri -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_left"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_right"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintWidth_percent="0.5">
 
-    <ScrollView
-        android:layout_width="wrap_content"
-        android:layout_height="350dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/title_top_right"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Detail"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="20dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="Tebal"
+                            android:textSize="15sp"
+                            android:textColor="@color/black" />
+
+                        <AutoCompleteTextView
+                            android:id="@+id/DetailTebalS"
+                            android:layout_width="150dp"
+                            android:layout_height="32dp"
+                            android:padding="6dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:hint="Tebal"
+                            android:inputType="numberDecimal"
+                            android:completionThreshold="1" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="Lebar"
+                            android:textSize="15sp"
+                            android:textColor="@color/black" />
+
+                        <AutoCompleteTextView
+                            android:id="@+id/DetailLebarS"
+                            android:layout_width="150dp"
+                            android:layout_height="32dp"
+                            android:padding="6dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:hint="Lebar"
+                            android:inputType="numberDecimal"
+                            android:completionThreshold="1" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="Panjang"
+                            android:textSize="15sp"
+                            android:textColor="@color/black" />
+
+                        <AutoCompleteTextView
+                            android:id="@+id/DetailPanjangS"
+                            android:layout_width="150dp"
+                            android:layout_height="32dp"
+                            android:padding="6dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:hint="Panjang"
+                            android:inputType="numberDecimal"
+                            android:completionThreshold="1" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="Pcs"
+                            android:textSize="15sp"
+                            android:textColor="@color/black" />
+
+                        <EditText
+                            android:id="@+id/DetailPcsS"
+                            android:layout_width="150dp"
+                            android:layout_height="32dp"
+                            android:padding="6dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:hint="Pcs"
+                            android:inputType="number"
+                            android:completionThreshold="1"
+                            android:imeOptions="actionDone"
+                            />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- CardView Atas Kanan -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_right"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_left"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:background="#FFFFFF"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Panjang"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMPanjang"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioCentimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Centimeter"
+                                android:enabled="false"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioMeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Meter"
+                                android:textSize="12sp"
+                                android:enabled="false"
+                                android:layout_marginBottom="2dp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioFeet"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Feet"
+                                android:checked="true"
+                                android:textSize="12sp"/>
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Lebar"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginTop="12dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMTblLebar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioMillimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Millimeter"
+                                android:textSize="12sp"
+                                android:checked="true"
+                                android:layout_marginBottom="2dp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioInch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Inch"
+                                android:enabled="false"
+                                android:textSize="12sp"/>
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- CardView Bawah Full -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_bottom"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/inner_card_top_left"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHeight_percent="0.5">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:layout_marginTop="10dp">
+
+                    <ScrollView
+                        android:layout_width="wrap_content"
+                        android:layout_height="175dp"
+                        android:fillViewport="true"
+                        android:scrollbars="none"
+                        android:layout_marginBottom="5dp">
+
+                        <TableLayout
+                            android:id="@+id/Tabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/table_background"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintHorizontal_bias="1.0"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintVertical_bias="0.86">
+
+                            <!-- Table Header Row -->
+                            <TableRow
+                                android:background="@drawable/table_header_bg">
+
+                                <TextView
+                                    android:layout_width="50dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="No"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="Tebal"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="Lebar"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="Panjang"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="Pcs"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="100dp"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_horizontal"
+                                    android:padding="10sp"
+                                    android:text="Aksi"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp" />
+                            </TableRow>
+
+                        </TableLayout>
+
+                    </ScrollView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Jumlah Pcs :"
+                                android:textSize="14sp"
+                                android:textColor="@color/black" />
+
+                            <TextView
+                                android:id="@+id/JumlahPcsS"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:textSize="14sp"
+                                android:textColor="@color/black" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="M3 :"
+                                android:textSize="14sp"
+                                android:textColor="@color/black" />
+
+                            <TextView
+                                android:id="@+id/M3S"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:textSize="14sp"
+                                android:textColor="@color/black" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp"
+                        android:gravity="center">
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBAfkirS"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Afkir / Reject"
+                            android:textSize="14sp"
+                            android:layout_marginRight="20dp" />
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBLemburS"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lembur"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+
+
+    <!-- CardView Kanan Bawah -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_bottom_right"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toEndOf="@id/card_left"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.946"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.939">
-
-        <TableLayout
-            android:id="@+id/Tabel"
-            android:layout_width="wrap_content"
-            android:layout_height="110dp"
-            android:background="@android:color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.86">
-
-            <TableRow android:background="@color/hijau">
-
-                <TextView
-                    android:layout_width="50dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="No."
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Tebal"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Lebar"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Panjang"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Pcs"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Aksi"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-            </TableRow>
-
-        </TableLayout>
-    </ScrollView>
-
-    <TextView
-        android:id="@+id/textView20"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jumlah Batang :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.553"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.452" />
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/primary_dark">
 
-    <TextView
-        android:id="@+id/JumlahPcsS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.643"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.452" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/M3S"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0.0000"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.946"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.452" />
 
-    <TextView
-        android:id="@+id/textView28"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="m3 :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.874"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.452" />
+            <!-- Button Container -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
 
+                <Button
+                    android:id="@+id/BtnDataBaruS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Data Baru"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"
+                    android:layout_marginEnd="8dp"/>
+
+                <Button
+                    android:id="@+id/BtnSimpanS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Simpan"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"
+                    android:layout_marginEnd="8dp"/>
+
+                <Button
+                    android:id="@+id/BtnBatalS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Batal"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"
+                    android:layout_marginEnd="8dp"/>
+
+                <Button
+                    android:id="@+id/BtnPrintS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Print"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"/>
+
+                <Button
+                    android:id="@+id/BtnInputDetailS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Input Detail"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"
+                    android:visibility="gone"/>
+
+                <Button
+                    android:id="@+id/BtnHapusDetailS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hapus"
+                    android:textSize="20sp"
+                    android:backgroundTint="@color/hijau"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

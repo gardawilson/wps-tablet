@@ -1049,6 +1049,8 @@ public class Laminating extends AppCompatActivity {
         DetailPcsL.setEnabled(true);
         BtnHapusDetailL.setEnabled(true);
         BtnInputDetailL.setEnabled(true);
+        CBLemburL.setEnabled(true);
+        CBAfkirL.setEnabled(true);
     }
 
     private void disableForm(){
@@ -1071,6 +1073,8 @@ public class Laminating extends AppCompatActivity {
         BtnHapusDetailL.setEnabled(false);
         BtnInputDetailL.setEnabled(false);
         BtnSimpanL.setEnabled(false);
+        CBLemburL.setEnabled(false);
+        CBAfkirL.setEnabled(false);
 
 
         // Disable semua tombol hapus yang ada di tabel
@@ -1997,7 +2001,7 @@ public class Laminating extends AppCompatActivity {
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
-                Paragraph judul = new Paragraph("LABEL Laminating")
+                Paragraph judul = new Paragraph("LABEL LAMINATING")
                         .setUnderline()
                         .setBold()
                         .setFontSize(10)
@@ -2113,6 +2117,11 @@ public class Laminating extends AppCompatActivity {
                 Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
                 Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 28, 0, 0).setFont(timesNewRoman);
 
+
+                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-40, 10, 0, 0).setFont(timesNewRoman);
+
                 // Tambahkan semua elemen ke dokumen
 
                 document.add(judul);
@@ -2124,15 +2133,26 @@ public class Laminating extends AppCompatActivity {
                 document.add(table);
                 document.add(sumTable);
 
+                if(CBAfkirL.isChecked()){
+                    document.add(afkirText);
+                }
+
                 if(printCount % 2 != 0) {
                     document.add(outputText);
                     document.add(qrCodeImage);
                     document.add(qrCodeID);
+                    if(CBLemburL.isChecked()){
+                        document.add(lemburTextOutput);
+                    }
                 }
                 else{
                     document.add(inputText);
                     document.add(qrCodeBottomImage);
                     document.add(qrCodeIDbottom);
+                    if(CBLemburL.isChecked()){
+                        document.add(lemburTextInput);
+                    }
+
                 }
 
                 document.close();

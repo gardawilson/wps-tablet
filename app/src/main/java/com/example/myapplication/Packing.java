@@ -1030,6 +1030,8 @@ public class Packing extends AppCompatActivity {
         BtnHapusDetailP.setEnabled(true);
         BtnInputDetailP.setEnabled(true);
         SpinBarangJadiP.setEnabled(true);
+        CBLemburP.setEnabled(true);
+        CBAfkirP.setEnabled(true);
     }
 
     private void disableForm(){
@@ -1052,6 +1054,8 @@ public class Packing extends AppCompatActivity {
         BtnInputDetailP.setEnabled(false);
         SpinBarangJadiP.setEnabled(false);
         BtnSimpanP.setEnabled(false);
+        CBLemburP.setEnabled(false);
+        CBAfkirP.setEnabled(false);
 
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
@@ -2130,21 +2134,23 @@ public class Packing extends AppCompatActivity {
                 float[] columnWidthsQR = {140f, 140f};
                 Table qrTable = new Table(columnWidthsQR)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
+                        .setMarginTop(25)
                         .setFontSize(8)
                         .setBorder(Border.NO_BORDER);
 
                 qrTable.addCell(new Cell().add(new Paragraph("Input")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setPaddings(0, 0, -10, 30));
                 qrTable.addCell(new Cell().add(new Paragraph("Input")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setPaddings(0, 30, -10, 0));
 
-
                 qrTable.addCell(new Cell().add(qrCodeInputLeft).setBorder(Border.NO_BORDER));
                 qrTable.addCell(new Cell().add(qrCodeInputRight).setBorder(Border.NO_BORDER));
-
 
                 qrTable.addCell(new Cell().add(new Paragraph(String.valueOf(noBarangJadi))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setPaddings(-10,0,0,25));
                 qrTable.addCell(new Cell().add(new Paragraph(String.valueOf(noBarangJadi))).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setPaddings(-10,25,0,0));
 
+
+                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(10, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(-40, 0, 0, 20).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
                 document.add(judul);
@@ -2156,15 +2162,25 @@ public class Packing extends AppCompatActivity {
                 document.add(table);
                 document.add(sumTable);
 
+                if(CBAfkirP.isChecked()){
+                    document.add(afkirText);
+                }
+
                 if(printCount % 2 != 0) {
                     document.add(outputTextBottom);
                     document.add(qrCodeBottomImage);
                     document.add(qrCodeIDbottom);
+                    if(CBLemburP.isChecked()){
+                        document.add(lemburTextOutput);
+                    }
                 }
                 else{
                     document.add(qrTable);
-
+                    if(CBLemburP.isChecked()){
+                        document.add(lemburTextInput);
+                    }
                 }
+
 
                 document.close();
                 pdfUri = uri;
@@ -3023,7 +3039,8 @@ public class Packing extends AppCompatActivity {
                 try {
                     String query =  "SELECT IdBarangJadi, NamaBarangJadi " +
                             "FROM dbo.MstBarangJadi " +
-                            "ORDER BY NamaBarangJadi ASC";;
+                            "WHERE enable = 1 " +
+                            "ORDER BY NamaBarangJadi ASC";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
