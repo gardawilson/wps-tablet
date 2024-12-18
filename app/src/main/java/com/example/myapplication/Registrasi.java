@@ -20,6 +20,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.Executors;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 
 public class Registrasi extends AppCompatActivity {
 
@@ -51,6 +54,7 @@ public class Registrasi extends AppCompatActivity {
             runOnUiThread(() -> IdRegis.setText(String.valueOf(newId)));
         });
 
+        // Set up click listener for Registration button
         BtnRegistrasi2.setOnClickListener(v -> {
             String username = UserRegis.getText().toString().trim();
             String password = PassRegis.getText().toString().trim();
@@ -58,39 +62,65 @@ public class Registrasi extends AppCompatActivity {
             String namadepan = InputNamaDepan.getText().toString().trim();
             String namabelakang = InputNamaBelakang.getText().toString().trim();
 
-            if (!username.isEmpty() && !password.isEmpty() && !idText.isEmpty() && !namadepan.isEmpty() && !namabelakang.isEmpty()) {
+            if (validateInput(username, password, namadepan, namabelakang)) {
                 try {
                     int id = Integer.parseInt(idText);
                     String hashedPassword = hashPassword(password);
 
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        boolean isSuccess = saveUserToDatabase(id, username, hashedPassword, namadepan, namabelakang);
-                        runOnUiThread(() -> {
-                            if (isSuccess) {
-                                Toast.makeText(Registrasi.this, "Registration Successful", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(Registrasi.this, "Registration Failed", Toast.LENGTH_SHORT).show();
-                            }
+                    if (hashedPassword != null) {
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            boolean isSuccess = saveUserToDatabase(id, username, hashedPassword, namadepan, namabelakang);
+                            runOnUiThread(() -> {
+                                if (isSuccess) {
+                                    Toast.makeText(Registrasi.this, "Registrasi berhasil", Toast.LENGTH_SHORT).show();
+                                    // Return to login page
+                                    Intent intent = new Intent(Registrasi.this, MainActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                            });
                         });
-                    });
+                    } else {
+                        Toast.makeText(Registrasi.this, "Gagal mengenkripsi password", Toast.LENGTH_SHORT).show();
+                    }
                 } catch (NumberFormatException e) {
-                    Toast.makeText(Registrasi.this, "ID must be a number", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Registrasi.this, "ID harus berupa angka", Toast.LENGTH_SHORT).show();
                 }
-            } else {
-                Toast.makeText(Registrasi.this, "All fields must be filled", Toast.LENGTH_SHORT).show();
             }
         });
 
+        // Set up click listener for Login button
         BtnLogin2.setOnClickListener(v -> {
             Intent intent = new Intent(Registrasi.this, MainActivity.class);
             startActivity(intent);
+            finish();
         });
+    }
+
+    // Input validation
+    private boolean validateInput(String username, String password, String namadepan, String namabelakang) {
+        if (username.isEmpty() || password.isEmpty() || namadepan.isEmpty() || namabelakang.isEmpty()) {
+            Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        if (username.length() < 1) {
+            Toast.makeText(this, "Username minimal 4 karakter", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        if (password.length() < 1) {
+            Toast.makeText(this, "Password minimal 6 karakter", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        return true;
     }
 
     // Get a new user ID from the database
     private int getNewIdFromDatabase() {
         int newId = 1; // Default ID
-        try (Connection con = getDatabaseConnection()) {
+        try (Connection con = ConnectionClass()) {
             if (con != null) {
                 String queryMaxId = "SELECT MAX(IdUsername) AS max_id FROM dbo.MstUsername";
                 try (PreparedStatement psMaxId = con.prepareStatement(queryMaxId);
@@ -109,9 +139,24 @@ public class Registrasi extends AppCompatActivity {
     // Save the new user to the database
     private boolean saveUserToDatabase(int id, String username, String hashedPassword, String namadepan, String namabelakang) {
         boolean isSuccess = false;
-        try (Connection con = getDatabaseConnection()) {
+        try (Connection con = ConnectionClass()) {
             if (con != null) {
-                String query = "INSERT INTO dbo.MstUsername (IdUsername, Username, PassMobile, FName, LName) VALUES (?, ?, ?, ?, ?)";
+                // Check if username already exists
+                String checkQuery = "SELECT COUNT(*) FROM dbo.MstUsername WHERE Username = ?";
+                try (PreparedStatement checkPs = con.prepareStatement(checkQuery)) {
+                    checkPs.setString(1, username);
+                    try (ResultSet rs = checkPs.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(Registrasi.this, "Username sudah terdaftar", Toast.LENGTH_SHORT).show();
+                            });
+                            return false;
+                        }
+                    }
+                }
+
+                // If username doesn't exist, proceed with insertion
+                String query = "INSERT INTO dbo.MstUsername (IdUsername, Username, Password, FName, LName) VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement ps = con.prepareStatement(query)) {
                     ps.setInt(1, id);
                     ps.setString(2, username);
@@ -124,44 +169,49 @@ public class Registrasi extends AppCompatActivity {
             }
         } catch (SQLException e) {
             Log.e("Registration Error", "SQL Error: " + e.getMessage(), e);
+            runOnUiThread(() -> {
+                Toast.makeText(Registrasi.this, "Terjadi kesalahan saat registrasi", Toast.LENGTH_SHORT).show();
+            });
         }
         return isSuccess;
     }
 
-    // Create a reusable method for establishing a database connection
-    private Connection getDatabaseConnection() {
-        String ip = "192.168.10.100";
-        String port = "1433";
-        String db = "WPS";
-        String user = "sa";
-        String pass = "Utama1234";
-        Connection con = null;
-
-        try {
-            Class.forName("net.sourceforge.jtds.jdbc.Driver");
-            String connectionUrl = "jdbc:jtds:sqlserver://" + ip + ":" + port + ";databasename=" + db + ";User=" + user + ";password=" + pass + ";";
-            con = DriverManager.getConnection(connectionUrl);
-        } catch (ClassNotFoundException e) {
-            Log.e("Database Error", "JDBC Driver not found", e);
-        } catch (SQLException e) {
-            Log.e("Database Error", "Connection failed: " + e.getMessage(), e);
-        }
-        return con;
-    }
-
-    // Hash password using SHA-256
+    // Password hashing using MD5 + TripleDES + Base64
     private String hashPassword(String password) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = md.digest(password.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            Log.e("Hashing Error", "Hash algorithm not found", e);
+            // Create MD5 hash
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            byte[] keyBytes = md5.digest(password.getBytes());
+
+            // Create TripleDES key
+            SecretKeySpec key = new SecretKeySpec(keyBytes, "DESede");
+
+            // Initialize cipher
+            Cipher cipher = Cipher.getInstance("DESede/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+
+            // Encrypt password
+            byte[] encryptedBytes = cipher.doFinal(password.getBytes());
+
+            // Convert to Base64
+            return Base64.getEncoder().encodeToString(encryptedBytes);
+        } catch (Exception e) {
+            Log.e("Hashing Error", "Failed to hash password", e);
+            e.printStackTrace();
+            return null;
         }
-        return null;
+    }
+
+    //Koneksi Database
+    @SuppressLint("NewApi")
+    private Connection ConnectionClass() {
+        Connection con = null;
+        try {
+            Class.forName("net.sourceforge.jtds.jdbc.Driver");
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+        } catch (Exception exception) {
+            Log.e("Error", exception.getMessage());
+        }
+        return con;
     }
 }

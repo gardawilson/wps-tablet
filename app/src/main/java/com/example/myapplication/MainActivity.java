@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private Button BtnLogin;
     private Button BtnRegistrasi;
     private ProgressBar progressBar;
-    private Button LayoutTest;
+
 
     // Update related
     private UpdateManager updateManager;
@@ -75,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         BtnRegistrasi = findViewById(R.id.BtnRegistrasi);
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
-        LayoutTest = findViewById(R.id.LayoutTest);
 
     }
 
@@ -107,11 +106,6 @@ public class MainActivity extends AppCompatActivity {
 
         BtnRegistrasi.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, Registrasi.class);
-            startActivity(intent);
-        });
-
-        LayoutTest.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, CobacobaActivity.class);
             startActivity(intent);
         });
     }
@@ -312,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         int count = rs.getInt(1);
-                        isValid = count == 0;
+                        isValid = count > 0;
                     }
                 }
             } catch (SQLException e) {

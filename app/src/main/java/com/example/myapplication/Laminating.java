@@ -402,13 +402,15 @@ public class Laminating extends AppCompatActivity {
             new LoadProfileTask().execute();
             new LoadFisikTask().execute();
             new LoadGradeTask().execute();
-            new LoadMesinTask().execute();
-            new LoadSusunTask().execute();
 
             BtnDataBaruL.setEnabled(false);
             BtnSimpanL.setEnabled(true);
             BtnBatalL.setEnabled(true);
             BtnPrintL.setEnabled(false);
+            CBAfkirL.setChecked(false);
+            CBLemburL.setChecked(false);
+            BtnDataBaruL.setVisibility(View.GONE);
+            BtnSimpanL.setVisibility(View.VISIBLE);
         });
 
         BtnSimpanL.setOnClickListener(v -> {
@@ -442,11 +444,11 @@ public class Laminating extends AppCompatActivity {
             int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
             int idUOMPanjang;
             if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 3;
+                idUOMPanjang = 1;
             } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
                 idUOMPanjang = 2;
             } else {
-                idUOMPanjang = 1;
+                idUOMPanjang = 3;
             }
 
             if (noLaminating.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
@@ -464,48 +466,75 @@ public class Laminating extends AppCompatActivity {
                 Toast.makeText(Laminating.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            BtnDataBaruL.setEnabled(true);
-            BtnPrintL.setEnabled(true);
 
-            new UpdateDatabaseTask(
-                    noLaminating,
-                    dateCreate,
-                    time,
-                    idTelly,
-                    noSPK,
-                    noSPKasal,
-                    idGrade,
-                    idJenisKayu,
-                    idProfile,
-                    isReject,
-                    isLembur,
-                    idUOMTblLebar,
-                    idUOMPanjang
-            ).execute();
+            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
+                @Override
+                public void onResult(boolean canProceed, String message) {
+                    if (!canProceed) {
+                        Toast.makeText(Laminating.this, message, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-            if (radioButtonMesinL.isChecked() && SpinMesinL.isEnabled() && noProduksi != null) {
-                new SaveToDatabaseTask(noProduksi, noLaminating).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                    // Lanjutkan proses penyimpanan
+                    new UpdateDatabaseTask(
+                            noLaminating,
+                            dateCreate,
+                            time,
+                            idTelly,
+                            noSPK,
+                            noSPKasal,
+                            idGrade,
+                            idJenisKayu,
+                            idProfile,
+                            isReject,
+                            isLembur,
+                            idUOMTblLebar,
+                            idUOMPanjang
+                    ).execute();
+
+                    if (radioButtonMesinL.isChecked() && SpinMesinL.isEnabled() && noProduksi != null) {
+                        new SaveToDatabaseTask(noProduksi, noLaminating).execute();
+                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
+                            saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal),
+                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
+                                    Integer.parseInt(dataRow.pcs));
+                        }
+                    } else if (radioButtonBSusunL.isChecked() && SpinSusunL.isEnabled() && noBongkarSusun != null) {
+                        new SaveBongkarSusunTask(noBongkarSusun, noLaminating).execute();
+                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
+                            saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal),
+                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
+                                    Integer.parseInt(dataRow.pcs));
+                        }
+                    } else {
+                        Toast.makeText(Laminating.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Start the task to insert into Riwayat
+                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                    String username = prefs.getString("username", "");
+                    String capitalizedUsername = capitalizeFirstLetter(username);
+
+                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                    String activity = String.format("Menyimpan Data %s Pada Label Laminating (Mobile)", noLaminating);
+                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+                    // Perbarui UI
+                    runOnUiThread(() -> {
+                        BtnDataBaruL.setEnabled(true);
+                        BtnPrintL.setEnabled(true);
+                        BtnSimpanL.setEnabled(false);
+                        BtnDataBaruL.setVisibility(View.VISIBLE);
+                        BtnSimpanL.setVisibility(View.GONE);
+                        disableForm();
+
+                        Toast.makeText(Laminating.this, "Data berhasil disimpan", Toast.LENGTH_SHORT).show();
+                    });
                 }
-            } else if (radioButtonBSusunL.isChecked() && SpinSusunL.isEnabled() && noBongkarSusun != null) {
-                new SaveBongkarSusunTask(noBongkarSusun, noLaminating).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                }
-            } else {
-                Toast.makeText(Laminating.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            BtnDataBaruL.setEnabled(true);
-            BtnPrintL.setEnabled(true);
-            BtnSimpanL.setEnabled(false);
-            disableForm();
-            Toast.makeText(Laminating.this, "Data berhasil disimpan", Toast.LENGTH_SHORT).show();
+            });
         });
 
         BtnBatalL.setOnClickListener(new View.OnClickListener() {
@@ -522,6 +551,10 @@ public class Laminating extends AppCompatActivity {
                 BtnSimpanL.setEnabled(false);
                 NoLaminating.setVisibility(View.VISIBLE);
                 NoLaminating_display.setVisibility(View.GONE);
+                BtnDataBaruL.setVisibility(View.VISIBLE);
+                BtnSimpanL.setVisibility(View.GONE);
+                CBLemburL.setChecked(false);
+                CBAfkirL.setChecked(false);
             }
         });
 
@@ -808,6 +841,151 @@ public class Laminating extends AppCompatActivity {
 
     //METHOD LAMINATING
 
+
+    //Fungsi untuk membuat huruf kapital
+    public String capitalizeFirstLetter(String inputUsername) {
+        if (inputUsername == null || inputUsername.isEmpty()) {
+            return inputUsername; // Jika null atau kosong, kembalikan string asli
+        }
+        return inputUsername.substring(0, 1).toUpperCase() + inputUsername.substring(1).toLowerCase();
+    }
+
+    private class SaveToRiwayatTask extends AsyncTask<Void, Void, Boolean> {
+        private String username;
+        private String currentDate;
+        private String activity;
+
+        public SaveToRiwayatTask(String username, String currentDate, String activity) {
+            this.username = username;
+            this.currentDate = currentDate;
+            this.activity = activity;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            boolean success = false;
+
+            if (con != null) {
+                try {
+                    // Query untuk insert ke tabel Riwayat
+                    String query = "INSERT INTO dbo.Riwayat (Nip, Tgl, Aktivitas) VALUES (?, ?, ?)";
+                    Log.d("SQL Query", "Executing query: " + query);
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, username);
+                    ps.setString(2, currentDate);
+                    ps.setString(3, activity);
+
+                    int rowsAffected = ps.executeUpdate();
+                    Log.d("Database", "Rows affected: " + rowsAffected);
+
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                    Log.d("Riwayat", "Data successfully inserted into Riwayat.");
+
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            // Update UI atau beri feedback ke pengguna setelah data disimpan
+            if (success) {
+                Log.d("Riwayat", "Data berhasil disimpan di Riwayat");
+            } else {
+                Log.e("Riwayat", "Gagal menyimpan data di Riwayat");
+            }
+        }
+    }
+
+    // Add this method to check max period
+    private void checkMaxPeriod(String dateToCheck, OnPeriodCheckListener listener) {
+        new AsyncTask<Void, Void, String[]>() {  // Ubah return type jadi String[] untuk menampung 2 period
+            @Override
+            protected String[] doInBackground(Void... voids) {
+                String[] periods = new String[2];  // Array untuk menyimpan period dari 2 tabel
+                Connection conn = null;
+
+                try {
+                    conn = ConnectionClass();
+
+                    // Check MstTutupTransaksi
+                    String query1 = "SELECT MAX(Period) as max_period FROM MstTutupTransaksi";
+                    PreparedStatement stmt1 = conn.prepareStatement(query1);
+                    ResultSet rs1 = stmt1.executeQuery();
+                    if (rs1.next()) {
+                        periods[0] = rs1.getString("max_period");
+                    }
+
+                    // Check MstTutupTransaksiHarian
+                    String query2 = "SELECT MAX(PeriodHarian) as max_period FROM MstTutupTransaksiHarian";
+                    PreparedStatement stmt2 = conn.prepareStatement(query2);
+                    ResultSet rs2 = stmt2.executeQuery();
+                    if (rs2.next()) {
+                        periods[1] = rs2.getString("max_period");
+                    }
+
+                    return periods;
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return periods;
+                } finally {
+                    try {
+                        if (conn != null) conn.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            protected void onPostExecute(String[] periods) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                try {
+                    Date inputDate = sdf.parse(dateToCheck);
+
+                    // Check period dari MstTutupTransaksi
+                    if (periods[0] != null) {
+                        Date maxPeriodDate = sdf.parse(periods[0]);
+                        if (inputDate.before(maxPeriodDate) || inputDate.equals(maxPeriodDate)) {
+                            listener.onResult(false, "Periode Transaksi Bulanan Telah di Tutup!");
+                            return;
+                        }
+                    }
+
+                    // Check period dari MstTutupTransaksiHarian
+                    if (periods[1] != null) {
+                        Date maxPeriodHarianDate = sdf.parse(periods[1]);
+                        if (inputDate.before(maxPeriodHarianDate) || inputDate.equals(maxPeriodHarianDate)) {
+                            listener.onResult(false, "Periode Transaksi Harian Telah di Tutup!");
+                            return;
+                        }
+                    }
+
+                    // Jika lolos kedua pengecekan
+                    listener.onResult(true, "");
+
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    listener.onResult(false, "Error parsing date!");
+                }
+            }
+        }.execute();
+    }
+
+    // Interface for callback
+    interface OnPeriodCheckListener {
+        void onResult(boolean canProceed, String message);
+    }
+
     private class DeleteLatestNoLaminatingTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -1077,6 +1255,7 @@ public class Laminating extends AppCompatActivity {
         CBAfkirL.setEnabled(false);
 
 
+
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
             View row = Tabel.getChildAt(i);
@@ -1165,7 +1344,9 @@ public class Laminating extends AppCompatActivity {
                             "f.Profile, " +
                             "w.NamaWarehouse, " +
                             "h.IdJenisKayu, " +
-                            "k.Jenis " +
+                            "k.Jenis, " +
+                            "h.IsLembur, " +
+                            "h.IsReject " +
                             "FROM " +
                             "Laminating_h h " +
                             "LEFT JOIN " +
@@ -1213,7 +1394,8 @@ public class Laminating extends AppCompatActivity {
                                 final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
                                 final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
                                 final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
-
+                                final int isLembur = rs.getInt("IsLembur");
+                                final int isReject = rs.getInt("IsReject");
 
 
                                 // Mengambil data detail
@@ -1255,6 +1437,9 @@ public class Laminating extends AppCompatActivity {
                                         setSpinnerValue(SpinFisikL, namaWarehouse);
                                         setSpinnerValue(SpinMesinL, namaMesin + " - " + noProduksi);
                                         setSpinnerValue(SpinSusunL, noBongkarSusun);
+                                        CBAfkirL.setChecked(isReject == 1);
+                                        CBLemburL.setChecked(isLembur == 1);
+
 
                                         // Update tabel detail
                                         updateTableFromTemporaryData();
@@ -1762,6 +1947,9 @@ public class Laminating extends AppCompatActivity {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         TimeL.setText(currentTime);
+
+        new LoadMesinTask().execute(currentDate);
+        new LoadSusunTask().execute(currentDate);
     }
 
     private void showDatePickerDialog() {
@@ -1989,7 +2177,7 @@ public class Laminating extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 300; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 325; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
@@ -2087,11 +2275,11 @@ public class Laminating extends AppCompatActivity {
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {50f, 5f, 70f};
+                float[] columnWidths = {60f, 5f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                         .setMarginTop(10)
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setBorder(Border.NO_BORDER);
 
                 sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
@@ -2102,21 +2290,19 @@ public class Laminating extends AppCompatActivity {
                 sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
                 sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
 
-                Paragraph qrCodeID = new Paragraph(noLaminating).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(-5, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noLaminating).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(-5, 20, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeID = new Paragraph(noLaminating).setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noLaminating).setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-10, 27, 0, 0).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noLaminating);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-5, 0, 0, 0);
+                Image qrCodeImage = new Image(qrCodeObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-10, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noLaminating);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-5, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-10, 0, 0, 0);
 
-                Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
-                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 28, 0, 0).setFont(timesNewRoman);
-
+                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(25, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(25, 40, 0, 0).setFont(timesNewRoman);
 
                 Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
                 Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
@@ -3323,6 +3509,7 @@ public class Laminating extends AppCompatActivity {
         protected void onPostExecute(List<Susun> susunList) {
             if (!susunList.isEmpty()) {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Laminating.this, android.R.layout.simple_spinner_item, susunList);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinSusunL.setAdapter(adapter);
             } else {
                 SpinSusunL.setAdapter(null);

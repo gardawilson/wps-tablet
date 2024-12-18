@@ -605,7 +605,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Centimeter"
-                                android:enabled="false"
+                                android:checked="true"
                                 android:textSize="12sp"
                                 android:layout_marginBottom="2dp"/>
 
@@ -623,8 +623,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Feet"
-                                android:checked="true"
-                                android:textSize="12sp"/>
+                                android:textSize="12sp"
+                                android:enabled="false" />
 
                         </RadioGroup>
 
@@ -904,7 +904,7 @@
 
                 <Button
                     android:id="@+id/BtnDataBaruM"
-                    android:layout_width="wrap_content"
+                    android:layout_width="150dp"
                     android:layout_height="wrap_content"
                     android:text="Data Baru"
                     android:textSize="20sp"
@@ -913,12 +913,13 @@
 
                 <Button
                     android:id="@+id/BtnSimpanM"
-                    android:layout_width="wrap_content"
+                    android:layout_width="150dp"
                     android:layout_height="wrap_content"
                     android:text="Simpan"
                     android:textSize="20sp"
                     android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"/>
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone"/>
 
                 <Button
                     android:id="@+id/BtnBatalM"

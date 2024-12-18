@@ -133,9 +133,6 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
-
-
-
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -402,8 +399,6 @@ public class S4S extends AppCompatActivity {
             new LoadProfileTask().execute();
             new LoadFisikTask().execute();
             new LoadGradeTask().execute();
-            new LoadMesinTask().execute();
-            new LoadSusunTask().execute();
 
             BtnSimpan.setEnabled(true);
             BtnBatal.setEnabled(true);
@@ -411,6 +406,8 @@ public class S4S extends AppCompatActivity {
             radioButtonMesin.setEnabled(true);
             radioButtonBSusun.setEnabled(true);
             BtnPrint.setEnabled(false);
+            BtnDataBaru.setVisibility(View.GONE);
+            BtnSimpan.setVisibility(View.VISIBLE);
 
             clearData();
             resetDetailData();
@@ -446,19 +443,7 @@ public class S4S extends AppCompatActivity {
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
 
-            int isReject = CBAfkir.isChecked() ? 1 : 0;
-            int isLembur = CBLembur.isChecked() ? 1 : 0;
-            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-            int idUOMPanjang;
-            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 1;
-            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                idUOMPanjang = 2;
-            } else {
-                idUOMPanjang = 3;
-            }
-
-            // Validasi input
+            // Basic validation first
             if (noS4S.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
@@ -475,54 +460,94 @@ public class S4S extends AppCompatActivity {
                 return;
             }
 
-            // Update database utama
-            new UpdateDatabaseTask(
-                    noS4S,
-                    dateCreate,
-                    time,
-                    idTelly,
-                    noSPK,
-                    noSPKasal,
-                    idGrade,
-                    idJenisKayu,
-                    idProfile,
-                    isReject,
-                    isLembur,
-                    idUOMTblLebar,
-                    idUOMPanjang
-            ).execute();
+            // Check period before proceeding
+            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
+                @Override
+                public void onResult(boolean canProceed, String message) {
+                    if (!canProceed) {
+                        Toast.makeText(S4S.this, message, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-            // Simpan sesuai pilihan radio button
-            if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
-                new SaveToDatabaseTask(noProduksi, noS4S).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    S4S.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noS4S, i + 1,
-                            Double.parseDouble(dataRow.tebal),
-                            Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang),
-                            Integer.parseInt(dataRow.pcs));
+                    // If we can proceed, continue with the original save logic
+                    int isReject = CBAfkir.isChecked() ? 1 : 0;
+                    int isLembur = CBLembur.isChecked() ? 1 : 0;
+                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                    int idUOMPanjang;
+                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                        idUOMPanjang = 1;
+                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                        idUOMPanjang = 2;
+                    } else {
+                        idUOMPanjang = 3;
+                    }
+
+                    // Update database utama
+                    new UpdateDatabaseTask(
+                            noS4S,
+                            dateCreate,
+                            time,
+                            idTelly,
+                            noSPK,
+                            noSPKasal,
+                            idGrade,
+                            idJenisKayu,
+                            idProfile,
+                            isReject,
+                            isLembur,
+                            idUOMTblLebar,
+                            idUOMPanjang
+                    ).execute();
+
+                    // Simpan sesuai pilihan radio button
+                    if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
+                        new SaveToDatabaseTask(noProduksi, noS4S).execute();
+                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
+                            saveDataDetailToDatabase(noS4S, i + 1,
+                                    Double.parseDouble(dataRow.tebal),
+                                    Double.parseDouble(dataRow.lebar),
+                                    Double.parseDouble(dataRow.panjang),
+                                    Integer.parseInt(dataRow.pcs));
+                        }
+                    } else if (radioButtonBSusun.isChecked() && SpinSusun.isEnabled() && noBongkarSusun != null) {
+                        new SaveBongkarSusunTask(noBongkarSusun, noS4S).execute();
+                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
+                            saveDataDetailToDatabase(noS4S, i + 1,
+                                    Double.parseDouble(dataRow.tebal),
+                                    Double.parseDouble(dataRow.lebar),
+                                    Double.parseDouble(dataRow.panjang),
+                                    Integer.parseInt(dataRow.pcs));
+                        }
+                    }
+
+
+                    // Start the task to insert into Riwayat
+                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                    String username = prefs.getString("username", "");
+                    String capitalizedUsername = capitalizeFirstLetter(username);
+
+                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                    String activity = String.format("Menyimpan Data %s Pada Label S4S (Mobile)", noS4S);
+                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+
+                    // Update UI
+                    runOnUiThread(() -> {
+                        BtnDataBaru.setEnabled(true);
+                        BtnPrint.setEnabled(true);
+                        BtnSimpan.setEnabled(false);
+                        BtnDataBaru.setVisibility(View.VISIBLE);
+                        BtnSimpan.setVisibility(View.GONE);
+                        disableForm();
+
+                        Toast.makeText(S4S.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    });
                 }
-            } else if (radioButtonBSusun.isChecked() && SpinSusun.isEnabled() && noBongkarSusun != null) {
-                new SaveBongkarSusunTask(noBongkarSusun, noS4S).execute();
-                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                    S4S.DataRow dataRow = temporaryDataListDetail.get(i);
-                    saveDataDetailToDatabase(noS4S, i + 1,
-                            Double.parseDouble(dataRow.tebal),
-                            Double.parseDouble(dataRow.lebar),
-                            Double.parseDouble(dataRow.panjang),
-                            Integer.parseInt(dataRow.pcs));
-                }
-            }
-
-            // Update UI
-            BtnDataBaru.setEnabled(true);
-            BtnPrint.setEnabled(true);
-            BtnSimpan.setEnabled(false);
-            disableForm();
-
-            Toast.makeText(S4S.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+            });
         });
+
 
         BtnBatal.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -539,7 +564,10 @@ public class S4S extends AppCompatActivity {
                 BtnPrint.setEnabled(false);
                 NoS4S.setVisibility(View.VISIBLE);
                 NoS4S_display.setVisibility(View.GONE);
-//                Toast.makeText(S4S.this, "Tampilan telah dikosongkan.", Toast.LENGTH_SHORT).show();
+                BtnDataBaru.setVisibility(View.VISIBLE);
+                BtnSimpan.setVisibility(View.GONE);
+                CBAfkir.setChecked(false);
+                CBLembur.setChecked(false);
             }
         });
 
@@ -825,6 +853,153 @@ public class S4S extends AppCompatActivity {
     }
 
     //METHOD S4S
+
+    //Fungsi untuk membuat huruf kapital
+    public String capitalizeFirstLetter(String inputUsername) {
+        if (inputUsername == null || inputUsername.isEmpty()) {
+            return inputUsername; // Jika null atau kosong, kembalikan string asli
+        }
+        return inputUsername.substring(0, 1).toUpperCase() + inputUsername.substring(1).toLowerCase();
+    }
+
+    private class SaveToRiwayatTask extends AsyncTask<Void, Void, Boolean> {
+        private String username;
+        private String currentDate;
+        private String activity;
+
+        public SaveToRiwayatTask(String username, String currentDate, String activity) {
+            this.username = username;
+            this.currentDate = currentDate;
+            this.activity = activity;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            boolean success = false;
+
+            if (con != null) {
+                try {
+                    // Query untuk insert ke tabel Riwayat
+                    String query = "INSERT INTO dbo.Riwayat (Nip, Tgl, Aktivitas) VALUES (?, ?, ?)";
+                    Log.d("SQL Query", "Executing query: " + query);
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, username);
+                    ps.setString(2, currentDate);
+                    ps.setString(3, activity);
+
+                    int rowsAffected = ps.executeUpdate();
+                    Log.d("Database", "Rows affected: " + rowsAffected);
+
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                    Log.d("Riwayat", "Data successfully inserted into Riwayat.");
+
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            // Update UI atau beri feedback ke pengguna setelah data disimpan
+            if (success) {
+                Log.d("Riwayat", "Data berhasil disimpan di Riwayat");
+            } else {
+                Log.e("Riwayat", "Gagal menyimpan data di Riwayat");
+            }
+        }
+    }
+
+
+    // Add this method to check max period
+    private void checkMaxPeriod(String dateToCheck, OnPeriodCheckListener listener) {
+        new AsyncTask<Void, Void, String[]>() {  // Ubah return type jadi String[] untuk menampung 2 period
+            @Override
+            protected String[] doInBackground(Void... voids) {
+                String[] periods = new String[2];  // Array untuk menyimpan period dari 2 tabel
+                Connection conn = null;
+
+                try {
+                    conn = ConnectionClass();
+
+                    // Check MstTutupTransaksi
+                    String query1 = "SELECT MAX(Period) as max_period FROM MstTutupTransaksi";
+                    PreparedStatement stmt1 = conn.prepareStatement(query1);
+                    ResultSet rs1 = stmt1.executeQuery();
+                    if (rs1.next()) {
+                        periods[0] = rs1.getString("max_period");
+                    }
+
+                    // Check MstTutupTransaksiHarian
+                    String query2 = "SELECT MAX(PeriodHarian) as max_period FROM MstTutupTransaksiHarian";
+                    PreparedStatement stmt2 = conn.prepareStatement(query2);
+                    ResultSet rs2 = stmt2.executeQuery();
+                    if (rs2.next()) {
+                        periods[1] = rs2.getString("max_period");
+                    }
+
+                    return periods;
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return periods;
+                } finally {
+                    try {
+                        if (conn != null) conn.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            protected void onPostExecute(String[] periods) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                try {
+                    Date inputDate = sdf.parse(dateToCheck);
+
+                    // Check period dari MstTutupTransaksi
+                    if (periods[0] != null) {
+                        Date maxPeriodDate = sdf.parse(periods[0]);
+                        if (inputDate.before(maxPeriodDate) || inputDate.equals(maxPeriodDate)) {
+                            listener.onResult(false, "Periode Transaksi Bulanan Telah di Tutup!");
+                            return;
+                        }
+                    }
+
+                    // Check period dari MstTutupTransaksiHarian
+                    if (periods[1] != null) {
+                        Date maxPeriodHarianDate = sdf.parse(periods[1]);
+                        if (inputDate.before(maxPeriodHarianDate) || inputDate.equals(maxPeriodHarianDate)) {
+                            listener.onResult(false, "Periode Transaksi Harian Telah di Tutup!");
+                            return;
+                        }
+                    }
+
+                    // Jika lolos kedua pengecekan
+                    listener.onResult(true, "");
+
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    listener.onResult(false, "Error parsing date!");
+                }
+            }
+        }.execute();
+    }
+
+    // Interface for callback
+    interface OnPeriodCheckListener {
+        void onResult(boolean canProceed, String message);
+    }
+
+
     private class DeleteLatestNoS4STask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -852,13 +1027,7 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(S4S.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
-//            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(S4S.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
-//            }
+
         }
     }
 
@@ -1095,6 +1264,7 @@ public class S4S extends AppCompatActivity {
         CBAfkir.setEnabled(false);
 
 
+
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
             View row = Tabel.getChildAt(i);
@@ -1183,7 +1353,9 @@ public class S4S extends AppCompatActivity {
                             "f.Profile, " +
                             "w.NamaWarehouse, " +
                             "h.IdJenisKayu, " +
-                            "k.Jenis " +
+                            "k.Jenis, " +
+                            "h.IsLembur, " +
+                            "h.IsReject " +
                             "FROM S4S_h h " +
                             "LEFT JOIN S4SProduksiOutput o ON h.NoS4S = o.NoS4S " +
                             "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
@@ -1220,7 +1392,8 @@ public class S4S extends AppCompatActivity {
                                 final String namaProfile = rs.getString("Profile") != null ? rs.getString("Profile") : "-";
                                 final String namaWarehouse = rs.getString("NamaWarehouse") != null ? rs.getString("NamaWarehouse") : "-";
                                 final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
-
+                                final int isLembur = rs.getInt("IsLembur");
+                                final int isReject = rs.getInt("IsReject");
 
 
                                 // Mengambil data detail
@@ -1262,6 +1435,8 @@ public class S4S extends AppCompatActivity {
                                         setSpinnerValue(SpinFisik, namaWarehouse);
                                         setSpinnerValue(SpinMesin, namaMesin + " - " + noProduksi);
                                         setSpinnerValue(SpinSusun, noBongkarSusun);
+                                        CBAfkir.setChecked(isReject == 1);
+                                        CBLembur.setChecked(isLembur == 1);
 
                                         // Update tabel detail
                                         updateTableFromTemporaryData();
@@ -2052,7 +2227,7 @@ public class S4S extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 300; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 325; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
@@ -2150,11 +2325,11 @@ public class S4S extends AppCompatActivity {
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {50f, 5f, 70f};
+                float[] columnWidths = {60f, 5f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                         .setMarginTop(10)
-                        .setFontSize(8)
+                        .setFontSize(10)
                         .setBorder(Border.NO_BORDER);
 
                 sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
@@ -2165,19 +2340,19 @@ public class S4S extends AppCompatActivity {
                 sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
                 sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
 
-                Paragraph qrCodeID = new Paragraph(noS4S).setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(-5, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noS4S).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(0, 20, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeID = new Paragraph(noS4S).setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noS4S).setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-10, 27, 0, 0).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noS4S);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-5, 0, 0, 0);
+                Image qrCodeImage = new Image(qrCodeObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-10, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noS4S);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-10, 0, 0, 0);
 
-                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(15, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(15, 30, 0, 0).setFont(timesNewRoman);
+                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(25, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(25, 40, 0, 0).setFont(timesNewRoman);
 
                 Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
                 Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
@@ -3429,6 +3604,7 @@ public class S4S extends AppCompatActivity {
         protected void onPostExecute(List<Susun> susunList) {
             if (!susunList.isEmpty()) {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(S4S.this, android.R.layout.simple_spinner_item, susunList);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinSusun.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load susun data");
@@ -3436,6 +3612,7 @@ public class S4S extends AppCompatActivity {
             }
         }
     }
+
     private class LoadSusunTask2 extends AsyncTask<Void, Void, List<Susun>> {
         private String noS4S;
 
