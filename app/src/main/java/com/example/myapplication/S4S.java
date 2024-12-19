@@ -77,6 +77,8 @@ import com.itextpdf.io.font.PdfEncodings;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.view.inputmethod.InputConnection;
+import android.text.InputType;
+
 
 
 
@@ -205,7 +207,6 @@ public class S4S extends AppCompatActivity {
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_s4_s);
-
 
         NoSTAsal = findViewById(R.id.NoSTAsal);
         NoS4S = findViewById(R.id.NoS4S);
@@ -337,9 +338,15 @@ public class S4S extends AppCompatActivity {
             }
         });
 
-
         NoS4S_display.setVisibility(View.GONE);
         disableForm();
+
+        int searchEditTextId = NoS4S.getContext().getResources().getIdentifier("android:id/search_src_text", null, null);
+        EditText searchEditText = NoS4S.findViewById(searchEditTextId);
+
+        if (searchEditText != null) {
+            searchEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
 
         NoS4S.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -354,6 +361,10 @@ public class S4S extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (!isCreateMode) {
+                    if (!newText.startsWith("R.")) {
+                        NoS4S.setQuery("R." + newText, false);  // false untuk mencegah pemanggilan ulang listener
+                    }
+
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
@@ -2227,7 +2238,7 @@ public class S4S extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 325; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 

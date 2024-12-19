@@ -77,8 +77,6 @@
             android:name=".MainActivity"
             android:exported="true"/>
 
-        <activity android:name=".CobacobaActivity" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

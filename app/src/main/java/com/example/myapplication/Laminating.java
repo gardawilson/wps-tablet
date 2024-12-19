@@ -14,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -340,6 +341,13 @@ public class Laminating extends AppCompatActivity {
         NoLaminating_display.setVisibility(View.GONE);
         disableForm();
 
+        int searchEditTextId = NoLaminating.getContext().getResources().getIdentifier("android:id/search_src_text", null, null);
+        EditText searchEditText = NoLaminating.findViewById(searchEditTextId);
+
+        if (searchEditText != null) {
+            searchEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
+
         NoLaminating.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -353,6 +361,10 @@ public class Laminating extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (!isCreateMode) {
+                    if (!newText.startsWith("U.")) {
+                        NoLaminating.setQuery("U." + newText, false);  // false untuk mencegah pemanggilan ulang listener
+                    }
+
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);
@@ -2177,7 +2189,7 @@ public class Laminating extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 325; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 

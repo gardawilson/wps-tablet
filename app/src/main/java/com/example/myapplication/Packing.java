@@ -14,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -330,7 +331,12 @@ public class Packing extends AppCompatActivity {
         NoBarangJadi_display.setVisibility(View.GONE);
         disableForm();
 
+        int searchEditTextId = NoBarangJadi.getContext().getResources().getIdentifier("android:id/search_src_text", null, null);
+        EditText searchEditText = NoBarangJadi.findViewById(searchEditTextId);
 
+        if (searchEditText != null) {
+            searchEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
 
         NoBarangJadi.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -345,6 +351,10 @@ public class Packing extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (!isCreateMode) {
+                    if (!newText.startsWith("I.")) {
+                        NoBarangJadi.setQuery("I." + newText, false);  // false untuk mencegah pemanggilan ulang listener
+                    }
+
                     if(!newText.isEmpty()){
                         disableForm();
                         loadSubmittedData(newText);

@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,8 +20,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import android.content.SharedPreferences;
-import android.content.Context;
+import android.os.AsyncTask;
 
+import android.content.Context;
 
 import java.io.File;
 import java.security.MessageDigest;
@@ -35,6 +37,11 @@ import java.util.concurrent.Executors;
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.Date;
+
+
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -94,6 +101,12 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     if (isLoginSuccessful) {
                         saveUsername(username);
+                        // Start the task to insert into Riwayat
+                        String capitalizedUsername = capitalizeFirstLetter(username);
+
+                        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                        String activity = String.format("User %s Telah Login", capitalizedUsername);
+                        new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
                         Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(MainActivity.this, MenuUtama.class);
                         startActivity(intent);
@@ -110,6 +123,68 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //Fungsi untuk membuat huruf kapital
+    public String capitalizeFirstLetter(String inputUsername) {
+        if (inputUsername == null || inputUsername.isEmpty()) {
+            return inputUsername; // Jika null atau kosong, kembalikan string asli
+        }
+        return inputUsername.substring(0, 1).toUpperCase() + inputUsername.substring(1).toLowerCase();
+    }
+
+    private class SaveToRiwayatTask extends AsyncTask<Void, Void, Boolean> {
+        private String username;
+        private String currentDate;
+        private String activity;
+
+        public SaveToRiwayatTask(String username, String currentDate, String activity) {
+            this.username = username;
+            this.currentDate = currentDate;
+            this.activity = activity;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+            boolean success = false;
+
+            if (con != null) {
+                try {
+                    // Query untuk insert ke tabel Riwayat
+                    String query = "INSERT INTO dbo.Riwayat (Nip, Tgl, Aktivitas) VALUES (?, ?, ?)";
+                    Log.d("SQL Query", "Executing query: " + query);
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, username);
+                    ps.setString(2, currentDate);
+                    ps.setString(3, activity);
+
+                    int rowsAffected = ps.executeUpdate();
+                    Log.d("Database", "Rows affected: " + rowsAffected);
+
+                    ps.close();
+                    con.close();
+
+                    success = rowsAffected > 0;
+                    Log.d("Riwayat", "Data successfully inserted into Riwayat.");
+
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            // Update UI atau beri feedback ke pengguna setelah data disimpan
+            if (success) {
+                Log.d("Riwayat", "Data berhasil disimpan di Riwayat");
+            } else {
+                Log.e("Riwayat", "Gagal menyimpan data di Riwayat");
+            }
+        }
+    }
 
     private void initializeUpdateManagerAndCheck() {
         if (isChecking) return; // Prevent multiple simultaneous checks
@@ -361,6 +436,23 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        // Membuat AlertDialog untuk konfirmasi keluar
+        new AlertDialog.Builder(this)
+                .setMessage("Apakah Anda yakin ingin keluar dari aplikasi?")
+                .setCancelable(false) // Agar dialog tidak bisa dibatalkan dengan menekan luar dialog
+                .setPositiveButton("Ya", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finishAffinity(); // Menutup semua aktivitas dalam stack
+                        System.exit(0);   // Memastikan aplikasi tertutup
+                    }
+                })
+                .setNegativeButton("Tidak", null) // Jika memilih "Tidak", dialog ditutup
+                .show();
+    }
+
 
     //Koneksi Database
     @SuppressLint("NewApi")
