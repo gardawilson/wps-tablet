@@ -1,23 +1,14 @@
 package com.example.myapplication;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-
-public class InputProduksi extends AppCompatActivity {
+public class InputLabel extends AppCompatActivity {
 
 private CardView S4S;
 private CardView FingerJoin;
@@ -32,7 +23,7 @@ private CardView SawnTimber;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_input_produksi);
+        setContentView(R.layout.activity_input_label);
 
         S4S = findViewById(R.id.S4S);
         FingerJoin = findViewById(R.id.FingerJoin);
@@ -46,7 +37,7 @@ private CardView SawnTimber;
         S4S.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent( InputProduksi.this, S4S.class);
+                Intent intent = new Intent( InputLabel.this, S4S.class);
                 startActivity(intent);
             }
         });
@@ -54,7 +45,7 @@ private CardView SawnTimber;
         FingerJoin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent( InputProduksi.this, FingerJoint.class);
+                Intent intent = new Intent( InputLabel.this, FingerJoint.class);
                 startActivity(intent);
             }
         });
@@ -62,7 +53,7 @@ private CardView SawnTimber;
         Moulding.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new  Intent(InputProduksi.this,Moulding.class);
+                Intent intent = new  Intent(InputLabel.this,Moulding.class);
                 startActivity(intent);
             }
         });
@@ -70,7 +61,7 @@ private CardView SawnTimber;
         Laminating.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(InputProduksi.this,Laminating.class);
+                Intent intent = new Intent(InputLabel.this,Laminating.class);
                 startActivity(intent);
             }
         });
@@ -78,7 +69,7 @@ private CardView SawnTimber;
         CrossCut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(InputProduksi.this,CrossCut.class);
+                Intent intent = new Intent(InputLabel.this,CrossCut.class);
                 startActivity(intent);
             }
         });
@@ -86,7 +77,7 @@ private CardView SawnTimber;
         Sanding.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(InputProduksi.this, Sanding.class);
+                Intent intent = new Intent(InputLabel.this, Sanding.class);
                 startActivity(intent);
             }
         });
@@ -94,7 +85,7 @@ private CardView SawnTimber;
         Packing.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(InputProduksi.this,Packing.class);
+                Intent intent = new Intent(InputLabel.this,Packing.class);
                 startActivity(intent);
             }
         });
@@ -102,7 +93,7 @@ private CardView SawnTimber;
 //        SawnTimber.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
-//                Intent intent = new Intent(InputProduksi.this,SawnTimber.class);
+//                Intent intent = new Intent(InputLabel.this,SawnTimber.class);
 //                startActivity(intent);
 //            }
 //        });

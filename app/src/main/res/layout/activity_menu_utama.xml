@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginStart="16dp"
-        android:text="User : "
+        android:text="Hai, "
         android:textColor="@color/primary"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -64,7 +64,7 @@
 
         <!-- Menu 1: Input Produksi (Enabled) -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/InputProduksi"
+            android:id="@+id/InputLabel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
@@ -102,38 +102,37 @@
 
         <!-- Menu 2: Laporan (Disabled) -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/ProsesProduksi"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_columnWeight="1"
             android:layout_rowWeight="1"
             android:layout_margin="8dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:alpha="0.5">
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="16dp"
-                android:enabled="false">
+                android:padding="16dp">
 
                 <ImageView
-                    android:id="@+id/menuLaporan"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:padding="12dp"
-                    android:background="@drawable/circle_background" />
+                    android:background="@drawable/circle_background"
+                    android:src="@drawable/proses"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Laporan"
+                    android:text="Proses Produksi"
                     android:textAlignment="center"
                     android:textSize="16sp"
-                    android:textColor="@color/gray"
+                    android:textColor="@color/primary"
                     android:textStyle="bold"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>

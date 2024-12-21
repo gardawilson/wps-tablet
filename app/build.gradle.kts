@@ -70,4 +70,14 @@ dependencies {
     implementation(libs.itext7.core)
     implementation(libs.smbj)
     implementation(libs.bouncycastle)
+
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+    implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+
 }

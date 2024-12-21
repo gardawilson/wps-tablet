@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name="androidx.multidex.MultiDexApplication"
@@ -26,17 +28,22 @@
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-
+        <activity
+            android:name=".ProsesProduksiS4S"
+            android:exported="false" />
+        <activity
+            android:name=".ProsesProduksi"
+            android:exported="false" />
         <activity
             android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".SawnTimber"
             android:exported="false" />
@@ -65,7 +72,7 @@
             android:name=".S4S"
             android:exported="true" />
         <activity
-            android:name=".InputProduksi"
+            android:name=".InputLabel"
             android:exported="false" />
         <activity
             android:name=".MenuUtama"
@@ -75,7 +82,7 @@
             android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"/>
+            android:exported="true" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

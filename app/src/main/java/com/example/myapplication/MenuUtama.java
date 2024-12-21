@@ -30,8 +30,8 @@ import java.util.Date;
 
 public class MenuUtama extends AppCompatActivity {
 
-    private CardView InputProduksi;
-    private String username;
+    private CardView InputLabel;
+    private CardView ProsesProduksi;
     private TextView usernameView;
     private Button BtnLogout;
 
@@ -41,9 +41,10 @@ public class MenuUtama extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_menu_utama);
 
-        InputProduksi = findViewById(R.id.InputProduksi);
+        InputLabel = findViewById(R.id.InputLabel);
         usernameView = findViewById(R.id.usernameView);
         BtnLogout = findViewById(R.id.BtnLogout);
+        ProsesProduksi = findViewById(R.id.ProsesProduksi);
 
         SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
         String username = prefs.getString("username", "");
@@ -64,10 +65,18 @@ public class MenuUtama extends AppCompatActivity {
             }
         });
 
-        InputProduksi.setOnClickListener(new View.OnClickListener() {
+        InputLabel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MenuUtama.this, InputProduksi.class);
+                Intent intent = new Intent(MenuUtama.this, InputLabel.class);
+                startActivity(intent);
+            }
+        });
+
+        ProsesProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
                 startActivity(intent);
             }
         });
