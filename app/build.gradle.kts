@@ -74,10 +74,12 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.gson)
-    implementation(libs.mlkit.barcode.scanning)
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
+
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 
 }

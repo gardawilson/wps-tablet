@@ -4,29 +4,50 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.ProductionData;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.PlanarYUVLuminanceSource;
+import com.google.zxing.Reader;
+import com.google.zxing.Result;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ProsesProduksiS4S extends AppCompatActivity {
 
     private TableLayout tableLayout;
+    private PreviewView cameraPreview; // Komponen Preview Kamera
+    private ProcessCameraProvider cameraProvider;
+    private Camera camera;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
+    private TableLayout scanResultsTable;
+    private int scanResultCount = 0; // Counter untuk hasil scan
+    private List<String> scannedResults = new ArrayList<>(); // Untuk menyimpan hasil scan unik
 
 
     @Override
@@ -35,6 +56,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         setContentView(R.layout.activity_proses_produksi_s4_s);
 
         tableLayout = findViewById(R.id.tableLayout);
+        cameraPreview = findViewById(R.id.cameraPreview); // Hubungkan dengan layout XML Anda
+        scanResultsTable = findViewById(R.id.scanResultsTable); // Tabel hasil scan
+
 
         executorService.execute(() -> {
             List<ProductionData> productionDataList = ProductionApi.getProductionData();
@@ -43,14 +67,51 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 populateTable(productionDataList);
             });
         });
+
+        // Memulai kamera dengan ZXing
+        startCamera();
     }
+
+    private void addScanResultToTable(String result) {
+        runOnUiThread(() -> {
+            if (!scannedResults.contains(result)) {
+                // Tambahkan hasil ke daftar
+                scannedResults.add(result);
+
+                // Tambahkan baris baru ke tabel
+                TableRow row = new TableRow(this);
+
+                // Kolom No.
+                TextView numberView = new TextView(this);
+                numberView.setText(String.valueOf(scannedResults.size())); // Nomor berdasarkan ukuran daftar
+                numberView.setPadding(8, 8, 8, 8);
+                numberView.setGravity(Gravity.CENTER);
+
+                // Kolom Hasil Scan
+                TextView resultView = new TextView(this);
+                resultView.setText(result);
+                resultView.setPadding(8, 8, 8, 8);
+                resultView.setGravity(Gravity.START);
+
+                // Tambahkan kolom ke baris
+                row.addView(numberView);
+                row.addView(resultView);
+
+                // Tambahkan baris ke tabel dengan ID scanResultsTable
+                scanResultsTable.addView(row);
+            } else {
+                Log.d("DuplicateScan", "Hasil scan sudah ada: " + result);
+            }
+        });
+    }
+
+
 
     private void populateTable(List<ProductionData> dataList) {
         Log.d("PopulateTable", "Start");
 
         if (dataList == null || dataList.isEmpty()) {
             Log.w("PopulateTable", "Data list is empty or null");
-            // Tampilkan pesan "Data tidak ditemukan" jika data kosong
             TextView noDataView = new TextView(this);
             noDataView.setText("Data tidak ditemukan");
             noDataView.setLayoutParams(new TableLayout.LayoutParams(
@@ -62,7 +123,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             return;
         }
 
-        // Tambahkan header
         TableRow headerRow = new TableRow(this);
         headerRow.setBackgroundColor(ContextCompat.getColor(this, R.color.hijau));
 
@@ -97,18 +157,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 cardView.setCardBackgroundColor(ContextCompat.getColor(this, R.color.gray));
             }
 
-            // Tambahkan OnClickListener ke CardView
-            cardView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int rowIndex = tableLayout.indexOfChild(v);
-                    ProductionData clickedData = dataList.get(rowIndex - 1); // Kurangi 1 karena ada header
-
-                    Log.d("Row Click", "Clicked row: " + rowIndex +
-                            ", NoProduksi: " + clickedData.getNoProduksi());
-                }
-            });
-
             TableRow row = new TableRow(this);
 
             TextView noProdView = createTextView(data.getNoProduksi(), false);
@@ -122,7 +170,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             tanggalView.setGravity(Gravity.CENTER);
             mesinView.setGravity(Gravity.CENTER);
             operatorView.setGravity(Gravity.CENTER);
-
 
             row.addView(noProdView);
             row.addView(shiftView);
@@ -138,7 +185,76 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         Log.d("PopulateTable", "End");
     }
 
-    // Helper method untuk membuat TextView dengan opsi header
+    // Konfigurasi dan memulai CameraX dengan ZXing Analyzer
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
+                ProcessCameraProvider.getInstance(this);
+
+        cameraProviderFuture.addListener(() -> {
+            try {
+                cameraProvider = cameraProviderFuture.get();
+                cameraProvider.unbindAll();
+
+                CameraSelector cameraSelector = new CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
+                        .build();
+
+                androidx.camera.core.Preview preview = new androidx.camera.core.Preview.Builder()
+                        .build();
+                preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
+
+                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
+
+                imageAnalysis.setAnalyzer(getExecutor(), new ZXingAnalyzer());
+
+                camera = cameraProvider.bindToLifecycle(
+                        this, cameraSelector, preview, imageAnalysis);
+
+                Log.d("Camera", "Camera started successfully");
+
+            } catch (Exception e) {
+                Log.e("CameraError", "Error starting camera: " + e.getMessage(), e);
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    // ZXingAnalyzer untuk membaca QR Code
+    private class ZXingAnalyzer implements ImageAnalysis.Analyzer {
+        @Override
+        public void analyze(@NonNull ImageProxy imageProxy) {
+            try {
+                ImageProxy.PlaneProxy[] planes = imageProxy.getPlanes();
+                ByteBuffer buffer = planes[0].getBuffer();
+                byte[] data = new byte[buffer.remaining()];
+                buffer.get(data);
+
+                int width = imageProxy.getWidth();
+                int height = imageProxy.getHeight();
+                LuminanceSource source = new PlanarYUVLuminanceSource(
+                        data, width, height,
+                        0, 0, width, height,
+                        false);
+
+                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+                Reader reader = new QRCodeReader();
+
+                try {
+                    Result result = reader.decode(bitmap);
+                    Log.d("ZXingAnalyzer", "QR Code detected: " + result.getText());
+                    addScanResultToTable(result.getText()); // Tambahkan hasil ke tabel jika unik
+                } catch (Exception e) {
+                    Log.d("ZXingAnalyzer", "No QR Code found in this frame.");
+                }
+            } finally {
+                imageProxy.close();
+            }
+        }
+    }
+
+
+
     private TextView createTextView(String text, boolean isHeader) {
         TextView textView = new TextView(this);
         textView.setText(text);
@@ -154,6 +270,13 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
         executorService.shutdown();
+    }
+
+    private Executor getExecutor() {
+        return ContextCompat.getMainExecutor(this);
     }
 }

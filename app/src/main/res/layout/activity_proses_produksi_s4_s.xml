@@ -38,12 +38,12 @@
         android:padding="16dp">
 
         <!-- Preview Kamera -->
-        <SurfaceView
+        <androidx.camera.view.PreviewView
             android:id="@+id/cameraPreview"
-            android:layout_width="300dp"
-            android:layout_height="400dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
             android:layout_marginBottom="16dp"
-            android:background="#000"/>
+            android:background="#000" />
 
         <!-- Tombol untuk mengaktifkan dan menonaktifkan kamera -->
         <Button
@@ -58,5 +58,43 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Nonaktifkan Kamera"/>
+
+        <!-- Tabel hasil scan QR Code -->
+        <ScrollView
+            android:id="@+id/scrollViewResults"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp">
+
+            <TableLayout
+                android:id="@+id/scanResultsTable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:stretchColumns="1"
+                android:padding="8dp"
+                android:background="#EFEFEF">
+                <!-- Header tabel -->
+                <TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No."
+                        android:padding="8dp"
+                        android:background="#D3D3D3"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hasil Scan"
+                        android:padding="8dp"
+                        android:background="#D3D3D3"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+                </TableRow>
+            </TableLayout>
+        </ScrollView>
     </LinearLayout>
 </RelativeLayout>
