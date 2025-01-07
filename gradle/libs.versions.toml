@@ -17,6 +17,9 @@ gson = "2.10.1"
 camerax_version = "1.4.1"
 zxing-core = "3.5.1"
 zxing-android-embedded = "4.3.0"
+rxjava = "3.1.7"
+rxandroid = "3.0.2"
+
 
 
 [libraries]
@@ -41,6 +44,9 @@ camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", versi
 camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax_version" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxing-android-embedded" }
+rxjava = { group = "io.reactivex.rxjava3", name = "rxjava", version.ref = "rxjava" }
+rxandroid = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = "rxandroid" }
+
 
 
 

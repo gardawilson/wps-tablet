@@ -111,7 +111,8 @@
                     android:textSize="14sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
-                    android:hint="Tanggal" />
+                    android:hint="Tanggal"
+                    android:focusable="false"/>
 
                 <EditText
                     android:id="@+id/TimeL"
@@ -122,7 +123,8 @@
                     android:textSize="14sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
-                    android:hint="Jam" />
+                    android:hint="Jam"
+                    android:focusable="false"/>
             </LinearLayout>
 
             <!-- Spinner 1 Section -->

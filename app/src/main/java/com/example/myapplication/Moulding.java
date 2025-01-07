@@ -2,6 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import androidx.appcompat.app.AlertDialog;
+
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -99,10 +104,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-
-
-
-
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -144,6 +145,10 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class Moulding extends AppCompatActivity {
 
@@ -187,6 +192,7 @@ public class Moulding extends AppCompatActivity {
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoMoulding_display;
+    private String rawDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -317,7 +323,7 @@ public class Moulding extends AppCompatActivity {
                                 addDataDetail(noMoulding);
                                 jumlahpcs();
                                 m3();
-                                Toast.makeText(Moulding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(Moulding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
 
                                 // Sembunyikan keyboard setelah selesai
                                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -403,33 +409,82 @@ public class Moulding extends AppCompatActivity {
 
         //fungsi button DataBaru
         BtnDataBaruM.setOnClickListener(v -> {
-            setCurrentDateTime();
-            setCreateMode(true);
+            // Tampilkan Dialog Loading
+            AlertDialog.Builder builder = new AlertDialog.Builder(Moulding.this);
+            builder.setCancelable(false); // Tidak bisa ditutup oleh pengguna
+            builder.setView(R.layout.progress_dialog); // Layout custom dengan ProgressBar
+            AlertDialog loadingDialog = builder.create();
+            loadingDialog.show();
 
-            new SetAndSaveNoMouldingTask().execute();
-            new LoadJenisKayuTask().execute();
-            new LoadTellyTask().execute();
-            new LoadSPKTask().execute();
-            new LoadSPKAsalTask().execute();
-            new LoadProfileTask().execute();
-            new LoadFisikTask().execute();
-            new LoadGradeTask().execute();
+            // Timeout jika jaringan lambat
+            Handler handler = new Handler(Looper.getMainLooper());
+            boolean[] isTimeout = {false};
+            handler.postDelayed(() -> {
+                isTimeout[0] = true;
+                if (loadingDialog.isShowing()) {
+                    loadingDialog.dismiss();
+                    runOnUiThread(() -> {
+                        Toast.makeText(Moulding.this, "Koneksi terlalu lambat. Silakan coba lagi.", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }, 20000); // Timeout 20 detik
 
-            BtnSimpanM.setEnabled(true);
-            BtnBatalM.setEnabled(true);
-            BtnPrintM.setEnabled(false);
-            BtnDataBaruM.setVisibility(View.GONE);
-            BtnSimpanM.setVisibility(View.VISIBLE);
+            new Thread(() -> {
+                try {
+                    // Set waktu saat ini dan mode input
+                    setCurrentDateTime();
+                    setCreateMode(true);
 
-            clearData();
-            resetDetailData();
-            enableForm();
+                    // Jalankan tugas asinkron untuk memuat data
+                    new SetAndSaveNoMouldingTask().execute();
+                    new LoadJenisKayuTask().execute();
+                    new LoadTellyTask().execute();
+                    new LoadSPKTask().execute();
+                    new LoadSPKAsalTask().execute();
+                    new LoadProfileTask().execute();
+                    new LoadFisikTask().execute();
+                    new LoadGradeTask().execute();
+
+                    // Perbarui tombol dan UI
+                    runOnUiThread(() -> {
+                        BtnSimpanM.setEnabled(true);
+                        BtnBatalM.setEnabled(true);
+                        BtnPrintM.setEnabled(false);
+                        BtnDataBaruM.setVisibility(View.GONE);
+                        BtnSimpanM.setVisibility(View.VISIBLE);
+
+                        clearData();
+                        resetDetailData();
+                        enableForm();
+
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+
+                        Toast.makeText(Moulding.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
+                    });
+
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        Toast.makeText(Moulding.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                    Log.e("BtnDataBaruM", "Kesalahan: " + e.getMessage(), e);
+                }
+            }).start();
         });
 
         // Fungsi Button Simpan
         BtnSimpanM.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(Moulding.this);
+            progressDialog.setMessage("Menyimpan data...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
             String noMoulding = NoMoulding.getQuery().toString();
-            String dateCreate = DateM.getText().toString();
+            String dateCreate = rawDate;
             String time = TimeM.getText().toString();
 
             Telly selectedTelly = (Telly) SpinTellyM.getSelectedItem();
@@ -452,16 +507,11 @@ public class Moulding extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
-            int isReject = CBAfkirM.isChecked() ? 1 : 0;
-            int isLembur = CBLemburM.isChecked() ? 1 : 0;
-            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-            int idUOMPanjang;
-            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 1;
-            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                idUOMPanjang = 2;
-            } else {
-                idUOMPanjang = 3;
+
+            if (!isInternetAvailable()) {
+                progressDialog.dismiss();
+                Toast.makeText(Moulding.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if (noMoulding.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
@@ -476,76 +526,86 @@ public class Moulding extends AppCompatActivity {
                     (radioButtonBSusunM.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
                     temporaryDataListDetail.isEmpty()) {
 
+                progressDialog.dismiss();
                 Toast.makeText(Moulding.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Periksa periode sebelum melanjutkan
-            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
-                @Override
-                public void onResult(boolean canProceed, String message) {
-                    if (!canProceed) {
-                        Toast.makeText(Moulding.this, message, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            Completable.create(emitter -> {
+                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                            if (!canProceed) {
+                                emitter.onError(new Exception(message));
+                            } else {
+                                try {
+                                    int isReject = CBAfkirM.isChecked() ? 1 : 0;
+                                    int isLembur = CBLemburM.isChecked() ? 1 : 0;
+                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                    int idUOMPanjang;
+                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                        idUOMPanjang = 1;
+                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                        idUOMPanjang = 2;
+                                    } else {
+                                        idUOMPanjang = 3;
+                                    }
 
-                    // Lanjutkan logika simpan
-                    new UpdateDatabaseTask(
-                            noMoulding,
-                            dateCreate,
-                            time,
-                            idTelly,
-                            noSPK,
-                            noSPKasal,
-                            idGrade,
-                            idJenisKayu,
-                            idProfile,
-                            isReject,
-                            isLembur,
-                            idUOMTblLebar,
-                            idUOMPanjang
-                    ).execute();
+                                    new UpdateDatabaseTask(
+                                            noMoulding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang
+                                    ).execute();
 
-                    if (radioButtonMesinM.isChecked() && SpinMesinM.isEnabled() && noProduksi != null) {
-                        new SaveToDatabaseTask(noProduksi, noMoulding).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noMoulding, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                        }
-                    } else if (radioButtonBSusunM.isChecked() && SpinSusunM.isEnabled() && noBongkarSusun != null) {
-                        new SaveBongkarSusunTask(noBongkarSusun, noMoulding).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noMoulding, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                        }
-                    }
+                                    if (radioButtonMesinM.isChecked() && SpinMesinM.isEnabled() && noProduksi != null) {
+                                        new SaveToDatabaseTask(noProduksi, noMoulding).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noMoulding, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    } else if (radioButtonBSusunM.isChecked() && SpinSusunM.isEnabled() && noBongkarSusun != null) {
+                                        new SaveBongkarSusunTask(noBongkarSusun, noMoulding).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            Moulding.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noMoulding, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    }
 
-                    // Start the task to insert into Riwayat
-                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                    String username = prefs.getString("username", "");
-                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                    String username = prefs.getString("username", "");
+                                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    String activity = String.format("Menyimpan Data %s Pada Label Moulding (Mobile)", noMoulding);
+                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
 
-                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    String activity = String.format("Menyimpan Data %s Pada Label Moulding (Mobile)", noMoulding);
-                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-                    // Perbarui UI
-                    runOnUiThread(() -> {
+                                    emitter.onComplete();
+                                } catch (Exception e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        });
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> {
+                        progressDialog.dismiss();
                         BtnDataBaruM.setEnabled(true);
                         BtnPrintM.setEnabled(true);
                         BtnSimpanM.setEnabled(false);
                         BtnDataBaruM.setVisibility(View.VISIBLE);
                         BtnSimpanM.setVisibility(View.GONE);
                         disableForm();
-
                         Toast.makeText(Moulding.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }, throwable -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(Moulding.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     });
-                }
-            });
         });
-
 
         BtnBatalM.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -694,7 +754,7 @@ public class Moulding extends AppCompatActivity {
                         addDataDetail(noMoulding);
                         jumlahpcs();
                         m3();
-                        Toast.makeText(Moulding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(Moulding.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
                     } else {
                         // Tampilkan pesan error
                         Toast.makeText(Moulding.this, result, Toast.LENGTH_SHORT).show();
@@ -729,6 +789,9 @@ public class Moulding extends AppCompatActivity {
                 checkHasBeenPrinted(noMoulding, new Moulding.HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
+                        if (printCount == -1){
+                            return;
+                        }
                         // Menggunakan printCount untuk menentukan jumlah print sebelumnya
                         // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
 
@@ -857,6 +920,12 @@ public class Moulding extends AppCompatActivity {
     }
 
     //METHOD MOULDING
+
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
 
     //Fungsi untuk membuat huruf kapital
     public String capitalizeFirstLetter(String inputUsername) {
@@ -1030,11 +1099,11 @@ public class Moulding extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
 //            if (success) {
-//                Toast.makeText(Moulding.this, "NoS4S terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoS4S, jika diperlukan
+//                Toast.makeText(Moulding.this, "NoMoulding terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
+//                // Lakukan tindakan lain setelah penghapusan NoMoulding, jika diperlukan
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(Moulding.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoMoulding.");
+//                Toast.makeText(Moulding.this, "Gagal menghapus NoMoulding terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -1433,7 +1502,12 @@ public class Moulding extends AppCompatActivity {
                                             radioButtonMesinM.setEnabled(false);
                                         }
                                         // Update header fields
-                                        DateM.setText(dateCreate);
+                                        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                        SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+                                        Date date = inputDateFormat.parse(dateCreate);
+                                        String formattedDate = outputDateFormat.format(date);
+
+                                        DateM.setText(formattedDate);
                                         TimeM.setText(jam);
                                         setSpinnerValue(SpinTellyM, namaOrgTelly);
                                         setSpinnerValue(SpinSPKM, noSPK);
@@ -1549,21 +1623,38 @@ public class Moulding extends AppCompatActivity {
     }
 
     // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
-    private void checkHasBeenPrinted(String NoMoulding, Moulding.HasBeenPrintedCallback callback) {
+    private void checkHasBeenPrinted(String noMoulding, Moulding.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            int count = 0;
+            int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
+            boolean existsInH = false; // Cek keberadaan di s4s_h
+            boolean existsInD = false; // Cek keberadaan di s4s_d
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
-                    String query = "SELECT HasBeenPrinted FROM Moulding_h WHERE NoMoulding = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, NoMoulding);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                count = rs.getInt(1);  // Ambil hasil hitungan
+                    // Query untuk mengecek keberadaan di s4s_h dan mengambil HasBeenPrinted
+                    String queryCheckH = "SELECT HasBeenPrinted FROM Moulding_h WHERE NoMoulding = ?";
+                    String queryCheckD = "SELECT 1 FROM Moulding_d WHERE NoMoulding = ?";
+
+                    // Cek keberadaan di s4s_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noMoulding);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                existsInH = true; // Data ditemukan di s4s_h
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di s4s_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noMoulding);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true; // Data ditemukan di s4s_d
                             }
                         }
                     }
@@ -1583,11 +1674,22 @@ public class Moulding extends AppCompatActivity {
                 }
             }
 
-            final int finalCount = count;
-            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                } else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
-
+    
     // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String NoMoulding) {
         new Thread(() -> {
@@ -1801,9 +1903,14 @@ public class Moulding extends AppCompatActivity {
             String panjang = params[4];
             String pcs = params[5];
 
+            Log.d("SaveDataTaskDetail", "Starting insert with params: " +
+                    "NoMoulding=" + noMoulding + ", NoUrut=" + noUrut + ", Tebal=" + tebal +
+                    ", Lebar=" + lebar + ", Panjang=" + panjang + ", PCS=" + pcs);
+
             try {
                 Connection connection = ConnectionClass();
                 if (connection != null) {
+                    Log.d("SaveDataTaskDetail", "Database connection established");
                     String query = "INSERT INTO dbo.Moulding_d (NoMoulding, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
                     PreparedStatement preparedStatement = connection.prepareStatement(query);
                     preparedStatement.setString(1, noMoulding);
@@ -1814,16 +1921,20 @@ public class Moulding extends AppCompatActivity {
                     preparedStatement.setInt(6, Integer.parseInt(pcs));
 
                     int rowsAffected = preparedStatement.executeUpdate();
+                    Log.d("SaveDataTaskDetail", "Rows affected: " + rowsAffected);
+                    preparedStatement.close();
+                    connection.close();
                     return rowsAffected > 0;
                 } else {
-                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
+                    Log.e("SaveDataTaskDetail", "Koneksi ke database gagal");
                 }
             } catch (SQLException e) {
-                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage());
+                Log.e("SaveDataTaskDetail", "SQL Exception: " + e.getMessage());
                 e.printStackTrace();
             }
             return false;
         }
+
 
         @Override
         protected void onPostExecute(Boolean success) {
@@ -1913,7 +2024,7 @@ public class Moulding extends AppCompatActivity {
 
     // fungsi untuk memunculkan waktu dan tanggal realtime
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateM.setText(currentDate);
 
@@ -1935,10 +2046,26 @@ public class Moulding extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(Moulding.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                DateM.setText(selectedDate);
-                new LoadMesinTask().execute(selectedDate);
-                new LoadSusunTask().execute(selectedDate);
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    DateM.setText(formattedDate);
+
+                    new LoadMesinTask().execute(rawDate);
+                    new LoadSusunTask().execute(rawDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DateM.setText("Invalid Date");
+                }
             }
         }, year, month, day);
 

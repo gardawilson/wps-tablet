@@ -1,100 +1,773 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ProsesProduksiS4S">
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="@color/primary">
 
-    <!-- ScrollView dengan tabel -->
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/nestedScrollView"
-        android:layout_width="wrap_content"
+    <!-- CardView di Kiri -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_alignParentStart="true">
+        android:layout_weight="2"
+        android:layout_marginEnd="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:background="#FFFFFF">
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Konten CardView Kiri -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PROSES PRODUKSI S4S"
+                android:textSize="30sp"
+                android:textColor="#000000"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnCameraControl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="5dp"
+                    android:text="Aktif"
+                    android:drawableTint="@color/white"/>
+
+                <Button
+                    android:id="@+id/btnSimpan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Save" />
+
+            </LinearLayout>
+
+            <!-- Baris No Produksi -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="15dp">
+
+                <!-- Label -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="16sp"
+                    android:text="No Produksi"
+                    android:textColor="#000000" />
+
+                <!-- Tanda ":" -->
+                <TextView
+                    android:layout_width="10dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:text=":"
+                    android:textColor="#000000" />
+
+                <!-- Nilai -->
+                <TextView
+                    android:id="@+id/noProduksiView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Baris Tanggal -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Label -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="16sp"
+                    android:text="Tanggal"
+                    android:textColor="#000000" />
+
+                <!-- Tanda ":" -->
+                <TextView
+                    android:layout_width="10dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:text=":"
+                    android:textColor="#000000" />
+
+                <!-- Nilai -->
+                <TextView
+                    android:id="@+id/tglProduksiView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Baris Mesin -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Label -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="16sp"
+                    android:text="Mesin"
+                    android:textColor="#000000" />
+
+                <!-- Tanda ":" -->
+                <TextView
+                    android:layout_width="10dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:text=":"
+                    android:textColor="#000000" />
+
+                <!-- Nilai -->
+                <TextView
+                    android:id="@+id/mesinProduksiView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Search Bar -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchMainTable"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Cari data produksi..."
+                    android:imeOptions="actionDone"
+                    android:inputType="text" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:id="@+id/inputKodeManual"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal"
+                android:layout_gravity="center_vertical"
+                android:descendantFocusability="afterDescendants"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/kodeLabelContainer"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:layout_marginRight="10dp"
+                    app:boxStrokeColor="@color/primary"
+                    app:boxBackgroundMode="outline"
+                    app:hintEnabled="true"
+                    app:hintTextColor="@color/primary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/kodeLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Kode Label"
+                        android:textSize="14sp"
+                        android:imeOptions="actionDone"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnInputKodeLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:layout_marginStart="16dp"
+                    android:text="Input"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="8dp"
+                    app:iconTint="@color/white" />
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/scanLayout"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_marginTop="25dp"
+                android:layout_gravity="center"
+                android:visibility="gone">
+
+                <!-- Preview Kamera -->
+                <androidx.camera.view.PreviewView
+                    android:id="@+id/cameraPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <!-- Bagian Overlay -->
+                <View
+                    android:id="@+id/overlayTop"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#80000000"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/transparentFrame" />
+
+                <View
+                    android:id="@+id/overlayBottom"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#80000000"
+                    app:layout_constraintTop_toBottomOf="@+id/transparentFrame"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <View
+                    android:id="@+id/overlayLeft"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#80000000"
+                    app:layout_constraintTop_toTopOf="@+id/transparentFrame"
+                    app:layout_constraintBottom_toBottomOf="@+id/transparentFrame"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/transparentFrame" />
+
+                <View
+                    android:id="@+id/overlayRight"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="#80000000"
+                    app:layout_constraintTop_toTopOf="@+id/transparentFrame"
+                    app:layout_constraintBottom_toBottomOf="@+id/transparentFrame"
+                    app:layout_constraintStart_toEndOf="@+id/transparentFrame"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <!-- Area Transparan -->
+                <FrameLayout
+                    android:id="@+id/transparentFrame"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:background="@android:color/transparent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <View
+                        android:id="@+id/scannerOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/gradient_scanner" />
+
+                    <!-- Garis Bingkai -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:background="@color/white" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:background="@color/white"
+                        android:layout_gravity="bottom" />
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/white" />
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/white"
+                        android:layout_gravity="end" />
+
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/qrResultText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:background="@android:color/black"
+                    android:textColor="@android:color/white"
+                    android:text="QR Code Result"
+                    android:visibility="gone"
+                    android:textSize="14sp"
+                    app:layout_constraintTop_toBottomOf="@id/transparentFrame"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/overlayBottom" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TableLayout
-                android:id="@+id/tableLayout"
-                android:layout_width="500dp"
+                android:id="@+id/headerTableProduksi"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="visible">
+                android:layout_marginTop="5dp"
+                android:background="#EFEFEF"
+                android:stretchColumns="*"> <!-- Membuat kolom proporsional -->
+
+                <TableRow
+                    android:background="@color/hijau">
+
+                    <!-- Kolom No. Produksi -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="No. Produksi"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+                    <!-- Kolom Shift -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Shift"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+                    <!-- Kolom Tanggal -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tanggal"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+                    <!-- Kolom Mesin -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Mesin"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+
+                    <!-- Kolom Operator -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Operator"
+                        android:padding="8dp"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/white"/>
+                </TableRow>
 
             </TableLayout>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TableLayout
+                    android:id="@+id/tableLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stretchColumns="*"
+                    android:background="#EFEFEF">
+                    <!-- Baris isi tabel akan dimuat secara dinamis -->
+                </TableLayout>
+
+            </ScrollView>
+
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-    <!-- Layout untuk preview kamera dan tombol -->
+    </androidx.cardview.widget.CardView>
+
+    <!-- Layout untuk CardView di Kanan -->
     <LinearLayout
-        android:id="@+id/cameraControlLayout"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_toEndOf="@id/nestedScrollView"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_weight="2"
+        android:orientation="vertical">
 
-        <!-- Preview Kamera -->
-        <androidx.camera.view.PreviewView
-            android:id="@+id/cameraPreview"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginBottom="16dp"
-            android:background="#000" />
-
-        <!-- Tombol untuk mengaktifkan dan menonaktifkan kamera -->
-        <Button
-            android:id="@+id/btnActivateCamera"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Aktifkan Kamera"
-            android:layout_marginBottom="8dp"/>
-
-        <Button
-            android:id="@+id/btnDeactivateCamera"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Nonaktifkan Kamera"/>
-
-        <!-- Tabel hasil scan QR Code -->
-        <ScrollView
-            android:id="@+id/scrollViewResults"
+        <!-- Baris Pertama (3 CardView) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="16dp">
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
 
-            <TableLayout
-                android:id="@+id/scanResultsTable"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:stretchColumns="1"
-                android:padding="8dp"
-                android:background="#EFEFEF">
-                <!-- Header tabel -->
-                <TableRow>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="No."
-                        android:padding="8dp"
-                        android:background="#D3D3D3"
-                        android:gravity="center"
-                        android:textStyle="bold" />
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Hasil Scan"
-                        android:padding="8dp"
-                        android:background="#D3D3D3"
-                        android:gravity="center"
-                        android:textStyle="bold" />
-                </TableRow>
-            </TableLayout>
-        </ScrollView>
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No S4S"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noS4STableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No ST"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noSTTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No Moulding"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noMouldingTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Baris Kedua (3 CardView) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No FJ"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noFJTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No CC"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noCCTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="No Reproses"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/noReprosesTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+                        </TableLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
     </LinearLayout>
-</RelativeLayout>
+</LinearLayout>

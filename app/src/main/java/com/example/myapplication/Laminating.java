@@ -2,6 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import androidx.appcompat.app.AlertDialog;
+
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -99,10 +104,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-
-
-
-
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -144,6 +145,10 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class Laminating extends AppCompatActivity {
 
@@ -188,6 +193,7 @@ public class Laminating extends AppCompatActivity {
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoLaminating_display;
+    private String rawDate;
 
 
 
@@ -320,7 +326,7 @@ public class Laminating extends AppCompatActivity {
                                 addDataDetail(noLaminating);
                                 jumlahpcs();
                                 m3();
-                                Toast.makeText(Laminating.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(Laminating.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
 
                                 // Sembunyikan keyboard setelah selesai
                                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -402,33 +408,79 @@ public class Laminating extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruL.setOnClickListener(v -> {
-            setCreateMode(true);
-            setCurrentDateTime();
-            enableForm();
+            AlertDialog.Builder builder = new AlertDialog.Builder(Laminating.this);
+            builder.setCancelable(false);
+            builder.setView(R.layout.progress_dialog);
+            AlertDialog loadingDialog = builder.create();
+            loadingDialog.show();
 
-            new SetAndSaveNoLaminatingTask().execute();
-            new LoadJenisKayuTask().execute();
-            new LoadTellyTask().execute();
-            new LoadSPKTask().execute();
-            new LoadSPKAsalTask().execute();
-            new LoadProfileTask().execute();
-            new LoadFisikTask().execute();
-            new LoadGradeTask().execute();
+            // Timeout jika jaringan lambat
+            Handler handler = new Handler(Looper.getMainLooper());
+            boolean[] isTimeout = {false};
+            handler.postDelayed(() -> {
+                isTimeout[0] = true;
+                runOnUiThread(() -> {
+                    if (loadingDialog.isShowing()) {
+                        loadingDialog.dismiss();
+                        Toast.makeText(Laminating.this, "Koneksi terlalu lambat. Silakan coba lagi.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }, 20000);
 
-            BtnDataBaruL.setEnabled(false);
-            BtnSimpanL.setEnabled(true);
-            BtnBatalL.setEnabled(true);
-            BtnPrintL.setEnabled(false);
-            CBAfkirL.setChecked(false);
-            CBLemburL.setChecked(false);
-            BtnDataBaruL.setVisibility(View.GONE);
-            BtnSimpanL.setVisibility(View.VISIBLE);
+            new Thread(() -> {
+                try {
+                    // Operasi berat atau jaringan berjalan di background thread
+                    setCreateMode(true);
+                    setCurrentDateTime();
+
+                    // Pastikan semua operasi UI dilakukan di UI thread
+                    runOnUiThread(() -> {
+                        enableForm();
+
+                        new SetAndSaveNoLaminatingTask().execute();
+                        new LoadJenisKayuTask().execute();
+                        new LoadTellyTask().execute();
+                        new LoadSPKTask().execute();
+                        new LoadSPKAsalTask().execute();
+                        new LoadProfileTask().execute();
+                        new LoadFisikTask().execute();
+                        new LoadGradeTask().execute();
+
+                        BtnDataBaruL.setEnabled(false);
+                        BtnSimpanL.setEnabled(true);
+                        BtnBatalL.setEnabled(true);
+                        BtnPrintL.setEnabled(false);
+                        CBAfkirL.setChecked(false);
+                        CBLemburL.setChecked(false);
+                        BtnDataBaruL.setVisibility(View.GONE);
+                        BtnSimpanL.setVisibility(View.VISIBLE);
+
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+
+                        Toast.makeText(Laminating.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        Toast.makeText(Laminating.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                    Log.e("BtnDataBaruL", "Kesalahan: " + e.getMessage(), e);
+                }
+            }).start();
         });
 
         BtnSimpanL.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(Laminating.this);
+            progressDialog.setMessage("Menyimpan data...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
 
             String noLaminating = NoLaminating.getQuery().toString();
-            String dateCreate = DateL.getText().toString();
+            String dateCreate = rawDate;
             String time = TimeL.getText().toString();
 
             Telly selectedTelly = (Telly) SpinTellyL.getSelectedItem();
@@ -451,16 +503,11 @@ public class Laminating extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
-            int isReject = CBAfkirL.isChecked() ? 1 : 0;
-            int isLembur = CBLemburL.isChecked() ? 1 : 0;
-            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-            int idUOMPanjang;
-            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 1;
-            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                idUOMPanjang = 2;
-            } else {
-                idUOMPanjang = 3;
+
+            if (!isInternetAvailable()) {
+                progressDialog.dismiss();
+                Toast.makeText(Laminating.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if (noLaminating.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
@@ -472,81 +519,88 @@ public class Laminating extends AppCompatActivity {
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinL.isChecked() && !radioButtonBSusunL.isChecked()) ||
                     (radioButtonMesinL.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
-                    (radioButtonBSusunL.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+                    (radioButtonBSusunL.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
+                    temporaryDataListDetail.isEmpty()) {
 
-
+                progressDialog.dismiss();
                 Toast.makeText(Laminating.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
-                @Override
-                public void onResult(boolean canProceed, String message) {
-                    if (!canProceed) {
-                        Toast.makeText(Laminating.this, message, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            Completable.create(emitter -> {
+                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                            if (!canProceed) {
+                                emitter.onError(new Exception(message));
+                            } else {
+                                try {
+                                    int isReject = CBAfkirL.isChecked() ? 1 : 0;
+                                    int isLembur = CBLemburL.isChecked() ? 1 : 0;
+                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                    int idUOMPanjang;
+                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                        idUOMPanjang = 1;
+                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                        idUOMPanjang = 2;
+                                    } else {
+                                        idUOMPanjang = 3;
+                                    }
 
-                    // Lanjutkan proses penyimpanan
-                    new UpdateDatabaseTask(
-                            noLaminating,
-                            dateCreate,
-                            time,
-                            idTelly,
-                            noSPK,
-                            noSPKasal,
-                            idGrade,
-                            idJenisKayu,
-                            idProfile,
-                            isReject,
-                            isLembur,
-                            idUOMTblLebar,
-                            idUOMPanjang
-                    ).execute();
+                                    new UpdateDatabaseTask(
+                                            noLaminating, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang
+                                    ).execute();
 
-                    if (radioButtonMesinL.isChecked() && SpinMesinL.isEnabled() && noProduksi != null) {
-                        new SaveToDatabaseTask(noProduksi, noLaminating).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else if (radioButtonBSusunL.isChecked() && SpinSusunL.isEnabled() && noBongkarSusun != null) {
-                        new SaveBongkarSusunTask(noBongkarSusun, noLaminating).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noLaminating, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else {
-                        Toast.makeText(Laminating.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                                    if (radioButtonMesinL.isChecked() && SpinMesinL.isEnabled() && noProduksi != null) {
+                                        new SaveToDatabaseTask(noProduksi, noLaminating).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noLaminating, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    } else if (radioButtonBSusunL.isChecked() && SpinSusunL.isEnabled() && noBongkarSusun != null) {
+                                        new SaveBongkarSusunTask(noBongkarSusun, noLaminating).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            Laminating.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noLaminating, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    }
 
-                    // Start the task to insert into Riwayat
-                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                    String username = prefs.getString("username", "");
-                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                    String username = prefs.getString("username", "");
+                                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    String activity = String.format("Menyimpan Data %s Pada Label Laminating (Mobile)", noLaminating);
+                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
 
-                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    String activity = String.format("Menyimpan Data %s Pada Label Laminating (Mobile)", noLaminating);
-                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-                    // Perbarui UI
-                    runOnUiThread(() -> {
+                                    emitter.onComplete();
+                                } catch (Exception e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        });
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> {
+                        progressDialog.dismiss();
                         BtnDataBaruL.setEnabled(true);
                         BtnPrintL.setEnabled(true);
                         BtnSimpanL.setEnabled(false);
                         BtnDataBaruL.setVisibility(View.VISIBLE);
                         BtnSimpanL.setVisibility(View.GONE);
                         disableForm();
-
-                        Toast.makeText(Laminating.this, "Data berhasil disimpan", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Laminating.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }, throwable -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(Laminating.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     });
-                }
-            });
         });
 
         BtnBatalL.setOnClickListener(new View.OnClickListener() {
@@ -690,7 +744,7 @@ public class Laminating extends AppCompatActivity {
                         addDataDetail(noLaminating);
                         jumlahpcs();
                         m3();
-                        Toast.makeText(Laminating.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(Laminating.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
                     } else {
                         // Tampilkan pesan error
                         Toast.makeText(Laminating.this, result, Toast.LENGTH_SHORT).show();
@@ -724,6 +778,9 @@ public class Laminating extends AppCompatActivity {
                 checkHasBeenPrinted(noLaminating, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
+                        if (printCount == -1){
+                            return;
+                        }
                         // Menggunakan printCount untuk menentukan jumlah print sebelumnya
                         // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
 
@@ -853,6 +910,11 @@ public class Laminating extends AppCompatActivity {
 
     //METHOD LAMINATING
 
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
 
     //Fungsi untuk membuat huruf kapital
     public String capitalizeFirstLetter(String inputUsername) {
@@ -1438,7 +1500,12 @@ public class Laminating extends AppCompatActivity {
                                             radioButtonMesinL.setEnabled(false);
                                         }
                                         // Update header fields
-                                        DateL.setText(dateCreate);
+                                        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                        SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+                                        Date date = inputDateFormat.parse(dateCreate);
+                                        String formattedDate = outputDateFormat.format(date);
+
+                                        DateL.setText(formattedDate);
                                         TimeL.setText(jam);
                                         setSpinnerValue(SpinTellyL, namaOrgTelly);
                                         setSpinnerValue(SpinSPKL, noSPK);
@@ -1557,19 +1624,36 @@ public class Laminating extends AppCompatActivity {
     // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noLaminating, Laminating.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            int count = 0;
+            int hasBeenPrintedValue = -1;
+            boolean existsInH = false;
+            boolean existsInD = false;
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
-                    String query = "SELECT HasBeenPrinted FROM Laminating_h WHERE NoLaminating = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, noLaminating);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                count = rs.getInt(1);  // Ambil hasil hitungan
+
+                    String queryCheckH = "SELECT HasBeenPrinted FROM Laminating_h WHERE NoLaminating = ?";
+                    String queryCheckD = "SELECT 1 FROM Laminating_d WHERE NoLaminating = ?";
+
+                    // Cek keberadaan di s4s_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noLaminating);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                existsInH = true; // Data ditemukan di s4s_h
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di s4s_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noLaminating);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true;
                             }
                         }
                     }
@@ -1589,8 +1673,19 @@ public class Laminating extends AppCompatActivity {
                 }
             }
 
-            final int finalCount = count;
-            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                } else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
 
@@ -1952,7 +2047,7 @@ public class Laminating extends AppCompatActivity {
 
 
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateL.setText(currentDate);
 
@@ -1973,10 +2068,26 @@ public class Laminating extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(Laminating.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                DateL.setText(selectedDate);
-                new LoadMesinTask().execute(selectedDate);
-                new LoadSusunTask().execute(selectedDate);
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    DateL.setText(formattedDate);
+
+                    new LoadMesinTask().execute(rawDate);
+                    new LoadSusunTask().execute(rawDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DateL.setText("Invalid Date");
+                }
             }
         }, year, month, day);
 

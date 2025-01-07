@@ -2,6 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import androidx.appcompat.app.AlertDialog;
+
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -99,10 +104,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-
-
-
-
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -127,9 +128,6 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
-
-
-
 import com.itextpdf.layout.properties.VerticalAlignment;
 
 import java.io.File;
@@ -144,6 +142,10 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class CrossCut extends AppCompatActivity {
 
@@ -189,6 +191,7 @@ public class CrossCut extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoCC_display;
     private Button deleteButton;
+    private String rawDate;
 
 
 
@@ -322,7 +325,7 @@ public class CrossCut extends AppCompatActivity {
                                 addDataDetail(noCC);
                                 jumlahpcs();
                                 m3();
-                                Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
 
                                 // Sembunyikan keyboard setelah selesai
                                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -405,34 +408,80 @@ public class CrossCut extends AppCompatActivity {
         setCurrentDateTime();
 
         BtnDataBaruCC.setOnClickListener(v -> {
-            setCurrentDateTime();
-            setCreateMode(true);
+            // Tampilkan Dialog Loading
+            AlertDialog.Builder builder = new AlertDialog.Builder(CrossCut.this);
+            builder.setCancelable(false); // Tidak bisa ditutup oleh pengguna
+            builder.setView(R.layout.progress_dialog); // Layout custom dengan ProgressBar
+            AlertDialog loadingDialog = builder.create();
+            loadingDialog.show();
 
-            new SetAndSaveNoCCTask().execute();
-            new LoadJenisKayuTask().execute();
-            new LoadTellyTask().execute();
-            new LoadSPKTask().execute();
-            new LoadSPKAsalTask().execute();
-            new LoadProfileTask().execute();
-            new LoadFisikTask().execute();
-            new LoadGradeTask().execute();
+            // Timeout jika jaringan lambat
+            Handler handler = new Handler(Looper.getMainLooper());
+            boolean[] isTimeout = {false};
+            handler.postDelayed(() -> {
+                isTimeout[0] = true;
+                runOnUiThread(() -> {
+                    if (loadingDialog.isShowing()) {
+                        loadingDialog.dismiss();
+                        Toast.makeText(CrossCut.this, "Koneksi terlalu lambat. Silakan coba lagi.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }, 20000); // Timeout 20 detik
 
-            BtnSimpanCC.setEnabled(true);
-            BtnBatalCC.setEnabled(true);
-            BtnDataBaruCC.setEnabled(false);
-            BtnPrintCC.setEnabled(false);
-            BtnDataBaruCC.setVisibility(View.GONE);
-            BtnSimpanCC.setVisibility(View.VISIBLE);
+            new Thread(() -> {
+                try {
+                    // Set mode input dan waktu saat ini
+                    setCurrentDateTime();
+                    setCreateMode(true);
 
-            clearData();
-            resetDetailData();
-            enableForm();
+                    // Jalankan tugas asinkron untuk memuat data
+                    runOnUiThread(() -> {
+                        new SetAndSaveNoCCTask().execute();
+                        new LoadJenisKayuTask().execute();
+                        new LoadTellyTask().execute();
+                        new LoadSPKTask().execute();
+                        new LoadSPKAsalTask().execute();
+                        new LoadProfileTask().execute();
+                        new LoadFisikTask().execute();
+                        new LoadGradeTask().execute();
+
+                        BtnSimpanCC.setEnabled(true);
+                        BtnBatalCC.setEnabled(true);
+                        BtnPrintCC.setEnabled(false);
+                        BtnDataBaruCC.setEnabled(false);
+                        BtnDataBaruCC.setVisibility(View.GONE);
+                        BtnSimpanCC.setVisibility(View.VISIBLE);
+
+                        clearData();
+                        resetDetailData();
+                        enableForm();
+
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+
+                        Toast.makeText(CrossCut.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        Toast.makeText(CrossCut.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                    Log.e("BtnDataBaruCC", "Kesalahan: " + e.getMessage(), e);
+                }
+            }).start();
         });
 
-
         BtnSimpanCC.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(CrossCut.this);
+            progressDialog.setMessage("Menyimpan data...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
             String noCC = NoCC.getQuery().toString();
-            String dateCreate = DateCC.getText().toString();
+            String dateCreate = rawDate;
             String time = TimeCC.getText().toString();
 
             Telly selectedTelly = (Telly) SpinTellyCC.getSelectedItem();
@@ -455,100 +504,104 @@ public class CrossCut extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
-            int isReject = CBAfkirCC.isChecked() ? 1 : 0;
-            int isLembur = CBLemburCC.isChecked() ? 1 : 0;
-            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-            int idUOMPanjang;
-            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 1;
-            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                idUOMPanjang = 2;
-            } else {
-                idUOMPanjang = 3;
+
+            if (!isInternetAvailable()) {
+                progressDialog.dismiss();
+                Toast.makeText(CrossCut.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if (noCC.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
-                    selectedFisik == null || selectedFisik.getNamaWarehouse().equals("PILIH") ||
+                    selectedFisik == null ||
                     selectedGrade == null || selectedGrade.getIdGrade().isEmpty() ||
                     selectedJenisKayu == null || selectedJenisKayu.getIdJenisKayu().isEmpty() ||
                     (!radioButtonMesinCC.isChecked() && !radioButtonBSusunCC.isChecked()) ||
                     (radioButtonMesinCC.isChecked() && (selectedMesin == null || selectedMesin.getNoProduksi().isEmpty())) ||
-                    (radioButtonBSusunCC.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) || temporaryDataListDetail.isEmpty()) {
+                    (radioButtonBSusunCC.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
+                    temporaryDataListDetail.isEmpty()) {
 
+                progressDialog.dismiss();
                 Toast.makeText(CrossCut.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
-                @Override
-                public void onResult(boolean canProceed, String message) {
-                    if (!canProceed) {
-                        Toast.makeText(CrossCut.this, message, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            Completable.create(emitter -> {
+                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                            if (!canProceed) {
+                                emitter.onError(new Exception(message));
+                            } else {
+                                try {
+                                    int isReject = CBAfkirCC.isChecked() ? 1 : 0;
+                                    int isLembur = CBLemburCC.isChecked() ? 1 : 0;
+                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                    int idUOMPanjang;
+                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                        idUOMPanjang = 1;
+                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                        idUOMPanjang = 2;
+                                    } else {
+                                        idUOMPanjang = 3;
+                                    }
 
-                    // Lanjutkan proses penyimpanan
-                    new UpdateDatabaseTask(
-                            noCC,
-                            dateCreate,
-                            time,
-                            idTelly,
-                            noSPK,
-                            noSPKasal,
-                            idGrade,
-                            idJenisKayu,
-                            idProfile,
-                            isReject,
-                            isLembur,
-                            idUOMTblLebar,
-                            idUOMPanjang
-                    ).execute();
+                                    new UpdateDatabaseTask(
+                                            noCC, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang
+                                    ).execute();
 
-                    if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
-                        new SaveToDatabaseTask(noProduksi, noCC).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noCC, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else if (radioButtonBSusunCC.isChecked() && SpinSusunCC.isEnabled() && noBongkarSusun != null) {
-                        new SaveBongkarSusunTask(noBongkarSusun, noCC).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noCC, i + 1, Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar), Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else {
-                        Toast.makeText(CrossCut.this, "Pilih opsi yang valid untuk disimpan.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                                    if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
+                                        new SaveToDatabaseTask(noProduksi, noCC).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noCC, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    } else if (radioButtonBSusunCC.isChecked() && SpinSusunCC.isEnabled() && noBongkarSusun != null) {
+                                        new SaveBongkarSusunTask(noBongkarSusun, noCC).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noCC, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    }
 
-                    // Start the task to insert into Riwayat
-                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                    String username = prefs.getString("username", "");
-                    String capitalizedUsername = capitalizeFirstLetter(username);
-                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    String activity = String.format("Menyimpan Data %s Pada Label Cross Cut (Mobile)", noCC);
-                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                    String username = prefs.getString("username", "");
+                                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    String activity = String.format("Menyimpan Data %s Pada Label Cross Cut (Mobile)", noCC);
+                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
 
-                    // Perbarui UI
-                    runOnUiThread(() -> {
+                                    emitter.onComplete();
+                                } catch (Exception e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        });
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> {
+                        progressDialog.dismiss();
                         BtnDataBaruCC.setEnabled(true);
                         BtnPrintCC.setEnabled(true);
                         BtnSimpanCC.setEnabled(false);
                         BtnDataBaruCC.setVisibility(View.VISIBLE);
                         BtnSimpanCC.setVisibility(View.GONE);
                         disableForm();
-
                         Toast.makeText(CrossCut.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }, throwable -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(CrossCut.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     });
-                }
-            });
         });
 
         BtnHapusDetailCC.setOnClickListener(v -> {
@@ -699,7 +752,7 @@ public class CrossCut extends AppCompatActivity {
                         addDataDetail(noCC);
                         jumlahpcs();
                         m3();
-                        Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(CrossCut.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
                     } else {
                         // Tampilkan pesan error
                         Toast.makeText(CrossCut.this, result, Toast.LENGTH_SHORT).show();
@@ -728,6 +781,9 @@ public class CrossCut extends AppCompatActivity {
                 checkHasBeenPrinted(noCC, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
+                        if (printCount == -1){
+                            return;
+                        }
                         // Menggunakan printCount untuk menentukan jumlah print sebelumnya
                         // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
 
@@ -858,6 +914,11 @@ public class CrossCut extends AppCompatActivity {
 
     //METHOD CROSSCUT
 
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
 
     //Fungsi untuk membuat huruf kapital
     public String capitalizeFirstLetter(String inputUsername) {
@@ -1442,7 +1503,12 @@ public class CrossCut extends AppCompatActivity {
                                             radioButtonMesinCC.setEnabled(false);
                                         }
                                         // Update header fields
-                                        DateCC.setText(dateCreate);
+                                        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                        SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+                                        Date date = inputDateFormat.parse(dateCreate);
+                                        String formattedDate = outputDateFormat.format(date);
+
+                                        DateCC.setText(formattedDate);
                                         TimeCC.setText(jam);
                                         setSpinnerValue(SpinTellyCC, namaOrgTelly);
                                         setSpinnerValue(SpinSPKCC, noSPK);
@@ -1560,19 +1626,36 @@ public class CrossCut extends AppCompatActivity {
     // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noCC, CrossCut.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            int count = 0;
+            int hasBeenPrintedValue = -1;
+            boolean existsInH = false;
+            boolean existsInD = false;
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
-                    String query = "SELECT HasBeenPrinted FROM CCAkhir_h WHERE NoCCAkhir = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, noCC);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                count = rs.getInt(1);  // Ambil hasil hitungan
+
+                    String queryCheckH = "SELECT HasBeenPrinted FROM CCAkhir_h WHERE NoCCAkhir = ?";
+                    String queryCheckD = "SELECT 1 FROM CCAkhir_d WHERE NoCCAkhir = ?";
+
+                    // Cek keberadaan di s4s_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noCC);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                existsInH = true; // Data ditemukan di s4s_h
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di s4s_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noCC);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true;
                             }
                         }
                     }
@@ -1592,10 +1675,22 @@ public class CrossCut extends AppCompatActivity {
                 }
             }
 
-            final int finalCount = count;
-            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                } else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
+
 
     // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noCC) {
@@ -1923,7 +2018,7 @@ public class CrossCut extends AppCompatActivity {
 
 
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateCC.setText(currentDate);
 
@@ -1944,10 +2039,26 @@ public class CrossCut extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(CrossCut.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                DateCC.setText(selectedDate);
-                new LoadMesinTask().execute(selectedDate);
-                new LoadSusunTask().execute(selectedDate);
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    DateCC.setText(formattedDate);
+
+                    new LoadMesinTask().execute(rawDate);
+                    new LoadSusunTask().execute(rawDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DateCC.setText("Invalid Date");
+                }
             }
         }, year, month, day);
 

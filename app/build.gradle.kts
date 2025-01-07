@@ -11,7 +11,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.12"
+        versionName = "1.0.14"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -81,5 +81,11 @@ dependencies {
 
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
+
+    implementation(libs.rxjava)
+    implementation(libs.rxandroid)
+
+
+
 
 }

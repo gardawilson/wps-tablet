@@ -2,6 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import androidx.appcompat.app.AlertDialog;
+
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -99,10 +104,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-
-
-
-
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -144,6 +145,10 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class FingerJoint extends AppCompatActivity {
 
@@ -187,6 +192,7 @@ public class FingerJoint extends AppCompatActivity {
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoFJ_display;
+    private String rawDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -316,7 +322,7 @@ public class FingerJoint extends AppCompatActivity {
                                 addDataDetail(noFJ);
                                 jumlahpcs();
                                 m3();
-                                Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
 
                                 // Sembunyikan keyboard setelah selesai
                                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -396,37 +402,85 @@ public class FingerJoint extends AppCompatActivity {
             }
         });
 
-        setCurrentDateTimeFJ();
+        setCurrentDateTime();
 
         BtnDataBaruFJ.setOnClickListener(v -> {
-            setCurrentDateTime();
-            setCreateMode(true);
+            // Tampilkan Dialog Loading
+            AlertDialog.Builder builder = new AlertDialog.Builder(FingerJoint.this);
+            builder.setCancelable(false); // Tidak bisa ditutup oleh pengguna
+            builder.setView(R.layout.progress_dialog); // Layout custom dengan ProgressBar
+            AlertDialog loadingDialog = builder.create();
+            loadingDialog.show();
 
-            new SetAndSaveNoFJoinTaskFJ().execute();
-            new LoadJenisKayuTaskFJ().execute();
-            new LoadTellyTaskFJ().execute();
-            new LoadSPKTaskFJ().execute();
-            new LoadSPKAsalTaskFJ().execute();
-            new LoadProfileTaskFJ().execute();
-            new LoadFisikTaskFJ().execute();
-            new LoadGradeTaskFJ().execute();
+            // Timeout jika jaringan lambat
+            Handler handler = new Handler(Looper.getMainLooper());
+            boolean[] isTimeout = {false};
+            handler.postDelayed(() -> {
+                isTimeout[0] = true;
+                if (loadingDialog.isShowing()) {
+                    loadingDialog.dismiss();
+                    runOnUiThread(() -> {
+                        Toast.makeText(FingerJoint.this, "Koneksi terlalu lambat. Silakan coba lagi.", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }, 20000); // Timeout 20 detik
 
-            BtnSimpanFJ.setEnabled(true);
-            BtnBatalFJ.setEnabled(true);
-            BtnDataBaruFJ.setEnabled(false);
-            BtnPrintFJ.setEnabled(false);
-            BtnDataBaruFJ.setVisibility(View.GONE);
-            BtnSimpanFJ.setVisibility(View.VISIBLE);
+            new Thread(() -> {
+                try {
+                    // Set waktu saat ini dan mode input
+                    setCurrentDateTime();
+                    setCreateMode(true);
 
-            clearData();
-            resetDetailData();
-            enableForm();
+                    // Jalankan tugas asinkron untuk memuat data
+                    new SetAndSaveNoFJoinTaskFJ().execute();
+                    new LoadJenisKayuTaskFJ().execute();
+                    new LoadTellyTaskFJ().execute();
+                    new LoadSPKTaskFJ().execute();
+                    new LoadSPKAsalTaskFJ().execute();
+                    new LoadProfileTaskFJ().execute();
+                    new LoadFisikTaskFJ().execute();
+                    new LoadGradeTaskFJ().execute();
+
+                    // Perbarui tombol dan UI
+                    runOnUiThread(() -> {
+                        BtnSimpanFJ.setEnabled(true);
+                        BtnBatalFJ.setEnabled(true);
+                        BtnPrintFJ.setEnabled(false);
+                        BtnDataBaruFJ.setEnabled(false);
+                        BtnDataBaruFJ.setVisibility(View.GONE);
+                        BtnSimpanFJ.setVisibility(View.VISIBLE);
+
+                        clearData();
+                        resetDetailData();
+                        enableForm();
+
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+
+                        Toast.makeText(FingerJoint.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
+                    });
+
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        Toast.makeText(FingerJoint.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                    Log.e("BtnDataBaruFJ", "Kesalahan: " + e.getMessage(), e);
+                }
+            }).start();
         });
 
         BtnSimpanFJ.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(FingerJoint.this);
+            progressDialog.setMessage("Menyimpan data...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
 
             String noFJ = NoFJ.getQuery().toString();
-            String dateCreate = DateFJ.getText().toString();
+            String dateCreate = rawDate;
             String time = TimeFJ.getText().toString();
 
             TellyFJ selectedTelly = (TellyFJ) SpinTellyFJ.getSelectedItem();
@@ -449,16 +503,11 @@ public class FingerJoint extends AppCompatActivity {
             String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
-            int isReject = CBAfkirFJ.isChecked() ? 1 : 0;
-            int isLembur = CBLemburFJ.isChecked() ? 1 : 0;
-            int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-            int idUOMPanjang;
-            if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                idUOMPanjang = 1;
-            } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                idUOMPanjang = 2;
-            } else {
-                idUOMPanjang = 3;
+
+            if (!isInternetAvailable()) {
+                progressDialog.dismiss();
+                Toast.makeText(FingerJoint.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
             if (noFJ.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
@@ -473,80 +522,85 @@ public class FingerJoint extends AppCompatActivity {
                     (radioButtonBSusunFJ.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
                     temporaryDataListDetail.isEmpty()) {
 
+                progressDialog.dismiss();
                 Toast.makeText(FingerJoint.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
-                @Override
-                public void onResult(boolean canProceed, String message) {
-                    if (!canProceed) {
-                        Toast.makeText(FingerJoint.this, message, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            Completable.create(emitter -> {
+                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                            if (!canProceed) {
+                                emitter.onError(new Exception(message));
+                            } else {
+                                try {
+                                    int isReject = CBAfkirFJ.isChecked() ? 1 : 0;
+                                    int isLembur = CBLemburFJ.isChecked() ? 1 : 0;
+                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                    int idUOMPanjang;
+                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                        idUOMPanjang = 1;
+                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                        idUOMPanjang = 2;
+                                    } else {
+                                        idUOMPanjang = 3;
+                                    }
 
-                    // Update database utama
-                    new UpdateDatabaseTaskFJ(
-                            noFJ,
-                            dateCreate,
-                            time,
-                            idTelly,
-                            noSPK,
-                            noSPKasal,
-                            idGrade,
-                            idJenisKayu,
-                            idProfile,
-                            isReject,
-                            isLembur,
-                            idUOMTblLebar,
-                            idUOMPanjang
-                    ).execute();
+                                    new UpdateDatabaseTaskFJ(
+                                            noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang
+                                    ).execute();
 
-                    // Simpan sesuai pilihan radio button
-                    if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
-                        new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noFJ, i + 1,
-                                    Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar),
-                                    Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
-                        new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noFJ, i + 1,
-                                    Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar),
-                                    Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    }
+                                    if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
+                                        new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noFJ, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
+                                        new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noFJ, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    }
 
-                    // Start the task to insert into Riwayat
-                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                    String username = prefs.getString("username", "");
-                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                    String username = prefs.getString("username", "");
+                                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    String activity = String.format("Menyimpan Data %s Pada Label Finger Joint (Mobile)", noFJ);
+                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
 
-                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    String activity = String.format("Menyimpan Data %s Pada Label Finger Joint (Mobile)", noFJ);
-                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-                    // Update UI
-                    runOnUiThread(() -> {
+                                    emitter.onComplete();
+                                } catch (Exception e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        });
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> {
+                        progressDialog.dismiss();
                         BtnDataBaruFJ.setEnabled(true);
                         BtnPrintFJ.setEnabled(true);
                         BtnSimpanFJ.setEnabled(false);
                         BtnDataBaruFJ.setVisibility(View.VISIBLE);
                         BtnSimpanFJ.setVisibility(View.GONE);
                         disableForm();
-
                         Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }, throwable -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(FingerJoint.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     });
-                }
-            });
         });
 
 
@@ -693,7 +747,7 @@ public class FingerJoint extends AppCompatActivity {
                         addDataDetail(noFJ);
                         jumlahpcs();
                         m3();
-                        Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(FingerJoint.this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
                     } else {
                         // Tampilkan pesan error
                         Toast.makeText(FingerJoint.this, result, Toast.LENGTH_SHORT).show();
@@ -727,6 +781,9 @@ public class FingerJoint extends AppCompatActivity {
                 checkHasBeenPrinted(noFJ, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
+                        if (printCount == -1){
+                            return;
+                        }
                         // Menggunakan printCount untuk menentukan jumlah print sebelumnya
                         // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
 
@@ -855,6 +912,12 @@ public class FingerJoint extends AppCompatActivity {
 
 
     //Method FingerJoint
+
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
 
     //Fungsi untuk membuat huruf kapital
     public String capitalizeFirstLetter(String inputUsername) {
@@ -1431,7 +1494,12 @@ public class FingerJoint extends AppCompatActivity {
                                             radioButtonMesinFJ.setEnabled(false);
                                         }
                                         // Update header fields
-                                        DateFJ.setText(dateCreate);
+                                        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                        SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+                                        Date date = inputDateFormat.parse(dateCreate);
+                                        String formattedDate = outputDateFormat.format(date);
+
+                                        DateFJ.setText(formattedDate);
                                         TimeFJ.setText(jam);
                                         setSpinnerValue(SpinTellyFJ, namaOrgTelly);
                                         setSpinnerValue(SpinSPKFJ, noSPK);
@@ -1548,22 +1616,38 @@ public class FingerJoint extends AppCompatActivity {
         void onResult(int count);  // Callback menerima count
     }
 
-    // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noFJ, FingerJoint.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            int count = 0;
+            int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
+            boolean existsInH = false; // Cek keberadaan di FJ_h
+            boolean existsInD = false; // Cek keberadaan di FJ_d
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
-                    String query = "SELECT HasBeenPrinted FROM FJ_h WHERE NoFJ = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, noFJ);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                count = rs.getInt(1);  // Ambil hasil hitungan
+                    // Query untuk mengecek keberadaan di FJ_h dan mengambil HasBeenPrinted
+                    String queryCheckH = "SELECT HasBeenPrinted FROM FJ_h WHERE NoFJ = ?";
+                    String queryCheckD = "SELECT 1 FROM FJ_d WHERE NoFJ = ?";
+
+                    // Cek keberadaan di FJ_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noFJ);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                existsInH = true; // Data ditemukan di FJ_h
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di FJ_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noFJ);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true; // Data ditemukan di FJ_d
                             }
                         }
                     }
@@ -1583,10 +1667,22 @@ public class FingerJoint extends AppCompatActivity {
                 }
             }
 
-            final int finalCount = count;
-            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                } else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
+
 
     // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noFJ) {
@@ -1635,19 +1731,6 @@ public class FingerJoint extends AppCompatActivity {
         }).start();
     }
 
-
-    private void setCurrentDateTimeFJ() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String currentDate = dateFormat.format(new Date());
-        DateFJ.setText(currentDate);
-
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        String currentTime = timeFormat.format(new Date());
-        TimeFJ.setText(currentTime);
-
-        new LoadMesinTaskFJ().execute(currentDate);
-        new LoadSusunTaskFJ().execute(currentDate);
-    }
 
     private class CheckNoFJDataTask extends AsyncTask<String, Void, Boolean> {
         private String errorMessage;
@@ -2043,7 +2126,7 @@ public class FingerJoint extends AppCompatActivity {
 
 
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateFJ.setText(currentDate);
 
@@ -2061,10 +2144,26 @@ public class FingerJoint extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(FingerJoint.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                DateFJ.setText(selectedDate);
-                new LoadMesinTaskFJ().execute(selectedDate);
-                new LoadSusunTaskFJ().execute(selectedDate);
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    DateFJ.setText(formattedDate);
+
+                    new LoadMesinTaskFJ().execute(rawDate);
+                    new LoadSusunTaskFJ().execute(rawDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DateFJ.setText("Invalid Date");
+                }
             }
         }, year, month, day);
 
@@ -2574,11 +2673,11 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(FingerJoint.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(FingerJoint.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(FingerJoint.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(FingerJoint.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
     

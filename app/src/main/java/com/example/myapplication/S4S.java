@@ -2,6 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import androidx.appcompat.app.AlertDialog;
+
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,17 +12,18 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
-import android.view.View;
-import android.widget.AutoCompleteTextView;
-import android.widget.TextView;
-import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -32,11 +36,9 @@ import android.widget.RadioGroup;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
-import android.widget.FrameLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.LinearLayout;
 import android.view.Gravity;
 import android.graphics.Color;
 import android.content.Context;
@@ -52,12 +54,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.kernel.geom.AffineTransform;
 import android.print.PrintManager;
 import android.print.PrintAttributes;
@@ -73,18 +69,14 @@ import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import com.itextpdf.io.font.PdfEncodings;
-import android.inputmethodservice.Keyboard;
-import android.inputmethodservice.KeyboardView;
-import android.view.inputmethod.InputConnection;
-import android.text.InputType;
+
 
 
 
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -110,6 +102,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+
 
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
@@ -150,6 +143,10 @@ import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
 
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+
 public class S4S extends AppCompatActivity {
 
     private String username;
@@ -189,6 +186,7 @@ public class S4S extends AppCompatActivity {
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoS4S_display;
+    private String rawDate;
 
 
     @Override
@@ -399,39 +397,81 @@ public class S4S extends AppCompatActivity {
         });
 
         BtnDataBaru.setOnClickListener(v -> {
-            setCurrentDateTime();
-            setCreateMode(true);
+            // Tampilkan Dialog Loading
+            AlertDialog.Builder builder = new AlertDialog.Builder(S4S.this);
+            builder.setCancelable(false); // Tidak bisa ditutup oleh pengguna
+            builder.setView(R.layout.progress_dialog); // Layout custom dengan ProgressBar
+            AlertDialog loadingDialog = builder.create();
+            loadingDialog.show();
 
-            new SetAndSaveNoS4STask().execute();
-            new LoadJenisKayuTask().execute();
-            new LoadTellyTask().execute();
-            new LoadSPKTask().execute();
-            new LoadSPKAsalTask().execute();
-            new LoadProfileTask().execute();
-            new LoadFisikTask().execute();
-            new LoadGradeTask().execute();
+            // Timeout jika jaringan lambat
+            Handler handler = new Handler(Looper.getMainLooper());
+            boolean[] isTimeout = {false};
+            handler.postDelayed(() -> {
+                isTimeout[0] = true;
+                if (loadingDialog.isShowing()) {
+                    loadingDialog.dismiss();
+                    runOnUiThread(() -> {
+                        Toast.makeText(S4S.this, "Koneksi terlalu lambat. Silakan coba lagi.", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }, 20000); // Timeout 20 detik
 
-            BtnSimpan.setEnabled(true);
-            BtnBatal.setEnabled(true);
-            BtnDataBaru.setEnabled(false);
-            radioButtonMesin.setEnabled(true);
-            radioButtonBSusun.setEnabled(true);
-            BtnPrint.setEnabled(false);
-            BtnDataBaru.setVisibility(View.GONE);
-            BtnSimpan.setVisibility(View.VISIBLE);
+            new Thread(() -> {
+                try {
+                    // Set waktu saat ini dan mode input
+                    setCurrentDateTime();
+                    setCreateMode(true);
 
-            clearData();
-            resetDetailData();
-            enableForm();
+                    // Jalankan tugas asinkron untuk memuat data
+                    new SetAndSaveNoS4STask().execute();
+                    new LoadJenisKayuTask().execute();
+                    new LoadTellyTask().execute();
+                    new LoadSPKTask().execute();
+                    new LoadSPKAsalTask().execute();
+                    new LoadProfileTask().execute();
+                    new LoadFisikTask().execute();
+                    new LoadGradeTask().execute();
 
+                    // Perbarui tombol dan UI
+                    runOnUiThread(() -> {
+                        BtnSimpan.setEnabled(true);
+                        BtnBatal.setEnabled(true);
+                        BtnPrint.setEnabled(false);
+                        BtnDataBaru.setEnabled(false);
+                        BtnDataBaru.setVisibility(View.GONE);
+                        BtnSimpan.setVisibility(View.VISIBLE);
+                        radioButtonMesin.setEnabled(true);
+                        radioButtonBSusun.setEnabled(true);
+
+                        clearData();
+                        resetDetailData();
+                        enableForm();
+
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+
+                        Toast.makeText(S4S.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
+                    });
+
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        if (loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        Toast.makeText(S4S.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+                    Log.e("BtnDataBaru", "Kesalahan: " + e.getMessage(), e);
+                }
+            }).start();
         });
 
         BtnSimpan.setOnClickListener(v -> {
             String noS4S = NoS4S.getQuery().toString();
-            String dateCreate = Date.getText().toString();
+            String dateCreate = rawDate;
             String time = Time.getText().toString();
 
-            // Get selected items
             Telly selectedTelly = (Telly) SpinTelly.getSelectedItem();
             SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
             SPKAsal selectedSPKasal = (SPKAsal) SpinSPKAsal.getSelectedItem();
@@ -444,7 +484,6 @@ public class S4S extends AppCompatActivity {
             RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
             RadioGroup radioGroupUOMPanjang = findViewById(R.id.radioGroupUOMPanjang);
 
-            // Get values
             String idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String idTelly = selectedTelly != null ? selectedTelly.getIdTelly() : null;
             String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
@@ -454,7 +493,11 @@ public class S4S extends AppCompatActivity {
             String noProduksi = selectedMesin != null ? selectedMesin.getNoProduksi() : null;
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
 
-            // Basic validation first
+            if (!isInternetAvailable()) {
+                Toast.makeText(S4S.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (noS4S.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
@@ -471,92 +514,86 @@ public class S4S extends AppCompatActivity {
                 return;
             }
 
-            // Check period before proceeding
-            checkMaxPeriod(dateCreate, new OnPeriodCheckListener() {
-                @Override
-                public void onResult(boolean canProceed, String message) {
-                    if (!canProceed) {
-                        Toast.makeText(S4S.this, message, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            ProgressDialog progressDialog = new ProgressDialog(S4S.this);
+            progressDialog.setMessage("Menyimpan data...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
 
-                    // If we can proceed, continue with the original save logic
-                    int isReject = CBAfkir.isChecked() ? 1 : 0;
-                    int isLembur = CBLembur.isChecked() ? 1 : 0;
-                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-                    int idUOMPanjang;
-                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                        idUOMPanjang = 1;
-                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                        idUOMPanjang = 2;
-                    } else {
-                        idUOMPanjang = 3;
-                    }
+            Completable.create(emitter -> {
+                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                            if (!canProceed) {
+                                emitter.onError(new Exception(message));
+                            } else {
+                                try {
+                                    int isReject = CBAfkir.isChecked() ? 1 : 0;
+                                    int isLembur = CBLembur.isChecked() ? 1 : 0;
+                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                    int idUOMPanjang;
+                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                        idUOMPanjang = 1;
+                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                        idUOMPanjang = 2;
+                                    } else {
+                                        idUOMPanjang = 3;
+                                    }
 
-                    // Update database utama
-                    new UpdateDatabaseTask(
-                            noS4S,
-                            dateCreate,
-                            time,
-                            idTelly,
-                            noSPK,
-                            noSPKasal,
-                            idGrade,
-                            idJenisKayu,
-                            idProfile,
-                            isReject,
-                            isLembur,
-                            idUOMTblLebar,
-                            idUOMPanjang
-                    ).execute();
+                                    new UpdateDatabaseTask(
+                                            noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
+                                            idGrade, idJenisKayu, idProfile, isReject, isLembur,
+                                            idUOMTblLebar, idUOMPanjang
+                                    ).execute();
 
-                    // Simpan sesuai pilihan radio button
-                    if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
-                        new SaveToDatabaseTask(noProduksi, noS4S).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noS4S, i + 1,
-                                    Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar),
-                                    Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    } else if (radioButtonBSusun.isChecked() && SpinSusun.isEnabled() && noBongkarSusun != null) {
-                        new SaveBongkarSusunTask(noBongkarSusun, noS4S).execute();
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataDetailToDatabase(noS4S, i + 1,
-                                    Double.parseDouble(dataRow.tebal),
-                                    Double.parseDouble(dataRow.lebar),
-                                    Double.parseDouble(dataRow.panjang),
-                                    Integer.parseInt(dataRow.pcs));
-                        }
-                    }
+                                    if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
+                                        new SaveToDatabaseTask(noProduksi, noS4S).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noS4S, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    } else if (radioButtonBSusun.isChecked() && SpinSusun.isEnabled() && noBongkarSusun != null) {
+                                        new SaveBongkarSusunTask(noBongkarSusun, noS4S).execute();
+                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                            S4S.DataRow dataRow = temporaryDataListDetail.get(i);
+                                            saveDataDetailToDatabase(noS4S, i + 1,
+                                                    Double.parseDouble(dataRow.tebal),
+                                                    Double.parseDouble(dataRow.lebar),
+                                                    Double.parseDouble(dataRow.panjang),
+                                                    Integer.parseInt(dataRow.pcs));
+                                        }
+                                    }
 
+                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                    String username = prefs.getString("username", "");
+                                    String capitalizedUsername = capitalizeFirstLetter(username);
+                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    String activity = String.format("Menyimpan Data %s Pada Label S4S (Mobile)", noS4S);
+                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
 
-                    // Start the task to insert into Riwayat
-                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                    String username = prefs.getString("username", "");
-                    String capitalizedUsername = capitalizeFirstLetter(username);
-
-                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    String activity = String.format("Menyimpan Data %s Pada Label S4S (Mobile)", noS4S);
-                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-
-                    // Update UI
-                    runOnUiThread(() -> {
+                                    emitter.onComplete();
+                                } catch (Exception e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        });
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(() -> {
+                        progressDialog.dismiss();
                         BtnDataBaru.setEnabled(true);
                         BtnPrint.setEnabled(true);
                         BtnSimpan.setEnabled(false);
                         BtnDataBaru.setVisibility(View.VISIBLE);
                         BtnSimpan.setVisibility(View.GONE);
                         disableForm();
-
                         Toast.makeText(S4S.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    }, throwable -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(S4S.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                     });
-                }
-            });
         });
 
 
@@ -718,9 +755,10 @@ public class S4S extends AppCompatActivity {
         BtnPrint.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 // Validasi input
                 if (NoS4S.getQuery() == null || NoS4S.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(S4S.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(S4S.this, "Nomor S4S tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -732,10 +770,12 @@ public class S4S extends AppCompatActivity {
 
                 // Cek status HasBeenPrinted di database
                 String noS4S = NoS4S.getQuery().toString().trim();
-
                 checkHasBeenPrinted(noS4S, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
+                        if (printCount == -1){
+                            return;
+                        }
                         // Menggunakan printCount untuk menentukan jumlah print sebelumnya
                         // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
 
@@ -864,6 +904,12 @@ public class S4S extends AppCompatActivity {
     }
 
     //METHOD S4S
+
+    private boolean isInternetAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
 
     //Fungsi untuk membuat huruf kapital
     public String capitalizeFirstLetter(String inputUsername) {
@@ -1435,7 +1481,12 @@ public class S4S extends AppCompatActivity {
                                             radioButtonMesin.setEnabled(false);
                                         }
                                         // Update header fields
-                                        Date.setText(dateCreate);
+                                        SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                        SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+                                        Date date = inputDateFormat.parse(dateCreate);
+                                        String formattedDate = outputDateFormat.format(date);
+
+                                        Date.setText(formattedDate);
                                         Time.setText(jam);
                                         setSpinnerValue(SpinTelly, namaOrgTelly);
                                         setSpinnerValue(SpinSPK, noSPK);
@@ -1547,25 +1598,41 @@ public class S4S extends AppCompatActivity {
     }
 
     interface HasBeenPrintedCallback {
-        void onResult(int count);  // Callback menerima count
+        void onResult(int count); // Callback menerima count
     }
 
-    // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noS4S, S4S.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            int count = 0;
+            int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
+            boolean existsInH = false; // Cek keberadaan di s4s_h
+            boolean existsInD = false; // Cek keberadaan di s4s_d
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk menghitung jumlah HasBeenPrinted lebih besar dari 0 dan menangani NULL
-                    String query = "SELECT HasBeenPrinted FROM S4S_h WHERE NoS4S = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, noS4S);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                count = rs.getInt(1);  // Ambil hasil hitungan
+                    // Query untuk mengecek keberadaan di s4s_h dan mengambil HasBeenPrinted
+                    String queryCheckH = "SELECT HasBeenPrinted FROM S4S_h WHERE NoS4S = ?";
+                    String queryCheckD = "SELECT 1 FROM S4S_d WHERE NoS4S = ?";
+
+                    // Cek keberadaan di s4s_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noS4S);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                existsInH = true; // Data ditemukan di s4s_h
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di s4s_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noS4S);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true; // Data ditemukan di s4s_d
                             }
                         }
                     }
@@ -1585,10 +1652,23 @@ public class S4S extends AppCompatActivity {
                 }
             }
 
-            final int finalCount = count;
-            runOnUiThread(() -> callback.onResult(finalCount));  // Mengembalikan count, bukan boolean
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                } else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
+
+
 
     // Method untuk mengupdate status HasBeenPrinted pada database
     private void updatePrintStatus(String noS4S) {
@@ -2001,7 +2081,7 @@ public class S4S extends AppCompatActivity {
 
 
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         Date.setText(currentDate);
 
@@ -2022,11 +2102,28 @@ public class S4S extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(S4S.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                Date.setText(selectedDate);
-                new LoadMesinTask().execute(selectedDate);
-                new LoadSusunTask().execute(selectedDate);
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    Date.setText(formattedDate);
+
+                    new LoadMesinTask().execute(rawDate);
+                    new LoadSusunTask().execute(rawDate);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Date.setText("Invalid Date");
+                }
             }
+
         }, year, month, day);
 
         datePickerDialog.show();
@@ -2527,11 +2624,11 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(S4S.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(S4S.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-            }
+//            if (success) {
+//                Toast.makeText(S4S.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(S4S.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
+//            }
         }
     }
 
