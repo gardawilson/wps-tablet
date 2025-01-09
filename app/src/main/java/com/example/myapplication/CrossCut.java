@@ -459,8 +459,6 @@ public class CrossCut extends AppCompatActivity {
                         if (loadingDialog.isShowing()) {
                             loadingDialog.dismiss();
                         }
-
-                        Toast.makeText(CrossCut.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
                     });
                 } catch (Exception e) {
                     runOnUiThread(() -> {
@@ -2019,8 +2017,10 @@ public class CrossCut extends AppCompatActivity {
 
     private void setCurrentDateTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateCC.setText(currentDate);
+        rawDate = saveFormat.format(new Date());
 
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
@@ -2271,7 +2271,7 @@ public class CrossCut extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 350; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 

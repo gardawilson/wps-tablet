@@ -425,24 +425,26 @@ public class FingerJoint extends AppCompatActivity {
                 }
             }, 20000); // Timeout 20 detik
 
-            new Thread(() -> {
-                try {
-                    // Set waktu saat ini dan mode input
-                    setCurrentDateTime();
-                    setCreateMode(true);
-
-                    // Jalankan tugas asinkron untuk memuat data
-                    new SetAndSaveNoFJoinTaskFJ().execute();
-                    new LoadJenisKayuTaskFJ().execute();
-                    new LoadTellyTaskFJ().execute();
-                    new LoadSPKTaskFJ().execute();
-                    new LoadSPKAsalTaskFJ().execute();
-                    new LoadProfileTaskFJ().execute();
-                    new LoadFisikTaskFJ().execute();
-                    new LoadGradeTaskFJ().execute();
-
-                    // Perbarui tombol dan UI
-                    runOnUiThread(() -> {
+            // Gunakan RxJava untuk memastikan semua data selesai dimuat
+            Completable.mergeArray(
+                            Completable.fromAction(this::setCurrentDateTime),
+                            Completable.fromAction(() -> setCreateMode(true)),
+                            Completable.fromAction(() -> new SetAndSaveNoFJoinTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadJenisKayuTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadTellyTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadSPKTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadSPKAsalTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadProfileTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadFisikTaskFJ().execute()),
+                            Completable.fromAction(() -> new LoadGradeTaskFJ().execute())
+                    )
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnTerminate(() -> {
+                        if (!isTimeout[0] && loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        // Perbarui tombol dan UI
                         BtnSimpanFJ.setEnabled(true);
                         BtnBatalFJ.setEnabled(true);
                         BtnPrintFJ.setEnabled(false);
@@ -453,25 +455,19 @@ public class FingerJoint extends AppCompatActivity {
                         clearData();
                         resetDetailData();
                         enableForm();
-
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-
-                        Toast.makeText(FingerJoint.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
-                    });
-
-                } catch (Exception e) {
-                    runOnUiThread(() -> {
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-                        Toast.makeText(FingerJoint.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-                    Log.e("BtnDataBaruFJ", "Kesalahan: " + e.getMessage(), e);
-                }
-            }).start();
+                    })
+                    .subscribe(
+                            () -> Log.d("BtnDataBaruFJ", "Semua data berhasil dimuat."),
+                            throwable -> {
+                                if (loadingDialog.isShowing()) {
+                                    loadingDialog.dismiss();
+                                }
+                                Toast.makeText(FingerJoint.this, "Kesalahan saat memuat data: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.e("BtnDataBaruFJ", "Kesalahan: " + throwable.getMessage(), throwable);
+                            }
+                    );
         });
+
 
         BtnSimpanFJ.setOnClickListener(v -> {
             ProgressDialog progressDialog = new ProgressDialog(FingerJoint.this);
@@ -2127,12 +2123,17 @@ public class FingerJoint extends AppCompatActivity {
 
     private void setCurrentDateTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateFJ.setText(currentDate);
+        rawDate = saveFormat.format(new Date());
 
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
         TimeFJ.setText(currentTime);
+
+        new LoadMesinTaskFJ().execute(currentDate);
+        new LoadSusunTaskFJ().execute(currentDate);
     }
 
     private void showDatePickerDialog() {
@@ -2376,7 +2377,7 @@ public class FingerJoint extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 350; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 

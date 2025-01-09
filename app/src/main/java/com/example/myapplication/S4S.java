@@ -417,24 +417,26 @@ public class S4S extends AppCompatActivity {
                 }
             }, 20000); // Timeout 20 detik
 
-            new Thread(() -> {
-                try {
-                    // Set waktu saat ini dan mode input
-                    setCurrentDateTime();
-                    setCreateMode(true);
-
-                    // Jalankan tugas asinkron untuk memuat data
-                    new SetAndSaveNoS4STask().execute();
-                    new LoadJenisKayuTask().execute();
-                    new LoadTellyTask().execute();
-                    new LoadSPKTask().execute();
-                    new LoadSPKAsalTask().execute();
-                    new LoadProfileTask().execute();
-                    new LoadFisikTask().execute();
-                    new LoadGradeTask().execute();
-
-                    // Perbarui tombol dan UI
-                    runOnUiThread(() -> {
+            // Gunakan RxJava untuk memastikan semua data selesai dimuat
+            Completable.mergeArray(
+                            Completable.fromAction(this::setCurrentDateTime),
+                            Completable.fromAction(() -> setCreateMode(true)),
+                            Completable.fromAction(() -> new SetAndSaveNoS4STask().execute()),
+                            Completable.fromAction(() -> new LoadJenisKayuTask().execute()),
+                            Completable.fromAction(() -> new LoadTellyTask().execute()),
+                            Completable.fromAction(() -> new LoadSPKTask().execute()),
+                            Completable.fromAction(() -> new LoadSPKAsalTask().execute()),
+                            Completable.fromAction(() -> new LoadProfileTask().execute()),
+                            Completable.fromAction(() -> new LoadFisikTask().execute()),
+                            Completable.fromAction(() -> new LoadGradeTask().execute())
+                    )
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnTerminate(() -> {
+                        if (!isTimeout[0] && loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        // Perbarui tombol dan UI
                         BtnSimpan.setEnabled(true);
                         BtnBatal.setEnabled(true);
                         BtnPrint.setEnabled(false);
@@ -447,25 +449,19 @@ public class S4S extends AppCompatActivity {
                         clearData();
                         resetDetailData();
                         enableForm();
-
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-
-                        Toast.makeText(S4S.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
-                    });
-
-                } catch (Exception e) {
-                    runOnUiThread(() -> {
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-                        Toast.makeText(S4S.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-                    Log.e("BtnDataBaru", "Kesalahan: " + e.getMessage(), e);
-                }
-            }).start();
+                    })
+                    .subscribe(
+                            () -> Log.d("BtnDataBaru", "Semua data berhasil dimuat."),
+                            throwable -> {
+                                if (loadingDialog.isShowing()) {
+                                    loadingDialog.dismiss();
+                                }
+                                Toast.makeText(S4S.this, "Kesalahan saat memuat data: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.e("BtnDataBaru", "Kesalahan: " + throwable.getMessage(), throwable);
+                            }
+                    );
         });
+
 
         BtnSimpan.setOnClickListener(v -> {
             String noS4S = NoS4S.getQuery().toString();
@@ -2082,8 +2078,11 @@ public class S4S extends AppCompatActivity {
 
     private void setCurrentDateTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         Date.setText(currentDate);
+        rawDate = saveFormat.format(new Date());
+
 
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
@@ -2335,7 +2334,7 @@ public class S4S extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 350; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 

@@ -50,12 +50,12 @@ public class MenuUtama extends AppCompatActivity {
         String username = prefs.getString("username", "");
         String capitalizedUsername = capitalizeFirstLetter(username);
 
-        if (!username.equals("x")) {
-            ProsesProduksi.setEnabled(false);
-            ProsesProduksi.setAlpha(0.5f);
-        }
+//        if (!username.equals("x")) {
+//            ProsesProduksi.setEnabled(false);
+//            ProsesProduksi.setAlpha(0.5f);
+//        }
 
-        usernameView.setText(capitalizedUsername);
+        usernameView.setText(capitalizedUsername + " !");
 
         BtnLogout.setOnClickListener(new View.OnClickListener() {
             @Override

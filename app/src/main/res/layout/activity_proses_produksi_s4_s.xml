@@ -32,33 +32,12 @@
                 android:textColor="#000000"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnCameraControl"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="5dp"
-                    android:text="Aktif"
-                    android:drawableTint="@color/white"/>
-
-                <Button
-                    android:id="@+id/btnSimpan"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Save" />
-
-            </LinearLayout>
-
             <!-- Baris No Produksi -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="15dp">
+                android:layout_marginTop="10dp">
 
                 <!-- Label -->
                 <TextView
@@ -153,21 +132,50 @@
                     android:textColor="#000000" />
             </LinearLayout>
 
-            <!-- Search Bar -->
-            <com.google.android.material.textfield.TextInputLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/searchMainTable"
-                    android:layout_width="match_parent"
+                <Button
+                    android:id="@+id/btnCameraControl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="0.2"
+                    android:text="Aktif"
+                    android:drawableTint="@color/white" />
+
+                <Button
+                    android:id="@+id/btnSimpan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="50dp"
+                    android:layout_weight="0.2"
+                    android:text="Save" />
+
+                <!-- Search Bar -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/textLayoutSearchMainTable"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:hint="Cari data produksi..."
-                    android:imeOptions="actionDone"
-                    android:inputType="text" />
+                    android:layout_weight="1">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/searchMainTable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Cari data produksi..."
+                        android:imeOptions="actionDone"
+                        android:inputType="text" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+
+
 
             <LinearLayout
                 android:id="@+id/inputKodeManual"
@@ -182,8 +190,9 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/kodeLabelContainer"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="150dp"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:layout_marginTop="25dp"
                     android:layout_marginRight="10dp"
                     app:boxStrokeColor="@color/primary"
@@ -195,7 +204,7 @@
                         android:id="@+id/kodeLabel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Kode Label"
+                        android:hint="Input Manual"
                         android:textSize="14sp"
                         android:imeOptions="actionDone"
                         android:inputType="text"
@@ -206,8 +215,9 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnInputKodeLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.5"
                     android:layout_marginTop="25dp"
                     android:layout_marginStart="16dp"
                     android:text="Input"
@@ -221,7 +231,7 @@
                 android:id="@+id/scanLayout"
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:layout_width="300dp"
+                android:layout_width="600dp"
                 android:layout_height="300dp"
                 android:layout_marginTop="25dp"
                 android:layout_gravity="center"
@@ -277,8 +287,8 @@
                 <!-- Area Transparan -->
                 <FrameLayout
                     android:id="@+id/transparentFrame"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
+                    android:layout_width="250dp"
+                    android:layout_height="250dp"
                     android:background="@android:color/transparent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -293,26 +303,31 @@
 
                     <!-- Garis Bingkai -->
                     <View
+                        android:id="@+id/borderTop"
                         android:layout_width="match_parent"
                         android:layout_height="4dp"
-                        android:background="@color/white" />
+                        android:background="@drawable/border_default" />
 
                     <View
+                        android:id="@+id/borderBottom"
                         android:layout_width="match_parent"
                         android:layout_height="4dp"
-                        android:background="@color/white"
-                        android:layout_gravity="bottom" />
+                        android:layout_gravity="bottom"
+                        android:background="@drawable/border_default"/>
 
                     <View
+                        android:id="@+id/borderLeft"
                         android:layout_width="4dp"
                         android:layout_height="match_parent"
-                        android:background="@color/white" />
+                        android:background="@drawable/border_default" />
 
                     <View
+                        android:id="@+id/borderRight"
                         android:layout_width="4dp"
                         android:layout_height="match_parent"
-                        android:background="@color/white"
-                        android:layout_gravity="end" />
+                        android:layout_gravity="end"
+                        android:background="@drawable/border_default"/>
+
 
                 </FrameLayout>
 
@@ -340,7 +355,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:background="#EFEFEF"
-                android:stretchColumns="*"> <!-- Membuat kolom proporsional -->
+                android:stretchColumns="0">
+                <!-- Membuat kolom proporsional -->
 
                 <TableRow
                     android:background="@color/hijau">
@@ -356,16 +372,26 @@
                         android:textStyle="bold"
                         android:textColor="@color/white"/>
 
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
                     <!-- Kolom Shift -->
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:layout_weight="0.5"
                         android:text="Shift"
                         android:padding="8dp"
                         android:gravity="center"
                         android:textStyle="bold"
                         android:textColor="@color/white"/>
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
 
                     <!-- Kolom Tanggal -->
                     <TextView
@@ -378,6 +404,11 @@
                         android:textStyle="bold"
                         android:textColor="@color/white"/>
 
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
                     <!-- Kolom Mesin -->
                     <TextView
                         android:layout_width="0dp"
@@ -388,6 +419,11 @@
                         android:gravity="center"
                         android:textStyle="bold"
                         android:textColor="@color/white"/>
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
 
                     <!-- Kolom Operator -->
                     <TextView
@@ -410,8 +446,16 @@
                     android:id="@+id/tableLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="*"
+                    android:stretchColumns="0"
                     android:background="#EFEFEF">
+
+                    <ProgressBar
+                        android:id="@+id/loadingIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:visibility="gone"/>
+
                     <!-- Baris isi tabel akan dimuat secara dinamis -->
                 </TableLayout>
 
@@ -477,13 +521,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noS4STableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoS4S"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noS4STableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>
@@ -531,13 +589,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noSTTableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoST"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noSTTableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>
@@ -585,13 +657,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noMouldingTableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoMoulding"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noMouldingTableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>
@@ -648,13 +734,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noFJTableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoFJ"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noFJTableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>
@@ -702,13 +802,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noCCTableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoCC"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noCCTableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>
@@ -756,13 +870,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <TableLayout
-                            android:id="@+id/noReprosesTableLayout"
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="1">
-                        </TableLayout>
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorNoReproses"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/noReprosesTableLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
                     </ScrollView>
 
                 </LinearLayout>

@@ -422,22 +422,26 @@ public class Packing extends AppCompatActivity {
                 });
             }, 20000); // Timeout 20 detik
 
-            new Thread(() -> {
-                try {
-                    // Set mode input dan waktu saat ini
-                    setCurrentDateTime();
-                    setCreateMode(true);
-
-                    // Jalankan tugas asinkron untuk memuat data
-                    runOnUiThread(() -> {
-                        new SetAndSaveNoBJTask().execute();
-                        new LoadJenisKayuTask().execute();
-                        new LoadTellyTask().execute();
-                        new LoadSPKTask().execute();
-                        new LoadSPKAsalTask().execute();
-                        new LoadProfileTask().execute();
-                        new LoadFisikTask().execute();
-
+            // Gunakan RxJava untuk menjalankan semua tugas asinkron secara paralel
+            Completable.mergeArray(
+                            Completable.fromAction(this::setCurrentDateTime),
+                            Completable.fromAction(() -> setCreateMode(true)),
+                            Completable.fromAction(() -> new SetAndSaveNoBJTask().execute()),
+                            Completable.fromAction(() -> new LoadJenisKayuTask().execute()),
+                            Completable.fromAction(() -> new LoadTellyTask().execute()),
+                            Completable.fromAction(() -> new LoadSPKTask().execute()),
+                            Completable.fromAction(() -> new LoadSPKAsalTask().execute()),
+                            Completable.fromAction(() -> new LoadProfileTask().execute()),
+                            Completable.fromAction(() -> new LoadFisikTask().execute())
+                    )
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnTerminate(() -> {
+                        // Dismiss loading dialog jika semua selesai
+                        if (!isTimeout[0] && loadingDialog.isShowing()) {
+                            loadingDialog.dismiss();
+                        }
+                        // Aktifkan tombol dan reset data
                         BtnSimpanP.setEnabled(true);
                         BtnBatalP.setEnabled(true);
                         BtnPrintP.setEnabled(false);
@@ -448,23 +452,17 @@ public class Packing extends AppCompatActivity {
                         clearData();
                         resetDetailData();
                         enableForm();
-
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-
-                        Toast.makeText(Packing.this, "Data baru siap diinput!", Toast.LENGTH_SHORT).show();
-                    });
-                } catch (Exception e) {
-                    runOnUiThread(() -> {
-                        if (loadingDialog.isShowing()) {
-                            loadingDialog.dismiss();
-                        }
-                        Toast.makeText(Packing.this, "Kesalahan saat memuat data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-                    Log.e("BtnDataBaruP", "Kesalahan: " + e.getMessage(), e);
-                }
-            }).start();
+                    })
+                    .subscribe(
+                            () -> Log.d("BtnDataBaruP", "Semua data berhasil dimuat."),
+                            throwable -> {
+                                if (loadingDialog.isShowing()) {
+                                    loadingDialog.dismiss();
+                                }
+                                Toast.makeText(Packing.this, "Kesalahan saat memuat data: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.e("BtnDataBaruP", "Kesalahan: " + throwable.getMessage(), throwable);
+                            }
+                    );
         });
 
         BtnSimpanP.setOnClickListener(v -> {
@@ -2065,8 +2063,10 @@ public class Packing extends AppCompatActivity {
 
     private void setCurrentDateTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         DateP.setText(currentDate);
+        rawDate = saveFormat.format(new Date());
 
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         String currentTime = timeFormat.format(new Date());
@@ -2317,7 +2317,7 @@ public class Packing extends AppCompatActivity {
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 335; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float baseHeight = 350; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
                 float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
