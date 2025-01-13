@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
-import android.content.Context;
+import static com.example.myapplication.api.ProductionApi.getHistoryItems;
+
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
@@ -11,9 +12,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
+import android.view.LayoutInflater;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
@@ -22,11 +24,8 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.widget.Toast;
 import android.view.View;
-import android.graphics.Typeface;
 import android.app.AlertDialog;
 import android.Manifest;
-
-import android.graphics.drawable.ColorDrawable;
 
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -38,17 +37,23 @@ import androidx.camera.view.PreviewView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
 import com.example.myapplication.utils.CameraXAnalyzer;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,11 +61,7 @@ import java.util.function.Function;
 
 
 import android.animation.ObjectAnimator;
-import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.view.View;
-
-
 
 public class ProsesProduksiS4S extends AppCompatActivity {
 
@@ -91,7 +92,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private EditText kodeLabel;
     private EditText searchMainTable;
     private TextInputLayout textLayoutSearchMainTable;
-    private Button btnInputKodeLabel;
+    private ImageButton btnInputKodeLabel;
     private LinearLayout inputKodeManual;
     private List<String> noS4SList = new ArrayList<>(); // Daftar untuk kode 'R'
     private List<String> noSTList = new ArrayList<>();  // Daftar untuk kode 'E'
@@ -107,6 +108,21 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private TableLayout noFJTableLayout;
     private TableLayout noCCTableLayout;
     private TableLayout noReprosesTableLayout;
+    private LinearLayout jumlahLabel;
+    private LinearLayout jumlahLabelHeader;
+    private TextView sumS4SLabel;
+    private TextView sumSTLabel;
+    private TextView sumMouldingLabel;
+    private TextView sumFJLabel;
+    private TextView sumCCLabel;
+    private TextView sumReprosesLabel;
+    private View borderTop;
+    private View borderBottom;
+    private View borderLeft;
+    private View borderRight;
+    private View btnHistorySave;
+    private AlertDialog dialog;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,7 +152,19 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         noFJTableLayout = findViewById(R.id.noFJTableLayout);
         noCCTableLayout = findViewById(R.id.noCCTableLayout);
         noReprosesTableLayout = findViewById(R.id.noReprosesTableLayout);
-
+        jumlahLabel = findViewById(R.id.jumlahLabel);
+        jumlahLabelHeader = findViewById(R.id.jumlahLabelHeader);
+        sumS4SLabel = findViewById(R.id.sumS4SLabel);
+        sumSTLabel = findViewById(R.id.sumSTLabel);
+        sumMouldingLabel = findViewById(R.id.sumMouldingLabel);
+        sumFJLabel = findViewById(R.id.sumFJLabel);
+        sumCCLabel = findViewById(R.id.sumCCLabel);
+        sumReprosesLabel = findViewById(R.id.sumReprosesLabel);
+        borderTop = findViewById(R.id.borderTop);
+        borderBottom = findViewById(R.id.borderBottom);
+        borderLeft = findViewById(R.id.borderLeft);
+        borderRight = findViewById(R.id.borderRight);
+        btnHistorySave = findViewById(R.id.btnHistorySave);
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -180,6 +208,11 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             }
         });
+
+
+
+
+
 
 
         btnSimpan.setOnClickListener(new View.OnClickListener() {
@@ -236,9 +269,129 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         Toast.makeText(this, "Permission kamera dibutuhkan untuk mengaktifkan kamera", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        btnHistorySave.setOnClickListener(v -> showHistoryDialog(noProduksi));
+
     }
 
     //METHOD S4S
+
+    public static String getCurrentDateTime() {
+        // Ambil waktu saat ini
+        LocalDateTime now = LocalDateTime.now();
+
+        // Format waktu sesuai kebutuhan (contoh: "yyyy-MM-dd HH:mm:ss")
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        // Kembalikan hasil format
+        return now.format(formatter);
+    }
+
+    private String formatDateTime(String dateTime) {
+        if (dateTime == null || dateTime.isEmpty()) {
+            return "N/A"; // Tampilkan "N/A" jika input null atau kosong
+        }
+
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
+            Date date = inputFormat.parse(dateTime); // Parsing input date
+            return outputFormat.format(date); // Format ulang ke output
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return "N/A"; // Tampilkan "N/A" jika parsing gagal
+        }
+    }
+
+
+    private void showHistoryDialog(String noProduksi) {
+        executorService.execute(() -> {
+            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi);
+
+            runOnUiThread(() -> {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                LayoutInflater inflater = getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.dialog_history_save, null);
+                builder.setView(dialogView);
+
+                LinearLayout historyContainer = dialogView.findViewById(R.id.historyContainer);
+                ImageButton btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+
+                for (HistoryItem group : historyGroups) {
+                    View itemView = inflater.inflate(R.layout.history_item, null);
+
+                    // Header data
+                    TextView tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
+                    TextView tvTotalCount = itemView.findViewById(R.id.tvTotalCount);
+                    MaterialCardView dropdownContainer = itemView.findViewById(R.id.dropdownContainer);
+                    LinearLayout dropdownContent = dropdownContainer.findViewById(R.id.dropdownContent);
+                    ImageView dropdownIcon = itemView.findViewById(R.id.dropdownIcon);
+                    TextView tvSumS4S = dialogView.findViewById(R.id.tvSumS4S);
+                    TextView tvSumST = dialogView.findViewById(R.id.tvSumST);
+                    TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
+                    TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
+                    TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
+                    TextView tvSumReproses = dialogView.findViewById(R.id.tvSumReproses);
+                    TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
+
+                    int totalLabels = noS4SList.size() + noSTList.size() + noMouldingList.size() +
+                            noFJList.size() + noCCList.size() + noReprosesList.size();
+
+                    // Set data untuk header
+                    tvTimestamp.setText(formatDateTime(group.getDateTimeSaved()));
+                    tvTotalCount.setText(String.valueOf(group.getTotalCount()));
+                    tvSumS4S.setText(String.valueOf(noS4SList.size()));
+                    tvSumST.setText(String.valueOf(noSTList.size()));
+                    tvSumMoulding.setText(String.valueOf(noMouldingList.size()));
+                    tvSumFJ.setText(String.valueOf(noFJList.size()));
+                    tvSumCCAkhir.setText(String.valueOf(noCCList.size()));
+                    tvSumReproses.setText(String.valueOf(noReprosesList.size()));
+                    tvSumLabel.setText(String.valueOf(totalLabels));
+
+                    // Hapus elemen sebelumnya di dropdownContent
+                    dropdownContent.removeViews(1, dropdownContent.getChildCount() - 1);
+
+                    // Tambahkan detail item ke dropdownContent
+                    for (HistoryItem labelItem : group.getItems()) {
+                        TextView detailView = new TextView(this);
+                        detailView.setLayoutParams(new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT));
+                        detailView.setText("x" + labelItem.getLabelCount() + " " + labelItem.getLabel());
+                        detailView.setTextSize(12);
+                        detailView.setTextColor(getResources().getColor(R.color.black));
+                        detailView.setPadding(4, 4, 4, 4);
+
+                        dropdownContent.addView(detailView);
+                    }
+
+                    // Klik listener untuk toggle dropdown
+                    itemView.setOnClickListener(v -> {
+                        if (dropdownContainer.getVisibility() == View.GONE) {
+                            dropdownContainer.setVisibility(View.VISIBLE);
+                            dropdownIcon.setRotation(360);
+                        } else {
+                            dropdownContainer.setVisibility(View.GONE);
+                            dropdownIcon.setRotation(270);
+                        }
+                    });
+
+                    historyContainer.addView(itemView);
+                }
+
+                btnCloseDialog.setOnClickListener(v -> {
+                    if (dialog != null && dialog.isShowing()) {
+                        dialog.dismiss();
+                    }
+                });
+
+                dialog = builder.create();
+                dialog.show();
+            });
+        });
+    }
+
+
 
     private void playSound(int soundResource) {
         MediaPlayer mediaPlayer = MediaPlayer.create(this, soundResource);
@@ -304,6 +457,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private void saveScannedResultsToDatabase() {
         showCustomProgressDialog(); // Tampilkan dialog loading
 
+        String dateTimeSaved = getCurrentDateTime();
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
@@ -341,7 +496,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoS4S = ProductionApi.getNoS4SByNoProduksi(noProduksi);
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S);
+                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -352,7 +507,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoST = ProductionApi.getNoSTByNoProduksi(noProduksi);
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProductionApi.saveNoST(noProduksi, tglProduksi, newNoST);
+                ProductionApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -363,7 +518,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoMoulding = ProductionApi.getNoMouldingByNoProduksi(noProduksi);
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding);
+                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -374,7 +529,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoFJ = ProductionApi.getNoFJByNoProduksi(noProduksi);
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ);
+                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved);
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -385,7 +540,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi);
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC);
+                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -396,7 +551,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoReproses = ProductionApi.getNoReprosesByNoProduksi(noProduksi);
                 List<String> newNoReproses = new ArrayList<>(noReprosesList);
                 newNoReproses.removeAll(existingNoReproses);
-                ProductionApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses);
+                ProductionApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses, dateTimeSaved);
                 savedItems += newNoReproses.size();
                 int progress = (savedItems * 100) / totalItems;
                 updateProgressDialog(progress); // Perbarui dialog progress
@@ -480,10 +635,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             // Periksa permission kamera
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 // Permission sudah diberikan, setup kamera
-                View borderTop = findViewById(R.id.borderTop);
-                View borderBottom = findViewById(R.id.borderBottom);
-                View borderLeft = findViewById(R.id.borderLeft);
-                View borderRight = findViewById(R.id.borderRight);
+
 
                 CameraUtils.setupCamera(
                         this,
@@ -495,12 +647,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     qrResultText.setText(result);
                                     qrResultText.setVisibility(View.VISIBLE);
                                     isShowingResult = true;
-
-                                    // Ubah warna border menjadi kuning
-                                    borderTop.setBackgroundResource(R.drawable.border_focus);
-                                    borderBottom.setBackgroundResource(R.drawable.border_focus);
-                                    borderLeft.setBackgroundResource(R.drawable.border_focus);
-                                    borderRight.setBackgroundResource(R.drawable.border_focus);
 
                                     // Kembalikan warna border ke default setelah 3 detik
                                     new android.os.Handler().postDelayed(() -> {
@@ -535,6 +681,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 headerTableProduksi.setVisibility(View.GONE);
                 searchMainTable.setVisibility(View.INVISIBLE);
                 textLayoutSearchMainTable.setVisibility(View.INVISIBLE);
+                jumlahLabelHeader.setVisibility(View.VISIBLE);
+                jumlahLabel.setVisibility(View.VISIBLE);
 
                 isCameraActive = true;
                 Toast.makeText(this, "Kamera diaktifkan", Toast.LENGTH_SHORT).show();
@@ -558,6 +706,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             scanLayout.setVisibility(View.GONE);
             cameraPreview.setVisibility(View.GONE);
             inputKodeManual.setVisibility(View.GONE);
+            jumlahLabelHeader.setVisibility(View.GONE);
+            jumlahLabel.setVisibility(View.GONE);
             tableLayout.setVisibility(View.VISIBLE);
             headerTableProduksi.setVisibility(View.VISIBLE);
             searchMainTable.setVisibility(View.VISIBLE);
@@ -613,17 +763,22 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                     String tableProduksi = "S4SProduksi_h";
 
                     Map<String, TableConfig> tableConfigMap = new HashMap<>();
-                    tableConfigMap.put("R", new TableConfig("S4S_h", "S4S_d", "NoS4S", R.id.noS4STableLayout, noS4SList, ProductionApi::findS4SResultTable));
-                    tableConfigMap.put("E", new TableConfig("ST_h", "ST_d", "NoST", R.id.noSTTableLayout, noSTList, ProductionApi::findSTResultTable));
-                    tableConfigMap.put("T", new TableConfig("Moulding_h", "Moulding_d", "NoMoulding", R.id.noMouldingTableLayout, noMouldingList, ProductionApi::findMouldingResultTable));
-                    tableConfigMap.put("S", new TableConfig("FJ_h", "FJ_d", "NoFJ", R.id.noFJTableLayout, noFJList, ProductionApi::findFJResultTable));
-                    tableConfigMap.put("V", new TableConfig("CCAkhir_h", "CCAkhir_d", "NoCCAkhir", R.id.noCCTableLayout, noCCList, ProductionApi::findCCAkhirResultTable));
-                    tableConfigMap.put("Y", new TableConfig("Reproses_h", "Reproses_d", "NoReproses", R.id.noReprosesTableLayout, noReprosesList, ProductionApi::findReprosesResultTable));
+                    tableConfigMap.put("R", new TableConfig("S4S_h", "S4S_d", "NoS4S", R.id.noS4STableLayout, noS4SList, ProductionApi::findS4SResultTable, R.id.sumS4SLabel));
+                    tableConfigMap.put("E", new TableConfig("ST_h", "ST_d", "NoST", R.id.noSTTableLayout, noSTList, ProductionApi::findSTResultTable, R.id.sumSTLabel));
+                    tableConfigMap.put("T", new TableConfig("Moulding_h", "Moulding_d", "NoMoulding", R.id.noMouldingTableLayout, noMouldingList, ProductionApi::findMouldingResultTable, R.id.sumMouldingLabel));
+                    tableConfigMap.put("S", new TableConfig("FJ_h", "FJ_d", "NoFJ", R.id.noFJTableLayout, noFJList, ProductionApi::findFJResultTable, R.id.sumFJLabel));
+                    tableConfigMap.put("V", new TableConfig("CCAkhir_h", "CCAkhir_d", "NoCCAkhir", R.id.noCCTableLayout, noCCList, ProductionApi::findCCAkhirResultTable, R.id.sumCCLabel));
+                    tableConfigMap.put("Y", new TableConfig("Reproses_h", "Reproses_d", "NoReproses", R.id.noReprosesTableLayout, noReprosesList, ProductionApi::findReprosesResultTable, R.id.sumReprosesLabel));
 
                     TableConfig config = tableConfigMap.get(result.substring(0, 1));
 
                     if (config == null) {
                         runOnUiThread(() -> {
+                            borderTop.setBackgroundResource(R.drawable.border_denied);
+                            borderBottom.setBackgroundResource(R.drawable.border_denied);
+                            borderLeft.setBackgroundResource(R.drawable.border_denied);
+                            borderRight.setBackgroundResource(R.drawable.border_denied);
+
                             showToastAndPlaySound("Label " + result + " tidak sesuai", R.raw.denied_data);
                         });
                         scannedResults.remove(result);
@@ -635,22 +790,44 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                             if (ProductionApi.isDateValid(noProduksi, tableProduksi, result, config.tableNameH, config.columnName)) {
                                 runOnUiThread(() -> {
                                     TableLayout targetTableLayout = findViewById(config.tableLayoutId);
+                                    TextView targetSumLabel = findViewById(config.sumLabelId);
+
                                     Log.d("Configlist", "configlist: " + config.list);
 
                                     if (config.list == null || config.list.isEmpty()) {
                                         targetTableLayout.removeAllViews();
                                     }
                                     config.list.add(result);
-                                    addRowToTable(targetTableLayout, result, config.list);
+                                    targetSumLabel.setText(String.valueOf(config.list.size()));
+
+                                    addRowToTable(targetTableLayout, result, config.list, targetSumLabel);
+
+                                    // Ubah warna border menjadi kuning
+                                    borderTop.setBackgroundResource(R.drawable.border_granted);
+                                    borderBottom.setBackgroundResource(R.drawable.border_granted);
+                                    borderLeft.setBackgroundResource(R.drawable.border_granted);
+                                    borderRight.setBackgroundResource(R.drawable.border_granted);
+
+                                    kodeLabel.setText("");
 
                                     playSound(R.raw.granted_data);
                                 });
 
                             } else {
+                                borderTop.setBackgroundResource(R.drawable.border_denied);
+                                borderBottom.setBackgroundResource(R.drawable.border_denied);
+                                borderLeft.setBackgroundResource(R.drawable.border_denied);
+                                borderRight.setBackgroundResource(R.drawable.border_denied);
+
                                 showToastAndPlaySound("Tgl Label lebih besar dari Tgl Produksi " + result, R.raw.denied_data);
                                 scannedResults.remove(result);
                             }
                         } else {
+                            borderTop.setBackgroundResource(R.drawable.border_denied);
+                            borderBottom.setBackgroundResource(R.drawable.border_denied);
+                            borderLeft.setBackgroundResource(R.drawable.border_denied);
+                            borderRight.setBackgroundResource(R.drawable.border_denied);
+
                             String namaTabel = config.resultChecker.apply(result);
 
                             if (namaTabel == null) {
@@ -661,11 +838,21 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                             }
                         }
                     } else {
+                        borderTop.setBackgroundResource(R.drawable.border_denied);
+                        borderBottom.setBackgroundResource(R.drawable.border_denied);
+                        borderLeft.setBackgroundResource(R.drawable.border_denied);
+                        borderRight.setBackgroundResource(R.drawable.border_denied);
+
                         showToastAndPlaySound("Label " + result + " Tidak ditemukan di Database", R.raw.denied_data);
                         scannedResults.remove(result);
                     }
 
                 } else {
+                    borderTop.setBackgroundResource(R.drawable.border_denied);
+                    borderBottom.setBackgroundResource(R.drawable.border_denied);
+                    borderLeft.setBackgroundResource(R.drawable.border_denied);
+                    borderRight.setBackgroundResource(R.drawable.border_denied);
+
                     Log.d("DuplicateScan", "Hasil scan sudah ada: " + result);
                     showToastAndPlaySound("Label " + result + " Sudah di Masukkan ke dalam Tabel", R.raw.denied_data);
                 }
@@ -689,27 +876,31 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
 
     public class TableConfig {
-        public final String tableNameH;
-        public final String tableNameD;
-        public final String columnName;
-        public final int tableLayoutId;
-        public final List<String> list;
-        public final Function<String, String> resultChecker;
+        public String tableNameH;
+        public String tableNameD;
+        public String columnName;
+        public int tableLayoutId;
+        public List<String> list;
+        public Function<String, String> resultChecker;
+        public int sumLabelId; // Simpan ID TextView
 
-        public TableConfig(String tableNameH, String tableNameD, String columnName, int tableLayoutId, List<String> list, Function<String, String> resultChecker) {
+        public TableConfig(String tableNameH, String tableNameD, String columnName, int tableLayoutId, List<String> list, Function<String, String> resultChecker, int sumLabelId) {
             this.tableNameH = tableNameH;
             this.tableNameD = tableNameD;
             this.columnName = columnName;
             this.tableLayoutId = tableLayoutId;
             this.list = list;
             this.resultChecker = resultChecker;
+            this.sumLabelId = sumLabelId;
         }
     }
 
 
 
 
-    private void addRowToTable(TableLayout tableLayout, String result, List<String> list) {
+
+
+    private void addRowToTable(TableLayout tableLayout, String result, List<String> list, TextView sumLabel) {
         // Buat TableRow untuk baris baru
         TableRow row = new TableRow(this);
         row.setLayoutParams(new TableLayout.LayoutParams(
@@ -735,13 +926,13 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 1f // Berat untuk membagi lebar secara proporsional
         ));
 
-        // Buat tombol delete
-        Button deleteButton = new Button(this);
-        deleteButton.setText("-");
-        deleteButton.setPadding(0, 0, 0, 0);
-        deleteButton.setMinWidth(0);
-        deleteButton.setMinimumHeight(0);
-        deleteButton.setLayoutParams(new TableRow.LayoutParams(50, 50));
+        ImageButton deleteButton = new ImageButton(this);
+        deleteButton.setImageResource(R.drawable.ic_delete);
+        deleteButton.setBackground(null);
+        deleteButton.setPadding(0, 5, 0, 0);
+        deleteButton.setLayoutParams(new TableRow.LayoutParams(50, TableRow.LayoutParams.WRAP_CONTENT));
+
+// ... kode lainnya ...
 
         deleteButton.setOnClickListener(v -> {
             try {
@@ -751,6 +942,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 // Hapus data dari daftar
                 list.remove(result);
                 scannedResults.remove(result);
+
+                sumLabel.setText(Integer.toString(list.size()));
 
             } catch (Exception e) {
                 Log.e("DeleteButton", "Error saat menghapus baris: " + e.getMessage());
@@ -925,26 +1118,32 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
                 // Populate tabel
                 populateNoS4STable(noS4SList);
+                sumS4SLabel.setText(String.valueOf(noS4SList.size()));
                 loadingIndicatorNoS4S.setVisibility(View.GONE);
                 noS4STableLayout.setVisibility(View.VISIBLE);
 
                 populateNoSTTable(noSTList);
+                sumSTLabel.setText(String.valueOf(noSTList.size()));
                 loadingIndicatorNoST.setVisibility(View.GONE);
                 noSTTableLayout.setVisibility(View.VISIBLE);
 
                 populateNoMouldingTable(noMouldingList);
+                sumMouldingLabel.setText(String.valueOf(noMouldingList.size()));
                 loadingIndicatorNoMoulding.setVisibility(View.GONE);
                 noMouldingTableLayout.setVisibility(View.VISIBLE);
 
                 populateNoFJTable(noFJList);
+                sumFJLabel.setText(String.valueOf(noFJList.size()));
                 loadingIndicatorNoFJ.setVisibility(View.GONE);
                 noFJTableLayout.setVisibility(View.VISIBLE);
 
                 populateNoCCTable(noCCList);
+                sumCCLabel.setText(String.valueOf(noCCList.size()));
                 loadingIndicatorNoCC.setVisibility(View.GONE);
                 noCCTableLayout.setVisibility(View.VISIBLE);
 
                 populateNoReprosesTable(noReprosesList);
+                sumReprosesLabel.setText(String.valueOf(noReprosesList.size()));
                 loadingIndicatorNoReproses.setVisibility(View.GONE);
                 noReprosesTableLayout.setVisibility(View.VISIBLE);
 
@@ -1110,6 +1309,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         return divider;
     }
+
+
 
     @Override
     protected void onDestroy() {

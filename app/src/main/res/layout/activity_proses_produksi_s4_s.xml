@@ -11,7 +11,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="2"
+        android:layout_weight="3"
         android:layout_marginEnd="8dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
@@ -141,19 +141,28 @@
                 <Button
                     android:id="@+id/btnCameraControl"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_height="50dp"
                     android:layout_marginRight="8dp"
-                    android:layout_weight="0.2"
+                    android:layout_weight="0.1"
                     android:text="Aktif"
                     android:drawableTint="@color/white" />
 
                 <Button
                     android:id="@+id/btnSimpan"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="50dp"
-                    android:layout_weight="0.2"
+                    android:layout_height="50dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="0.1"
                     android:text="Save" />
+
+                <Button
+                    android:id="@+id/btnHistorySave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_weight="0.1"
+                    android:text="History" />
+
 
                 <!-- Search Bar -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -191,9 +200,8 @@
                     android:id="@+id/kodeLabelContainer"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginTop="25dp"
                     android:layout_marginRight="10dp"
                     app:boxStrokeColor="@color/primary"
                     app:boxBackgroundMode="outline"
@@ -203,28 +211,27 @@
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/kodeLabel"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:hint="Input Manual"
                         android:textSize="14sp"
                         android:imeOptions="actionDone"
-                        android:inputType="text"
+                        android:inputType="textCapCharacters"
                         android:singleLine="true"
                         android:focusable="true"
                         android:focusableInTouchMode="true" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.button.MaterialButton
+                <ImageButton
                     android:id="@+id/btnInputKodeLabel"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.5"
-                    android:layout_marginTop="25dp"
-                    android:layout_marginStart="16dp"
-                    android:text="Input"
-                    android:textColor="@color/white"
-                    app:backgroundTint="@color/primary"
-                    app:cornerRadius="8dp"
-                    app:iconTint="@color/white" />
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="0.1"
+                    android:src="@drawable/ic_add"
+                    android:scaleType="fitCenter"
+                    android:background="@null"
+                    app:tint="@color/primary" />
+
             </LinearLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -233,9 +240,10 @@
                 xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:layout_width="600dp"
                 android:layout_height="300dp"
-                android:layout_marginTop="25dp"
+                android:layout_marginTop="5dp"
                 android:layout_gravity="center"
                 android:visibility="gone">
+
 
                 <!-- Preview Kamera -->
                 <androidx.camera.view.PreviewView
@@ -348,6 +356,217 @@
                     app:layout_constraintBottom_toTopOf="@+id/overlayBottom" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <LinearLayout
+            android:id="@+id/jumlahLabelHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="5dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Jumlah Label"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/jumlahLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginRight="10dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#E0E0E0">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="S4S"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumS4SLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="ST"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumSTLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Mld."
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumMouldingLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="FJ"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumFJLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CC"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumCCLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Repro."
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=":"
+                            android:padding="4dp"
+                            android:gravity="center"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/sumReprosesLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:padding="4dp"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
 
             <TableLayout
                 android:id="@+id/headerTableProduksi"
@@ -507,7 +726,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No S4S"
+                                android:text="S4S"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -576,7 +795,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No ST"
+                                android:text="SAWN TIMBER"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -643,7 +862,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No Moulding"
+                                android:text="MOULDING"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -720,7 +939,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No FJ"
+                                android:text="FINGER JOINT"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -788,7 +1007,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No CC"
+                                android:text="CROSS CUT"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -856,7 +1075,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
-                                android:text="No Reproses"
+                                android:text="REPROSES"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -898,4 +1117,67 @@
             </androidx.cardview.widget.CardView>
         </LinearLayout>
     </LinearLayout>
+
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.6"
+        android:layout_marginStart="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:background="#FFFFFF">
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#EFEFEF">
+
+            <TableRow
+                android:background="@color/hijau">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:text="Output"
+                    android:gravity="center"
+                    android:layout_weight="1"
+                    android:textStyle="bold"
+                    android:textColor="@color/white" />
+
+            </TableRow>
+        </TableLayout>
+
+        <!-- Isi Tabel -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ProgressBar
+                    android:id="@+id/loadingIndicatorOutput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:visibility="gone" />
+
+                <TableLayout
+                    android:id="@+id/outputTableLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF"
+                    android:stretchColumns="1">
+
+                </TableLayout>
+
+            </RelativeLayout>
+        </ScrollView>
+
+
+    </androidx.cardview.widget.CardView>
+
 </LinearLayout>

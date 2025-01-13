@@ -3,6 +3,7 @@ package com.example.myapplication.api;
 import android.util.Log;
 
 import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 
 import java.sql.Connection;
@@ -12,9 +13,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.sql.DriverManager;
 import java.util.Locale;
+import java.util.Map;
 
 public class ProductionApi {
 
@@ -24,7 +27,7 @@ public class ProductionApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(
-                     "SELECT TOP 200 " +
+                     "SELECT TOP 50 " +
                              "p.NoProduksi, " +
                              "p.Shift, " +
                              "p.Tanggal, " +
@@ -66,7 +69,7 @@ public class ProductionApi {
         List<String> noS4SList = new ArrayList<>();
 
         // Query untuk mengambil NoS4S berdasarkan NoProduksi
-        String query = "SELECT NoS4S FROM S4SProduksiInputS4S WHERE NoProduksi = '" + noProduksi + "'";
+        String query = "SELECT NoS4S, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = '" + noProduksi + "'";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
@@ -191,69 +194,22 @@ public class ProductionApi {
         return noReprosesList;
     }
 
-//    public static void saveNoS4S(String noProduksi, List<String> noS4SList) {
-//        if (noS4SList == null || noS4SList.isEmpty()) {
-//            Log.e("SaveError", "List NoS4S kosong");
-//            return;
-//        }
-//
-//        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-//             Statement stmt = con.createStatement()) {
-//
-//            for (String noS4S : noS4SList) {
-//                String query = "INSERT INTO S4SProduksiInputS4S (NoProduksi, NoS4S) VALUES ('" + noProduksi + "', '" + noS4S + "')";
-//                int rowsAffected = stmt.executeUpdate(query);
-//
-//                if (rowsAffected > 0) {
-//                    Log.d("SaveSuccess", "NoS4S berhasil disimpan: " + noS4S);
-//                } else {
-//                    Log.e("SaveError", "Gagal menyimpan NoS4S: " + noS4S);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            Log.e("SaveError", "Error menyimpan NoS4S: " + e.getMessage());
-//        }
-//    }
-//
-//    public static void saveNoST(String noProduksi, List<String> noSTList) {
-//        if (noSTList == null || noSTList.isEmpty()) {
-//            Log.e("SaveError", "List NoST kosong");
-//            return;
-//        }
-//
-//        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-//             Statement stmt = con.createStatement()) {
-//
-//            for (String noST : noSTList) {
-//                String query = "INSERT INTO S4SProduksiInputST (NoProduksi, NoST) VALUES ('" + noProduksi + "', '" + noST + "')";
-//                int rowsAffected = stmt.executeUpdate(query);
-//
-//                if (rowsAffected > 0) {
-//                    Log.d("SaveSuccess", "NoST berhasil disimpan: " + noST);
-//                } else {
-//                    Log.e("SaveError", "Gagal menyimpan NoST: " + noST);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            Log.e("SaveError", "Error menyimpan NoST: " + e.getMessage());
-//        }
-//    }
 
-
-    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList) {
+    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved) {
         if (noS4SList == null || noS4SList.isEmpty()) {
             Log.e("SaveError", "List NoS4S kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputS4S (NoProduksi, NoS4S) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputS4S (NoProduksi, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
 
             // Insert Data ke S4SProduksiInputS4S
             for (String noS4S : noS4SList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noS4S);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -275,20 +231,21 @@ public class ProductionApi {
 
 
 
-    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList) {
+    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved) {
         if (noSTList == null || noSTList.isEmpty()) {
             Log.e("SaveError", "List NoST kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputST (NoProduksi, NoST) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputST (NoProduksi, NoST, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE ST_h SET DateUsage = ? WHERE NoST = ?")) {
 
             // Insert Data ke S4SProduksiInputST
             for (String noST : noSTList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noST);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -309,20 +266,21 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList) {
+    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved) {
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             Log.e("SaveError", "List NoMoulding kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputMoulding (NoProduksi, NoMoulding) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputMoulding (NoProduksi, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
 
             // Insert Data ke S4SProduksiInputMoulding
             for (String noMoulding : noMouldingList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noMoulding);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -343,20 +301,21 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList) {
+    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved) {
         if (noFJList == null || noFJList.isEmpty()) {
             Log.e("SaveError", "List NoFJ kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputFJ (NoProduksi, NoFJ) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputFJ (NoProduksi, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
 
             // Insert Data ke S4SProduksiInputFJ
             for (String noFJ : noFJList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noFJ);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -377,20 +336,21 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList) {
+    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved) {
         if (noCCList == null || noCCList.isEmpty()) {
             Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputCCAkhir (NoProduksi, NoCCAkhir) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputCCAkhir (NoProduksi, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
 
             // Insert Data ke S4SProduksiInputCCAkhir
             for (String noCCAkhir : noCCList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noCCAkhir);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -411,20 +371,21 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoReproses(String noProduksi, String tglProduksi, List<String> noReprosesList) {
+    public static void saveNoReproses(String noProduksi, String tglProduksi, List<String> noReprosesList, String dateTimeSaved) {
         if (noReprosesList == null || noReprosesList.isEmpty()) {
             Log.e("SaveError", "List NoReproses kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputReproses (NoProduksi, NoReproses) VALUES (?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputReproses (NoProduksi, NoReproses, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Reproses_h SET DateUsage = ? WHERE NoReproses = ?")) {
 
             // Insert Data ke S4SProduksiInputReproses
             for (String noReproses : noReprosesList) {
                 insertStmt.setString(1, noProduksi);
                 insertStmt.setString(2, noReproses);
+                insertStmt.setString(3, dateTimeSaved);
                 insertStmt.addBatch();
             }
             insertStmt.executeBatch();
@@ -599,7 +560,7 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
 
 
@@ -640,7 +601,7 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
 
     public static String findMouldingResultTable(String result) {
@@ -695,7 +656,7 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
 
 
@@ -745,7 +706,7 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
 
 
@@ -773,19 +734,19 @@ public class ProductionApi {
                             // Return a message based on the table name
                             switch (table) {
                                 case "SandingProduksiInputCCAkhir":
-                                    return "Proses Produksi Sanding - CC Akhir";
+                                    return "Proses Produksi Sanding";
                                 case "S4SProduksiInputCCAkhir":
-                                    return "Proses Produksi S4S - CC Akhir";
+                                    return "Proses Produksi S4S";
                                 case "MouldingProduksiInputCCAkhir":
-                                    return "Proses Produksi Moulding - CC Akhir";
+                                    return "Proses Produksi Moulding";
                                 case "LaminatingProduksiInputCCAkhir":
-                                    return "Proses Produksi Laminating - CC Akhir";
+                                    return "Proses Produksi Laminating";
                                 case "FJProduksiInputCCAkhir":
-                                    return "Proses Produksi Finger Joint - CC Akhir";
+                                    return "Proses Produksi Finger Joint";
                                 case "AdjustmentInputCCAkhir":
-                                    return "Adjustment Cross Cut - CC Akhir";
+                                    return "Adjustment Cross Cut";
                                 case "BongkarSusunInputCCAkhir":
-                                    return "Bongkar Susun Cross Cut - CC Akhir";
+                                    return "Bongkar Susun Cross Cut";
                                 default:
                                     return " " + table;
                             }
@@ -798,7 +759,7 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
 
 
@@ -852,8 +813,61 @@ public class ProductionApi {
             e.printStackTrace();
         }
 
-        return "-"; // Return a default message if result is not found
+        return null; // Return a default message if result is not found
     }
+
+
+    public static List<HistoryItem> getHistoryItems(String noProduksi) {
+        List<HistoryItem> historyGroups = new ArrayList<>();
+        String query = "SELECT DateTimeSaved, Label, COUNT(KodeLabel) AS Total " +
+                "FROM (" +
+                "    SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = ? " +
+                "    UNION ALL " +
+                "    SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM S4SProduksiInputST WHERE NoProduksi = ? " +
+                "    UNION ALL " +
+                "    SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM S4SProduksiInputMoulding WHERE NoProduksi = ? " +
+                "    UNION ALL " +
+                "    SELECT 'FJ' AS Label, NoFJ AS KodeLabel, DateTimeSaved FROM S4SProduksiInputFJ WHERE NoProduksi = ? " +
+                "    UNION ALL " +
+                "    SELECT 'Cross Cut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM S4SProduksiInputCCAkhir WHERE NoProduksi = ? " +
+                "    UNION ALL " +
+                "    SELECT 'Reproses' AS Label, NoReproses AS KodeLabel, DateTimeSaved FROM S4SProduksiInputReproses WHERE NoProduksi = ? " +
+                ") AS CombinedData " +
+                "GROUP BY DateTimeSaved, Label " +
+                "ORDER BY DateTimeSaved DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+            for (int i = 1; i <= 6; i++) {
+                pstmt.setString(i, noProduksi); // Set NoProduksi untuk semua parameter
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                Map<String, HistoryItem> groupedHistory = new LinkedHashMap<>();
+
+                while (rs.next()) {
+                    String dateTimeSaved = rs.getString("DateTimeSaved");
+                    String label = rs.getString("Label");
+                    int total = rs.getInt("Total");
+
+                    // Jika grup untuk DateTimeSaved belum ada, tambahkan
+                    groupedHistory.putIfAbsent(dateTimeSaved, new HistoryItem(dateTimeSaved));
+
+                    // Tambahkan item ke grup
+                    groupedHistory.get(dateTimeSaved).addItem(new HistoryItem(label, String.valueOf(total), dateTimeSaved));
+                }
+
+                historyGroups.addAll(groupedHistory.values());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return historyGroups;
+    }
+
+
+
+
 
 
 
