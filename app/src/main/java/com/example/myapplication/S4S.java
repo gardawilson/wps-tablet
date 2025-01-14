@@ -31,6 +31,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SearchView;
@@ -77,6 +78,7 @@ import android.os.Looper;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -187,6 +189,9 @@ public class S4S extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoS4S_display;
     private String rawDate;
+    private TableLayout TabelOutput;
+    private TextView tvLabelCount;
+
 
 
     @Override
@@ -239,14 +244,16 @@ public class S4S extends AppCompatActivity {
         Tabel = findViewById(R.id.Tabel);
         radioGroup = findViewById(R.id.radioGroup);
         NoS4S_display = findViewById(R.id.NoS4S_display);
+        TabelOutput = findViewById(R.id.TabelOutput);
+        tvLabelCount = findViewById(R.id.labelCount);
 
-// Set imeOptions untuk memungkinkan pindah fokus
+        // Set imeOptions untuk memungkinkan pindah fokus
         DetailTebalS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         DetailLebarS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         DetailPanjangS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
 
-// Menangani aksi 'Enter' pada keyboard
+        // Menangani aksi 'Enter' pada keyboard
         DetailTebalS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -346,6 +353,51 @@ public class S4S extends AppCompatActivity {
             searchEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         }
 
+        SpinMesin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonMesin.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Mesin) {
+                        Mesin selectedMesin = (Mesin) selectedItem;
+                        String noProduksi = selectedMesin.getNoProduksi();
+                        loadOuputByMesinSusun(noProduksi, true);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Mesin");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
+        SpinSusun.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonBSusun.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Susun) {
+                        Susun selectedSusun = (Susun) selectedItem;
+                        String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                        loadOuputByMesinSusun(noBongkarSusun, false);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Susun");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
         NoS4S.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -376,23 +428,35 @@ public class S4S extends AppCompatActivity {
             }
         });
 
-        radioButtonMesin.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinMesin.setEnabled(true);
-                    SpinSusun.setEnabled(false);
+        radioButtonMesin.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesin.setEnabled(true);
+                SpinSusun.setEnabled(false);
+
+                Mesin selectedMesin = (Mesin) SpinMesin.getSelectedItem();
+                if (selectedMesin != null) {
+                    String noProduksi = selectedMesin.getNoProduksi();
+                    loadOuputByMesinSusun(noProduksi, true);
                 }
+            } else if (radioButtonBSusun.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         });
 
-        radioButtonBSusun.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinSusun.setEnabled(true);
-                    SpinMesin.setEnabled(false);
+        radioButtonBSusun.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesin.setEnabled(false);
+                SpinSusun.setEnabled(true);
+
+                Susun selectedSusun = (Susun) SpinSusun.getSelectedItem();
+                if (selectedSusun != null) {
+                    String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                    loadOuputByMesinSusun(noBongkarSusun, false);
                 }
+            } else if (radioButtonMesin.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         });
 
@@ -900,6 +964,142 @@ public class S4S extends AppCompatActivity {
     }
 
     //METHOD S4S
+
+    private void loadOuputByMesinSusun(String parameter, boolean isNoProduksi) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query;
+                    if (isNoProduksi) {
+                        query = "SELECT spo.NoS4S, s4s.HasBeenPrinted " +
+                                "FROM dbo.S4SProduksiOutput spo " +
+                                "JOIN dbo.S4S_h s4s ON spo.NoS4S = s4s.NoS4S " +
+                                "WHERE spo.NoProduksi = ?";
+                    } else {
+                        query = "SELECT bs.NoS4S, sh.HasBeenPrinted " +
+                                "FROM dbo.BongkarSusunOutputS4S bs " +
+                                "JOIN dbo.S4S_h sh ON bs.NoS4S = sh.NoS4S " +
+                                "WHERE bs.NoBongkarSusun = ?";
+                    }
+
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, parameter);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            List<String> noS4SList = new ArrayList<>();
+                            List<Integer> hasBeenPrintedList = new ArrayList<>();
+
+                            while (rs.next()) {
+                                noS4SList.add(rs.getString("NoS4S"));
+                                hasBeenPrintedList.add(rs.getInt("HasBeenPrinted"));
+                            }
+
+                            runOnUiThread(() -> {
+                                TabelOutput.removeAllViews();
+
+                                int labelCount = 0;
+
+                                if (!noS4SList.isEmpty() && noS4SList.size() == hasBeenPrintedList.size()) {
+                                    for (int i = 0; i < noS4SList.size(); i++) {
+                                        String noS4S = noS4SList.get(i);
+                                        int hasBeenPrinted = hasBeenPrintedList.get(i);
+
+                                        TableRow row = new TableRow(this);
+                                        TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
+                                                TableLayout.LayoutParams.MATCH_PARENT,
+                                                TableLayout.LayoutParams.WRAP_CONTENT
+                                        );
+
+                                        // Tambahkan margin bawah untuk jarak antar baris
+                                        row.setLayoutParams(rowParams);
+
+                                        row.setPadding(0, 10, 0, 10);
+
+                                        // Ubah warna latar belakang berdasarkan indeks
+                                        if (i % 2 == 0) {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                                        } else {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                                        }
+
+                                        TextView labelTextView = new TextView(this);
+                                        labelTextView.setText(noS4S);
+                                        labelTextView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                                        labelTextView.setGravity(Gravity.CENTER);
+                                        row.addView(labelTextView);
+
+                                        ImageView iIcon = new ImageView(this);
+                                        iIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        iIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+
+                                        ImageView oIcon = new ImageView(this);
+                                        oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        oIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+
+
+                                        if (hasBeenPrinted == 0) {
+                                            iIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 1) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 2) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "O"
+                                        } else {
+                                            iIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                            oIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                        }
+
+                                        row.addView(iIcon);
+
+                                        row.addView(oIcon);
+                                        TabelOutput.addView(row);
+
+                                        labelCount++;
+
+                                    }
+
+                                    tvLabelCount.setText("Total Label : " + labelCount);
+
+                                } else {
+                                    //Toast.makeText(this, "Data tidak ditemukan", Toast.LENGTH_SHORT).show();
+                                    Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
+
+                                }
+                            });
+
+
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        // Handle koneksi database gagal
+                        Toast.makeText(this, "Gagal terhubung ke database", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                runOnUiThread(() -> {
+                    // Handle error SQL
+                    Log.e("Database Error", "Error: " + e.getMessage());
+                    Toast.makeText(this, "Terjadi kesalahan", Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
 
     private boolean isInternetAvailable() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -2015,6 +2215,7 @@ public class S4S extends AppCompatActivity {
         SpinSusun.setEnabled(false);
         SpinMesin.setEnabled(false);
         radioGroup.clearCheck();
+        tvLabelCount.setText("Total Label : 0");
 
     }
 
@@ -2582,9 +2783,7 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(S4S.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noBongkarSusun, false);
         }
     }
 
@@ -2623,11 +2822,8 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(S4S.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Toast.makeText(S4S.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noProduksi, true);
+
         }
     }
 
@@ -3597,71 +3793,9 @@ public class S4S extends AppCompatActivity {
             } else {
                 Log.e("Error", "Failed to load mesin data.");
                 SpinMesin.setAdapter(null);
-            }
-        }
-    }
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
 
-    private class LoadMesinTask2 extends AsyncTask<Void, Void, List<Mesin>> {
-        private String noS4S;
-
-        public LoadMesinTask2(String noS4S) {
-            this.noS4S = noS4S;
-        }
-
-        @Override
-        protected List<Mesin> doInBackground(Void... params) {
-            List<Mesin> mesinList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT b.NoProduksi, d.NamaMesin FROM S4S_h a " +
-                            "INNER JOIN S4SProduksiOutput b ON b.NoS4S = a.NoS4S " +
-                            "INNER JOIN S4SProduksi_h c ON c.NoProduksi = b.NoProduksi " +
-                            "INNER JOIN MstMesin d ON d.IdMesin = c.IdMesin " +
-                            "WHERE a.NoS4S = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noS4S);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorProduksi = rs.getString("NoProduksi");
-                        String namaMesin = rs.getString("NamaMesin");
-
-                        Mesin mesin = new Mesin(nomorProduksi, namaMesin);
-                        mesinList.add(mesin);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return mesinList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Mesin> mesinList) {
-            if (!mesinList.isEmpty()) {
-                ArrayAdapter<Mesin> adapter = new ArrayAdapter<>(S4S.this, android.R.layout.simple_spinner_item, mesinList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinMesin.setAdapter(adapter);
-
-                radioButtonMesin.setEnabled(true);
-                radioButtonBSusun.setEnabled(false);
-            } else {
-                Log.e("Error", "Failed to load mesin data.");
-                radioButtonMesin.setEnabled(false);
-                radioButtonBSusun.setEnabled(false);
-
-                Toast.makeText(S4S.this, "Tidak ada data mesin yang ditemukan.", Toast.LENGTH_SHORT).show();
-                SpinMesin.setAdapter(null);
             }
         }
     }
@@ -3716,69 +3850,12 @@ public class S4S extends AppCompatActivity {
             } else {
                 Log.e("Error", "Failed to load susun data");
                 SpinSusun.setAdapter(null);
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
+
             }
         }
     }
-
-    private class LoadSusunTask2 extends AsyncTask<Void, Void, List<Susun>> {
-        private String noS4S;
-
-        public LoadSusunTask2(String noS4S) {
-            this.noS4S = noS4S;
-        }
-
-        @Override
-        protected List<Susun> doInBackground(Void... params) {
-            List<Susun> susunList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputS4S WHERE NoS4S = ?"; // Filter by noS4S
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noS4S);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorBongkarSusun = rs.getString("NoBongkarSusun");
-
-                        Susun susun = new Susun(nomorBongkarSusun);
-                        susunList.add(susun);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return susunList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Susun> susunList) {
-            if (!susunList.isEmpty()) {
-                ArrayAdapter<Susun> adapter = new ArrayAdapter<>(S4S.this, android.R.layout.simple_spinner_item, susunList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinSusun.setAdapter(adapter);
-
-                radioButtonMesin.setEnabled(false);
-                radioButtonBSusun.setEnabled(true);
-            } else {
-                Log.e("Error", "Failed to load susun data.");
-                radioButtonMesin.setEnabled(false);
-                radioButtonBSusun.setEnabled(false);
-
-                Toast.makeText(S4S.this, "Tidak ada data susun yang ditemukan.", Toast.LENGTH_SHORT).show();
-                SpinSusun.setAdapter(null);
-            }
-        }
-    }
-
-
 
 
 

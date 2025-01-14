@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import static com.example.myapplication.api.ProductionApi.getHistoryItems;
+import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
 
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -294,7 +295,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         try {
             SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.getDefault());
             Date date = inputFormat.parse(dateTime); // Parsing input date
             return outputFormat.format(date); // Format ulang ke output
         } catch (ParseException e) {
@@ -316,6 +317,20 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
                 LinearLayout historyContainer = dialogView.findViewById(R.id.historyContainer);
                 ImageButton btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+                TextView tvSumS4S = dialogView.findViewById(R.id.tvSumS4S);
+                TextView tvSumST = dialogView.findViewById(R.id.tvSumST);
+                TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
+                TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
+                TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
+                TextView tvSumReproses = dialogView.findViewById(R.id.tvSumReproses);
+                TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
+
+                int totalS4S = 0;
+                int totalST = 0;
+                int totalMoulding = 0;
+                int totalFJ = 0;
+                int totalCCAkhir = 0;
+                int totalReproses = 0;
 
                 for (HistoryItem group : historyGroups) {
                     View itemView = inflater.inflate(R.layout.history_item, null);
@@ -326,27 +341,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                     MaterialCardView dropdownContainer = itemView.findViewById(R.id.dropdownContainer);
                     LinearLayout dropdownContent = dropdownContainer.findViewById(R.id.dropdownContent);
                     ImageView dropdownIcon = itemView.findViewById(R.id.dropdownIcon);
-                    TextView tvSumS4S = dialogView.findViewById(R.id.tvSumS4S);
-                    TextView tvSumST = dialogView.findViewById(R.id.tvSumST);
-                    TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
-                    TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
-                    TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
-                    TextView tvSumReproses = dialogView.findViewById(R.id.tvSumReproses);
-                    TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
-
-                    int totalLabels = noS4SList.size() + noSTList.size() + noMouldingList.size() +
-                            noFJList.size() + noCCList.size() + noReprosesList.size();
 
                     // Set data untuk header
                     tvTimestamp.setText(formatDateTime(group.getDateTimeSaved()));
-                    tvTotalCount.setText(String.valueOf(group.getTotalCount()));
-                    tvSumS4S.setText(String.valueOf(noS4SList.size()));
-                    tvSumST.setText(String.valueOf(noSTList.size()));
-                    tvSumMoulding.setText(String.valueOf(noMouldingList.size()));
-                    tvSumFJ.setText(String.valueOf(noFJList.size()));
-                    tvSumCCAkhir.setText(String.valueOf(noCCList.size()));
-                    tvSumReproses.setText(String.valueOf(noReprosesList.size()));
-                    tvSumLabel.setText(String.valueOf(totalLabels));
+                    tvTotalCount.setText(String.valueOf(group.getTotalAllLabels()));
 
                     // Hapus elemen sebelumnya di dropdownContent
                     dropdownContent.removeViews(1, dropdownContent.getChildCount() - 1);
@@ -377,7 +375,28 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                     });
 
                     historyContainer.addView(itemView);
+
+                    // Hitung total untuk setiap label
+                    totalS4S += group.getTotalS4S();
+                    totalST += group.getTotalST();
+                    totalMoulding += group.getTotalMoulding();
+                    totalFJ += group.getTotalFJ();
+                    totalCCAkhir += group.getTotalCrossCut();
+                    totalReproses += group.getTotalReproses();
                 }
+
+                // Tampilkan jumlah masing-masing label
+
+                tvSumS4S.setText(String.valueOf(totalS4S));
+                tvSumST.setText(String.valueOf(totalST));
+                tvSumMoulding.setText(String.valueOf(totalMoulding));
+                tvSumFJ.setText(String.valueOf(totalFJ));
+                tvSumCCAkhir.setText(String.valueOf(totalCCAkhir));
+                tvSumReproses.setText(String.valueOf(totalReproses));
+
+                // Hitung dan tampilkan total keseluruhan label
+                int totalAllLabels = totalS4S + totalST + totalMoulding + totalFJ + totalCCAkhir + totalReproses;
+                tvSumLabel.setText(String.valueOf(totalAllLabels));
 
                 btnCloseDialog.setOnClickListener(v -> {
                     if (dialog != null && dialog.isShowing()) {
@@ -408,7 +427,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         try {
             // Format input dan output
             SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MMM-yyyy");
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy");
 
             // Parsing tanggal dan format ulang
             Date date = inputFormat.parse(originalDate);
@@ -614,17 +633,38 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             if (isCameraActive) {
                 deactivateCamera();
             } else {
-                if(!noProduksiView.getText().toString().isEmpty()){
-                    // Minta permission kamera langsung saat halaman dibuka
-                    requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-                }
-                else{
+                String noProduksi = noProduksiView.getText().toString();
+
+                if (!noProduksi.isEmpty()) {
+                    executorService.execute(() -> {
+                        if (tglProduksi == null) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(this, "Tanggal Produksi tidak valid!", Toast.LENGTH_SHORT).show()
+                            );
+                            return;
+                        }
+
+                        // Periksa periode transaksi
+                        boolean isClosed = isTransactionPeriodClosed(tglProduksi);
+
+                        runOnUiThread(() -> {
+                            if (!isClosed) {
+                                Toast.makeText(this, "Periode transaksi sudah ditutup!", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            // Jika valid, minta permission kamera
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+                        });
+                    });
+                } else {
                     Toast.makeText(this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
                 }
-
             }
+
             updateButtonText(); // Ubah teks tombol sesuai status
         });
+
     }
 
     /**
@@ -683,9 +723,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 textLayoutSearchMainTable.setVisibility(View.INVISIBLE);
                 jumlahLabelHeader.setVisibility(View.VISIBLE);
                 jumlahLabel.setVisibility(View.VISIBLE);
+                btnSimpan.setEnabled(true);
 
                 isCameraActive = true;
-                Toast.makeText(this, "Kamera diaktifkan", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "Kamera diaktifkan", Toast.LENGTH_SHORT).show();
             } else {
                 // Permission belum diberikan, minta permission
                 requestPermissionLauncher.launch(Manifest.permission.CAMERA);
@@ -712,9 +753,12 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             headerTableProduksi.setVisibility(View.VISIBLE);
             searchMainTable.setVisibility(View.VISIBLE);
             textLayoutSearchMainTable.setVisibility(View.VISIBLE);
+            btnSimpan.setEnabled(false);
+
+
 
             isCameraActive = false;
-            Toast.makeText(this, "Kamera dinonaktifkan", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(this, "Kamera dinonaktifkan", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Kamera sudah tidak aktif", Toast.LENGTH_SHORT).show();
         }
@@ -932,7 +976,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         deleteButton.setPadding(0, 5, 0, 0);
         deleteButton.setLayoutParams(new TableRow.LayoutParams(50, TableRow.LayoutParams.WRAP_CONTENT));
 
-// ... kode lainnya ...
 
         deleteButton.setOnClickListener(v -> {
             try {
@@ -1302,7 +1345,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         // Set parameter untuk garis tipis (0.5dp)
         TableRow.LayoutParams params = new TableRow.LayoutParams(
-          1,
+                1,
                 TableRow.LayoutParams.MATCH_PARENT // Tinggi penuh
         );
         divider.setLayoutParams(params);

@@ -819,8 +819,14 @@ public class ProductionApi {
 
     public static List<HistoryItem> getHistoryItems(String noProduksi) {
         List<HistoryItem> historyGroups = new ArrayList<>();
-        String query = "SELECT DateTimeSaved, Label, COUNT(KodeLabel) AS Total " +
-                "FROM (" +
+        String query = "SELECT DateTimeSaved, Label, COUNT(KodeLabel) AS Total, " +
+                "SUM(CASE WHEN Label = 'S4S' THEN 1 ELSE 0 END) AS TotalS4S, " +
+                "SUM(CASE WHEN Label = 'ST' THEN 1 ELSE 0 END) AS TotalST, " +
+                "SUM(CASE WHEN Label = 'Moulding' THEN 1 ELSE 0 END) AS TotalMoulding, " +
+                "SUM(CASE WHEN Label = 'FJ' THEN 1 ELSE 0 END) AS TotalFJ, " +
+                "SUM(CASE WHEN Label = 'Cross Cut' THEN 1 ELSE 0 END) AS TotalCrossCut, " +
+                "SUM(CASE WHEN Label = 'Reproses' THEN 1 ELSE 0 END) AS TotalReproses " +
+                "FROM ( " +
                 "    SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = ? " +
                 "    UNION ALL " +
                 "    SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM S4SProduksiInputST WHERE NoProduksi = ? " +
@@ -839,7 +845,7 @@ public class ProductionApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement pstmt = con.prepareStatement(query)) {
             for (int i = 1; i <= 6; i++) {
-                pstmt.setString(i, noProduksi); // Set NoProduksi untuk semua parameter
+                pstmt.setString(i, noProduksi);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -850,11 +856,34 @@ public class ProductionApi {
                     String label = rs.getString("Label");
                     int total = rs.getInt("Total");
 
-                    // Jika grup untuk DateTimeSaved belum ada, tambahkan
-                    groupedHistory.putIfAbsent(dateTimeSaved, new HistoryItem(dateTimeSaved));
+                    int totalS4S = rs.getInt("TotalS4S");
+                    int totalST = rs.getInt("TotalST");
+                    int totalMoulding = rs.getInt("TotalMoulding");
+                    int totalFJ = rs.getInt("TotalFJ");
+                    int totalCrossCut = rs.getInt("TotalCrossCut");
+                    int totalReproses = rs.getInt("TotalReproses");
+                    int totalAllLabels = totalS4S + totalST + totalMoulding + totalFJ + totalCrossCut + totalReproses;
 
-                    // Tambahkan item ke grup
+                    Log.d("TotalS4S", "Total S4S: " + totalS4S);
+                    Log.d("TotalST", "Total ST: " + totalST);
+                    Log.d("TotalMoulding", "Total Moulding: " + totalMoulding);
+                    Log.d("TotalFJ", "Total FJ: " + totalFJ);
+                    Log.d("TotalCrossCut", "Total Cross Cut: " + totalCrossCut);
+                    Log.d("TotalReproses", "Total Reproses: " + totalReproses);
+                    Log.d("TotalAllLabels", "Total All Labels: " + totalAllLabels);
+
+
+                    groupedHistory.putIfAbsent(dateTimeSaved, new HistoryItem(dateTimeSaved));
                     groupedHistory.get(dateTimeSaved).addItem(new HistoryItem(label, String.valueOf(total), dateTimeSaved));
+
+                    HistoryItem history = groupedHistory.get(dateTimeSaved);
+                    history.setTotalCrossCut(history.getTotalCrossCut() + totalCrossCut);
+                    history.setTotalS4S(history.getTotalS4S() + totalS4S);
+                    history.setTotalST(history.getTotalST() + totalST);
+                    history.setTotalMoulding(history.getTotalMoulding() + totalMoulding);
+                    history.setTotalFJ(history.getTotalFJ() + totalFJ);
+                    history.setTotalReproses(history.getTotalReproses() + totalReproses);
+                    history.setTotalAllLabels(history.getTotalAllLabels() + totalAllLabels);
                 }
 
                 historyGroups.addAll(groupedHistory.values());
@@ -864,6 +893,50 @@ public class ProductionApi {
         }
         return historyGroups;
     }
+
+
+
+    public static boolean isTransactionPeriodClosed(String tglProduksi) {
+        String queryBulanan = "SELECT TOP 1 Period FROM MstTutupTransaksi WHERE Lock = 1 ORDER BY Period DESC";
+        String queryHarian = "SELECT TOP 1 PeriodHarian FROM MstTutupTransaksiHarian WHERE Lock = 1 ORDER BY PeriodHarian DESC";
+
+        java.sql.Date periodBulanan = null;
+        java.sql.Date periodHarian = null;
+        java.sql.Date produksiDate = java.sql.Date.valueOf(tglProduksi);
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            // Ambil Period dari queryBulanan
+            try (PreparedStatement pstmtBulanan = con.prepareStatement(queryBulanan);
+                 ResultSet rsBulanan = pstmtBulanan.executeQuery()) {
+                if (rsBulanan.next()) {
+                    periodBulanan = rsBulanan.getDate("Period");
+                }
+            }
+
+            if (periodBulanan != null && produksiDate.before(periodBulanan)) {
+                return false;
+            }
+
+            // Ambil Period dari queryHarian
+            try (PreparedStatement pstmtHarian = con.prepareStatement(queryHarian);
+                 ResultSet rsHarian = pstmtHarian.executeQuery()) {
+                if (rsHarian.next()) {
+                    periodHarian = rsHarian.getDate("PeriodHarian");
+                }
+            }
+
+            if (periodHarian != null && produksiDate.before(periodHarian)) {
+                return false;
+            }
+
+            // Jika tglProduksi lebih kecil atau sama dengan kedua period, return true
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Database error: " + e.getMessage());
+            return false; // Return default jika terjadi kesalahan
+        }
+    }
+
 
 
 

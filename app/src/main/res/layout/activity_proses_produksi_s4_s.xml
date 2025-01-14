@@ -153,7 +153,8 @@
                     android:layout_height="50dp"
                     android:layout_marginRight="8dp"
                     android:layout_weight="0.1"
-                    android:text="Save" />
+                    android:text="Save"
+                    android:enabled="false"/>
 
                 <Button
                     android:id="@+id/btnHistorySave"

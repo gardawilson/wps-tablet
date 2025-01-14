@@ -83,7 +83,8 @@
                     android:layout_height="64dp"
                     android:padding="12dp"
                     android:background="@drawable/circle_background"
-                    android:src="@drawable/label" />
+                    android:src="@drawable/label"
+                    app:tint="@color/primary"/>
 
                 <TextView
                     android:id="@+id/textView7"
@@ -121,7 +122,8 @@
                     android:layout_height="64dp"
                     android:padding="12dp"
                     android:background="@drawable/circle_background"
-                    android:src="@drawable/proses"/>
+                    android:src="@drawable/proses"
+                    app:tint="@color/primary"/>
 
                 <TextView
                     android:layout_width="wrap_content"
