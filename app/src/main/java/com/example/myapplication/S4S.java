@@ -12,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -22,7 +24,9 @@ import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -32,8 +36,11 @@ import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -1057,10 +1064,15 @@ public class S4S extends AppCompatActivity {
                                         }
 
                                         row.addView(iIcon);
-
                                         row.addView(oIcon);
-                                        TabelOutput.addView(row);
 
+                                        row.setOnClickListener(v -> {
+                                            // Tampilkan tooltip ketika baris diklik
+                                            fetchDataAndShowTooltip(v, noS4S);
+                                        });
+
+
+                                        TabelOutput.addView(row);
                                         labelCount++;
 
                                     }
@@ -1073,8 +1085,6 @@ public class S4S extends AppCompatActivity {
 
                                 }
                             });
-
-
                         }
                     }
                 } else {
@@ -1099,6 +1109,304 @@ public class S4S extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void fetchDataAndShowTooltip(View anchorView, String noS4S) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass(); // Koneksi ke database
+                if (connection != null) {
+                    // Query utama untuk mengambil detail tooltip
+                    String detailQuery = "SELECT h.NoS4S, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, b1.Buyer AS BuyerNoSPK, " +
+                            "h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
+                            "FROM S4S_h h " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                            "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                            "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                            "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                            "WHERE h.NoS4S = ?";
+
+                    PreparedStatement detailStmt = connection.prepareStatement(detailQuery);
+                    detailStmt.setString(1, noS4S);
+                    ResultSet detailRs = detailStmt.executeQuery();
+
+                    String retrievedNoS4S = null;
+                    String formattedDateTime = null;
+                    String jenis = null;
+                    String spkDetail = null;
+                    String spkAsalDetail = null;
+                    String namaGrade = null;
+                    boolean isLembur = false;
+
+                    if (detailRs.next()) {
+                        retrievedNoS4S = detailRs.getString("NoS4S");
+                        String dateCreate = detailRs.getString("DateCreate");
+                        String jam = detailRs.getString("Jam");
+                        jenis = detailRs.getString("Jenis");
+                        String noSPK = detailRs.getString("NoSPK");
+                        String buyerNoSPK = detailRs.getString("BuyerNoSPK");
+                        String noSPKAsal = detailRs.getString("NoSPKAsal");
+                        String buyerNoSPKAsal = detailRs.getString("BuyerNoSPKAsal");
+                        namaGrade = detailRs.getString("NamaGrade");
+                        isLembur = detailRs.getBoolean("IsLembur");
+
+                        spkDetail = (noSPK != null && buyerNoSPK != null) ? noSPK + " - " + buyerNoSPK : "No data";
+                        spkAsalDetail = (noSPKAsal != null && buyerNoSPKAsal != null) ? noSPKAsal + " - " + buyerNoSPKAsal : "No data";
+                        formattedDateTime = combineDateTime(dateCreate, jam);
+                    }
+
+                    // Query untuk mengambil data tabel
+                    String tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM S4S_d WHERE NoS4S = ? ORDER BY NoUrut";
+                    PreparedStatement tableStmt = connection.prepareStatement(tableQuery);
+                    tableStmt.setString(1, noS4S);
+
+                    ResultSet tableRs = tableStmt.executeQuery();
+                    List<String[]> tableData = new ArrayList<>();
+                    int totalPcs = 0;
+                    double totalM3 = 0.0;
+
+                    while (tableRs.next()) {
+                        // Ambil data dari tabel
+                        double tebal = tableRs.getDouble("Tebal");
+                        double lebar = tableRs.getDouble("Lebar");
+                        double panjang = tableRs.getDouble("Panjang");
+                        int pcs = tableRs.getInt("JmlhBatang");
+
+                        totalPcs += pcs;
+
+                        // Hitung M3 untuk baris ini
+                        double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                        rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                        totalM3 += rowM3;
+
+                        // Format data untuk tabel
+                        tableData.add(new String[]{
+                                String.valueOf((int) tebal),
+                                String.valueOf((int) lebar),
+                                String.valueOf((int) panjang),
+                                String.valueOf(pcs)
+                        });
+                    }
+
+                    // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
+                    String finalRetrievedNoS4S = retrievedNoS4S;
+                    String finalFormattedDateTime = formattedDateTime;
+                    String finalJenis = jenis;
+                    String finalSpkDetail = spkDetail;
+                    String finalSpkAsalDetail = spkAsalDetail;
+                    String finalNamaGrade = namaGrade;
+                    boolean finalIsLembur = isLembur;
+                    int finalTotalPcs = totalPcs;
+                    double finalTotalM3 = totalM3;
+
+                    runOnUiThread(() -> showTooltip(
+                            anchorView,
+                            finalRetrievedNoS4S,
+                            finalFormattedDateTime,
+                            finalJenis,
+                            finalSpkDetail,
+                            finalSpkAsalDetail,
+                            finalNamaGrade,
+                            finalIsLembur,
+                            tableData,
+                            finalTotalPcs,
+                            finalTotalM3
+                    ));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching data", Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+
+
+    // Metode untuk menggabungkan Date dan Time
+    private String combineDateTime(String date, String time) {
+        try {
+            // Format input Date (dari database)
+            SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date parsedDate = inputDateFormat.parse(date);
+
+            // Gabungkan Date dan Time
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            String formattedDateTime = outputFormat.format(parsedDate) + " (" + time + ")";
+            return formattedDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return date + " " + time; // Jika terjadi error, kembalikan format default
+        }
+    }
+
+    private void showTooltip(View anchorView, String noS4S, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noS4S);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        if (y < 25) {
+            trianglePointer.setY(y - 60);
+        }
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
     }
 
     private boolean isInternetAvailable() {

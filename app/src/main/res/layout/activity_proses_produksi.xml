@@ -182,7 +182,7 @@
 
         <!-- CardView 5 -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/FingerJointProduksi"
+            android:id="@+id/FJProduksi"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -226,7 +226,7 @@
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/CrossCutProduksi"
-            app:layout_constraintStart_toEndOf="@id/FingerJointProduksi"
+            app:layout_constraintStart_toEndOf="@id/FJProduksi"
             app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
@@ -261,7 +261,7 @@
             android:layout_margin="8dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
-            app:layout_constraintTop_toBottomOf="@id/FingerJointProduksi"
+            app:layout_constraintTop_toBottomOf="@id/FJProduksi"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/PackingProduksi">
 

@@ -11,6 +11,7 @@ import androidx.cardview.widget.CardView;
 public class ProsesProduksi extends AppCompatActivity {
 
     private CardView S4SProduksi;
+    private CardView FJProduksi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,11 +20,21 @@ public class ProsesProduksi extends AppCompatActivity {
         setContentView(R.layout.activity_proses_produksi);
 
         S4SProduksi = findViewById(R.id.S4SProduksi);
+        FJProduksi = findViewById(R.id.FJProduksi);
+
 
         S4SProduksi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiS4S.class);
+                startActivity(intent);
+            }
+        });
+
+        FJProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiFJ.class);
                 startActivity(intent);
             }
         });

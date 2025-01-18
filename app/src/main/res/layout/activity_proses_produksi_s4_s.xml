@@ -685,6 +685,82 @@
 
     </androidx.cardview.widget.CardView>
 
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="8dp"
+
+        android:orientation="horizontal">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:background="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <!-- Header Tabel -->
+                <TableLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF">
+
+                    <TableRow
+                        android:background="@color/hijau">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="SAWN TIMBER"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
+                    </TableRow>
+                </TableLayout>
+
+                <!-- Isi Tabel -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <ProgressBar
+                            android:id="@+id/loadingIndicatorNoST"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
+
+                        <TableLayout
+                            android:id="@+id/noSTTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="1">
+
+                        </TableLayout>
+
+                    </RelativeLayout>
+                </ScrollView>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
     <!-- Layout untuk CardView di Kanan -->
     <LinearLayout
         android:layout_width="0dp"
@@ -765,75 +841,6 @@
                     </ScrollView>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                android:background="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <!-- Header Tabel -->
-                    <TableLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#EFEFEF">
-
-                        <TableRow
-                            android:background="@color/hijau">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="SAWN TIMBER"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
-                        </TableRow>
-                    </TableLayout>
-
-                    <!-- Isi Tabel -->
-                    <ScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <ProgressBar
-                                android:id="@+id/loadingIndicatorNoST"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerInParent="true"
-                                android:visibility="gone" />
-
-                            <TableLayout
-                                android:id="@+id/noSTTableLayout"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
-                                android:stretchColumns="1">
-
-                            </TableLayout>
-
-                        </RelativeLayout>
-                    </ScrollView>
-
-                </LinearLayout>
-
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
@@ -985,7 +992,8 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginStart="4dp"
+
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 android:background="#FFFFFF">
@@ -1056,7 +1064,8 @@
                 android:layout_marginStart="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
-                android:background="#FFFFFF">
+                android:background="#FFFFFF"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1118,67 +1127,5 @@
             </androidx.cardview.widget.CardView>
         </LinearLayout>
     </LinearLayout>
-
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="0.6"
-        android:layout_marginStart="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        android:background="#FFFFFF">
-
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#EFEFEF">
-
-            <TableRow
-                android:background="@color/hijau">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:text="Output"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-            </TableRow>
-        </TableLayout>
-
-        <!-- Isi Tabel -->
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <ProgressBar
-                    android:id="@+id/loadingIndicatorOutput"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:visibility="gone" />
-
-                <TableLayout
-                    android:id="@+id/outputTableLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#EFEFEF"
-                    android:stretchColumns="1">
-
-                </TableLayout>
-
-            </RelativeLayout>
-        </ScrollView>
-
-
-    </androidx.cardview.widget.CardView>
 
 </LinearLayout>

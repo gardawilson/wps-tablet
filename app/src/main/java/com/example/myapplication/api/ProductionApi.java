@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.myapplication.DatabaseConfig;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
+import com.example.myapplication.model.TooltipData;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.sql.DriverManager;
@@ -21,40 +23,43 @@ import java.util.Map;
 
 public class ProductionApi {
 
-    public static List<ProductionData> getProductionData() {
+    public static List<ProductionData> getProductionData(String tableName) {
         List<ProductionData> productionDataList = new ArrayList<>();
+
+        // Query SQL dengan nama tabel dinamis
+        String query = "SELECT TOP 50 " +
+                "p.NoProduksi, " +
+                "p.Shift, " +
+                "p.Tanggal, " +
+                "p.IdMesin, " +
+                "p.IdOperator, " +
+                "m.NamaMesin, " +
+                "o.NamaOperator " +
+                "FROM " + tableName + " p " +
+                "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
+                "LEFT JOIN MstOperator o ON p.IdOperator = o.IdOperator " +
+                "ORDER BY p.NoProduksi DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "SELECT TOP 50 " +
-                             "p.NoProduksi, " +
-                             "p.Shift, " +
-                             "p.Tanggal, " +
-                             "p.IdMesin, " +
-                             "p.IdOperator, " +
-                             "m.NamaMesin, " +
-                             "o.NamaOperator " +
-                             "FROM S4SProduksi_h p " +
-                             "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
-                             "LEFT JOIN MstOperator o ON p.IdOperator = o.IdOperator " + // tambahkan spasi
-                             "ORDER BY p.NoProduksi DESC"
-             );
-        ) {
+             ResultSet rs = stmt.executeQuery(query)) {
 
             while (rs.next()) {
+                // Ambil data dari ResultSet
                 String noProduksi = rs.getString("NoProduksi");
                 String shift = rs.getString("Shift");
                 String tanggal = rs.getString("Tanggal");
                 String mesin = rs.getString("NamaMesin");
                 String operator = rs.getString("NamaOperator");
 
+                // Debugging untuk memverifikasi data
                 Log.d("Database Data", "NoProduksi: " + noProduksi +
                         ", Shift: " + shift +
                         ", Tanggal: " + tanggal +
                         ", Mesin: " + mesin +
                         ", Operator: " + operator);
 
+                // Tambahkan ke list ProductionData
                 productionDataList.add(new ProductionData(noProduksi, shift, tanggal, mesin, operator));
             }
         } catch (SQLException e) {
@@ -64,28 +69,28 @@ public class ProductionApi {
         return productionDataList;
     }
 
+
     // Metode baru untuk mengambil NoS4S berdasarkan NoProduksi
-    public static List<String> getNoS4SByNoProduksi(String noProduksi) {
+    public static List<String> getNoS4SByNoProduksi(String noProduksi, String tableName) {
         List<String> noS4SList = new ArrayList<>();
 
         // Query untuk mengambil NoS4S berdasarkan NoProduksi
-        String query = "SELECT NoS4S, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = '" + noProduksi + "'";
-
+        String query = "SELECT NoS4S FROM " + tableName + " WHERE NoProduksi = ?";
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             PreparedStatement pstmt = con.prepareStatement(query)) {
 
-            // Iterasi hasil query
-            while (rs.next()) {
-                String noS4S = rs.getString("NoS4S");
-                noS4SList.add(noS4S); // Tambahkan NoS4S ke dalam daftar
+            pstmt.setString(1, noProduksi); // Set nilai parameter
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noS4S = rs.getString("NoS4S");
+                    noS4SList.add(noS4S); // Tambahkan NoS4S ke dalam daftar
 
-                Log.d("Database Data", "NoS4S: " + noS4S);
+                    Log.d("Database Data", "NoS4S: " + noS4S);
+                }
             }
         } catch (SQLException e) {
             Log.e("Database Fetch Error", "Error fetching NoS4S: " + e.getMessage());
         }
-
         return noS4SList;
     }
 
@@ -152,26 +157,38 @@ public class ProductionApi {
         return noFJList;
     }
 
-    public static List<String> getNoCCByNoProduksi(String noProduksi) {
+    public static List<String> getNoCCByNoProduksi(String noProduksi, String tableName) {
         List<String> noCCList = new ArrayList<>();
 
-        String query = "SELECT NoCCAkhir FROM S4SProduksiInputCCAkhir WHERE NoProduksi = '" + noProduksi + "'";
+        // Query SQL dinamis berdasarkan nama tabel
+        String query = "SELECT NoCCAkhir FROM " + tableName + " WHERE NoProduksi = ?";
+
+        Log.d("SQL Query", "Executing query: SELECT NoCCAkhir FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'");
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             PreparedStatement pstmt = con.prepareStatement(query)) {
 
-            while (rs.next()) {
-                String noCC = rs.getString("NoCCAkhir");
-                noCCList.add(noCC);
-                Log.d("Database Data", "NoCC: " + noCC);
+            // Set parameter untuk query
+            pstmt.setString(1, noProduksi);
+
+            // Eksekusi query
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noCC = rs.getString("NoCCAkhir");
+                    noCCList.add(noCC);
+                    Log.d("Database Data", "NoCC: " + noCC);
+                }
             }
         } catch (SQLException e) {
             Log.e("Database Fetch Error", "Error fetching NoCC: " + e.getMessage());
         }
 
+        // Debugging jumlah data yang ditemukan
+        Log.d("NoCC List Size", "Number of NoCC fetched: " + noCCList.size());
+
         return noCCList;
     }
+
 
     public static List<String> getNoReprosesByNoProduksi(String noProduksi) {
         List<String> noReprosesList = new ArrayList<>();
@@ -195,14 +212,14 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved) {
+    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName) {
         if (noS4SList == null || noS4SList.isEmpty()) {
             Log.e("SaveError", "List NoS4S kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputS4S (NoProduksi, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
 
             // Insert Data ke S4SProduksiInputS4S
@@ -336,14 +353,14 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved) {
+    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName) {
         if (noCCList == null || noCCList.isEmpty()) {
             Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputCCAkhir (NoProduksi, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
 
             // Insert Data ke S4SProduksiInputCCAkhir
@@ -936,6 +953,103 @@ public class ProductionApi {
             return false; // Return default jika terjadi kesalahan
         }
     }
+
+    public static TooltipData getTooltipData(String noKey, String tableH, String tableD, String mainColumn) {
+        TooltipData tooltipData = new TooltipData();
+
+        // Query untuk tabel utama (detail tooltip)
+        String detailQuery = "SELECT h." + mainColumn + " AS KeyColumn, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, " +
+                "b1.Buyer AS BuyerNoSPK, h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
+                "FROM " + tableH + " h " +
+                "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                "WHERE h." + mainColumn + " = ?";
+
+        // Query untuk tabel detail
+        String tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM " + tableD + " WHERE " + mainColumn + " = ? ORDER BY NoUrut";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement detailStmt = con.prepareStatement(detailQuery);
+             PreparedStatement tableStmt = con.prepareStatement(tableQuery)) {
+
+            // Set parameter untuk detailQuery
+            detailStmt.setString(1, noKey);
+
+            try (ResultSet detailRs = detailStmt.executeQuery()) {
+                if (detailRs.next()) {
+                    tooltipData.setNoS4S(detailRs.getString("KeyColumn")); // Ambil kolom kunci (NoS4S, NoFJ, dll.)
+                    String dateCreate = detailRs.getString("DateCreate");
+                    String jam = detailRs.getString("Jam");
+                    tooltipData.setFormattedDateTime(combineDateTime(dateCreate, jam));
+                    tooltipData.setJenis(detailRs.getString("Jenis"));
+                    tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
+                    tooltipData.setSpkAsalDetail(formatSpk(detailRs.getString("NoSPKAsal"), detailRs.getString("BuyerNoSPKAsal")));
+                    tooltipData.setNamaGrade(detailRs.getString("NamaGrade"));
+                    tooltipData.setLembur(detailRs.getBoolean("IsLembur"));
+                }
+            }
+
+            // Set parameter untuk tableQuery
+            tableStmt.setString(1, noKey);
+
+            try (ResultSet tableRs = tableStmt.executeQuery()) {
+                List<String[]> tableData = new ArrayList<>();
+                int totalPcs = 0;
+                double totalM3 = 0.0;
+
+                while (tableRs.next()) {
+                    double tebal = tableRs.getDouble("Tebal");
+                    double lebar = tableRs.getDouble("Lebar");
+                    double panjang = tableRs.getDouble("Panjang");
+                    int pcs = tableRs.getInt("JmlhBatang");
+
+                    totalPcs += pcs;
+                    double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                    rowM3 = Math.floor(rowM3 * 10000) / 10000; // Bulatkan ke 4 desimal
+                    totalM3 += rowM3;
+
+                    tableData.add(new String[]{
+                            String.valueOf((int) tebal),
+                            String.valueOf((int) lebar),
+                            String.valueOf((int) panjang),
+                            String.valueOf(pcs)
+                    });
+                }
+
+                tooltipData.setTableData(tableData);
+                tooltipData.setTotalPcs(totalPcs);
+                tooltipData.setTotalM3(totalM3);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return tooltipData;
+    }
+
+    // Helper untuk menggabungkan Date dan Time
+    private static String combineDateTime(String date, String time) {
+        try {
+            SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date parsedDate = inputDateFormat.parse(date);
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            return outputFormat.format(parsedDate) + " (" + time + ")";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return date + " " + time;
+        }
+    }
+
+    // Helper untuk memformat SPK
+    private static String formatSpk(String noSPK, String buyer) {
+        return (noSPK != null && buyer != null) ? noSPK + " - " + buyer : "-";
+    }
+
 
 
 
