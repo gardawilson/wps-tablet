@@ -1240,6 +1240,9 @@ public class FingerJoint extends AppCompatActivity {
         ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
         ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
 
+        tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
+        tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+
         // Referensi TableLayout
         TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
 

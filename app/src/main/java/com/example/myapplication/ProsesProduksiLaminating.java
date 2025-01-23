@@ -552,6 +552,7 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
 
     private void populateNoMouldingTable(List<String> noMouldingList) {
         noMouldingTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -567,17 +568,27 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
         for (String noMoulding : noMouldingList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noMoulding, 1.0f);
             row.addView(textView);
 
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noMouldingTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoCCTable(List<String> noCCList) {
         noCCTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noCCList == null || noCCList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -592,17 +603,27 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
         for (String noCC : noCCList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noCC, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noCCTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
 
     private void populateNoSandingTable(List<String> noSandingList) {
         noSandingTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noSandingList == null || noSandingList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -617,16 +638,26 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
         for (String noSanding : noSandingList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noSanding, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noSanding, "Sanding_h", "Sanding_d", "NoSanding"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noSandingTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoPackingTable(List<String> noPackingList) {
         noPackingTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noPackingList == null || noPackingList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -641,11 +672,20 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
         for (String noPacking : noPackingList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noPacking, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noPacking, "BarangJadi_h", "BarangJadi_d", "NoBJ"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noPackingTableLayout.addView(row);
+            rowIndex++;
         }
     }
 

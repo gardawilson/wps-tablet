@@ -321,8 +321,6 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
     }
 
-    //METHOD S4S
-
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------METHOD UNTUK PENANGANAN KAMERA DENGAN SCAN QR-----------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -560,6 +558,723 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         }
     }
 
+    private void populateNoS4STable(List<String> noS4SList) {
+        noS4STableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noS4SList == null || noS4SList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noS4STableLayout.addView(noDataView);
+            return;
+        }
+
+        // Isi tabel
+        for (String noS4S : noS4SList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            // Tambahkan TextView ke baris tabel
+            TextView textView = createTextView(noS4S, 1.0f);
+            row.addView(textView);
+
+            // Tambahkan OnClickListener untuk menampilkan tooltip
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
+
+            // Tetapkan warna latar belakang berdasarkan indeks baris
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            // Tambahkan baris ke TableLayout
+            noS4STableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoMouldingTable(List<String> noMouldingList) {
+        noMouldingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noMouldingList == null || noMouldingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noMouldingTableLayout.addView(noDataView);
+            return;
+
+        }
+
+        // Data tabel
+        for (String noMoulding : noMouldingList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noMoulding, 1.0f);
+            row.addView(textView);
+
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noMouldingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoFJTable(List<String> noFJList) {
+        noFJTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noFJList == null || noFJList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noFJTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Data tabel
+        for (String noFJ : noFJList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noFJ, 1.0f);
+            row.addView(textView);
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noFJTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoCCTable(List<String> noCCList) {
+        noCCTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noCCList == null || noCCList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noCCTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Data tabel
+        for (String noCC : noCCList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noCC, 1.0f);
+            row.addView(textView);
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noCCTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoLaminatingTable(List<String> noLaminatingList) {
+        noLaminatingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noLaminatingList == null || noLaminatingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noLaminatingTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Data tabel
+        for (String noLaminating : noLaminatingList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noLaminating, 1.0f);
+            row.addView(textView);
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noLaminating, "Laminating_h", "Laminating_d", "NoLaminating"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noLaminatingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoSandingTable(List<String> noSandingList) {
+        noSandingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noSandingList == null || noSandingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noSandingTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Data tabel
+        for (String noSanding : noSandingList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noSanding, 1.0f);
+            row.addView(textView);
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noSanding, "Sanding_h", "Sanding_d", "NoSanding"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noSandingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoPackingTable(List<String> noPackingList) {
+        noPackingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noPackingList == null || noPackingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noPackingTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Data tabel
+        for (String noPacking : noPackingList) {
+            TableRow row = new TableRow(this);
+
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noPacking, 1.0f);
+            row.addView(textView);
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noPacking, "BarangJadi_h", "BarangJadi_d", "NoBJ"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
+            noPackingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------METHOD ADD DATA KE TABLE LIST DENGAN PRE-CONDITION---------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+    private void addRowToTable(TableLayout tableLayout, String result, List<String> list, TextView sumLabel) {
+        // Buat TableRow untuk baris baru
+        TableRow row = new TableRow(this);
+        row.setLayoutParams(new TableLayout.LayoutParams(
+                TableLayout.LayoutParams.MATCH_PARENT,
+                TableLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        // Buat TextView kosong (placeholder) di sebelah kiri
+        TextView emptyView = new TextView(this);
+        emptyView.setText(""); // Kosongkan teks
+        emptyView.setPadding(0, 0, 0, 0); // Tidak ada padding
+        emptyView.setGravity(Gravity.CENTER); // Pusatkan konten (jika ada)
+        emptyView.setLayoutParams(new TableRow.LayoutParams(50, 50));
+
+        // Buat TextView untuk menampilkan hasil
+        TextView textView = new TextView(this);
+        textView.setText(result);
+        textView.setPadding(8, 15, 8, 15); // Padding untuk jarak
+        textView.setGravity(Gravity.CENTER); // Pusatkan teks di tengah
+        textView.setLayoutParams(new TableRow.LayoutParams(
+                0, // Lebar proporsional (diatur oleh weight)
+                TableRow.LayoutParams.WRAP_CONTENT, // Tinggi mengikuti konten
+                1f // Berat untuk membagi lebar secara proporsional
+        ));
+
+        ImageButton deleteButton = new ImageButton(this);
+        deleteButton.setImageResource(R.drawable.ic_close);
+        deleteButton.setBackground(null);
+        deleteButton.setPadding(0, 10, 0, 0);
+        deleteButton.setLayoutParams(new TableRow.LayoutParams(50, TableRow.LayoutParams.WRAP_CONTENT));
+
+
+        deleteButton.setOnClickListener(v -> {
+            try {
+                // Hapus baris dari tabel
+                tableLayout.removeView(row);
+
+                // Hapus data dari daftar
+                list.remove(result);
+                scannedResults.remove(result);
+
+                sumLabel.setText(Integer.toString(list.size()));
+
+            } catch (Exception e) {
+                Log.e("DeleteButton", "Error saat menghapus baris: " + e.getMessage());
+            }
+        });
+
+        // Tambahkan placeholder, TextView, dan tombol delete ke TableRow
+        row.addView(emptyView); // Tambahkan ruang kosong di kolom pertama
+        row.addView(textView); // Tambahkan teks di kolom kedua
+        row.addView(deleteButton); // Tambahkan tombol delete di kolom ketiga
+
+        // Tambahkan TableRow ke TableLayout
+        tableLayout.addView(row, 0);
+    }
+
+    private void addScanResultToTable(String result) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            synchronized (scannedResults) {
+                // Abaikan jika hasil baru saja ditambahkan
+                if (recentlyAddedResults.containsKey(result) &&
+                        System.currentTimeMillis() - recentlyAddedResults.get(result) < RECENTLY_ADDED_INTERVAL) {
+                    return;
+                }
+
+                if (!scannedResults.contains(result)) {
+                    // Tambahkan hasil baru
+                    scannedResults.add(result);
+                    recentlyAddedResults.put(result, System.currentTimeMillis());
+
+                    // Jadwalkan penghapusan elemen dari recentlyAddedResults
+                    handler.postDelayed(() -> {
+                        synchronized (recentlyAddedResults) {
+                            recentlyAddedResults.remove(result);
+                        }
+                    }, RECENTLY_ADDED_INTERVAL);
+
+                    // Ambil konfigurasi tabel berdasarkan prefix hasil
+                    Map<String, TableConfig> tableConfigMap = TableConfigUtils.getTableConfigMap(
+                            noS4SList, noSTList, noMouldingList, noFJList, noCCList, noReprosesList, noLaminatingList, noSandingList, noPackingList
+                    );
+                    TableConfig config = tableConfigMap.get(result.substring(0, 1));
+
+                    if (config == null) {
+                        displayErrorState("Label " + result + " tidak sesuai", R.raw.denied_data);
+                        scannedResults.remove(result);
+                        return;
+                    }
+
+                    if (ProductionApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
+                        if (ProductionApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
+                            handleValidData(result, config);
+                        } else {
+                            handleDuplicateOrInvalidUsage(result, config);
+                        }
+                    } else {
+                        displayErrorState("Label " + result + " Tidak ditemukan di Database", R.raw.denied_data);
+                        scannedResults.remove(result);
+                    }
+                } else {
+                    displayDuplicateScanError(result);
+                }
+            }
+        });
+        executor.shutdown();
+    }
+
+    private void handleValidData(String result, TableConfig config) {
+        if (ProductionApi.isDateValid(noProduksi, "MouldingProduksi_h", result, config.tableNameH, config.columnName)) {
+            runOnUiThread(() -> {
+                TableLayout targetTableLayout = findViewById(config.tableLayoutId);
+                TextView targetSumLabel = findViewById(config.sumLabelId);
+
+                if (config.list == null || config.list.isEmpty()) {
+                    targetTableLayout.removeAllViews();
+                }
+
+                config.list.add(result);
+                targetSumLabel.setText(String.valueOf(config.list.size()));
+                addRowToTable(targetTableLayout, result, config.list, targetSumLabel);
+
+                // Ubah warna border menjadi hijau
+                setBorderState(R.drawable.border_granted);
+                kodeLabel.setText("");
+                playSound(R.raw.granted_data);
+            });
+        } else {
+            displayErrorState("Tgl Label lebih besar dari Tgl Produksi " + result, R.raw.denied_data);
+            scannedResults.remove(result);
+        }
+    }
+
+    private void handleDuplicateOrInvalidUsage(String result, TableConfig config) {
+        setBorderState(R.drawable.border_denied);
+
+        String namaTabel = config.resultChecker.apply(result);
+
+        if (namaTabel == null) {
+            displayErrorState("Label " + result + " tidak ada di Proses manapun", R.raw.denied_data);
+        } else {
+            displayErrorState("Label " + result + " sudah ada pada " + namaTabel, R.raw.denied_data);
+        }
+        scannedResults.remove(result);
+    }
+
+    private void displayDuplicateScanError(String result) {
+        setBorderState(R.drawable.border_denied);
+        Log.d("DuplicateScan", "Hasil scan sudah ada: " + result);
+        showToastAndPlaySound("Label " + result + " Sudah di Masukkan ke dalam Tabel", R.raw.denied_data);
+    }
+
+    private void displayErrorState(String message, int soundResId) {
+        runOnUiThread(() -> {
+            setBorderState(R.drawable.border_denied);
+            showToastAndPlaySound(message, soundResId);
+        });
+    }
+
+    private void setBorderState(int drawableResId) {
+        borderTop.setBackgroundResource(drawableResId);
+        borderBottom.setBackgroundResource(drawableResId);
+        borderLeft.setBackgroundResource(drawableResId);
+        borderRight.setBackgroundResource(drawableResId);
+    }
+
+    private void showToastAndPlaySound(String message, int soundResId) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastToastTime > TOAST_INTERVAL) {
+            runOnUiThread(() -> {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                playSound(soundResId);
+            });
+            lastToastTime = currentTime;
+        }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------METHOD MENYIMPAN DATA KE DALAM DATABASE -------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void saveScannedResultsToDatabase() {
+        customProgressDialog = new CustomProgressDialog(this);
+        customProgressDialog.show(); // Tampilkan progress dialog
+
+        String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
+
+            int totalItems = noS4SList.size() + noMouldingList.size() + noLaminatingList.size() + noFJList.size() + noCCList.size() + noSandingList.size() + noPackingList.size();
+            int savedItems = 0;
+
+            // Proses penyimpanan untuk tabel S4S
+            if (!noS4SList.isEmpty()) {
+                List<String> existingNoS4S = ProductionApi.getNoS4SByNoProduksi(noProduksi, "MouldingProduksiInputS4S");
+                List<String> newNoS4S = new ArrayList<>(noS4SList);
+                newNoS4S.removeAll(existingNoS4S);
+                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "MouldingProduksiInputS4S");
+                savedItems += newNoS4S.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel Moulding
+            if (!noMouldingList.isEmpty()) {
+                List<String> existingNoMoulding = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "MouldingProduksiInputMoulding");
+                List<String> newNoMoulding = new ArrayList<>(noMouldingList);
+                newNoMoulding.removeAll(existingNoMoulding);
+                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "MouldingProduksiInputMoulding");
+                savedItems += newNoMoulding.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel FJ
+            if (!noFJList.isEmpty()) {
+                List<String> existingNoFJ = ProductionApi.getNoFJByNoProduksi(noProduksi, "MouldingProduksiInputFJ");
+                List<String> newNoFJ = new ArrayList<>(noFJList);
+                newNoFJ.removeAll(existingNoFJ);
+                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "MouldingProduksiInputFJ");
+                savedItems += newNoFJ.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel CC
+            if (!noCCList.isEmpty()) {
+                List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi, "MouldingProduksiInputCCAkhir");
+                List<String> newNoCC = new ArrayList<>(noCCList);
+                newNoCC.removeAll(existingNoCC);
+                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "MouldingProduksiInputCCAkhir");
+                savedItems += newNoCC.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel Laminating
+            if (!noLaminatingList.isEmpty()) {
+                List<String> existingNoLaminating = ProductionApi.getNoLaminatingByNoProduksi(noProduksi, "MouldingProduksiInputLaminating");
+                List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
+                newNoLaminating.removeAll(existingNoLaminating);
+                ProductionApi.saveNoLaminating(noProduksi, tglProduksi, newNoLaminating, dateTimeSaved, "MouldingProduksiInputLaminating");
+                savedItems += newNoLaminating.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel Sanding
+            if (!noSandingList.isEmpty()) {
+                List<String> existingNoSanding = ProductionApi.getNoSandingByNoProduksi(noProduksi, "MouldingProduksiInputSanding");
+                List<String> newNoSanding = new ArrayList<>(noSandingList);
+                newNoSanding.removeAll(existingNoSanding);
+                ProductionApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "MouldingProduksiInputSanding");
+                savedItems += newNoSanding.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Proses penyimpanan untuk tabel Packing
+            if (!noPackingList.isEmpty()) {
+                List<String> existingNoPacking = ProductionApi.getNoPackingByNoProduksi(noProduksi, "MouldingProduksiInputBarangJadi");
+                List<String> newNoPacking = new ArrayList<>(noPackingList);
+                newNoPacking.removeAll(existingNoPacking);
+                ProductionApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "MouldingProduksiInputBarangJadi");
+                savedItems += newNoPacking.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            // Kosongkan semua list setelah penyimpanan berhasil
+            noS4SList.clear();
+            noMouldingList.clear();
+            noFJList.clear();
+            noCCList.clear();
+            noLaminatingList.clear();
+            noSandingList.clear();
+            noPackingList.clear();
+            scannedResults.clear();
+
+            runOnUiThread(() -> {
+                customProgressDialog.dismiss(); // Tutup progress dialog
+                showHistoryDialog(noProduksi);
+                Toast.makeText(this, "Proses penyimpanan selesai.", Toast.LENGTH_SHORT).show();
+
+                // Panggil onRowClick dengan data yang terakhir dipilih
+                if (selectedProductionData != null) {
+                    onRowClick(selectedProductionData);
+                } else {
+                    Log.w("SaveScannedResults", "Tidak ada data yang dipilih untuk diperbarui.");
+                }
+            });
+
+            Log.d("SaveScannedResults", "Proses penyimpanan hasil scan selesai");
+        });
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------HISTORY METHOD------------------------- -------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void showHistoryDialog(String noProduksi) {
+        executorService.execute(() -> {
+            String filterQuery =
+                    "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputS4S WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputMoulding WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'FJ' AS Label, NoFJ AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputFJ WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'Laminating' AS Label, NoLaminating AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputLaminating WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'CrossCut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputCCAkhir WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'Sanding' AS Label, NoSanding AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputSanding WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'Packing' AS Label, NoBJ AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputBarangJadi WHERE NoProduksi = ? " ;
+
+
+            // 1. Ambil data history dari API
+            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 7);
+
+            // 2. Siapkan dan proses data (di latar belakang)
+            HistorySummary summary = prepareHistorySummary(historyGroups);
+
+            // 3. Tampilkan dialog di UI thread
+            runOnUiThread(() -> showHistoryDialogUI(summary, historyGroups));
+        });
+    }
+
+    private HistorySummary prepareHistorySummary(List<HistoryItem> historyGroups) {
+        int totalS4S = 0;
+        int totalMoulding = 0;
+        int totalFJ = 0;
+        int totalCCAkhir = 0;
+        int totalLaminating = 0;
+        int totalSanding = 0;
+        int totalPacking = 0;
+
+        for (HistoryItem group : historyGroups) {
+            totalS4S += group.getTotalS4S();
+            totalMoulding += group.getTotalMoulding();
+            totalFJ += group.getTotalFJ();
+            totalCCAkhir += group.getTotalCrossCut();
+            totalLaminating += group.getTotalLaminating();
+            totalSanding += group.getTotalSanding();
+            totalPacking += group.getTotalPacking();
+        }
+
+        // Kembalikan hasil summary
+        return new HistorySummary(totalS4S, totalMoulding, totalFJ, totalCCAkhir, totalLaminating, totalSanding, totalPacking);
+    }
+    public class HistorySummary {
+        public int totalS4S, totalMoulding, totalFJ, totalCCAkhir, totalLaminating, totalSanding, totalPacking;
+
+        public HistorySummary(int totalS4S, int totalMoulding, int totalFJ, int totalCCAkhir, int totalLaminating, int totalSanding, int totalPacking) {
+            this.totalS4S = totalS4S;
+            this.totalMoulding = totalMoulding;
+            this.totalFJ = totalFJ;
+            this.totalCCAkhir = totalCCAkhir;
+            this.totalLaminating = totalLaminating;
+            this.totalSanding = totalSanding;
+            this.totalPacking = totalPacking;
+        }
+
+        public int getTotalAllLabels() {
+            return totalS4S + totalMoulding + totalFJ + totalCCAkhir + totalLaminating + totalSanding + totalPacking;
+        }
+    }
+
+    private void showHistoryDialogUI(HistorySummary summary, List<HistoryItem> historyGroups) {
+        // Siapkan dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_history_save, null);
+        builder.setView(dialogView);
+
+        // Inisialisasi elemen UI
+        LinearLayout historyContainer = dialogView.findViewById(R.id.historyContainer);
+        ImageButton btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+        TextView tvSumS4S = dialogView.findViewById(R.id.tvSumS4S);
+        TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
+        TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
+        TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
+        TextView tvSumLaminating = dialogView.findViewById(R.id.tvSumLaminating);
+        TextView tvSumSanding = dialogView.findViewById(R.id.tvSumSanding);
+        TextView tvSumPacking = dialogView.findViewById(R.id.tvSumPacking);
+        TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
+
+        // Tambahkan data ke historyContainer
+        populateHistoryItems(historyGroups, historyContainer, inflater);
+
+        // Tampilkan jumlah masing-masing label
+        tvSumS4S.setText(String.valueOf(summary.totalS4S));
+        tvSumMoulding.setText(String.valueOf(summary.totalMoulding));
+        tvSumFJ.setText(String.valueOf(summary.totalFJ));
+        tvSumCCAkhir.setText(String.valueOf(summary.totalCCAkhir));
+        tvSumLaminating.setText(String.valueOf(summary.totalLaminating));
+        tvSumSanding.setText(String.valueOf(summary.totalSanding));
+        tvSumPacking.setText(String.valueOf(summary.totalPacking));
+        tvSumLabel.setText(String.valueOf(summary.getTotalAllLabels()));
+
+        // Tutup dialog
+        btnCloseDialog.setOnClickListener(v -> {
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog = builder.create();
+        dialog.show();
+    }
+
+    private void populateHistoryItems(List<HistoryItem> historyGroups, LinearLayout historyContainer, LayoutInflater inflater) {
+        for (HistoryItem group : historyGroups) {
+            View itemView = inflater.inflate(R.layout.history_item, null);
+
+            // Header data
+            TextView tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
+            TextView tvTotalCount = itemView.findViewById(R.id.tvTotalCount);
+            MaterialCardView dropdownContainer = itemView.findViewById(R.id.dropdownContainer);
+            LinearLayout dropdownContent = dropdownContainer.findViewById(R.id.dropdownContent);
+            ImageView dropdownIcon = itemView.findViewById(R.id.dropdownIcon);
+
+            // Set data untuk header
+            tvTimestamp.setText(DateTimeUtils.formatDateTime(group.getDateTimeSaved()));
+            tvTotalCount.setText(String.valueOf(group.getTotalAllLabels()));
+
+            // Tambahkan detail item ke dropdownContent
+            for (HistoryItem labelItem : group.getItems()) {
+                TextView detailView = new TextView(this);
+                detailView.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                detailView.setText("x" + labelItem.getLabelCount() + " " + labelItem.getLabel());
+                detailView.setTextSize(12);
+                detailView.setTextColor(getResources().getColor(R.color.black));
+                detailView.setPadding(4, 4, 4, 4);
+
+                dropdownContent.addView(detailView);
+            }
+
+            // Klik listener untuk toggle dropdown
+            itemView.setOnClickListener(v -> {
+                if (dropdownContainer.getVisibility() == View.GONE) {
+                    dropdownContainer.setVisibility(View.VISIBLE);
+                    dropdownIcon.setRotation(360);
+                } else {
+                    dropdownContainer.setVisibility(View.GONE);
+                    dropdownIcon.setRotation(270);
+                }
+            });
+
+            historyContainer.addView(itemView);
+        }
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------TOOLTIP METHOD------------------------- -------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
@@ -773,487 +1488,6 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
     }
 
-    private void populateNoS4STable(List<String> noS4SList) {
-        noS4STableLayout.removeAllViews();
-
-        if (noS4SList == null || noS4SList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noS4STableLayout.addView(noDataView);
-            return;
-        }
-
-        // Isi tabel
-        for (String noS4S : noS4SList) {
-            TableRow row = new TableRow(this);
-
-            // Tambahkan TextView ke baris tabel
-            TextView textView = createTextView(noS4S, 1.0f);
-            row.addView(textView);
-
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
-
-            // Tambahkan baris ke TableLayout
-            noS4STableLayout.addView(row);
-        }
-    }
-
-    private void populateNoMouldingTable(List<String> noMouldingList) {
-        noMouldingTableLayout.removeAllViews();
-
-        if (noMouldingList == null || noMouldingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noMouldingTableLayout.addView(noDataView);
-            return;
-
-        }
-
-        // Data tabel
-        for (String noMoulding : noMouldingList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noMoulding, 1.0f);
-            row.addView(textView);
-
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
-
-            noMouldingTableLayout.addView(row);
-        }
-    }
-
-    private void populateNoFJTable(List<String> noFJList) {
-        noFJTableLayout.removeAllViews();
-
-        if (noFJList == null || noFJList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noFJTableLayout.addView(noDataView);
-            return;
-        }
-
-        // Data tabel
-        for (String noFJ : noFJList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noFJ, 1.0f);
-            row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
-
-            noFJTableLayout.addView(row);
-        }
-    }
-
-    private void populateNoCCTable(List<String> noCCList) {
-        noCCTableLayout.removeAllViews();
-
-        if (noCCList == null || noCCList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noCCTableLayout.addView(noDataView);
-            return;
-        }
-
-        // Data tabel
-        for (String noCC : noCCList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noCC, 1.0f);
-            row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
-
-            noCCTableLayout.addView(row);
-        }
-    }
-
-    private void populateNoLaminatingTable(List<String> noLaminatingList) {
-        noLaminatingTableLayout.removeAllViews();
-
-        if (noLaminatingList == null || noLaminatingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noLaminatingTableLayout.addView(noDataView);
-            return;
-        }
-
-        // Data tabel
-        for (String noLaminating : noLaminatingList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noLaminating, 1.0f);
-            row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noLaminating, "Laminating_h", "Laminating_d", "NoLaminating"));
-
-            noLaminatingTableLayout.addView(row);
-        }
-    }
-
-    private void populateNoSandingTable(List<String> noSandingList) {
-        noSandingTableLayout.removeAllViews();
-
-        if (noSandingList == null || noSandingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noSandingTableLayout.addView(noDataView);
-            return;
-        }
-
-        // Data tabel
-        for (String noSanding : noSandingList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noSanding, 1.0f);
-            row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noSanding, "Sanding_h", "Sanding_d", "NoSanding"));
-
-            noSandingTableLayout.addView(row);
-        }
-    }
-
-    private void populateNoPackingTable(List<String> noPackingList) {
-        noPackingTableLayout.removeAllViews();
-
-        if (noPackingList == null || noPackingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noPackingTableLayout.addView(noDataView);
-            return;
-        }
-
-        // Data tabel
-        for (String noPacking : noPackingList) {
-            TableRow row = new TableRow(this);
-
-            TextView textView = createTextView(noPacking, 1.0f);
-            row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noPacking, "BarangJadi_h", "BarangJadi_d", "NoBJ"));
-
-            noPackingTableLayout.addView(row);
-        }
-    }
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------METHOD ADD DATA KE TABLE LIST DENGAN PRE-CONDITION---------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-
-    private void addRowToTable(TableLayout tableLayout, String result, List<String> list, TextView sumLabel) {
-        // Buat TableRow untuk baris baru
-        TableRow row = new TableRow(this);
-        row.setLayoutParams(new TableLayout.LayoutParams(
-                TableLayout.LayoutParams.MATCH_PARENT,
-                TableLayout.LayoutParams.WRAP_CONTENT
-        ));
-
-        // Buat TextView kosong (placeholder) di sebelah kiri
-        TextView emptyView = new TextView(this);
-        emptyView.setText(""); // Kosongkan teks
-        emptyView.setPadding(0, 0, 0, 0); // Tidak ada padding
-        emptyView.setGravity(Gravity.CENTER); // Pusatkan konten (jika ada)
-        emptyView.setLayoutParams(new TableRow.LayoutParams(50, 50));
-
-        // Buat TextView untuk menampilkan hasil
-        TextView textView = new TextView(this);
-        textView.setText(result);
-        textView.setPadding(8, 15, 8, 15); // Padding untuk jarak
-        textView.setGravity(Gravity.CENTER); // Pusatkan teks di tengah
-        textView.setLayoutParams(new TableRow.LayoutParams(
-                0, // Lebar proporsional (diatur oleh weight)
-                TableRow.LayoutParams.WRAP_CONTENT, // Tinggi mengikuti konten
-                1f // Berat untuk membagi lebar secara proporsional
-        ));
-
-        ImageButton deleteButton = new ImageButton(this);
-        deleteButton.setImageResource(R.drawable.ic_close);
-        deleteButton.setBackground(null);
-        deleteButton.setPadding(0, 10, 0, 0);
-        deleteButton.setLayoutParams(new TableRow.LayoutParams(50, TableRow.LayoutParams.WRAP_CONTENT));
-
-
-        deleteButton.setOnClickListener(v -> {
-            try {
-                // Hapus baris dari tabel
-                tableLayout.removeView(row);
-
-                // Hapus data dari daftar
-                list.remove(result);
-                scannedResults.remove(result);
-
-                sumLabel.setText(Integer.toString(list.size()));
-
-            } catch (Exception e) {
-                Log.e("DeleteButton", "Error saat menghapus baris: " + e.getMessage());
-            }
-        });
-
-        // Tambahkan placeholder, TextView, dan tombol delete ke TableRow
-        row.addView(emptyView); // Tambahkan ruang kosong di kolom pertama
-        row.addView(textView); // Tambahkan teks di kolom kedua
-        row.addView(deleteButton); // Tambahkan tombol delete di kolom ketiga
-
-        // Tambahkan TableRow ke TableLayout
-        tableLayout.addView(row, 0);
-    }
-
-    private void addScanResultToTable(String result) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            synchronized (scannedResults) {
-                // Abaikan jika hasil baru saja ditambahkan
-                if (recentlyAddedResults.containsKey(result) &&
-                        System.currentTimeMillis() - recentlyAddedResults.get(result) < RECENTLY_ADDED_INTERVAL) {
-                    return;
-                }
-
-                if (!scannedResults.contains(result)) {
-                    // Tambahkan hasil baru
-                    scannedResults.add(result);
-                    recentlyAddedResults.put(result, System.currentTimeMillis());
-
-                    // Jadwalkan penghapusan elemen dari recentlyAddedResults
-                    handler.postDelayed(() -> {
-                        synchronized (recentlyAddedResults) {
-                            recentlyAddedResults.remove(result);
-                        }
-                    }, RECENTLY_ADDED_INTERVAL);
-
-                    // Ambil konfigurasi tabel berdasarkan prefix hasil
-                    Map<String, TableConfig> tableConfigMap = TableConfigUtils.getTableConfigMap(
-                            noS4SList, noSTList, noMouldingList, noFJList, noCCList, noReprosesList, noLaminatingList, noSandingList, noPackingList
-                    );
-                    TableConfig config = tableConfigMap.get(result.substring(0, 1));
-
-                    if (config == null) {
-                        displayErrorState("Label " + result + " tidak sesuai", R.raw.denied_data);
-                        scannedResults.remove(result);
-                        return;
-                    }
-
-                    if (ProductionApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
-                        if (ProductionApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
-                            handleValidData(result, config);
-                        } else {
-                            handleDuplicateOrInvalidUsage(result, config);
-                        }
-                    } else {
-                        displayErrorState("Label " + result + " Tidak ditemukan di Database", R.raw.denied_data);
-                        scannedResults.remove(result);
-                    }
-                } else {
-                    displayDuplicateScanError(result);
-                }
-            }
-        });
-        executor.shutdown();
-    }
-
-    private void handleValidData(String result, TableConfig config) {
-        if (ProductionApi.isDateValid(noProduksi, "MouldingProduksi_h", result, config.tableNameH, config.columnName)) {
-            runOnUiThread(() -> {
-                TableLayout targetTableLayout = findViewById(config.tableLayoutId);
-                TextView targetSumLabel = findViewById(config.sumLabelId);
-
-                if (config.list == null || config.list.isEmpty()) {
-                    targetTableLayout.removeAllViews();
-                }
-
-                config.list.add(result);
-                targetSumLabel.setText(String.valueOf(config.list.size()));
-                addRowToTable(targetTableLayout, result, config.list, targetSumLabel);
-
-                // Ubah warna border menjadi hijau
-                setBorderState(R.drawable.border_granted);
-                kodeLabel.setText("");
-                playSound(R.raw.granted_data);
-            });
-        } else {
-            displayErrorState("Tgl Label lebih besar dari Tgl Produksi " + result, R.raw.denied_data);
-            scannedResults.remove(result);
-        }
-    }
-
-    private void handleDuplicateOrInvalidUsage(String result, TableConfig config) {
-        setBorderState(R.drawable.border_denied);
-
-        String namaTabel = config.resultChecker.apply(result);
-
-        if (namaTabel == null) {
-            displayErrorState("Label " + result + " tidak ada di Proses manapun", R.raw.denied_data);
-        } else {
-            displayErrorState("Label " + result + " sudah ada pada " + namaTabel, R.raw.denied_data);
-        }
-        scannedResults.remove(result);
-    }
-
-    private void displayDuplicateScanError(String result) {
-        setBorderState(R.drawable.border_denied);
-        Log.d("DuplicateScan", "Hasil scan sudah ada: " + result);
-        showToastAndPlaySound("Label " + result + " Sudah di Masukkan ke dalam Tabel", R.raw.denied_data);
-    }
-
-    private void displayErrorState(String message, int soundResId) {
-        runOnUiThread(() -> {
-            setBorderState(R.drawable.border_denied);
-            showToastAndPlaySound(message, soundResId);
-        });
-    }
-
-    private void setBorderState(int drawableResId) {
-        borderTop.setBackgroundResource(drawableResId);
-        borderBottom.setBackgroundResource(drawableResId);
-        borderLeft.setBackgroundResource(drawableResId);
-        borderRight.setBackgroundResource(drawableResId);
-    }
-
-    private void showToastAndPlaySound(String message, int soundResId) {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastToastTime > TOAST_INTERVAL) {
-            runOnUiThread(() -> {
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                playSound(soundResId);
-            });
-            lastToastTime = currentTime;
-        }
-    }
-
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------METHOD MENYIMPAN DATA KE DALAM DATABASE -------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-    private void saveScannedResultsToDatabase() {
-        customProgressDialog = new CustomProgressDialog(this);
-        customProgressDialog.show(); // Tampilkan progress dialog
-
-        String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
-
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
-
-            int totalItems = noS4SList.size() + noMouldingList.size() +
-                    noFJList.size() + noCCList.size();
-            int savedItems = 0;
-
-            // Proses penyimpanan untuk tabel S4S
-            if (!noS4SList.isEmpty()) {
-                List<String> existingNoS4S = ProductionApi.getNoS4SByNoProduksi(noProduksi, "MouldingProduksiInputS4S");
-                List<String> newNoS4S = new ArrayList<>(noS4SList);
-                newNoS4S.removeAll(existingNoS4S);
-                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "MouldingProduksiInputS4S");
-                savedItems += newNoS4S.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel Moulding
-            if (!noMouldingList.isEmpty()) {
-                List<String> existingNoMoulding = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "MouldingProduksiInputMoulding");
-                List<String> newNoMoulding = new ArrayList<>(noMouldingList);
-                newNoMoulding.removeAll(existingNoMoulding);
-                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "MouldingProduksiInputMoulding");
-                savedItems += newNoMoulding.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel FJ
-            if (!noFJList.isEmpty()) {
-                List<String> existingNoFJ = ProductionApi.getNoFJByNoProduksi(noProduksi, "MouldingProduksiInputFJ");
-                List<String> newNoFJ = new ArrayList<>(noFJList);
-                newNoFJ.removeAll(existingNoFJ);
-                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "MouldingProduksiInputFJ");
-                savedItems += newNoFJ.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel CC
-            if (!noCCList.isEmpty()) {
-                List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi, "MouldingProduksiInputCCAkhir");
-                List<String> newNoCC = new ArrayList<>(noCCList);
-                newNoCC.removeAll(existingNoCC);
-                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "MouldingProduksiInputCCAkhir");
-                savedItems += newNoCC.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel Laminating
-            if (!noLaminatingList.isEmpty()) {
-                List<String> existingNoLaminating = ProductionApi.getNoLaminatingByNoProduksi(noProduksi, "MouldingProduksiInputLaminating");
-                List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
-                newNoLaminating.removeAll(existingNoLaminating);
-                ProductionApi.saveNoLaminating(noProduksi, tglProduksi, newNoLaminating, dateTimeSaved, "MouldingProduksiInputLaminating");
-                savedItems += newNoLaminating.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel Sanding
-            if (!noSandingList.isEmpty()) {
-                List<String> existingNoSanding = ProductionApi.getNoSandingByNoProduksi(noProduksi, "MouldingProduksiInputSanding");
-                List<String> newNoSanding = new ArrayList<>(noSandingList);
-                newNoSanding.removeAll(existingNoSanding);
-                ProductionApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "MouldingProduksiInputSanding");
-                savedItems += newNoSanding.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Proses penyimpanan untuk tabel Packing
-            if (!noPackingList.isEmpty()) {
-                List<String> existingNoPacking = ProductionApi.getNoPackingByNoProduksi(noProduksi, "MouldingProduksiInputBarangJadi");
-                List<String> newNoPacking = new ArrayList<>(noPackingList);
-                newNoPacking.removeAll(existingNoPacking);
-                ProductionApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "MouldingProduksiInputBarangJadi");
-                savedItems += newNoPacking.size();
-                int progress = (savedItems * 100) / totalItems;
-                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
-            }
-
-            // Kosongkan semua list setelah penyimpanan berhasil
-            noS4SList.clear();
-            noMouldingList.clear();
-            noFJList.clear();
-            noCCList.clear();
-            noLaminatingList.clear();
-            noSandingList.clear();
-            noPackingList.clear();
-            scannedResults.clear();
-
-            runOnUiThread(() -> {
-                customProgressDialog.dismiss(); // Tutup progress dialog
-                showHistoryDialog(noProduksi);
-                Toast.makeText(this, "Proses penyimpanan selesai.", Toast.LENGTH_SHORT).show();
-
-                // Panggil onRowClick dengan data yang terakhir dipilih
-                if (selectedProductionData != null) {
-                    onRowClick(selectedProductionData);
-                } else {
-                    Log.w("SaveScannedResults", "Tidak ada data yang dipilih untuk diperbarui.");
-                }
-            });
-
-            Log.d("SaveScannedResults", "Proses penyimpanan hasil scan selesai");
-        });
-    }
-
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------HELPER METHOD-------------------------- -------------------------------------------------------------------//
@@ -1358,162 +1592,6 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         divider.setLayoutParams(params);
 
         return divider;
-    }
-
-    private void showHistoryDialog(String noProduksi) {
-        executorService.execute(() -> {
-            String filterQuery =
-                            "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputS4S WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputMoulding WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'FJ' AS Label, NoFJ AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputFJ WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'Laminating' AS Label, NoLaminating AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputLaminating WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'CrossCut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputCCAkhir WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'Sanding' AS Label, NoSanding AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputSanding WHERE NoProduksi = ? " +
-                            "UNION ALL " +
-                            "SELECT 'Packing' AS Label, NoBJ AS KodeLabel, DateTimeSaved FROM MouldingProduksiInputBarangJadi WHERE NoProduksi = ? " ;
-
-
-                            // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 7);
-
-            // 2. Siapkan dan proses data (di latar belakang)
-            HistorySummary summary = prepareHistorySummary(historyGroups);
-
-            // 3. Tampilkan dialog di UI thread
-            runOnUiThread(() -> showHistoryDialogUI(summary, historyGroups));
-        });
-    }
-
-    private HistorySummary prepareHistorySummary(List<HistoryItem> historyGroups) {
-        int totalS4S = 0;
-        int totalMoulding = 0;
-        int totalFJ = 0;
-        int totalCCAkhir = 0;
-        int totalLaminating = 0;
-        int totalSanding = 0;
-        int totalPacking = 0;
-
-        for (HistoryItem group : historyGroups) {
-            totalS4S += group.getTotalS4S();
-            totalMoulding += group.getTotalMoulding();
-            totalFJ += group.getTotalFJ();
-            totalCCAkhir += group.getTotalCrossCut();
-            totalLaminating += group.getTotalLaminating();
-            totalSanding += group.getTotalSanding();
-            totalPacking += group.getTotalPacking();
-        }
-
-        // Kembalikan hasil summary
-        return new HistorySummary(totalS4S, totalMoulding, totalFJ, totalCCAkhir, totalLaminating, totalSanding, totalPacking);
-    }
-    public class HistorySummary {
-        public int totalS4S, totalMoulding, totalFJ, totalCCAkhir, totalLaminating, totalSanding, totalPacking;
-
-        public HistorySummary(int totalS4S, int totalMoulding, int totalFJ, int totalCCAkhir, int totalLaminating, int totalSanding, int totalPacking) {
-            this.totalS4S = totalS4S;
-            this.totalMoulding = totalMoulding;
-            this.totalFJ = totalFJ;
-            this.totalCCAkhir = totalCCAkhir;
-            this.totalLaminating = totalLaminating;
-            this.totalSanding = totalSanding;
-            this.totalPacking = totalPacking;
-        }
-
-        public int getTotalAllLabels() {
-            return totalS4S + totalMoulding + totalFJ + totalCCAkhir + totalLaminating + totalSanding + totalPacking;
-        }
-    }
-
-    private void showHistoryDialogUI(HistorySummary summary, List<HistoryItem> historyGroups) {
-        // Siapkan dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialog_history_save, null);
-        builder.setView(dialogView);
-
-        // Inisialisasi elemen UI
-        LinearLayout historyContainer = dialogView.findViewById(R.id.historyContainer);
-        ImageButton btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
-        TextView tvSumS4S = dialogView.findViewById(R.id.tvSumS4S);
-        TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
-        TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
-        TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
-        TextView tvSumLaminating = dialogView.findViewById(R.id.tvSumLaminating);
-        TextView tvSumSanding = dialogView.findViewById(R.id.tvSumSanding);
-        TextView tvSumPacking = dialogView.findViewById(R.id.tvSumPacking);
-        TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
-
-        // Tambahkan data ke historyContainer
-        populateHistoryItems(historyGroups, historyContainer, inflater);
-
-        // Tampilkan jumlah masing-masing label
-        tvSumS4S.setText(String.valueOf(summary.totalS4S));
-        tvSumMoulding.setText(String.valueOf(summary.totalMoulding));
-        tvSumFJ.setText(String.valueOf(summary.totalFJ));
-        tvSumCCAkhir.setText(String.valueOf(summary.totalCCAkhir));
-        tvSumLaminating.setText(String.valueOf(summary.totalLaminating));
-        tvSumSanding.setText(String.valueOf(summary.totalSanding));
-        tvSumPacking.setText(String.valueOf(summary.totalPacking));
-        tvSumLabel.setText(String.valueOf(summary.getTotalAllLabels()));
-
-        // Tutup dialog
-        btnCloseDialog.setOnClickListener(v -> {
-            if (dialog != null && dialog.isShowing()) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog = builder.create();
-        dialog.show();
-    }
-
-    private void populateHistoryItems(List<HistoryItem> historyGroups, LinearLayout historyContainer, LayoutInflater inflater) {
-        for (HistoryItem group : historyGroups) {
-            View itemView = inflater.inflate(R.layout.history_item, null);
-
-            // Header data
-            TextView tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
-            TextView tvTotalCount = itemView.findViewById(R.id.tvTotalCount);
-            MaterialCardView dropdownContainer = itemView.findViewById(R.id.dropdownContainer);
-            LinearLayout dropdownContent = dropdownContainer.findViewById(R.id.dropdownContent);
-            ImageView dropdownIcon = itemView.findViewById(R.id.dropdownIcon);
-
-            // Set data untuk header
-            tvTimestamp.setText(DateTimeUtils.formatDateTime(group.getDateTimeSaved()));
-            tvTotalCount.setText(String.valueOf(group.getTotalAllLabels()));
-
-            // Tambahkan detail item ke dropdownContent
-            for (HistoryItem labelItem : group.getItems()) {
-                TextView detailView = new TextView(this);
-                detailView.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
-                detailView.setText("x" + labelItem.getLabelCount() + " " + labelItem.getLabel());
-                detailView.setTextSize(12);
-                detailView.setTextColor(getResources().getColor(R.color.black));
-                detailView.setPadding(4, 4, 4, 4);
-
-                dropdownContent.addView(detailView);
-            }
-
-            // Klik listener untuk toggle dropdown
-            itemView.setOnClickListener(v -> {
-                if (dropdownContainer.getVisibility() == View.GONE) {
-                    dropdownContainer.setVisibility(View.VISIBLE);
-                    dropdownIcon.setRotation(360);
-                } else {
-                    dropdownContainer.setVisibility(View.GONE);
-                    dropdownIcon.setRotation(270);
-                }
-            });
-
-            historyContainer.addView(itemView);
-        }
     }
 
     private void onRowClick(ProductionData data) {

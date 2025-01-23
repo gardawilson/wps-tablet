@@ -537,205 +537,6 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         }
     }
 
-    // Mengambil data tooltip dan menampilkan tooltip
-    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
-        executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
-
-            // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
-            runOnUiThread(() -> {
-                if (tooltipData != null) {
-                    // Tampilkan tooltip dengan data yang diperoleh
-                    showTooltip(
-                            anchorView,
-                            tooltipData.getNoLabel(),
-                            tooltipData.getFormattedDateTime(),
-                            tooltipData.getJenis(),
-                            tooltipData.getSpkDetail(),
-                            tooltipData.getSpkAsalDetail(),
-                            tooltipData.getNamaGrade(),
-                            tooltipData.isLembur(),
-                            tooltipData.getTableData(),
-                            tooltipData.getTotalPcs(),
-                            tooltipData.getTotalM3()
-                    );
-                } else {
-                    // Tampilkan pesan error jika data tidak ditemukan
-                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-    }
-
-
-    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
-        // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
-
-        // Set data pada TextView
-        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
-        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
-        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
-        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
-
-        // Referensi TableLayout
-        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
-
-        // Membuat Header Tabel Secara Dinamis
-        TableRow headerRow = new TableRow(this);
-        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
-
-        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
-        for (String headerText : headerTexts) {
-            TextView headerTextView = new TextView(this);
-            headerTextView.setText(headerText);
-            headerTextView.setGravity(Gravity.CENTER);
-            headerTextView.setPadding(8, 8, 8, 8);
-            headerTextView.setTextColor(Color.WHITE);
-            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
-            headerRow.addView(headerTextView);
-        }
-
-        // Tambahkan Header ke TableLayout
-        tableLayout.addView(headerRow);
-
-        // Tambahkan Data ke TableLayout
-        for (String[] row : tableData) {
-            TableRow tableRow = new TableRow(this);
-            tableRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-            ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
-
-            for (String cell : row) {
-                TextView textView = new TextView(this);
-                textView.setText(cell);
-                textView.setGravity(Gravity.CENTER);
-                textView.setPadding(8, 8, 8, 8);
-                textView.setTextColor(Color.BLACK);
-                tableRow.addView(textView);
-            }
-            tableLayout.addView(tableRow);
-        }
-
-        // Tambahkan Baris untuk Total Pcs
-        TableRow totalRow = new TableRow(this);
-        totalRow.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        totalRow.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan total dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            totalRow.addView(emptyCell);
-        }
-
-        TextView totalLabel = new TextView(this);
-        totalLabel.setText("Total :");
-        totalLabel.setGravity(Gravity.END);
-        totalLabel.setPadding(8, 8, 8, 8);
-        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalLabel);
-
-        // Cell untuk Total Pcs
-        TextView totalValue = new TextView(this);
-        totalValue.setText(String.valueOf(totalPcs));
-        totalValue.setGravity(Gravity.CENTER);
-        totalValue.setPadding(8, 8, 8, 8);
-        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalValue);
-
-        // Tambahkan totalRow ke TableLayout
-        tableLayout.addView(totalRow);
-
-        // Tambahkan Baris untuk Total M3
-        TableRow m3Row = new TableRow(this);
-        m3Row.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        m3Row.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan m3 dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            m3Row.addView(emptyCell);
-        }
-
-        TextView m3Label = new TextView(this);
-        m3Label.setText("M3 :");
-        m3Label.setGravity(Gravity.END);
-        m3Label.setPadding(8, 8, 8, 8);
-        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Label);
-
-        // Cell untuk Total M3
-        DecimalFormat df = new DecimalFormat("0.0000");
-        TextView m3Value = new TextView(this);
-        m3Value.setText(df.format(totalM3));
-        m3Value.setGravity(Gravity.CENTER);
-        m3Value.setPadding(8, 8, 8, 8);
-        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Value);
-
-        // Tambahkan m3Row ke TableLayout
-        tableLayout.addView(m3Row);
-
-        // Buat PopupWindow
-        PopupWindow popupWindow = new PopupWindow(
-                tooltipView,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-
-        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
-
-        // Ukur ukuran tooltip sebelum menampilkannya
-        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int tooltipWidth = tooltipView.getMeasuredWidth();
-        int tooltipHeight = tooltipView.getMeasuredHeight();
-
-        // Dapatkan posisi anchorView
-        int[] location = new int[2];
-        anchorView.getLocationOnScreen(location);
-
-        // Hitung posisi tooltip
-        int x = location[0] - tooltipWidth;
-        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int screenHeight = displayMetrics.heightPixels;
-
-
-        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
-
-        // Menaikkan dan menurunkan pointer ketika popup melebihi batas layout
-        if (y < 60) {
-            trianglePointer.setY(y - 60);
-        }
-        else if(y > (screenHeight - tooltipHeight)){
-            trianglePointer.setY(y - (screenHeight - tooltipHeight));
-        }
-
-        // Tampilkan tooltip
-        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
-    }
-
     private void populateNoS4STable(List<String> noS4SList) {
         noS4STableLayout.removeAllViews();
 
@@ -1070,94 +871,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------HELPER METHOD-------------------------- -------------------------------------------------------------------//
+//-------------------------------------------HISTORY METHOD------------------------- -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-
-    private void playSound(int soundResource) {
-        MediaPlayer mediaPlayer = MediaPlayer.create(this, soundResource);
-        mediaPlayer.setOnCompletionListener(MediaPlayer::release); // Bebaskan resources setelah selesai
-        mediaPlayer.start();
-    }
-
-
-    public void setDateToView(String tglProduksi, TextView tglProduksiView) {
-        // Gunakan metode dari DateTimeUtils untuk memformat tanggal
-        String formattedDate = DateTimeUtils.formatDate(tglProduksi);
-
-        // Set tanggal terformat ke TextView
-        tglProduksiView.setText(formattedDate);
-    }
-
-    private void setTextColor(TableRow row, int colorResId) {
-        for (int i = 0; i < row.getChildCount(); i++) {
-            View child = row.getChildAt(i);
-            if (child instanceof TextView) {
-                ((TextView) child).setTextColor(ContextCompat.getColor(this, colorResId));
-            }
-        }
-    }
-
-    private void resetTextColor(TableRow row) {
-        for (int i = 0; i < row.getChildCount(); i++) {
-            View child = row.getChildAt(i);
-            if (child instanceof TextView) {
-                ((TextView) child).setTextColor(ContextCompat.getColor(this, R.color.black)); // Kembalikan ke hitam
-            }
-        }
-    }
-
-    private void showAllLoadingIndicators(boolean visible) {
-        int visibility = visible ? View.VISIBLE : View.GONE;
-        loadingIndicatorNoS4S.setVisibility(visibility);
-        loadingIndicatorNoCC.setVisibility(visibility);
-    }
-
-    private void setAllTableLayoutsVisibility(int visibility) {
-        noS4STableLayout.setVisibility(visibility);
-        noCCTableLayout.setVisibility(visibility);
-    }
-
-    private void clearAllDataLists() {
-        noS4SList.clear();
-        noCCList.clear();
-        scannedResults.clear();
-    }
-
-    /**
-     * Membuat TextView untuk digunakan dalam tabel
-     */
-    private TextView createTextView(String text, float weight) {
-        TextView textView = new TextView(this);
-        textView.setText(text);
-        textView.setPadding(8, 15, 8, 15); // Padding untuk jarak
-        textView.setGravity(Gravity.CENTER); // Pusatkan teks di tengah
-
-        // Atur LayoutParams untuk mengatur lebar kolom berdasarkan weight
-        textView.setLayoutParams(new TableRow.LayoutParams(
-                0, // Lebar proporsional (diatur oleh weight)
-                TableRow.LayoutParams.WRAP_CONTENT, // Tinggi mengikuti konten
-                weight // Berat untuk membagi lebar
-        ));
-
-        return textView;
-    }
-
-
-    // Tambahkan metode untuk membuat garis pembatas
-    private View createDivider() {
-        View divider = new View(this);
-        divider.setBackgroundColor(Color.GRAY); // Warna garis pemisah
-
-        // Set parameter untuk garis tipis (0.5dp)
-        TableRow.LayoutParams params = new TableRow.LayoutParams(
-                1,
-                TableRow.LayoutParams.MATCH_PARENT // Tinggi penuh
-        );
-        divider.setLayoutParams(params);
-
-        return divider;
-    }
 
     private void showHistoryDialog(String noProduksi) {
         executorService.execute(() -> {
@@ -1295,6 +1010,301 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             historyContainer.addView(itemView);
         }
+    }
+
+
+    // Mengambil data tooltip dan menampilkan tooltip
+    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
+        executorService.execute(() -> {
+            // Ambil data tooltip menggunakan ProductionApi
+            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+
+            // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
+            runOnUiThread(() -> {
+                if (tooltipData != null) {
+                    // Tampilkan tooltip dengan data yang diperoleh
+                    showTooltip(
+                            anchorView,
+                            tooltipData.getNoLabel(),
+                            tooltipData.getFormattedDateTime(),
+                            tooltipData.getJenis(),
+                            tooltipData.getSpkDetail(),
+                            tooltipData.getSpkAsalDetail(),
+                            tooltipData.getNamaGrade(),
+                            tooltipData.isLembur(),
+                            tooltipData.getTableData(),
+                            tooltipData.getTotalPcs(),
+                            tooltipData.getTotalM3()
+                    );
+                } else {
+                    // Tampilkan pesan error jika data tidak ditemukan
+                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------TOOLTIP METHOD------------------------- -------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int screenHeight = displayMetrics.heightPixels;
+
+
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan dan menurunkan pointer ketika popup melebihi batas layout
+        if (y < 60) {
+            trianglePointer.setY(y - 60);
+        }
+        else if(y > (screenHeight - tooltipHeight)){
+            trianglePointer.setY(y - (screenHeight - tooltipHeight));
+        }
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------HELPER METHOD-------------------------- -------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+    private void playSound(int soundResource) {
+        MediaPlayer mediaPlayer = MediaPlayer.create(this, soundResource);
+        mediaPlayer.setOnCompletionListener(MediaPlayer::release); // Bebaskan resources setelah selesai
+        mediaPlayer.start();
+    }
+
+
+    public void setDateToView(String tglProduksi, TextView tglProduksiView) {
+        // Gunakan metode dari DateTimeUtils untuk memformat tanggal
+        String formattedDate = DateTimeUtils.formatDate(tglProduksi);
+
+        // Set tanggal terformat ke TextView
+        tglProduksiView.setText(formattedDate);
+    }
+
+    private void setTextColor(TableRow row, int colorResId) {
+        for (int i = 0; i < row.getChildCount(); i++) {
+            View child = row.getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView) child).setTextColor(ContextCompat.getColor(this, colorResId));
+            }
+        }
+    }
+
+    private void resetTextColor(TableRow row) {
+        for (int i = 0; i < row.getChildCount(); i++) {
+            View child = row.getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView) child).setTextColor(ContextCompat.getColor(this, R.color.black)); // Kembalikan ke hitam
+            }
+        }
+    }
+
+    private void showAllLoadingIndicators(boolean visible) {
+        int visibility = visible ? View.VISIBLE : View.GONE;
+        loadingIndicatorNoS4S.setVisibility(visibility);
+        loadingIndicatorNoCC.setVisibility(visibility);
+    }
+
+    private void setAllTableLayoutsVisibility(int visibility) {
+        noS4STableLayout.setVisibility(visibility);
+        noCCTableLayout.setVisibility(visibility);
+    }
+
+    private void clearAllDataLists() {
+        noS4SList.clear();
+        noCCList.clear();
+        scannedResults.clear();
+    }
+
+    /**
+     * Membuat TextView untuk digunakan dalam tabel
+     */
+    private TextView createTextView(String text, float weight) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setPadding(8, 15, 8, 15); // Padding untuk jarak
+        textView.setGravity(Gravity.CENTER); // Pusatkan teks di tengah
+
+        // Atur LayoutParams untuk mengatur lebar kolom berdasarkan weight
+        textView.setLayoutParams(new TableRow.LayoutParams(
+                0, // Lebar proporsional (diatur oleh weight)
+                TableRow.LayoutParams.WRAP_CONTENT, // Tinggi mengikuti konten
+                weight // Berat untuk membagi lebar
+        ));
+
+        return textView;
+    }
+
+
+    // Tambahkan metode untuk membuat garis pembatas
+    private View createDivider() {
+        View divider = new View(this);
+        divider.setBackgroundColor(Color.GRAY); // Warna garis pemisah
+
+        // Set parameter untuk garis tipis (0.5dp)
+        TableRow.LayoutParams params = new TableRow.LayoutParams(
+                1,
+                TableRow.LayoutParams.MATCH_PARENT // Tinggi penuh
+        );
+        divider.setLayoutParams(params);
+
+        return divider;
     }
 
     private void onRowClick(ProductionData data) {

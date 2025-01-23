@@ -563,7 +563,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- CardView Atas Kanan -->
+            <!-- CardView Atas Tengah -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/inner_card_top_center"
                 android:layout_width="0dp"

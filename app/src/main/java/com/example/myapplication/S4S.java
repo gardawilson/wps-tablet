@@ -332,50 +332,6 @@ public class S4S extends AppCompatActivity {
             searchEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         }
 
-        SpinMesin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (radioButtonMesin.isChecked()) {
-                    Object selectedItem = parent.getItemAtPosition(position);
-                    if (selectedItem instanceof Mesin) {
-                        Mesin selectedMesin = (Mesin) selectedItem;
-                        String noProduksi = selectedMesin.getNoProduksi();
-                        loadOuputByMesinSusun(noProduksi, true);
-                    } else {
-                        Log.e("Error", "Item bukan tipe Mesin");
-                        TabelOutput.removeAllViews();
-                        tvLabelCount.setText("Total Label : 0");
-                    }
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Tidak ada yang dipilih
-            }
-        });
-
-        SpinSusun.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (radioButtonBSusun.isChecked()) {
-                    Object selectedItem = parent.getItemAtPosition(position);
-                    if (selectedItem instanceof Susun) {
-                        Susun selectedSusun = (Susun) selectedItem;
-                        String noBongkarSusun = selectedSusun.getNoBongkarSusun();
-                        loadOuputByMesinSusun(noBongkarSusun, false);
-                    } else {
-                        Log.e("Error", "Item bukan tipe Susun");
-                        TabelOutput.removeAllViews();
-                        tvLabelCount.setText("Total Label : 0");
-                    }
-                }
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Tidak ada yang dipilih
-            }
-        });
 
         NoS4S.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -407,6 +363,51 @@ public class S4S extends AppCompatActivity {
             }
         });
 
+        SpinMesin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonMesin.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Mesin) {
+                        Mesin selectedMesin = (Mesin) selectedItem;
+                        String noProduksi = selectedMesin.getNoProduksi();
+                        loadOutputByMesinSusun(noProduksi, true);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Mesin");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
+        SpinSusun.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonBSusun.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Susun) {
+                        Susun selectedSusun = (Susun) selectedItem;
+                        String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                        loadOutputByMesinSusun(noBongkarSusun, false);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Susun");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
         radioButtonMesin.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 SpinMesin.setEnabled(true);
@@ -415,7 +416,7 @@ public class S4S extends AppCompatActivity {
                 Mesin selectedMesin = (Mesin) SpinMesin.getSelectedItem();
                 if (selectedMesin != null) {
                     String noProduksi = selectedMesin.getNoProduksi();
-                    loadOuputByMesinSusun(noProduksi, true);
+                    loadOutputByMesinSusun(noProduksi, true);
                 }
             } else if (radioButtonBSusun.isChecked()) {
                 TabelOutput.removeAllViews();
@@ -431,7 +432,7 @@ public class S4S extends AppCompatActivity {
                 Susun selectedSusun = (Susun) SpinSusun.getSelectedItem();
                 if (selectedSusun != null) {
                     String noBongkarSusun = selectedSusun.getNoBongkarSusun();
-                    loadOuputByMesinSusun(noBongkarSusun, false);
+                    loadOutputByMesinSusun(noBongkarSusun, false);
                 }
             } else if (radioButtonMesin.isChecked()) {
                 TabelOutput.removeAllViews();
@@ -944,7 +945,7 @@ public class S4S extends AppCompatActivity {
 
     //METHOD S4S
 
-    private void loadOuputByMesinSusun(String parameter, boolean isNoProduksi) {
+    private void loadOutputByMesinSusun(String parameter, boolean isNoProduksi) {
         new Thread(() -> {
             Connection connection = null;
             try {
@@ -952,14 +953,14 @@ public class S4S extends AppCompatActivity {
                 if (connection != null) {
                     String query;
                     if (isNoProduksi) {
-                        query = "SELECT spo.NoS4S, s4s.HasBeenPrinted " +
+                        query = "SELECT spo.NoS4S, h.HasBeenPrinted " +
                                 "FROM dbo.S4SProduksiOutput spo " +
-                                "JOIN dbo.S4S_h s4s ON spo.NoS4S = s4s.NoS4S " +
+                                "JOIN dbo.S4S_h h ON spo.NoS4S = h.NoS4S " +
                                 "WHERE spo.NoProduksi = ?";
                     } else {
-                        query = "SELECT bs.NoS4S, sh.HasBeenPrinted " +
+                        query = "SELECT bs.NoS4S, h.HasBeenPrinted " +
                                 "FROM dbo.BongkarSusunOutputS4S bs " +
-                                "JOIN dbo.S4S_h sh ON bs.NoS4S = sh.NoS4S " +
+                                "JOIN dbo.S4S_h h ON bs.NoS4S = h.NoS4S " +
                                 "WHERE bs.NoBongkarSusun = ?";
                     }
 
@@ -1235,6 +1236,9 @@ public class S4S extends AppCompatActivity {
         ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
         ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
 
+        tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
+        tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+
         // Referensi TableLayout
         TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
 
@@ -1372,7 +1376,7 @@ public class S4S extends AppCompatActivity {
         ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
 
         // Menaikkan pointer ketika popup melebihi batas layout
-        if (y < 25) {
+        if (y < 60) {
             trianglePointer.setY(y - 60);
         }
 
@@ -3063,7 +3067,7 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            loadOuputByMesinSusun(noBongkarSusun, false);
+            loadOutputByMesinSusun(noBongkarSusun, false);
         }
     }
 
@@ -3102,7 +3106,7 @@ public class S4S extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            loadOuputByMesinSusun(noProduksi, true);
+            loadOutputByMesinSusun(noProduksi, true);
 
         }
     }

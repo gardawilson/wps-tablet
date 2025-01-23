@@ -14,6 +14,9 @@ public class ProsesProduksi extends AppCompatActivity {
     private CardView FJProduksi;
     private CardView MouldingProduksi;
     private CardView LaminatingProduksi;
+    private CardView CrossCutProduksi;
+    private CardView SandingProduksi;
+    private CardView PackingProduksi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +28,9 @@ public class ProsesProduksi extends AppCompatActivity {
         FJProduksi = findViewById(R.id.FJProduksi);
         MouldingProduksi = findViewById(R.id.MouldingProduksi);
         LaminatingProduksi = findViewById(R.id.LaminatingProduksi);
+        CrossCutProduksi = findViewById(R.id.CrossCutProduksi);
+        SandingProduksi = findViewById(R.id.SandingProduksi);
+        PackingProduksi = findViewById(R.id.PackingProduksi);
 
 
         S4SProduksi.setOnClickListener(new View.OnClickListener() {
@@ -55,6 +61,30 @@ public class ProsesProduksi extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiLaminating.class);
+                startActivity(intent);
+            }
+        });
+
+        CrossCutProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiCrossCut.class);
+                startActivity(intent);
+            }
+        });
+
+        SandingProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiSanding.class);
+                startActivity(intent);
+            }
+        });
+
+        PackingProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiPacking.class);
                 startActivity(intent);
             }
         });

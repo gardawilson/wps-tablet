@@ -804,7 +804,6 @@
                                 android:id="@+id/noMouldingTableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
                                 android:stretchColumns="1">
 
                             </TableLayout>
@@ -820,7 +819,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="8dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 android:background="#FFFFFF">
@@ -872,7 +870,6 @@
                                 android:id="@+id/noCCTableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
                                 android:stretchColumns="1">
 
                             </TableLayout>
@@ -949,7 +946,6 @@
                                 android:id="@+id/noSandingTableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
                                 android:stretchColumns="1">
 
                             </TableLayout>
@@ -1016,7 +1012,6 @@
                                 android:id="@+id/noPackingTableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
                                 android:stretchColumns="1">
 
                             </TableLayout>

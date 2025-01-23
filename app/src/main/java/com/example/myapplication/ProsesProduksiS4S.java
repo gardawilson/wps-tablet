@@ -817,6 +817,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private void populateNoS4STable(List<String> noS4SList) {
         noS4STableLayout.removeAllViews();
 
+        int rowIndex = 0;
+
         if (noS4SList == null || noS4SList.isEmpty()) {
             TextView noDataView = new TextView(this);
             noDataView.setText("Tidak ada Data");
@@ -830,6 +832,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         for (String noS4S : noS4SList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noS4S, 1.0f);
             row.addView(textView);
@@ -837,13 +841,22 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             // Tambahkan OnClickListener untuk menampilkan tooltip
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
 
+            // Tetapkan warna latar belakang berdasarkan indeks baris
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             // Tambahkan baris ke TableLayout
             noS4STableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoSTTable(List<String> noSTList) {
         noSTTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noSTList == null || noSTList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -857,6 +870,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         // Data tabel
         for (String noST : noSTList) {
             TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
 
             // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noST, 1.0f);
@@ -864,12 +878,21 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Tambahkan OnClickListener untuk menampilkan tooltip
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noST, "ST_h", "ST_d", "NoST"));
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noSTTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoMouldingTable(List<String> noMouldingList) {
         noMouldingTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -885,17 +908,27 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         for (String noMoulding : noMouldingList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noMoulding, 1.0f);
             row.addView(textView);
 
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noMouldingTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoFJTable(List<String> noFJList) {
         noFJTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noFJList == null || noFJList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -910,16 +943,26 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         for (String noFJ : noFJList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noFJ, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noFJTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoCCTable(List<String> noCCList) {
         noCCTableLayout.removeAllViews();
+        int rowIndex = 0;
 
         if (noCCList == null || noCCList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -934,11 +977,20 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         for (String noCC : noCCList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noCC, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
 
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noCCTableLayout.addView(row);
+            rowIndex++;
         }
     }
 

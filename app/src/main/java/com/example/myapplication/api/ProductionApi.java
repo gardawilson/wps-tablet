@@ -1198,8 +1198,6 @@ public class ProductionApi {
     }
 
 
-
-
     public static boolean isTransactionPeriodClosed(String tglProduksi) {
         String queryBulanan = "SELECT TOP 1 Period FROM MstTutupTransaksi WHERE Lock = 1 ORDER BY Period DESC";
         String queryHarian = "SELECT TOP 1 PeriodHarian FROM MstTutupTransaksiHarian WHERE Lock = 1 ORDER BY PeriodHarian DESC";
@@ -1236,7 +1234,6 @@ public class ProductionApi {
             // Jika tglProduksi lebih kecil atau sama dengan kedua period, return true
             return true;
         } catch (SQLException e) {
-            System.err.println("Database error: " + e.getMessage());
             return false; // Return default jika terjadi kesalahan
         }
     }
@@ -1309,7 +1306,6 @@ public class ProductionApi {
                         tooltipData.setIdUOMPanjang(detailRs.getInt("IdUOMPanjang"));
                         tooltipData.setJenis(detailRs.getString("Jenis"));
                         tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
-
                     }
 
                     else if (tableH.equals("BarangJadi_h")) {
@@ -1321,6 +1317,7 @@ public class ProductionApi {
                         tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
                         tooltipData.setSpkAsalDetail(formatSpk(detailRs.getString("NoSPKAsal"), detailRs.getString("BuyerNoSPKAsal")));
                         tooltipData.setNamaGrade(detailRs.getString("NamaBarangJadi"));
+                        tooltipData.setLembur(detailRs.getBoolean("IsLembur"));
                     }
 
                     else{
@@ -1384,9 +1381,9 @@ public class ProductionApi {
                     }
 
                     tableData.add(new String[]{
-                            String.valueOf((int) tebal),
-                            String.valueOf((int) lebar),
-                            String.valueOf((int) panjang),
+                            formatNumber(tebal),
+                            formatNumber(lebar),
+                            formatNumber(panjang),
                             String.valueOf(pcs)
                     });
                 }
@@ -1425,6 +1422,16 @@ public class ProductionApi {
     // Helper untuk memformat SPK
     private static String formatNoKBSuket(String noKB, String noSuket) {
         return (noKB != null && noSuket != null) ? noKB + " - " + noSuket : "-";
+    }
+
+    private static String formatNumber(double value) {
+        if (value == Math.floor(value)) {
+            // Jika tidak ada desimal, tampilkan sebagai integer
+            return String.valueOf((int) value);
+        } else {
+            // Jika ada desimal, tampilkan dengan format yang diinginkan
+            return String.format("%.1f", value); // Misalnya 4 desimal
+        }
     }
 
 
