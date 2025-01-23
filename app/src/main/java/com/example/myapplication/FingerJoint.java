@@ -5,13 +5,15 @@ import android.app.DatePickerDialog;
 import androidx.appcompat.app.AlertDialog;
 
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
+
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Intent;
+
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -22,17 +24,24 @@ import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -47,26 +56,18 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintDocumentInfo;
 import android.print.PageRange;
-import android.os.Bundle;
+
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
-import com.itextpdf.kernel.geom.AffineTransform;
-import android.print.PrintManager;
-import android.print.PrintAttributes;
-import android.print.PrintDocumentAdapter;
-import android.print.PrintDocumentInfo;
-import android.os.CancellationSignal;
-import android.os.ParcelFileDescriptor;
-import android.os.Bundle;
+
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
 import android.widget.AutoCompleteTextView;
 import android.view.inputmethod.InputMethodManager;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -77,12 +78,7 @@ import android.os.Looper;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.OnBackPressedCallback;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import org.bouncycastle.cms.PasswordRecipientId;
-import org.bouncycastle.jcajce.provider.symmetric.Serpent;
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -100,11 +96,9 @@ import java.util.Locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 
 
-import com.itextpdf.layout.element.LineSeparator;
+
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -116,35 +110,20 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Paragraph;
+
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.element.LineSeparator;
+
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
-
-
-
-import com.itextpdf.layout.properties.VerticalAlignment;
-
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
-import android.text.TextUtils;
-import com.itextpdf.layout.element.Paragraph;
-import java.math.RoundingMode;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -193,6 +172,8 @@ public class FingerJoint extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoFJ_display;
     private String rawDate;
+    private TableLayout TabelOutput;
+    private TextView tvLabelCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -244,6 +225,8 @@ public class FingerJoint extends AppCompatActivity {
         Tabel = findViewById(R.id.Tabel);
         radioGroupFJ = findViewById(R.id.radioGroupFJ);
         NoFJ_display = findViewById(R.id.NoFJ_display);
+        TabelOutput = findViewById(R.id.TabelOutput);
+        tvLabelCount = findViewById(R.id.labelCount);
 
         // Set imeOptions untuk memungkinkan pindah fokus
         DetailTebalFJ.setImeOptions(EditorInfo.IME_ACTION_NEXT);
@@ -381,24 +364,81 @@ public class FingerJoint extends AppCompatActivity {
             }
         });
 
-
-        radioButtonMesinFJ.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        SpinMesinFJ.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinMesinFJ.setEnabled(true);
-                    SpinSusunFJ.setEnabled(false);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonMesinFJ.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof MesinFJ) {
+                        MesinFJ selectedMesin = (MesinFJ) selectedItem;
+                        String noProduksi = selectedMesin.getNoProduksi();
+                        loadOuputByMesinSusun(noProduksi, true);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Mesin");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
                 }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
             }
         });
 
-        radioButtonBSusunFJ.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        SpinSusunFJ.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinSusunFJ.setEnabled(true);
-                    SpinMesinFJ.setEnabled(false);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonBSusunFJ.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof SusunFJ) {
+                        SusunFJ selectedSusun = (SusunFJ) selectedItem;
+                        String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                        loadOuputByMesinSusun(noBongkarSusun, false);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Susun");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
                 }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
+
+        radioButtonMesinFJ.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesinFJ.setEnabled(true);
+                SpinSusunFJ.setEnabled(false);
+
+                MesinFJ selectedMesin = (MesinFJ) SpinMesinFJ.getSelectedItem();
+                if (selectedMesin != null) {
+                    String noProduksi = selectedMesin.getNoProduksi();
+                    loadOuputByMesinSusun(noProduksi, true);
+                }
+            } else if (radioButtonBSusunFJ.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
+            }
+        });
+
+        radioButtonBSusunFJ.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesinFJ.setEnabled(false);
+                SpinSusunFJ.setEnabled(true);
+
+                SusunFJ selectedSusun = (SusunFJ) SpinSusunFJ.getSelectedItem();
+                if (selectedSusun != null) {
+                    String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                    loadOuputByMesinSusun(noBongkarSusun, false);
+                }
+            } else if (radioButtonMesinFJ.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         });
 
@@ -909,6 +949,443 @@ public class FingerJoint extends AppCompatActivity {
 
     //Method FingerJoint
 
+    private void loadOuputByMesinSusun(String parameter, boolean isNoProduksi) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query;
+                    if (isNoProduksi) {
+                        query = "SELECT po.NoFJ, th.HasBeenPrinted " +
+                                "FROM dbo.FJProduksiOutput po " +
+                                "JOIN dbo.FJ_h th ON po.NoFJ = th.NoFJ " +
+                                "WHERE po.NoProduksi = ?";
+                    } else {
+                        query = "SELECT bs.NoFJ, th.HasBeenPrinted " +
+                                "FROM dbo.BongkarSusunOutputFJ bs " +
+                                "JOIN dbo.FJ_h th ON bs.NoFJ = th.NoFJ " +
+                                "WHERE bs.NoBongkarSusun = ?";
+                    }
+
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, parameter);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            List<String> noFJList = new ArrayList<>();
+                            List<Integer> hasBeenPrintedList = new ArrayList<>();
+
+                            while (rs.next()) {
+                                noFJList.add(rs.getString("NoFJ"));
+                                hasBeenPrintedList.add(rs.getInt("HasBeenPrinted"));
+                            }
+
+                            runOnUiThread(() -> {
+                                TabelOutput.removeAllViews();
+
+                                int labelCount = 0;
+
+                                if (!noFJList.isEmpty() && noFJList.size() == hasBeenPrintedList.size()) {
+                                    for (int i = 0; i < noFJList.size(); i++) {
+                                        String noFJ = noFJList.get(i);
+                                        int hasBeenPrinted = hasBeenPrintedList.get(i);
+
+                                        TableRow row = new TableRow(this);
+                                        TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
+                                                TableLayout.LayoutParams.MATCH_PARENT,
+                                                TableLayout.LayoutParams.WRAP_CONTENT
+                                        );
+
+                                        // Tambahkan margin bawah untuk jarak antar baris
+                                        row.setLayoutParams(rowParams);
+
+                                        row.setPadding(0, 10, 0, 10);
+
+                                        // Ubah warna latar belakang berdasarkan indeks
+                                        if (i % 2 == 0) {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                                        } else {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                                        }
+
+                                        TextView labelTextView = new TextView(this);
+                                        labelTextView.setText(noFJ);
+                                        labelTextView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                                        labelTextView.setGravity(Gravity.CENTER);
+                                        row.addView(labelTextView);
+
+                                        ImageView iIcon = new ImageView(this);
+                                        iIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        iIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+
+                                        ImageView oIcon = new ImageView(this);
+                                        oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        oIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+
+
+                                        if (hasBeenPrinted == 0) {
+                                            iIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 1) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 2) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "O"
+                                        } else {
+                                            iIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                            oIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                        }
+
+                                        row.addView(iIcon);
+                                        row.addView(oIcon);
+
+                                        row.setOnClickListener(v -> {
+                                            // Tampilkan tooltip ketika baris diklik
+                                            fetchDataAndShowTooltip(v, noFJ);
+                                        });
+
+
+                                        TabelOutput.addView(row);
+                                        labelCount++;
+
+                                    }
+
+                                    tvLabelCount.setText("Total Label : " + labelCount);
+
+                                } else {
+                                    //Toast.makeText(this, "Data tidak ditemukan", Toast.LENGTH_SHORT).show();
+                                    Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
+
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        // Handle koneksi database gagal
+                        Toast.makeText(this, "Gagal terhubung ke database", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                runOnUiThread(() -> {
+                    // Handle error SQL
+                    Log.e("Database Error", "Error: " + e.getMessage());
+                    Toast.makeText(this, "Terjadi kesalahan", Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void fetchDataAndShowTooltip(View anchorView, String noFJ) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass(); // Koneksi ke database
+                if (connection != null) {
+                    // Query utama untuk mengambil detail tooltip
+                    String detailQuery = "SELECT h.NoFJ, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, b1.Buyer AS BuyerNoSPK, " +
+                            "h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
+                            "FROM FJ_h h " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                            "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                            "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                            "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                            "WHERE h.NoFJ = ?";
+
+                    PreparedStatement detailStmt = connection.prepareStatement(detailQuery);
+                    detailStmt.setString(1, noFJ);
+                    ResultSet detailRs = detailStmt.executeQuery();
+
+                    String retrievedNoS4S = null;
+                    String formattedDateTime = null;
+                    String jenis = null;
+                    String spkDetail = null;
+                    String spkAsalDetail = null;
+                    String namaGrade = null;
+                    boolean isLembur = false;
+
+                    if (detailRs.next()) {
+                        retrievedNoS4S = detailRs.getString("NoFJ");
+                        String dateCreate = detailRs.getString("DateCreate");
+                        String jam = detailRs.getString("Jam");
+                        jenis = detailRs.getString("Jenis");
+                        String noSPK = detailRs.getString("NoSPK");
+                        String buyerNoSPK = detailRs.getString("BuyerNoSPK");
+                        String noSPKAsal = detailRs.getString("NoSPKAsal");
+                        String buyerNoSPKAsal = detailRs.getString("BuyerNoSPKAsal");
+                        namaGrade = detailRs.getString("NamaGrade");
+                        isLembur = detailRs.getBoolean("IsLembur");
+
+                        spkDetail = (noSPK != null && buyerNoSPK != null) ? noSPK + " - " + buyerNoSPK : "No data";
+                        spkAsalDetail = (noSPKAsal != null && buyerNoSPKAsal != null) ? noSPKAsal + " - " + buyerNoSPKAsal : "No data";
+                        formattedDateTime = combineDateTime(dateCreate, jam);
+                    }
+
+                    // Query untuk mengambil data tabel
+                    String tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM FJ_d WHERE NoFJ = ? ORDER BY NoUrut";
+                    PreparedStatement tableStmt = connection.prepareStatement(tableQuery);
+                    tableStmt.setString(1, noFJ);
+
+                    ResultSet tableRs = tableStmt.executeQuery();
+                    List<String[]> tableData = new ArrayList<>();
+                    int totalPcs = 0;
+                    double totalM3 = 0.0;
+
+                    while (tableRs.next()) {
+                        // Ambil data dari tabel
+                        double tebal = tableRs.getDouble("Tebal");
+                        double lebar = tableRs.getDouble("Lebar");
+                        double panjang = tableRs.getDouble("Panjang");
+                        int pcs = tableRs.getInt("JmlhBatang");
+
+                        totalPcs += pcs;
+
+                        // Hitung M3 untuk baris ini
+                        double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                        rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                        totalM3 += rowM3;
+
+                        // Format data untuk tabel
+                        tableData.add(new String[]{
+                                String.valueOf((int) tebal),
+                                String.valueOf((int) lebar),
+                                String.valueOf((int) panjang),
+                                String.valueOf(pcs)
+                        });
+                    }
+
+                    // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
+                    String finalRetrievedNoS4S = retrievedNoS4S;
+                    String finalFormattedDateTime = formattedDateTime;
+                    String finalJenis = jenis;
+                    String finalSpkDetail = spkDetail;
+                    String finalSpkAsalDetail = spkAsalDetail;
+                    String finalNamaGrade = namaGrade;
+                    boolean finalIsLembur = isLembur;
+                    int finalTotalPcs = totalPcs;
+                    double finalTotalM3 = totalM3;
+
+                    runOnUiThread(() -> showTooltip(
+                            anchorView,
+                            finalRetrievedNoS4S,
+                            finalFormattedDateTime,
+                            finalJenis,
+                            finalSpkDetail,
+                            finalSpkAsalDetail,
+                            finalNamaGrade,
+                            finalIsLembur,
+                            tableData,
+                            finalTotalPcs,
+                            finalTotalM3
+                    ));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching data", Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+
+
+    // Metode untuk menggabungkan Date dan Time
+    private String combineDateTime(String date, String time) {
+        try {
+            // Format input Date (dari database)
+            SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date parsedDate = inputDateFormat.parse(date);
+
+            // Gabungkan Date dan Time
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            String formattedDateTime = outputFormat.format(parsedDate) + " (" + time + ")";
+            return formattedDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return date + " " + time; // Jika terjadi error, kembalikan format default
+        }
+    }
+
+    private void showTooltip(View anchorView, String noFJ, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noFJ);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        if (y < 25) {
+            trianglePointer.setY(y - 60);
+        }
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
+
     private boolean isInternetAvailable() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -1091,8 +1568,8 @@ public class FingerJoint extends AppCompatActivity {
 //            if (success) {
 //                Toast.makeText(FingerJoint.this, "NoFJ terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
 //            } else {
-//                Log.e("Error", "Failed to delete the latest NoS4S.");
-//                Toast.makeText(FingerJoint.this, "Gagal menghapus NoS4S terbaru.", Toast.LENGTH_SHORT).show();
+//                Log.e("Error", "Failed to delete the latest NoFJ.");
+//                Toast.makeText(FingerJoint.this, "Gagal menghapus NoFJ terbaru.", Toast.LENGTH_SHORT).show();
 //            }
         }
     }
@@ -1727,124 +2204,6 @@ public class FingerJoint extends AppCompatActivity {
         }).start();
     }
 
-
-    private class CheckNoFJDataTask extends AsyncTask<String, Void, Boolean> {
-        private String errorMessage;
-        private String source = ""; // Untuk menyimpan sumber data (Mesin atau Bongkar Susun)
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noFJ = params[0];
-            Connection con = ConnectionClass();
-            boolean hasData = false;
-
-            if (con != null) {
-                try {
-                    String queryMesin = "SELECT NoProduksi FROM dbo.FJProduksiOutput WHERE NoFJ = ?";
-                    PreparedStatement psMesin = con.prepareStatement(queryMesin);
-                    psMesin.setString(1, noFJ);
-                    ResultSet rsMesin = psMesin.executeQuery();
-
-                    if (rsMesin.next()) {
-                        hasData = true;
-                        source = "Mesin";
-                    } else {
-
-                        String querySusun = "SELECT NoBongkarSusun FROM dbo.BongkarSusunOutputFJ WHERE NoFJ = ?";
-                        PreparedStatement psSusun = con.prepareStatement(querySusun);
-                        psSusun.setString(1, noFJ);
-                        ResultSet rsSusun = psSusun.executeQuery();
-
-                        if (rsSusun.next()) {
-                            hasData = true;
-                            source = "Bongkar Susun";
-                        }
-
-                        rsSusun.close();
-                        psSusun.close();
-                    }
-
-                    rsMesin.close();
-                    psMesin.close();
-                    con.close();
-                } catch (Exception e) {
-                    errorMessage = "Error: " + e.getMessage();
-                    Log.e("CheckNoFJDataTask", errorMessage);
-                }
-            }
-            return hasData;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean hasData) {
-            if (hasData) {
-                Toast.makeText(FingerJoint.this,
-                        "Data NoFJ ini sudah pernah disimpan di " + source + "!",
-                        Toast.LENGTH_SHORT).show();
-                // Disable tombol simpan
-                BtnSimpanFJ.setEnabled(false);
-            } else {
-                // Data belum pernah disimpan, enable tombol simpan
-                BtnSimpanFJ.setEnabled(true);
-            }
-        }
-    }
-
-    private class LoadProfileTask2FJ extends AsyncTask<String, Void, List<ProfileFJ>> {
-        private String noFJ;
-
-        public LoadProfileTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<ProfileFJ> doInBackground(String... voids) {
-            List<ProfileFJ> profileList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT p.Profile, p.IdFJProfile " +
-                            "FROM dbo.MstFJProfile AS p " +
-                            "INNER JOIN dbo.FJ_h AS h ON h.IdFJProfile = p.IdFJProfile " +
-                            "WHERE h.NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String namaProfile = rs.getString("Profile");
-                        String idFJProfile = rs.getString("IdFJProfile");
-                        ProfileFJ profileObj = new ProfileFJ(namaProfile, idFJProfile);
-                        profileList.add(profileObj);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return profileList;
-        }
-
-        @Override
-        protected void onPostExecute(List<ProfileFJ> profileList) {
-            if (!profileList.isEmpty()) {
-                ArrayAdapter<ProfileFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinProfileFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load profile data.");
-            }
-        }
-    }
-
-    
 
     //Fungsi untuk add Data Detail
 
@@ -2634,9 +2993,8 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(FingerJoint.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noBongkarSusun, false);
+
         }
     }
 
@@ -2674,51 +3032,10 @@ public class FingerJoint extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(FingerJoint.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Toast.makeText(FingerJoint.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noProduksi, true);
         }
     }
-    
 
-    private class DeleteDataTaskFJ extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noFJ = params[0];
-            Connection con = ConnectionClass();
-            boolean success = false;
-
-            if (con != null) {
-                try {
-                    String query = "DELETE FROM dbo.FJ_h WHERE NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    int rowsAffected = ps.executeUpdate();
-                    success = rowsAffected > 0;
-
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(FingerJoint.this, "Data berhasil dihapus.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(FingerJoint.this, "Gagal menghapus data.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
 
     private class UpdateDatabaseTaskFJ extends AsyncTask<Void, Void, Boolean> {
         private String noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
@@ -2884,60 +3201,6 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    public class LoadJenisKayuTask2FJ extends AsyncTask<String, Void, List<JenisKayuFJ>> {
-        private String noFJ;
-
-        public LoadJenisKayuTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<JenisKayuFJ> doInBackground(String... params) {
-            List<JenisKayuFJ> jenisKayuList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT j.IdJenisKayu, j.Jenis " +
-                            "FROM dbo.MstJenisKayu AS j " +
-                            "INNER JOIN dbo.FJ_h AS h ON h.IdJenisKayu = j.IdJenisKayu " +
-                            "WHERE h.NoFJ = ? AND j.enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idJenisKayu = rs.getString("IdJenisKayu");
-                        String namaJenisKayu = rs.getString("Jenis");
-                        JenisKayuFJ jenisKayu = new JenisKayuFJ(idJenisKayu, namaJenisKayu);
-                        jenisKayuList.add(jenisKayu);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return jenisKayuList;
-        }
-
-        @Override
-        protected void onPostExecute(List<JenisKayuFJ> jenisKayuList) {
-            if (!jenisKayuList.isEmpty()) {
-                ArrayAdapter<JenisKayuFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinKayuFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load jenis kayu.");
-            }
-        }
-    }
-
     private class LoadTellyTaskFJ extends AsyncTask<Void, Void, List<TellyFJ>> {
         @Override
         protected List<TellyFJ> doInBackground(Void... voids) {
@@ -2992,62 +3255,6 @@ public class FingerJoint extends AppCompatActivity {
             // Set adapter ke spinner
             SpinTellyFJ.setAdapter(adapter);
 
-        }
-    }
-
-    private class LoadTellyTask2FJ extends AsyncTask<String, Void, List<TellyFJ>> {
-        private String noFJ;
-
-        public LoadTellyTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<TellyFJ> doInBackground(String... params) {
-            List<TellyFJ> tellyList = new ArrayList<>();
-            Connection con = ConnectionClass(); // Ensure this method establishes a database connection
-
-            if (con != null) {
-                try {
-
-                    String query = "SELECT t.IdOrgTelly, t.NamaOrgTelly " +
-                            "FROM dbo.MstOrgTelly AS t " +
-                            "INNER JOIN dbo.FJ_h AS h ON h.IdOrgTelly = t.IdOrgTelly " +
-                            "WHERE h.NoFJ = ? AND t.enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idOrgTelly = rs.getString("IdOrgTelly");
-                        String namaOrgTelly = rs.getString("NamaOrgTelly");
-
-                        TellyFJ telly = new TellyFJ(idOrgTelly, namaOrgTelly);
-                        tellyList.add(telly);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return tellyList;
-        }
-
-        @Override
-        protected void onPostExecute(List<TellyFJ> tellyList) {
-            if (!tellyList.isEmpty()) {
-                ArrayAdapter<TellyFJ> adapter = new ArrayAdapter<>(FingerJoint.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinTellyFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load telly data.");
-            }
         }
     }
 
@@ -3243,64 +3450,6 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private class LoadFisikTask2FJ extends AsyncTask<String, Void, List<FisikFJ>> {
-        private String noFJ;
-
-        public LoadFisikTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<FisikFJ> doInBackground(String... params) {
-            List<FisikFJ> fisikList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT mw.NamaWarehouse " +
-                            "FROM dbo.MstWarehouse mw " +
-                            "INNER JOIN dbo.FJ_h fj ON mw.IdWarehouse = fj.IdWarehouse " +
-                            "WHERE fj.NoFJ = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaWarehouse");
-                        FisikFJ fisik = new FisikFJ(namaWarehouse);
-                        fisikList.add(fisik);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", "Error during query execution: " + e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return fisikList;
-        }
-
-        @Override
-        protected void onPostExecute(List<FisikFJ> fisikList) {
-            if (!fisikList.isEmpty()) {
-                ArrayAdapter<FisikFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinFisikFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "No warehouse found.");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada Fisik"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinFisikFJ.setAdapter(emptyAdapter);
-            }
-        }
-    }
-
 
     private class LoadGradeTaskFJ extends AsyncTask<String, Void, List<GradeFJ>> {
         @Override
@@ -3377,83 +3526,6 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private class LoadGradeTask2FJ extends AsyncTask<String, Void, List<GradeFJ>> {
-        private String noFJ;
-
-        public LoadGradeTask2FJ(String noFJ) {
-            this.noFJ = noFJ;
-        }
-
-        @Override
-        protected List<GradeFJ> doInBackground(String... params) {
-            List<GradeFJ> gradeList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String idJenisKayuStr = params[0];
-                    int idJenisKayu;
-
-                    try {
-                        idJenisKayu = Integer.parseInt(idJenisKayuStr);
-                    } catch (NumberFormatException e) {
-                        Log.e("Conversion Error", "IdJenisKayu should be an integer: " + idJenisKayuStr);
-                        return gradeList;
-                    }
-
-                    String category = "FingerJoin";
-
-                    String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
-                            "FROM MstGrade a " +
-                            "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? AND b.NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setInt(1, idJenisKayu);
-                    ps.setString(2, category);
-                    ps.setString(3, noFJ);
-                    Log.d("LoadGradeTask", "Executing query: " + query + " with IdJenisKayu: " + idJenisKayu);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idGrade = rs.getString("IdGrade");
-                        String namaGrade = rs.getString("NamaGrade");
-
-                        if (idGrade != null && namaGrade != null) {
-                            Log.d("LoadGradeTask", "Fetched Grade: IdGrade = " + idGrade + ", NamaGrade = " + namaGrade);
-                            GradeFJ gradeObj = new GradeFJ(idGrade, namaGrade);
-                            gradeList.add(gradeObj);
-                        }
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return gradeList;
-        }
-
-        @Override
-        protected void onPostExecute(List<GradeFJ> gradeList) {
-            if (!gradeList.isEmpty()) {
-                ArrayAdapter<GradeFJ> adapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, gradeList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeFJ.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(FingerJoint.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada grade"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeFJ.setAdapter(emptyAdapter);
-            }
-        }
-    }
-
     private class LoadMesinTaskFJ extends AsyncTask<String, Void, List<MesinFJ>> {
         @Override
         protected List<MesinFJ> doInBackground(String... params) {
@@ -3484,7 +3556,6 @@ public class FingerJoint extends AppCompatActivity {
                         String nomorProduksi = rs.getString("NoProduksi");
                         String namaMesin = rs.getString("NamaMesin");
 
-                        Log.d("LoadMesinTask", "Found: ID=" + idMesin + ", No=" + nomorProduksi + ", Name=" + namaMesin);
 
                         MesinFJ mesin = new MesinFJ(nomorProduksi, namaMesin);
                         mesinList.add(mesin);
@@ -3511,6 +3582,8 @@ public class FingerJoint extends AppCompatActivity {
             } else {
                 Log.d("LoadMesinTask", "No data found");
                 SpinMesinFJ.setAdapter(null);
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         }
     }

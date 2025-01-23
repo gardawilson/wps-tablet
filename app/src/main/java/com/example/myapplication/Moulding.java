@@ -12,6 +12,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -22,6 +24,7 @@ import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
@@ -31,6 +34,9 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SearchView;
@@ -77,6 +83,7 @@ import android.os.Looper;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -193,6 +200,8 @@ public class Moulding extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText NoMoulding_display;
     private String rawDate;
+    private TableLayout TabelOutput;
+    private TextView tvLabelCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -245,6 +254,8 @@ public class Moulding extends AppCompatActivity {
         Tabel = findViewById(R.id.Tabel);
         radioGroupM = findViewById(R.id.radioGroupM);
         NoMoulding_display = findViewById(R.id.NoMoulding_display);
+        TabelOutput = findViewById(R.id.TabelOutput);
+        tvLabelCount = findViewById(R.id.labelCount);
 
         // Set imeOptions untuk memungkinkan pindah fokus
         DetailTebalM.setImeOptions(EditorInfo.IME_ACTION_NEXT);
@@ -382,25 +393,80 @@ public class Moulding extends AppCompatActivity {
             }
         });
 
-        //mengatur fungsi RadioButtonMesin
-        radioButtonMesinM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        SpinMesinM.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinMesinM.setEnabled(true);
-                    SpinSusunM.setEnabled(false);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonMesinM.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Mesin) {
+                        Mesin selectedMesin = (Mesin) selectedItem;
+                        String noProduksi = selectedMesin.getNoProduksi();
+                        loadOuputByMesinSusun(noProduksi, true);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Mesin");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
                 }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
             }
         });
 
-        //mengatur fungsi RadioButtonSusun
-        radioButtonBSusunM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        SpinSusunM.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    SpinSusunM.setEnabled(true);
-                    SpinMesinM.setEnabled(false);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (radioButtonBSusunM.isChecked()) {
+                    Object selectedItem = parent.getItemAtPosition(position);
+                    if (selectedItem instanceof Susun) {
+                        Susun selectedSusun = (Susun) selectedItem;
+                        String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                        loadOuputByMesinSusun(noBongkarSusun, false);
+                    } else {
+                        Log.e("Error", "Item bukan tipe Susun");
+                        TabelOutput.removeAllViews();
+                        tvLabelCount.setText("Total Label : 0");
+                    }
                 }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Tidak ada yang dipilih
+            }
+        });
+
+        radioButtonMesinM.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesinM.setEnabled(true);
+                SpinSusunM.setEnabled(false);
+
+                Mesin selectedMesin = (Mesin) SpinMesinM.getSelectedItem();
+                if (selectedMesin != null) {
+                    String noProduksi = selectedMesin.getNoProduksi();
+                    loadOuputByMesinSusun(noProduksi, true);
+                }
+            } else if (radioButtonBSusunM.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
+            }
+        });
+
+        radioButtonBSusunM.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                SpinMesinM.setEnabled(false);
+                SpinSusunM.setEnabled(true);
+
+                Susun selectedSusun = (Susun) SpinSusunM.getSelectedItem();
+                if (selectedSusun != null) {
+                    String noBongkarSusun = selectedSusun.getNoBongkarSusun();
+                    loadOuputByMesinSusun(noBongkarSusun, false);
+                }
+            } else if (radioButtonMesinM.isChecked()) {
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         });
 
@@ -918,6 +984,441 @@ public class Moulding extends AppCompatActivity {
     }
 
     //METHOD MOULDING
+
+    private void loadOuputByMesinSusun(String parameter, boolean isNoProduksi) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query;
+                    if (isNoProduksi) {
+                        query = "SELECT spo.NoMoulding, MLD.HasBeenPrinted " +
+                                "FROM dbo.MouldingProduksiOutput spo " +
+                                "JOIN dbo.Moulding_h MLD ON spo.NoMoulding = MLD.NoMoulding " +
+                                "WHERE spo.NoProduksi = ?";
+                    } else {
+                        query = "SELECT bs.NoMoulding, MLD.HasBeenPrinted " +
+                                "FROM dbo.BongkarSusunOutputMoulding bs " +
+                                "JOIN dbo.Moulding_h MLD ON bs.NoMoulding = MLD.NoMoulding " +
+                                "WHERE bs.NoBongkarSusun = ?";
+                    }
+
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, parameter);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            List<String> noMouldingList = new ArrayList<>();
+                            List<Integer> hasBeenPrintedList = new ArrayList<>();
+
+                            while (rs.next()) {
+                                noMouldingList.add(rs.getString("NoMoulding"));
+                                hasBeenPrintedList.add(rs.getInt("HasBeenPrinted"));
+                            }
+
+                            runOnUiThread(() -> {
+                                TabelOutput.removeAllViews();
+
+                                int labelCount = 0;
+
+                                if (!noMouldingList.isEmpty() && noMouldingList.size() == hasBeenPrintedList.size()) {
+                                    for (int i = 0; i < noMouldingList.size(); i++) {
+                                        String noMoulding = noMouldingList.get(i);
+                                        int hasBeenPrinted = hasBeenPrintedList.get(i);
+
+                                        TableRow row = new TableRow(this);
+                                        TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
+                                                TableLayout.LayoutParams.MATCH_PARENT,
+                                                TableLayout.LayoutParams.WRAP_CONTENT
+                                        );
+
+                                        // Tambahkan margin bawah untuk jarak antar baris
+                                        row.setLayoutParams(rowParams);
+
+                                        row.setPadding(0, 10, 0, 10);
+
+                                        // Ubah warna latar belakang berdasarkan indeks
+                                        if (i % 2 == 0) {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                                        } else {
+                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                                        }
+
+                                        TextView labelTextView = new TextView(this);
+                                        labelTextView.setText(noMoulding);
+                                        labelTextView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                                        labelTextView.setGravity(Gravity.CENTER);
+                                        row.addView(labelTextView);
+
+                                        ImageView iIcon = new ImageView(this);
+                                        iIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        iIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+
+                                        ImageView oIcon = new ImageView(this);
+                                        oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                                        oIcon.setScaleType(ImageView.ScaleType.CENTER);
+                                        oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+
+                                        if (hasBeenPrinted == 0) {
+                                            iIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 1) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
+                                        } else if (hasBeenPrinted == 2) {
+                                            iIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "I"
+                                            oIcon.setImageResource(R.drawable.ic_done); // Ganti dengan ikon untuk "O"
+                                        } else {
+                                            iIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                            oIcon.setImageResource(R.drawable.ic_done_all); // Ganti dengan ikon untuk "D"
+                                        }
+
+                                        row.addView(iIcon);
+                                        row.addView(oIcon);
+
+                                        row.setOnClickListener(v -> {
+                                            // Tampilkan tooltip ketika baris diklik
+                                            fetchDataAndShowTooltip(v, noMoulding);
+                                        });
+
+
+                                        TabelOutput.addView(row);
+                                        labelCount++;
+
+                                    }
+
+                                    tvLabelCount.setText("Total Label : " + labelCount);
+
+                                } else {
+                                    //Toast.makeText(this, "Data tidak ditemukan", Toast.LENGTH_SHORT).show();
+                                    Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
+
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        // Handle koneksi database gagal
+                        Toast.makeText(this, "Gagal terhubung ke database", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                runOnUiThread(() -> {
+                    // Handle error SQL
+                    Log.e("Database Error", "Error: " + e.getMessage());
+                    Toast.makeText(this, "Terjadi kesalahan", Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void fetchDataAndShowTooltip(View anchorView, String noMoulding) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass(); // Koneksi ke database
+                if (connection != null) {
+                    // Query utama untuk mengambil detail tooltip
+                    String detailQuery = "SELECT h.NoMoulding, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, b1.Buyer AS BuyerNoSPK, " +
+                            "h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
+                            "FROM Moulding_h h " +
+                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                            "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                            "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                            "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                            "WHERE h.NoMoulding = ?";
+
+                    PreparedStatement detailStmt = connection.prepareStatement(detailQuery);
+                    detailStmt.setString(1, noMoulding);
+                    ResultSet detailRs = detailStmt.executeQuery();
+
+                    String retrievedNoMoulding = null;
+                    String formattedDateTime = null;
+                    String jenis = null;
+                    String spkDetail = null;
+                    String spkAsalDetail = null;
+                    String namaGrade = null;
+                    boolean isLembur = false;
+
+                    if (detailRs.next()) {
+                        retrievedNoMoulding = detailRs.getString("NoMoulding");
+                        String dateCreate = detailRs.getString("DateCreate");
+                        String jam = detailRs.getString("Jam");
+                        jenis = detailRs.getString("Jenis");
+                        String noSPK = detailRs.getString("NoSPK");
+                        String buyerNoSPK = detailRs.getString("BuyerNoSPK");
+                        String noSPKAsal = detailRs.getString("NoSPKAsal");
+                        String buyerNoSPKAsal = detailRs.getString("BuyerNoSPKAsal");
+                        namaGrade = detailRs.getString("NamaGrade");
+                        isLembur = detailRs.getBoolean("IsLembur");
+
+                        spkDetail = (noSPK != null && buyerNoSPK != null) ? noSPK + " - " + buyerNoSPK : "No data";
+                        spkAsalDetail = (noSPKAsal != null && buyerNoSPKAsal != null) ? noSPKAsal + " - " + buyerNoSPKAsal : "No data";
+                        formattedDateTime = combineDateTime(dateCreate, jam);
+                    }
+
+                    // Query untuk mengambil data tabel
+                    String tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM Moulding_d WHERE NoMoulding = ? ORDER BY NoUrut";
+                    PreparedStatement tableStmt = connection.prepareStatement(tableQuery);
+                    tableStmt.setString(1, noMoulding);
+
+                    ResultSet tableRs = tableStmt.executeQuery();
+                    List<String[]> tableData = new ArrayList<>();
+                    int totalPcs = 0;
+                    double totalM3 = 0.0;
+
+                    while (tableRs.next()) {
+                        // Ambil data dari tabel
+                        double tebal = tableRs.getDouble("Tebal");
+                        double lebar = tableRs.getDouble("Lebar");
+                        double panjang = tableRs.getDouble("Panjang");
+                        int pcs = tableRs.getInt("JmlhBatang");
+
+                        totalPcs += pcs;
+
+                        // Hitung M3 untuk baris ini
+                        double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                        rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                        totalM3 += rowM3;
+
+                        // Format data untuk tabel
+                        tableData.add(new String[]{
+                                String.valueOf((int) tebal),
+                                String.valueOf((int) lebar),
+                                String.valueOf((int) panjang),
+                                String.valueOf(pcs)
+                        });
+                    }
+
+                    // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
+                    String finalRetrievedNoMoulding = retrievedNoMoulding;
+                    String finalFormattedDateTime = formattedDateTime;
+                    String finalJenis = jenis;
+                    String finalSpkDetail = spkDetail;
+                    String finalSpkAsalDetail = spkAsalDetail;
+                    String finalNamaGrade = namaGrade;
+                    boolean finalIsLembur = isLembur;
+                    int finalTotalPcs = totalPcs;
+                    double finalTotalM3 = totalM3;
+
+                    runOnUiThread(() -> showTooltip(
+                            anchorView,
+                            finalRetrievedNoMoulding,
+                            finalFormattedDateTime,
+                            finalJenis,
+                            finalSpkDetail,
+                            finalSpkAsalDetail,
+                            finalNamaGrade,
+                            finalIsLembur,
+                            tableData,
+                            finalTotalPcs,
+                            finalTotalM3
+                    ));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching data", Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+
+
+    // Metode untuk menggabungkan Date dan Time
+    private String combineDateTime(String date, String time) {
+        try {
+            // Format input Date (dari database)
+            SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date parsedDate = inputDateFormat.parse(date);
+
+            // Gabungkan Date dan Time
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            String formattedDateTime = outputFormat.format(parsedDate) + " (" + time + ")";
+            return formattedDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return date + " " + time; // Jika terjadi error, kembalikan format default
+        }
+    }
+
+    private void showTooltip(View anchorView, String noMoulding, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noMoulding);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        if (y < 25) {
+            trianglePointer.setY(y - 60);
+        }
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
 
     private boolean isInternetAvailable() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -2541,9 +3042,7 @@ public class Moulding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(Moulding.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noBongkarSusun, false);
         }
     }
 
@@ -2582,11 +3081,7 @@ public class Moulding extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(Moulding.this, "Data berhasil disimpan ke database.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Toast.makeText(Moulding.this, "Gagal menyimpan data ke database.", Toast.LENGTH_SHORT).show();
-//            }
+            loadOuputByMesinSusun(noProduksi, true);
         }
     }
 
@@ -3225,68 +3720,6 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         }
     }
 
-    //menampilkan data profile berdasarkan nomor moulding saat di klik tombol Search
-    private class LoadFisikTask2 extends AsyncTask<String, Void, List<Fisik>> {
-        private String noMoulding;
-
-        public LoadFisikTask2(String noMoulding) {
-            this.noMoulding = noMoulding;
-        }
-
-        @Override
-        protected List<Fisik> doInBackground(String... params) {
-            List<Fisik> fisikList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT mw.NamaWarehouse " +
-                            "FROM dbo.MstWarehouse mw " +
-                            "INNER JOIN dbo.Moulding_h moulding ON mw.IdWarehouse = moulding.IdWarehouse " +
-                            "WHERE moulding.noMoulding = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noMoulding);
-
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaWarehouse");
-                        Fisik fisik = new Fisik(namaWarehouse);
-                        fisikList.add(fisik);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", "Error during query execution: " + e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return fisikList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Fisik> fisikList) {
-            if (!fisikList.isEmpty()) {
-                ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinFisikM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "No warehouse found.");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada Fisik"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinFisikM.setAdapter(emptyAdapter);
-            }
-        }
-    }
-
-
     //memuat spinner Grade
     private class LoadGradeTask extends AsyncTask<String, Void, List<Grade>> {
         @Override
@@ -3363,84 +3796,6 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         }
     }
 
-    //menampilkan data grade berdasarkan nomor moulding saat di klik tombol Search
-    private class LoadGradeTask2 extends AsyncTask<String, Void, List<Grade>> {
-        private String noMoulding;
-
-        public LoadGradeTask2(String noMoulding) {
-            this.noMoulding = noMoulding;
-        }
-
-        @Override
-        protected List<Grade> doInBackground(String... params) {
-            List<Grade> gradeList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String idJenisKayuStr = params[0];
-                    int idJenisKayu;
-
-                    try {
-                        idJenisKayu = Integer.parseInt(idJenisKayuStr);
-                    } catch (NumberFormatException e) {
-                        Log.e("Conversion Error", "IdJenisKayu should be an integer: " + idJenisKayuStr);
-                        return gradeList;
-                    }
-
-                    String category = "Moulding";
-
-                    String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
-                            "FROM MstGrade a " +
-                            "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                            "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? AND b.NoMoulding = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setInt(1, idJenisKayu);
-                    ps.setString(2, category);
-                    ps.setString(3, noMoulding);
-                    Log.d("LoadGradeTask", "Executing query: " + query + " with IdJenisKayu: " + idJenisKayu);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idGrade = rs.getString("IdGrade");
-                        String namaGrade = rs.getString("NamaGrade");
-
-                        if (idGrade != null && namaGrade != null) {
-                            Log.d("LoadGradeTask", "Fetched Grade: IdGrade = " + idGrade + ", NamaGrade = " + namaGrade);
-                            Grade gradeObj = new Grade(idGrade, namaGrade);
-                            gradeList.add(gradeObj);
-                        }
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return gradeList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Grade> gradeList) {
-            if (!gradeList.isEmpty()) {
-                ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, gradeList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeM.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Tidak ada grade");
-                ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(Moulding.this,
-                        android.R.layout.simple_spinner_item, new String[]{"Tidak ada grade"});
-                emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinGradeM.setAdapter(emptyAdapter);
-            }
-        }
-    }
-
 
     // memuat spinne mesin
     private class LoadMesinTask extends AsyncTask<String, Void, List<Mesin>> {
@@ -3489,75 +3844,12 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             } else {
                 Log.e("Error", "Failed to load mesin data.");
                 SpinMesinM.setAdapter(null);
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         }
     }
 
-    //menampilkan data mesin berdasarkan nomor moulding saat di klik tombol Search
-    private class LoadMesinTask2 extends AsyncTask<Void, Void, List<Mesin>> {
-        private String noMoulding;
-
-        public LoadMesinTask2(String noMoulding) {
-            this.noMoulding = noMoulding;
-        }
-
-        @Override
-        protected List<Mesin> doInBackground(Void... params) {
-            List<Mesin> mesinList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT b.NoProduksi, d.NamaMesin FROM Moulding_h a " +
-                            "INNER JOIN MouldingProduksiOutput b ON b.NoMoulding = a.NoMoulding " +
-                            "INNER JOIN MouldingProduksi_h c ON c.NoProduksi = b.NoProduksi " +
-                            "INNER JOIN MstMesin d ON d.IdMesin = c.IdMesin " +
-                            "WHERE a.NoMoulding = ?";
-
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noMoulding);
-
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorProduksi = rs.getString("NoProduksi");
-                        String namaMesin = rs.getString("NamaMesin");
-
-                        Mesin mesin = new Mesin(nomorProduksi, namaMesin);
-                        mesinList.add(mesin);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return mesinList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Mesin> mesinList) {
-            if (!mesinList.isEmpty()) {
-                ArrayAdapter<Mesin> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, mesinList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinMesinM.setAdapter(adapter);
-
-                radioButtonMesinM.setEnabled(true);
-                radioButtonBSusunM.setEnabled(false);
-            } else {
-                Log.e("Error", "Failed to load mesin data.");
-                radioButtonMesinM.setEnabled(false);
-                radioButtonBSusunM.setEnabled(false);
-
-                Toast.makeText(Moulding.this, "Tidak ada data mesin yang ditemukan.", Toast.LENGTH_SHORT).show();
-                SpinMesinM.setAdapter(null);
-            }
-        }
-    }
 
     //memuat spinner bongkar susun
     private class LoadSusunTask extends AsyncTask<String, Void, List<Susun>> {
@@ -3603,6 +3895,8 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             } else {
                 Log.e("Error", "Failed to load susun data");
                 SpinSusunM.setAdapter(null);
+                TabelOutput.removeAllViews();
+                tvLabelCount.setText("Total Label : 0");
             }
         }
     }

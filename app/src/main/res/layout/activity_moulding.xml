@@ -421,10 +421,10 @@
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/inner_card_top_right"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_center"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
-                app:layout_constraintWidth_percent="0.5">
+                app:layout_constraintHorizontal_weight="1">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -450,16 +450,18 @@
                         android:layout_marginBottom="10dp">
 
                         <TextView
-                            android:layout_width="120dp"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="0.7"
                             android:text="Tebal"
                             android:textSize="15sp"
                             android:textColor="@color/black" />
 
                         <AutoCompleteTextView
                             android:id="@+id/DetailTebalM"
-                            android:layout_width="150dp"
-                            android:layout_height="32dp"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:padding="6dp"
                             android:textSize="14sp"
                             android:background="@drawable/border_input"
@@ -477,16 +479,18 @@
                         android:layout_marginBottom="10dp">
 
                         <TextView
-                            android:layout_width="120dp"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="0.7"
                             android:text="Lebar"
                             android:textSize="15sp"
                             android:textColor="@color/black" />
 
                         <AutoCompleteTextView
                             android:id="@+id/DetailLebarM"
-                            android:layout_width="150dp"
-                            android:layout_height="32dp"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:padding="6dp"
                             android:textSize="14sp"
                             android:background="@drawable/border_input"
@@ -504,16 +508,18 @@
                         android:layout_marginBottom="10dp">
 
                         <TextView
-                            android:layout_width="120dp"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="0.7"
                             android:text="Panjang"
                             android:textSize="15sp"
                             android:textColor="@color/black" />
 
                         <AutoCompleteTextView
                             android:id="@+id/DetailPanjangM"
-                            android:layout_width="150dp"
-                            android:layout_height="32dp"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:padding="6dp"
                             android:textSize="14sp"
                             android:background="@drawable/border_input"
@@ -531,16 +537,18 @@
                         android:layout_marginBottom="10dp">
 
                         <TextView
-                            android:layout_width="120dp"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="0.7"
                             android:text="Pcs"
                             android:textSize="15sp"
                             android:textColor="@color/black" />
 
                         <EditText
                             android:id="@+id/DetailPcsM"
-                            android:layout_width="150dp"
-                            android:layout_height="32dp"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:padding="6dp"
                             android:textSize="14sp"
                             android:background="@drawable/border_input"
@@ -558,17 +566,19 @@
 
             <!-- CardView Atas Kanan -->
             <androidx.cardview.widget.CardView
-                android:id="@+id/inner_card_top_right"
+                android:id="@+id/inner_card_top_center"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
                 android:layout_marginBottom="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
                 app:layout_constraintStart_toEndOf="@id/inner_card_top_left"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_right"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom">
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintHorizontal_weight="0.7">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -678,6 +688,124 @@
                         </RadioGroup>
 
                     </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_right"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintHorizontal_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <!-- Header Tabel -->
+                        <TextView
+                            android:id="@+id/labelCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="4dp"
+                            android:text="Total Label: 0"
+                            android:textStyle="bold"
+                            android:padding="4dp" />
+
+                    </LinearLayout>
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="Label"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="I"
+                                android:gravity="center"
+                                android:layout_weight="0.5"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="O"
+                                android:gravity="center"
+                                android:layout_weight="0.5"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:id="@+id/loadingIndicatorLabelOutput"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:id="@+id/TabelOutput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="0">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
+                    </ScrollView>
 
                 </LinearLayout>
 

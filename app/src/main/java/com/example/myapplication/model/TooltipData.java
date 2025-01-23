@@ -17,13 +17,21 @@ public class TooltipData {
     private List<String[]> tableData; // Data tabel sebagai list of rows (array string)
     private int totalPcs; // Total Pcs (jumlah batang)
     private double totalM3; // Total M3 (volume kayu)
+    private double totalTon; // Atribut untuk menyimpan nilai ton
+
+    // Atribut tambahan untuk data ST
+    private String noKBSuket;
+    private String noPlat;
+    private String dateCreate;
+    private int idUOMTblLebar;
+    private int idUOMPanjang;
 
     // Constructor kosong (jika diperlukan)
     public TooltipData() {
     }
 
     // Constructor untuk mengisi semua atribut
-    public TooltipData(String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
+    public TooltipData(String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, String noKayuBulat, String suket, String noPlat, int idUOMTblLebar, int idUOMPanjang, String dateCreate) {
         this.noLabel = noLabel;
         this.formattedDateTime = formattedDateTime;
         this.jenis = jenis;
@@ -34,6 +42,10 @@ public class TooltipData {
         this.tableData = tableData;
         this.totalPcs = totalPcs;
         this.totalM3 = totalM3;
+        this.noPlat = noPlat;
+        this.idUOMTblLebar = idUOMTblLebar;
+        this.idUOMPanjang = idUOMPanjang;
+        this.dateCreate = dateCreate;
     }
 
     // Getter dan Setter untuk semua atribut
@@ -42,7 +54,7 @@ public class TooltipData {
         return noLabel;
     }
 
-    public void setNoS4S(String noLabel) {
+    public void setNoLabel(String noLabel) {
         this.noLabel = noLabel;
     }
 
@@ -116,5 +128,54 @@ public class TooltipData {
 
     public void setTotalM3(double totalM3) {
         this.totalM3 = totalM3;
+    }
+
+    public double getTotalTon() {
+        return totalTon;
+    }
+
+    public void setTotalTon(double totalTon) {
+        this.totalTon = totalTon;
+    }
+
+    public String getNoKBSuket () {
+        return noKBSuket;
+    }
+
+    public void setNoKBSuket(String noKBSuket) {
+        this.noKBSuket = noKBSuket;
+    }
+
+
+    public String getNoPlat() {
+        return noPlat;
+    }
+
+    public void setNoPlat(String suket) {
+        this.noPlat = suket;
+    }
+
+    public int getIdUOMTblLebar() {
+        return idUOMTblLebar;
+    }
+
+    public void setIdUOMTblLebar(int idUOMTblLebar) {
+        this.idUOMTblLebar = idUOMTblLebar;
+    }
+
+    public int getIdUOMPanjang() {
+        return idUOMPanjang;
+    }
+
+    public void setIdUOMPanjang(int idUOMPanjang) {
+        this.idUOMPanjang = idUOMPanjang;
+    }
+
+    public String getDateCreate() {
+        return dateCreate;
+    }
+
+    public void setDateCreate(String dateCreate) {
+        this.dateCreate = dateCreate;
     }
 }

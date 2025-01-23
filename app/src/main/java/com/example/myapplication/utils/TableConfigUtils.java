@@ -16,7 +16,10 @@ public class TableConfigUtils {
             List<String> noMouldingList,
             List<String> noFJList,
             List<String> noCCList,
-            List<String> noReprosesList
+            List<String> noReprosesList,
+            List<String> noLaminatingList,
+            List<String> noSandingList,
+            List<String> noPackingList
     ) {
         Map<String, TableConfig> tableConfigMap = new HashMap<>();
 
@@ -48,6 +51,21 @@ public class TableConfigUtils {
         tableConfigMap.put("Y", new TableConfig(
                 "Reproses_h", "Reproses_d", "NoReproses", R.id.noReprosesTableLayout, noReprosesList,
                 ProductionApi::findReprosesResultTable, R.id.sumReprosesLabel
+        ));
+
+        tableConfigMap.put("U", new TableConfig(
+                "Laminating_h", "Laminating_d", "NoLaminating", R.id.noLaminatingTableLayout, noLaminatingList,
+                ProductionApi::findLaminatingResultTable, R.id.sumLaminatingLabel
+        ));
+
+        tableConfigMap.put("W", new TableConfig(
+                "Sanding_h", "Sanding_d", "NoSanding", R.id.noSandingTableLayout, noSandingList,
+                ProductionApi::findSandingResultTable, R.id.sumSandingLabel
+        ));
+
+        tableConfigMap.put("I", new TableConfig(
+                "BarangJadi_h", "BarangJadi_d", "NoBJ", R.id.noPackingTableLayout, noPackingList,
+                ProductionApi::findPackingResultTable, R.id.sumPackingLabel
         ));
 
         return tableConfigMap;

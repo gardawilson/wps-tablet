@@ -110,6 +110,9 @@ public class ProsesProduksiFJ extends AppCompatActivity {
     private List<String> noFJList = new ArrayList<>();  // Daftar untuk kode 'S'
     private List<String> noCCList = new ArrayList<>();  // Daftar untuk kode 'V'
     private List<String> noReprosesList = new ArrayList<>();  // Daftar untuk kode 'Y'
+    private List<String> noLaminatingList = new ArrayList<>();  // Daftar untuk kode 'U'
+    private List<String> noSandingList = new ArrayList<>();  // Daftar untuk kode 'W'
+    private List<String> noPackingList = new ArrayList<>();  // Daftar untuk kode 'I'
     private List<ProductionData> dataList; // Data asli yang tidak difilter
     private ProgressBar loadingIndicator;
     private TableLayout noS4STableLayout;
@@ -721,16 +724,13 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
         ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
 
-        // Menaikkan pointer ketika popup melebihi batas layout
-        if (y < 25) {
+        // Menaikkan dan menurunkan pointer ketika popup melebihi batas layout
+        if (y < 60) {
             trianglePointer.setY(y - 60);
         }
-        else if((y + tooltipHeight) > screenHeight){
-            int pointerDownY = 0;
-            trianglePointer.setY(pointerDownY);
-            pointerDownY+=60;
+        else if(y > (screenHeight - tooltipHeight)){
+            trianglePointer.setY(y - (screenHeight - tooltipHeight));
         }
-
 
         // Tampilkan tooltip
         popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
@@ -738,6 +738,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
     private void populateNoS4STable(List<String> noS4SList) {
         noS4STableLayout.removeAllViews();
+
+        int rowIndex = 0;
 
         if (noS4SList == null || noS4SList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -752,6 +754,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         for (String noS4S : noS4SList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noS4S, 1.0f);
             row.addView(textView);
@@ -759,13 +763,23 @@ public class ProsesProduksiFJ extends AppCompatActivity {
             // Tambahkan OnClickListener untuk menampilkan tooltip
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
 
+            // Tetapkan warna latar belakang berdasarkan indeks baris
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             // Tambahkan baris ke TableLayout
             noS4STableLayout.addView(row);
+            rowIndex++;
         }
     }
 
     private void populateNoCCTable(List<String> noCCList) {
         noCCTableLayout.removeAllViews();
+
+        int rowIndex = 0;
 
         if (noCCList == null || noCCList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -780,11 +794,21 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         for (String noCC : noCCList) {
             TableRow row = new TableRow(this);
 
+            row.setTag(rowIndex);
+
             TextView textView = createTextView(noCC, 1.0f);
             row.addView(textView);
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
 
+            // Tetapkan warna latar belakang berdasarkan indeks baris
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+            }
+
             noCCTableLayout.addView(row);
+            rowIndex++;
         }
     }
 
@@ -822,9 +846,9 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         ));
 
         ImageButton deleteButton = new ImageButton(this);
-        deleteButton.setImageResource(R.drawable.ic_delete);
+        deleteButton.setImageResource(R.drawable.ic_close);
         deleteButton.setBackground(null);
-        deleteButton.setPadding(0, 5, 0, 0);
+        deleteButton.setPadding(0, 10, 0, 0);
         deleteButton.setLayoutParams(new TableRow.LayoutParams(50, TableRow.LayoutParams.WRAP_CONTENT));
 
 
@@ -863,6 +887,13 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                     return;
                 }
 
+                // Filter prefix: hanya terima awalan R (S4S) dan V (CC Akhir)
+                if (!result.startsWith("R") && !result.startsWith("V")) {
+                    runOnUiThread(() -> displayErrorState(
+                            "Label " + result + " Tidak Sesuai", R.raw.denied_data));
+                    return;
+                }
+
                 if (!scannedResults.contains(result)) {
                     // Tambahkan hasil baru
                     scannedResults.add(result);
@@ -877,7 +908,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
                     // Ambil konfigurasi tabel berdasarkan prefix hasil
                     Map<String, TableConfig> tableConfigMap = TableConfigUtils.getTableConfigMap(
-                            noS4SList, noSTList, noMouldingList, noFJList, noCCList, noReprosesList
+                            noS4SList, noSTList, noMouldingList, noFJList, noCCList, noReprosesList, noLaminatingList, noSandingList, noPackingList
                     );
                     TableConfig config = tableConfigMap.get(result.substring(0, 1));
 
@@ -1130,8 +1161,13 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
     private void showHistoryDialog(String noProduksi) {
         executorService.execute(() -> {
+            String filterQuery =
+                    "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM FJProduksiInputS4S WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'CrossCut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM FJProduksiInputCCAkhir WHERE NoProduksi = ?";
+
             // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi);
+            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 2);
 
             // 2. Siapkan dan proses data (di latar belakang)
             HistorySummary summary = prepareHistorySummary(historyGroups);
@@ -1193,7 +1229,6 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         TextView tvSumMoulding = dialogView.findViewById(R.id.tvSumMoulding);
         TextView tvSumFJ = dialogView.findViewById(R.id.tvSumFJ);
         TextView tvSumCCAkhir = dialogView.findViewById(R.id.tvSumCCAkhir);
-        TextView tvSumReproses = dialogView.findViewById(R.id.tvSumReproses);
         TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
 
         // Tambahkan data ke historyContainer
@@ -1205,7 +1240,6 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         tvSumMoulding.setText(String.valueOf(summary.totalMoulding));
         tvSumFJ.setText(String.valueOf(summary.totalFJ));
         tvSumCCAkhir.setText(String.valueOf(summary.totalCCAkhir));
-        tvSumReproses.setText(String.valueOf(summary.totalReproses));
         tvSumLabel.setText(String.valueOf(summary.getTotalAllLabels()));
 
         // Tutup dialog

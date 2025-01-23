@@ -115,10 +115,10 @@ public class ProductionApi {
         return noSTList;
     }
 
-    public static List<String> getNoMouldingByNoProduksi(String noProduksi) {
+    public static List<String> getNoMouldingByNoProduksi(String noProduksi, String tableName) {
         List<String> noMouldingList = new ArrayList<>();
 
-        String query = "SELECT NoMoulding FROM S4SProduksiInputMoulding WHERE NoProduksi = '" + noProduksi + "'";
+        String query = "SELECT NoMoulding FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
@@ -136,10 +136,10 @@ public class ProductionApi {
         return noMouldingList;
     }
 
-    public static List<String> getNoFJByNoProduksi(String noProduksi) {
+    public static List<String> getNoFJByNoProduksi(String noProduksi, String tableName) {
         List<String> noFJList = new ArrayList<>();
 
-        String query = "SELECT NoFJ FROM S4SProduksiInputFJ WHERE NoProduksi = '" + noProduksi + "'";
+        String query = "SELECT NoFJ FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
@@ -187,6 +187,69 @@ public class ProductionApi {
         Log.d("NoCC List Size", "Number of NoCC fetched: " + noCCList.size());
 
         return noCCList;
+    }
+
+    public static List<String> getNoLaminatingByNoProduksi(String noProduksi, String tableName) {
+        List<String> noLaminatingList = new ArrayList<>();
+
+        String query = "SELECT NoLaminating FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String noLaminating = rs.getString("NoLaminating");
+                noLaminatingList.add(noLaminating);
+                Log.d("Database Data", "NoLaminating: " + noLaminating);
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoLaminating: " + e.getMessage());
+        }
+
+        return noLaminatingList;
+    }
+
+    public static List<String> getNoSandingByNoProduksi(String noProduksi, String tableName) {
+        List<String> noSandingList = new ArrayList<>();
+
+        String query = "SELECT NoSanding FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String noSanding = rs.getString("NoSanding");
+                noSandingList.add(noSanding);
+                Log.d("Database Data", "NoSanding: " + noSanding);
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoSanding: " + e.getMessage());
+        }
+
+        return noSandingList;
+    }
+
+    public static List<String> getNoPackingByNoProduksi(String noProduksi, String tableName) {
+        List<String> noPackingList = new ArrayList<>();
+
+        String query = "SELECT NoBJ FROM " + tableName + " WHERE NoProduksi = '" + noProduksi + "'";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String noPacking = rs.getString("NoBJ");
+                noPackingList.add(noPacking);
+                Log.d("Database Data", "NoPacking: " + noPacking);
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoPacking: " + e.getMessage());
+        }
+
+        return noPackingList;
     }
 
 
@@ -283,14 +346,14 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved) {
+    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName) {
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             Log.e("SaveError", "List NoMoulding kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputMoulding (NoProduksi, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
 
             // Insert Data ke S4SProduksiInputMoulding
@@ -318,14 +381,14 @@ public class ProductionApi {
     }
 
 
-    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved) {
+    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName) {
         if (noFJList == null || noFJList.isEmpty()) {
             Log.e("SaveError", "List NoFJ kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputFJ (NoProduksi, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
 
             // Insert Data ke S4SProduksiInputFJ
@@ -384,6 +447,105 @@ public class ProductionApi {
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoCCAkhir: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoLaminating(String noProduksi, String tglProduksi, List<String> noLaminatingList, String dateTimeSaved, String tableName) {
+        if (noLaminatingList == null || noLaminatingList.isEmpty()) {
+            Log.e("SaveError", "List NoLaminating kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoLaminating, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE Laminating_h SET DateUsage = ? WHERE NoLaminating = ?")) {
+
+            // Insert Data ke S4SProduksiInputCCAkhir
+            for (String noLaminating : noLaminatingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noLaminating);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di CCAkhir_h
+            for (String noLaminating : noLaminatingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noLaminating);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoLaminating berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoLaminating: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoSanding(String noProduksi, String tglProduksi, List<String> noSandingList, String dateTimeSaved, String tableName) {
+        if (noSandingList == null || noSandingList.isEmpty()) {
+            Log.e("SaveError", "List NoSanding kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoSanding, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE Sanding_h SET DateUsage = ? WHERE NoSanding = ?")) {
+
+            for (String noSanding : noSandingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noSanding);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            for (String noSanding : noSandingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noSanding);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoSanding berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoSanding: " + e.getMessage());
+        }
+    }
+
+
+    public static void saveNoPacking(String noProduksi, String tglProduksi, List<String> noPackingList, String dateTimeSaved, String tableName) {
+        if (noPackingList == null || noPackingList.isEmpty()) {
+            Log.e("SaveError", "List NoPacking kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoBJ, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE BarangJadi_h SET DateUsage = ? WHERE NoBJ = ?")) {
+
+            for (String noPacking : noPackingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noPacking);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            for (String noPacking : noPackingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noPacking);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoPacking berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoPacking: " + e.getMessage());
         }
     }
 
@@ -833,35 +995,162 @@ public class ProductionApi {
         return null; // Return a default message if result is not found
     }
 
+    public static String findLaminatingResultTable(String result) {
+        String queryTemplate = "SELECT ? AS TableName, NoLaminating FROM %s WHERE NoLaminating = ?";
+        String[] tables = {
+                "CCAkhirProduksiInputLaminating",
+                "MouldingProduksiInputLaminating",
+                "AdjustmentInputLaminating",
+                "BongkarSusunInputLaminating"
+        };
 
-    public static List<HistoryItem> getHistoryItems(String noProduksi) {
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            for (String table : tables) {
+                String query = String.format(queryTemplate, table);
+                try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                    pstmt.setString(1, table); // Set table name as parameter
+                    pstmt.setString(2, result); // Set NoLaminating value
+
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            // Return a message based on the table name
+                            switch (table) {
+                                case "CCAkhirProduksiInputLaminating":
+                                    return "Proses Produksi CC Akhir";
+                                case "MouldingProduksiInputLaminating":
+                                    return "Proses Produksi Laminating";
+                                case "AdjustmentInputLaminating":
+                                    return "Adjustment Laminating";
+                                case "BongkarSusunInputLaminating":
+                                    return "Bongkar Susun Laminating";
+                                default:
+                                    return " " + table;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Check Error", "Error finding result table: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null; // Return a default message if result is not found
+    }
+
+    public static String findSandingResultTable(String result) {
+        String queryTemplate = "SELECT ? AS TableName, NoSanding FROM %s WHERE NoSanding = ?";
+        String[] tables = {
+                "LaminatingProduksiInputSanding",
+                "PackingProduksiInputSanding",
+                "AdjustmentInputSanding",
+                "BongkarSusunInputSanding"
+        };
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            for (String table : tables) {
+                String query = String.format(queryTemplate, table);
+                try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                    pstmt.setString(1, table); // Set table name as parameter
+                    pstmt.setString(2, result); // Set NoLaminating value
+
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            // Return a message based on the table name
+                            switch (table) {
+                                case "LaminatingProduksiInputSanding":
+                                    return "Proses Produksi Laminating";
+                                case "PackingProduksiInputSanding":
+                                    return "Proses Produksi Sanding";
+                                case "AdjustmentInputSanding":
+                                    return "Adjustment Sanding";
+                                case "BongkarSusunInputSanding":
+                                    return "Bongkar Susun Input Sanding";
+                                default:
+                                    return " " + table;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Check Error", "Error finding result table: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null; // Return a default message if result is not found
+    }
+
+    public static String findPackingResultTable(String result) {
+        String queryTemplate = "SELECT ? AS TableName, NoBJ FROM %s WHERE NoBJ = ?";
+        String[] tables = {
+                "CCAkhirProduksiInputBarangJadi",
+                "PackingProduksiInputBarangJadi",
+                "LaminatingProduksiInputBarangJadi",
+                "MouldingProduksiInputBarangJadi",
+                "BongkarSusunInputBarangJadi"
+        };
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            for (String table : tables) {
+                String query = String.format(queryTemplate, table);
+                try (PreparedStatement pstmt = con.prepareStatement(query)) {
+                    pstmt.setString(1, table); // Set table name as parameter
+                    pstmt.setString(2, result); // Set NoBJ value
+
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            // Return a message based on the table name
+                            switch (table) {
+                                case "CCAkhirProduksiInputBarangJadi":
+                                    return "Proses Produksi CC Akhir";
+                                case "PackingProduksiInputBarangJadi":
+                                    return "Proses Produksi Packing";
+                                case "MouldingProduksiInputBarangJadi":
+                                    return "Proses Produksi Moulding";
+                                case "LaminatingProduksiInputBarangJadi":
+                                    return "Proses Produksi Laminating";
+                                case "BongkarSusunInputBarangJadi":
+                                    return "Bongkar Susun Packing";
+                                default:
+                                    return " " + table;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Check Error", "Error finding result table: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null; // Return a default message if result is not found
+    }
+
+
+
+
+    public static List<HistoryItem> getHistoryItems(String noProduksi, String filterQuery, int tableCount) {
         List<HistoryItem> historyGroups = new ArrayList<>();
         String query = "SELECT DateTimeSaved, Label, COUNT(KodeLabel) AS Total, " +
                 "SUM(CASE WHEN Label = 'S4S' THEN 1 ELSE 0 END) AS TotalS4S, " +
                 "SUM(CASE WHEN Label = 'ST' THEN 1 ELSE 0 END) AS TotalST, " +
                 "SUM(CASE WHEN Label = 'Moulding' THEN 1 ELSE 0 END) AS TotalMoulding, " +
                 "SUM(CASE WHEN Label = 'FJ' THEN 1 ELSE 0 END) AS TotalFJ, " +
-                "SUM(CASE WHEN Label = 'Cross Cut' THEN 1 ELSE 0 END) AS TotalCrossCut, " +
+                "SUM(CASE WHEN Label = 'CrossCut' THEN 1 ELSE 0 END) AS TotalCrossCut, " +
+                "SUM(CASE WHEN Label = 'Laminating' THEN 1 ELSE 0 END) AS TotalLaminating, " +
+                "SUM(CASE WHEN Label = 'Sanding' THEN 1 ELSE 0 END) AS TotalSanding, " +
+                "SUM(CASE WHEN Label = 'Packing' THEN 1 ELSE 0 END) AS TotalPacking, " +
                 "SUM(CASE WHEN Label = 'Reproses' THEN 1 ELSE 0 END) AS TotalReproses " +
                 "FROM ( " +
-                "    SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = ? " +
-                "    UNION ALL " +
-                "    SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM S4SProduksiInputST WHERE NoProduksi = ? " +
-                "    UNION ALL " +
-                "    SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM S4SProduksiInputMoulding WHERE NoProduksi = ? " +
-                "    UNION ALL " +
-                "    SELECT 'FJ' AS Label, NoFJ AS KodeLabel, DateTimeSaved FROM S4SProduksiInputFJ WHERE NoProduksi = ? " +
-                "    UNION ALL " +
-                "    SELECT 'Cross Cut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM S4SProduksiInputCCAkhir WHERE NoProduksi = ? " +
-                "    UNION ALL " +
-                "    SELECT 'Reproses' AS Label, NoReproses AS KodeLabel, DateTimeSaved FROM S4SProduksiInputReproses WHERE NoProduksi = ? " +
+                filterQuery +
                 ") AS CombinedData " +
                 "GROUP BY DateTimeSaved, Label " +
                 "ORDER BY DateTimeSaved DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement pstmt = con.prepareStatement(query)) {
-            for (int i = 1; i <= 6; i++) {
+            for (int i = 1; i <= tableCount; i++) {
                 pstmt.setString(i, noProduksi);
             }
 
@@ -879,16 +1168,10 @@ public class ProductionApi {
                     int totalFJ = rs.getInt("TotalFJ");
                     int totalCrossCut = rs.getInt("TotalCrossCut");
                     int totalReproses = rs.getInt("TotalReproses");
-                    int totalAllLabels = totalS4S + totalST + totalMoulding + totalFJ + totalCrossCut + totalReproses;
-
-                    Log.d("TotalS4S", "Total S4S: " + totalS4S);
-                    Log.d("TotalST", "Total ST: " + totalST);
-                    Log.d("TotalMoulding", "Total Moulding: " + totalMoulding);
-                    Log.d("TotalFJ", "Total FJ: " + totalFJ);
-                    Log.d("TotalCrossCut", "Total Cross Cut: " + totalCrossCut);
-                    Log.d("TotalReproses", "Total Reproses: " + totalReproses);
-                    Log.d("TotalAllLabels", "Total All Labels: " + totalAllLabels);
-
+                    int totalLaminating = rs.getInt("TotalLaminating");
+                    int totalSanding = rs.getInt("TotalSanding");
+                    int totalPacking = rs.getInt("TotalPacking");
+                    int totalAllLabels = totalS4S + totalST + totalMoulding + totalFJ + totalCrossCut + totalReproses + totalLaminating + totalSanding + totalPacking;
 
                     groupedHistory.putIfAbsent(dateTimeSaved, new HistoryItem(dateTimeSaved));
                     groupedHistory.get(dateTimeSaved).addItem(new HistoryItem(label, String.valueOf(total), dateTimeSaved));
@@ -900,6 +1183,9 @@ public class ProductionApi {
                     history.setTotalMoulding(history.getTotalMoulding() + totalMoulding);
                     history.setTotalFJ(history.getTotalFJ() + totalFJ);
                     history.setTotalReproses(history.getTotalReproses() + totalReproses);
+                    history.setTotalLaminating(history.getTotalLaminating() + totalLaminating);
+                    history.setTotalSanding(history.getTotalSanding() + totalSanding);
+                    history.setTotalPacking(history.getTotalPacking() + totalPacking);
                     history.setTotalAllLabels(history.getTotalAllLabels() + totalAllLabels);
                 }
 
@@ -910,6 +1196,7 @@ public class ProductionApi {
         }
         return historyGroups;
     }
+
 
 
 
@@ -957,20 +1244,49 @@ public class ProductionApi {
     public static TooltipData getTooltipData(String noKey, String tableH, String tableD, String mainColumn) {
         TooltipData tooltipData = new TooltipData();
 
+        String detailQuery;
+        String tableQuery;
+
         // Query untuk tabel utama (detail tooltip)
-        String detailQuery = "SELECT h." + mainColumn + " AS KeyColumn, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, " +
-                "b1.Buyer AS BuyerNoSPK, h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
-                "FROM " + tableH + " h " +
-                "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
-                "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
-                "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
-                "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
-                "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
-                "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
-                "WHERE h." + mainColumn + " = ?";
+        if (tableH.equals("ST_h")) {
+            detailQuery = "SELECT ST." + mainColumn + " AS KeyColumn, ST.NoKayuBulat, KBH.Suket, ST.DateCreate, MJ.Jenis, " +
+                    "ST.NoSPK, B.Buyer AS BuyerNoSPK, ST.IdUOMTblLebar, ST.IdUOMPanjang, KBH.NoPlat " +
+                    "FROM ST_h ST " +
+                    "LEFT JOIN KayuBulat_h KBH ON ST.NoKayuBulat = KBH.NoKayuBulat " +
+                    "LEFT JOIN MstJenisKayu MJ ON ST.IdJenisKayu = MJ.IdJenisKayu " +
+                    "LEFT JOIN MstSPK_h SPK ON ST.NoSPK = SPK.NoSPK " +
+                    "LEFT JOIN MstBuyer B ON SPK.IdBuyer = B.IdBuyer " +
+                    "WHERE ST." + mainColumn + " = ?";
+        }
+
+        else if (tableH.equals("BarangJadi_h")){
+            detailQuery =  "SELECT h." + mainColumn + " AS KeyColumn, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, " +
+                    "b1.Buyer AS BuyerNoSPK, h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, bj.NamaBarangJadi, h.IsLembur " +
+                    "FROM BarangJadi_h h " +
+                    "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                    "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                    "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                    "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                    "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                    "LEFT JOIN MstBarangJadi bj ON h.IdBarangJadi = bj.IdBarangJadi " +
+                    "WHERE h." + mainColumn + " = ?";
+        }
+
+        else {
+            detailQuery = "SELECT h." + mainColumn + " AS KeyColumn, h.DateCreate, h.Jam, k.Jenis, h.NoSPK, " +
+                    "b1.Buyer AS BuyerNoSPK, h.NoSPKAsal, b2.Buyer AS BuyerNoSPKAsal, g.NamaGrade, h.IsLembur " +
+                    "FROM " + tableH + " h " +
+                    "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
+                    "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                    "LEFT JOIN MstSPK_h s1 ON h.NoSPK = s1.NoSPK " +
+                    "LEFT JOIN MstBuyer b1 ON s1.IdBuyer = b1.IdBuyer " +
+                    "LEFT JOIN MstSPK_h s2 ON h.NoSPKAsal = s2.NoSPK " +
+                    "LEFT JOIN MstBuyer b2 ON s2.IdBuyer = b2.IdBuyer " +
+                    "WHERE h." + mainColumn + " = ?";
+        }
 
         // Query untuk tabel detail
-        String tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM " + tableD + " WHERE " + mainColumn + " = ? ORDER BY NoUrut";
+        tableQuery = "SELECT Tebal, Lebar, Panjang, JmlhBatang FROM " + tableD + " WHERE " + mainColumn + " = ? ORDER BY NoUrut";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement detailStmt = con.prepareStatement(detailQuery);
@@ -981,15 +1297,43 @@ public class ProductionApi {
 
             try (ResultSet detailRs = detailStmt.executeQuery()) {
                 if (detailRs.next()) {
-                    tooltipData.setNoS4S(detailRs.getString("KeyColumn")); // Ambil kolom kunci (NoS4S, NoFJ, dll.)
-                    String dateCreate = detailRs.getString("DateCreate");
-                    String jam = detailRs.getString("Jam");
-                    tooltipData.setFormattedDateTime(combineDateTime(dateCreate, jam));
-                    tooltipData.setJenis(detailRs.getString("Jenis"));
-                    tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
-                    tooltipData.setSpkAsalDetail(formatSpk(detailRs.getString("NoSPKAsal"), detailRs.getString("BuyerNoSPKAsal")));
-                    tooltipData.setNamaGrade(detailRs.getString("NamaGrade"));
-                    tooltipData.setLembur(detailRs.getBoolean("IsLembur"));
+
+
+                    if (tableH.equals("ST_h")) {
+                        tooltipData.setNoLabel(detailRs.getString("KeyColumn"));
+                        String dateCreate = detailRs.getString("DateCreate");
+                        tooltipData.setFormattedDateTime(combineDateTime(dateCreate, ""));
+                        tooltipData.setNoKBSuket(formatNoKBSuket(detailRs.getString("NoKayuBulat"), detailRs.getString("Suket")));
+                        tooltipData.setNoPlat(detailRs.getString("NoPlat"));
+                        tooltipData.setIdUOMTblLebar(detailRs.getInt("IdUOMTblLebar"));
+                        tooltipData.setIdUOMPanjang(detailRs.getInt("IdUOMPanjang"));
+                        tooltipData.setJenis(detailRs.getString("Jenis"));
+                        tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
+
+                    }
+
+                    else if (tableH.equals("BarangJadi_h")) {
+                        tooltipData.setNoLabel(detailRs.getString("KeyColumn"));
+                        String dateCreate = detailRs.getString("DateCreate");
+                        String jam = detailRs.getString("Jam");
+                        tooltipData.setFormattedDateTime(combineDateTime(dateCreate, jam));
+                        tooltipData.setJenis(detailRs.getString("Jenis"));
+                        tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
+                        tooltipData.setSpkAsalDetail(formatSpk(detailRs.getString("NoSPKAsal"), detailRs.getString("BuyerNoSPKAsal")));
+                        tooltipData.setNamaGrade(detailRs.getString("NamaBarangJadi"));
+                    }
+
+                    else{
+                        tooltipData.setNoLabel(detailRs.getString("KeyColumn"));
+                        String dateCreate = detailRs.getString("DateCreate");
+                        String jam = detailRs.getString("Jam");
+                        tooltipData.setFormattedDateTime(combineDateTime(dateCreate, jam));
+                        tooltipData.setJenis(detailRs.getString("Jenis"));
+                        tooltipData.setSpkDetail(formatSpk(detailRs.getString("NoSPK"), detailRs.getString("BuyerNoSPK")));
+                        tooltipData.setSpkAsalDetail(formatSpk(detailRs.getString("NoSPKAsal"), detailRs.getString("BuyerNoSPKAsal")));
+                        tooltipData.setNamaGrade(detailRs.getString("NamaGrade"));
+                        tooltipData.setLembur(detailRs.getBoolean("IsLembur"));
+                    }
                 }
             }
 
@@ -999,7 +1343,8 @@ public class ProductionApi {
             try (ResultSet tableRs = tableStmt.executeQuery()) {
                 List<String[]> tableData = new ArrayList<>();
                 int totalPcs = 0;
-                double totalM3 = 0.0;
+                double totalM3 = 0.0000;
+                double totalTon = 0.0000;
 
                 while (tableRs.next()) {
                     double tebal = tableRs.getDouble("Tebal");
@@ -1008,9 +1353,35 @@ public class ProductionApi {
                     int pcs = tableRs.getInt("JmlhBatang");
 
                     totalPcs += pcs;
-                    double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
-                    rowM3 = Math.floor(rowM3 * 10000) / 10000; // Bulatkan ke 4 desimal
-                    totalM3 += rowM3;
+
+
+                    if (tableH.equals("ST_h")) {
+                        int idUOMTblLebar = tooltipData.getIdUOMTblLebar();
+                        double rowTON;
+                        double rowM3;
+
+                        // Perhitungan ton untuk baris ini berdasarkan IdUOMTblLebar
+                        if (idUOMTblLebar == 1) { // Jika menggunakan milimeter
+                            rowTON = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000);
+                            rowM3 = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000) * 1.416;
+                            rowTON = Math.floor(rowTON * 10000) / 10000; // Bulatkan ke 4 desimal
+                            rowM3 = Math.floor(rowM3 * 10000) / 10000;
+
+                        } else { // Satuan lainnya
+                            rowTON = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000);
+                            rowM3 = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000) * 1.416;
+                            rowTON = Math.floor(rowTON * 10000) / 10000; // Bulatkan ke 4 desimal
+                            rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                        }
+
+                        totalM3 += rowM3;
+                        totalTon += rowTON;
+                    }
+                    else{
+                        double rowM3 = (tebal * lebar * panjang * pcs) / 1000000000.0;
+                        rowM3 = Math.floor(rowM3 * 10000) / 10000; // Bulatkan ke 4 desimal
+                        totalM3 += rowM3;
+                    }
 
                     tableData.add(new String[]{
                             String.valueOf((int) tebal),
@@ -1023,6 +1394,7 @@ public class ProductionApi {
                 tooltipData.setTableData(tableData);
                 tooltipData.setTotalPcs(totalPcs);
                 tooltipData.setTotalM3(totalM3);
+                tooltipData.setTotalTon(totalTon);
             }
 
         } catch (SQLException e) {
@@ -1048,6 +1420,11 @@ public class ProductionApi {
     // Helper untuk memformat SPK
     private static String formatSpk(String noSPK, String buyer) {
         return (noSPK != null && buyer != null) ? noSPK + " - " + buyer : "-";
+    }
+
+    // Helper untuk memformat SPK
+    private static String formatNoKBSuket(String noKB, String noSuket) {
+        return (noKB != null && noSuket != null) ? noKB + " - " + noSuket : "-";
     }
 
 

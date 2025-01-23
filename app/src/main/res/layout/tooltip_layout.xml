@@ -29,15 +29,34 @@
             android:singleLine="true"
             android:ellipsize="end"
             android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingBottom="4dp"/>
+            android:textSize="18sp" />
     </LinearLayout>
+
+        <!-- No Kayu Bulat -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Label -->
+            <TextView
+                android:id="@+id/tvNoKBSuket"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     <!-- Date -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
 
         <!-- Label -->
         <TextView
@@ -132,8 +151,41 @@
             android:ellipsize="end" />
     </LinearLayout>
 
+        <!-- Plat Truk -->
+        <LinearLayout
+            android:id="@+id/fieldPlatTruk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Plat Truk"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvNoPlat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:ellipsize="end" />
+        </LinearLayout>
+
     <!-- SPK Asal -->
     <LinearLayout
+        android:id="@+id/fieldNoSPKAsal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -165,6 +217,7 @@
 
     <!-- Grade -->
     <LinearLayout
+        android:id="@+id/fieldGrade"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">

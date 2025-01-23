@@ -32,6 +32,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".ProsesProduksiLaminating"
+            android:exported="false" />
+        <activity
+            android:name=".ProsesProduksiMoulding"
+            android:exported="false" />
+        <activity
             android:name=".ProsesProduksiFJ"
             android:exported="false" />
         <activity

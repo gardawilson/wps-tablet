@@ -12,6 +12,8 @@ public class ProsesProduksi extends AppCompatActivity {
 
     private CardView S4SProduksi;
     private CardView FJProduksi;
+    private CardView MouldingProduksi;
+    private CardView LaminatingProduksi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +23,8 @@ public class ProsesProduksi extends AppCompatActivity {
 
         S4SProduksi = findViewById(R.id.S4SProduksi);
         FJProduksi = findViewById(R.id.FJProduksi);
+        MouldingProduksi = findViewById(R.id.MouldingProduksi);
+        LaminatingProduksi = findViewById(R.id.LaminatingProduksi);
 
 
         S4SProduksi.setOnClickListener(new View.OnClickListener() {
@@ -35,6 +39,22 @@ public class ProsesProduksi extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiFJ.class);
+                startActivity(intent);
+            }
+        });
+
+        MouldingProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiMoulding.class);
+                startActivity(intent);
+            }
+        });
+
+        LaminatingProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiLaminating.class);
                 startActivity(intent);
             }
         });

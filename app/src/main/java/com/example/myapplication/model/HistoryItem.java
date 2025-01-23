@@ -14,6 +14,9 @@ public class HistoryItem {
     private int totalFJ;
     private int totalCrossCut;
     private int totalReproses;
+    private int totalLaminating;
+    private int totalSanding;
+    private int totalPacking;
     private int totalAllLabels;
 
     private List<HistoryItem> items; // Tambahkan properti untuk daftar item detail
@@ -101,9 +104,29 @@ public class HistoryItem {
         return totalReproses;
     }
 
-    public void setTotalReproses(int totalReproses) {
-        this.totalReproses = totalReproses;
+    public void setTotalReproses(int totalReproses) { this.totalReproses = totalReproses; }
+
+    public int getTotalLaminating() {
+        return totalLaminating;
     }
+
+    public void setTotalLaminating(int totalLaminating) {
+        this.totalLaminating = totalLaminating;
+    }
+
+    public int getTotalSanding() {
+        return totalSanding;
+    }
+
+    public void setTotalSanding(int totalSanding) {
+        this.totalSanding = totalSanding;
+    }
+
+    public int getTotalPacking() {
+        return totalPacking;
+    }
+
+    public void setTotalPacking(int totalPacking) { this.totalPacking = totalPacking; }
 
     public int getTotalAllLabels() {
         return totalAllLabels;

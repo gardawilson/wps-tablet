@@ -53,7 +53,7 @@ public class CameraUtils {
 
                 Camera camera = cameraHolder[0];
                 if (camera != null) {
-                    camera.getCameraControl().setZoomRatio(3.0f); // Zoom 3x
+                    camera.getCameraControl().setZoomRatio(2.0f); // Zoom 2x
                     Log.d(TAG, "Zoom ratio set to 2x.");
                 }
 

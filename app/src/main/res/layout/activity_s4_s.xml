@@ -427,7 +427,7 @@
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
                 app:layout_constraintHorizontal_weight="1">
 
-            <LinearLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
@@ -579,7 +579,7 @@
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
                 app:layout_constraintHorizontal_weight="0.7">
 
-            <LinearLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
@@ -1006,7 +1006,8 @@
 
 
     <!-- CardView Kanan Bawah -->
-    <androidx.cardview.widget.CardView
+
+    <LinearLayout
         android:id="@+id/card_bottom_right"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -1018,77 +1019,70 @@
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/primary_dark">
 
+
+        <!-- Button Container -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
 
-
-            <!-- Button Container -->
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/BtnDataBaru"
+                android:layout_width="150dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
+                android:text="Data Baru"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
-                <Button
-                    android:id="@+id/BtnDataBaru"
-                    android:layout_width="150dp"
-                    android:layout_height="wrap_content"
-                    android:text="Data Baru"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/BtnSimpan"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:text="Simpan"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
 
-                <Button
-                    android:id="@+id/BtnSimpan"
-                    android:layout_width="150dp"
-                    android:layout_height="wrap_content"
-                    android:text="Simpan"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"
-                    android:visibility="gone"/>
+            <Button
+                android:id="@+id/BtnBatal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Batal"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
-                <Button
-                    android:id="@+id/BtnBatal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Batal"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/BtnPrint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Print"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"/>
 
-                <Button
-                    android:id="@+id/BtnPrint"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Print"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"/>
+            <Button
+                android:id="@+id/BtnInputDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Input Detail"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
 
-                <Button
-                    android:id="@+id/BtnInputDetail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Input Detail"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:visibility="gone"/>
-
-                <Button
-                    android:id="@+id/BtnHapusDetail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hapus"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:visibility="gone"/>
-
-            </LinearLayout>
+            <Button
+                android:id="@+id/BtnHapusDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hapus"
+                android:textSize="20sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

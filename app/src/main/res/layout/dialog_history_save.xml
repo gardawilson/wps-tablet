@@ -189,32 +189,7 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
-                        android:text="S4S"
-                        android:padding="4dp"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=":"
-                        android:padding="4dp"
-                        android:gravity="center"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvSumS4S"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="0"
-                        android:padding="4dp"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
+                        android:layout_weight="0.4"
                         android:text="ST"
                         android:padding="4dp"
                         android:textSize="12sp" />
@@ -239,7 +214,57 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
+                        android:layout_weight="0.4"
+                        android:text="S4S"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=":"
+                        android:padding="4dp"
+                        android:gravity="center"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvSumS4S"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="0"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.4"
+                        android:text="FJ"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=":"
+                        android:padding="4dp"
+                        android:gravity="center"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvSumFJ"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="0"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.4"
                         android:text="Mld."
                         android:padding="4dp"
                         android:textSize="12sp" />
@@ -271,8 +296,8 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
-                        android:text="FJ"
+                        android:layout_weight="0.4"
+                        android:text="Lam."
                         android:padding="4dp"
                         android:textSize="12sp" />
 
@@ -285,7 +310,7 @@
                         android:textSize="12sp" />
 
                     <TextView
-                        android:id="@+id/tvSumFJ"
+                        android:id="@+id/tvSumLaminating"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -297,7 +322,7 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
+                        android:layout_weight="0.4"
                         android:text="CC"
                         android:padding="4dp"
                         android:textSize="12sp" />
@@ -322,8 +347,8 @@
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="0.3"
-                        android:text="Rep."
+                        android:layout_weight="0.4"
+                        android:text="Snd."
                         android:padding="4dp"
                         android:textSize="12sp" />
 
@@ -336,13 +361,40 @@
                         android:textSize="12sp" />
 
                     <TextView
-                        android:id="@+id/tvSumReproses"
+                        android:id="@+id/tvSumSanding"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="0"
                         android:padding="4dp"
                         android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.4"
+                        android:text="BJ"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=":"
+                        android:padding="4dp"
+                        android:gravity="center"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvSumPacking"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="0"
+                        android:padding="4dp"
+                        android:textSize="12sp" />
+
+
 
                 </LinearLayout>
 

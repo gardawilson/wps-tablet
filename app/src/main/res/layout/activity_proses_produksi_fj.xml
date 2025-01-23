@@ -756,7 +756,7 @@
                                 android:id="@+id/noS4STableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
+                                android:background="#FFFFFF"
                                 android:stretchColumns="1">
 
                             </TableLayout>
@@ -823,7 +823,7 @@
                                 android:id="@+id/noCCTableLayout"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
+                                android:background="#FFFFFF"
                                 android:stretchColumns="1">
 
                             </TableLayout>
