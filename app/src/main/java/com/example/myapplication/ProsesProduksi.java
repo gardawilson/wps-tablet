@@ -17,6 +17,7 @@ public class ProsesProduksi extends AppCompatActivity {
     private CardView CrossCutProduksi;
     private CardView SandingProduksi;
     private CardView PackingProduksi;
+    private CardView BongkarSusun;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +32,7 @@ public class ProsesProduksi extends AppCompatActivity {
         CrossCutProduksi = findViewById(R.id.CrossCutProduksi);
         SandingProduksi = findViewById(R.id.SandingProduksi);
         PackingProduksi = findViewById(R.id.PackingProduksi);
+        BongkarSusun = findViewById(R.id.BongkarSusun);
 
 
         S4SProduksi.setOnClickListener(new View.OnClickListener() {
@@ -85,6 +87,14 @@ public class ProsesProduksi extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiPacking.class);
+                startActivity(intent);
+            }
+        });
+
+        BongkarSusun.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesProduksi.this, BongkarSusun.class);
                 startActivity(intent);
             }
         });

@@ -93,9 +93,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private String noProduksi; // Variabel global
     private String tglProduksi; // Variabel global
     private String mesinProduksi; // Variabel global
-    private AlertDialog progressDialog;
-    private TextView progressText;
-    private ProgressBar progressBar;
     private ActivityResultLauncher<String> requestPermissionLauncher;
     private ProcessCameraProvider cameraProvider;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -151,7 +148,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoFJ;
     private ProgressBar loadingIndicatorNoCC;
     private ProgressBar loadingIndicatorNoReproses;
-    int pointerDownY = 0;
 
 
     @Override
@@ -203,7 +199,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         loadingIndicatorNoReproses = findViewById(R.id.loadingIndicatorNoReproses);
 
         loadingIndicator.setVisibility(View.VISIBLE);
-
 
         // Inisialisasi View scanner overlay
         scannerOverlay = findViewById(R.id.scannerOverlay);
@@ -1423,7 +1418,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private void showHistoryDialog(String noProduksi) {
         executorService.execute(() -> {
             String filterQuery =
-                    "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = ? " +
+                            "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM S4SProduksiInputS4S WHERE NoProduksi = ? " +
                             "UNION ALL " +
                             "SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM S4SProduksiInputST WHERE NoProduksi = ? " +
                             "UNION ALL " +

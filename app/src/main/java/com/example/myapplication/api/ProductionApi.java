@@ -3,6 +3,7 @@ package com.example.myapplication.api;
 import android.util.Log;
 
 import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TooltipData;
@@ -23,6 +24,8 @@ import java.util.Map;
 
 public class ProductionApi {
 
+
+    // GETTER DAN SETTER PROSES PRODUKSI
     public static List<ProductionData> getProductionData(String tableName) {
         List<ProductionData> productionDataList = new ArrayList<>();
 
@@ -415,7 +418,6 @@ public class ProductionApi {
         }
     }
 
-
     public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName) {
         if (noCCList == null || noCCList.isEmpty()) {
             Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
@@ -585,6 +587,531 @@ public class ProductionApi {
     }
 
 
+    //GETTER DAN SETTER BONGKAR SUSUN
+    public static List<BongkarSusunData> getBongkarSusunData(String tableName) {
+        List<BongkarSusunData> bongkarSusunDataList = new ArrayList<>();
+
+        // Query SQL dengan nama tabel dinamis
+        String query = "SELECT TOP 50 " +
+                "NoBongkarSusun, " +
+                "Tanggal, " +
+                "Keterangan " +
+                "FROM " + tableName + " " +
+                "ORDER BY NoBongkarSusun DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                // Ambil data dari ResultSet
+                String noBongkarSusun = rs.getString("NoBongkarSusun");
+                String tanggal = rs.getString("Tanggal");
+                String keterangan = rs.getString("Keterangan");
+
+                bongkarSusunDataList.add(new BongkarSusunData(noBongkarSusun, tanggal, keterangan));
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+        }
+
+        return bongkarSusunDataList;
+    }
+
+    public static List<String> getNoS4SByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noS4SList = new ArrayList<>();
+
+        String query = "SELECT NoS4S FROM " + tableName + " WHERE NoBongkarSusun = ?";
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setString(1, noBongkarSusun); // Set nilai parameter
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noS4S = rs.getString("NoS4S");
+                    noS4SList.add(noS4S);
+
+                    Log.d("Database Data", "NoS4S: " + noS4S);
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoS4S: " + e.getMessage());
+        }
+        return noS4SList;
+    }
+
+    public static List<String> getNoSTByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noSTList = new ArrayList<>();
+
+        String query = "SELECT NoST FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noST = rs.getString("NoST");
+                    noSTList.add(noST);
+                    Log.d("Database Data", "NoST: " + noST);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoST: " + e.getMessage());
+        }
+
+        return noSTList;
+    }
+
+
+    public static List<String> getNoMouldingByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noMouldingList = new ArrayList<>();
+
+        // Menggunakan parameterized query
+        String query = "SELECT NoMoulding FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noMoulding = rs.getString("NoMoulding");
+                    noMouldingList.add(noMoulding);
+                    Log.d("Database Data", "NoMoulding: " + noMoulding);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoMoulding: " + e.getMessage());
+        }
+
+        return noMouldingList;
+    }
+
+
+    public static List<String> getNoFJByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noFJList = new ArrayList<>();
+
+        String query = "SELECT NoFJ FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noFJ = rs.getString("NoFJ");
+                    noFJList.add(noFJ);
+                    Log.d("Database Data", "NoFJ: " + noFJ);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoFJ: " + e.getMessage());
+        }
+
+        return noFJList;
+    }
+
+    public static List<String> getNoCCByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noCCList = new ArrayList<>();
+
+        // Query SQL dinamis berdasarkan nama tabel
+        String query = "SELECT NoCCAkhir FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            // Set parameter untuk query
+            pstmt.setString(1, noBongkarSusun);
+
+            // Eksekusi query
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noCC = rs.getString("NoCCAkhir");
+                    noCCList.add(noCC);
+                    Log.d("Database Data", "NoCC: " + noCC);
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoCC: " + e.getMessage());
+        }
+
+        // Debugging jumlah data yang ditemukan
+        Log.d("NoCC List Size", "Number of NoCC fetched: " + noCCList.size());
+
+        return noCCList;
+    }
+
+    public static List<String> getNoLaminatingByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noLaminatingList = new ArrayList<>();
+
+        // Menggunakan parameterized query
+        String query = "SELECT NoLaminating FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            // Set nilai untuk parameter "?"
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noLaminating = rs.getString("NoLaminating");
+                    noLaminatingList.add(noLaminating);
+                    Log.d("Database Data", "NoLaminating: " + noLaminating);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoLaminating: " + e.getMessage());
+        }
+
+        return noLaminatingList;
+    }
+
+
+    public static List<String> getNoSandingByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noSandingList = new ArrayList<>();
+
+        // Menggunakan parameterized query
+        String query = "SELECT NoSanding FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            // Set nilai untuk parameter "?"
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noSanding = rs.getString("NoSanding");
+                    noSandingList.add(noSanding);
+                    Log.d("Database Data", "NoSanding: " + noSanding);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoSanding: " + e.getMessage());
+        }
+
+        return noSandingList;
+    }
+
+    public static List<String> getNoPackingByNoBongkarSusun(String noBongkarSusun, String tableName) {
+        List<String> noPackingList = new ArrayList<>();
+
+        // Menggunakan parameterized query
+        String query = "SELECT NoBJ FROM " + tableName + " WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            // Set nilai untuk parameter "?"
+            pstmt.setString(1, noBongkarSusun);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noPacking = rs.getString("NoBJ");
+                    noPackingList.add(noPacking);
+                    Log.d("Database Data", "NoPacking: " + noPacking);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoPacking: " + e.getMessage());
+        }
+
+        return noPackingList;
+    }
+
+    //SAVE IN BONGKAR SUSUN
+
+
+    public static void saveNoSTInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String tableName) {
+        if (noSTList == null || noSTList.isEmpty()) {
+            Log.e("SaveError", "List NoST kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoST, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE ST_h SET DateUsage = ? WHERE NoST = ?")) {
+
+            // Insert Data ke S4SProduksiInputST
+            for (String noST : noSTList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noST);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di S4S_h
+            for (String noST : noSTList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noST);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoST berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoST: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoS4SInBongkarSusun(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName) {
+        if (noS4SList == null || noS4SList.isEmpty()) {
+            Log.e("SaveError", "List NoS4S kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
+
+            // Insert Data ke S4SProduksiInputS4S
+            for (String noS4S : noS4SList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noS4S);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di S4S_h
+            for (String noS4S : noS4SList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noS4S);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoFJInBongkarSusun(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName) {
+        if (noFJList == null || noFJList.isEmpty()) {
+            Log.e("SaveError", "List NoFJ kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
+
+            // Insert Data ke S4SProduksiInputFJ
+            for (String noFJ : noFJList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noFJ);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di FJ_h
+            for (String noFJ : noFJList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noFJ);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoFJ berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoFJ: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoMouldingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName) {
+        if (noMouldingList == null || noMouldingList.isEmpty()) {
+            Log.e("SaveError", "List NoMoulding kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
+
+            // Insert Data ke S4SProduksiInputMoulding
+            for (String noMoulding : noMouldingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noMoulding);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di Moulding_h
+            for (String noMoulding : noMouldingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noMoulding);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoMoulding berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoMoulding: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoLaminatingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noLaminatingList, String dateTimeSaved, String tableName) {
+        if (noLaminatingList == null || noLaminatingList.isEmpty()) {
+            Log.e("SaveError", "List NoLaminating kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoLaminating, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE Laminating_h SET DateUsage = ? WHERE NoLaminating = ?")) {
+
+            // Insert Data ke S4SProduksiInputCCAkhir
+            for (String noLaminating : noLaminatingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noLaminating);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di CCAkhir_h
+            for (String noLaminating : noLaminatingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noLaminating);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoLaminating berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoLaminating: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoCCInBongkarSusun(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName) {
+        if (noCCList == null || noCCList.isEmpty()) {
+            Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
+
+            // Insert Data ke S4SProduksiInputCCAkhir
+            for (String noCCAkhir : noCCList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noCCAkhir);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            // Update DataUsage di CCAkhir_h
+            for (String noCCAkhir : noCCList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noCCAkhir);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoCCAkhir berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoCCAkhir: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoSandingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSandingList, String dateTimeSaved, String tableName) {
+        if (noSandingList == null || noSandingList.isEmpty()) {
+            Log.e("SaveError", "List NoSanding kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoSanding, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE Sanding_h SET DateUsage = ? WHERE NoSanding = ?")) {
+
+            for (String noSanding : noSandingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noSanding);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            for (String noSanding : noSandingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noSanding);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoSanding berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoSanding: " + e.getMessage());
+        }
+    }
+
+    public static void saveNoPackingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noPackingList, String dateTimeSaved, String tableName) {
+        if (noPackingList == null || noPackingList.isEmpty()) {
+            Log.e("SaveError", "List NoPacking kosong, tidak ada data untuk disimpan.");
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoBJ, DateTimeSaved) VALUES (?, ?, ?)");
+             PreparedStatement updateStmt = con.prepareStatement("UPDATE BarangJadi_h SET DateUsage = ? WHERE NoBJ = ?")) {
+
+            for (String noPacking : noPackingList) {
+                insertStmt.setString(1, noProduksi);
+                insertStmt.setString(2, noPacking);
+                insertStmt.setString(3, dateTimeSaved);
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+
+            for (String noPacking : noPackingList) {
+                updateStmt.setString(1, tglProduksi);
+                updateStmt.setString(2, noPacking);
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+
+            Log.d("SaveSuccess", "Data NoPacking berhasil disimpan dan DateUsage diperbarui.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data NoPacking: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     public static boolean isDataExists(String result, String tableName_h, String tableName_d, String columnName) {
         boolean existsInTableH = false;
         boolean existsInTableD = false;
@@ -696,8 +1223,45 @@ public class ProductionApi {
         return false; // Default jika tidak valid
     }
 
+    public static boolean isDateValidInBongkarSusun(String noProduksi, String tableProduksi, String result, String tableNameH, String columnName) {
+        String queryH = "SELECT DateCreate FROM " + tableNameH + " WHERE " + columnName + " = ?";
+        String queryProduksi = "SELECT Tanggal FROM " + tableProduksi + " WHERE NoBongkarSusun = ?";
+        java.sql.Date dateCreated = null;
+        java.sql.Date produksiInputDate = null;
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            // Ambil DateCreated dari tableNameH
+            try (PreparedStatement pstmtH = con.prepareStatement(queryH)) {
+                pstmtH.setString(1, result);
+                try (ResultSet rsH = pstmtH.executeQuery()) {
+                    if (rsH.next()) {
+                        dateCreated = rsH.getDate("DateCreate");
+                    }
+                }
+            }
+
+            // Ambil Tanggal dari ProduksiInput
+            try (PreparedStatement pstmtProduksi = con.prepareStatement(queryProduksi)) {
+                pstmtProduksi.setString(1, noProduksi);
+                try (ResultSet rsProduksi = pstmtProduksi.executeQuery()) {
+                    if (rsProduksi.next()) {
+                        produksiInputDate = rsProduksi.getDate("Tanggal");
+                    }
+                }
+            }
+
+            // Bandingkan tanggal
+            if (dateCreated != null && produksiInputDate != null) {
+                return produksiInputDate.compareTo(dateCreated) >= 0;
+            }
+        } catch (SQLException e) {
+            Log.e("Database Check Error", "Error comparing dates: " + e.getMessage());
+        }
+        return false; // Default jika tidak valid
+    }
+
     public static String findS4SResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoS4S FROM %s WHERE NoS4S = ?";
+        String queryTemplate = "SELECT %s, NoS4S FROM %s WHERE NoS4S = ?";
         String[] tables = {
                 "S4SProduksiInputS4S",
                 "FJProduksiInputS4S",
@@ -708,27 +1272,49 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "S4SProduksiInputS4S":
+                    case "FJProduksiInputS4S":
+                    case "MouldingProduksiInputS4S":
+                        column = "NoProduksi"; // Kolom untuk tabel ini
+                        break;
+                    case "AdjustmentInputS4S":
+                        column = "NoAdjustment"; // Kolom khusus untuk Adjustment
+                        break;
+                    case "BongkarSusunInputS4S":
+                        column = "NoBongkarSusun"; // Kolom khusus untuk BongkarSusun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoS4S value
+                    pstmt.setString(1, result); // Set NoS4S value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noProduksi = rs.getString(column);
+
+                            // Return the message and NoProduksi based on the table
                             switch (table) {
                                 case "S4SProduksiInputS4S":
-                                    return "Proses Produksi S4S";
+                                    return "Proses Produksi S4S : " + noProduksi;
                                 case "FJProduksiInputS4S":
-                                    return "Proses Produksi FJ";
+                                    return "Proses Produksi FJ : " + noProduksi;
                                 case "MouldingProduksiInputS4S":
-                                    return "Proses Produksi Moulding";
+                                    return "Proses Produksi Moulding : " + noProduksi;
                                 case "AdjustmentInputS4S":
-                                    return "Adjustment S4S";
+                                    return "Adjustment S4S : " + noProduksi;
                                 case "BongkarSusunInputS4S":
-                                    return "Bongkar Susun";
+                                    return "Bongkar Susun : " + noProduksi;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noProduksi;
                             }
                         }
                     }
@@ -744,7 +1330,7 @@ public class ProductionApi {
 
 
     public static String findSTResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoST FROM %s WHERE NoST = ?";
+        String queryTemplate = "SELECT %s, NoST FROM %s WHERE NoST = ?";
         String[] tables = {
                 "S4SProduksiInputST",
                 "AdjustmentInputST",
@@ -753,23 +1339,43 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "S4SProduksiInputST":
+                        column = "NoProduksi"; // Kolom untuk S4SProduksiInputST
+                        break;
+                    case "AdjustmentInputST":
+                        column = "NoAdjustment"; // Kolom untuk AdjustmentInputST
+                        break;
+                    case "BongkarSusunInputST":
+                        column = "NoBongkarSusun"; // Kolom untuk BongkarSusunInputST
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoST value
+                    pstmt.setString(1, result); // Set NoST value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noST = rs.getString(column);
+
+                            // Return the message and NoST based on the table
                             switch (table) {
                                 case "S4SProduksiInputST":
-                                    return "Proses Produksi S4S";
+                                    return "Proses Produksi S4S : " + noST;
                                 case "AdjustmentInputST":
-                                    return "Adjustment ST";
+                                    return "Adjustment ST : " + noST;
                                 case "BongkarSusunInputST":
-                                    return "Bongkar Susun";
+                                    return "Bongkar Susun : " + noST;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noST;
                             }
                         }
                     }
@@ -783,8 +1389,9 @@ public class ProductionApi {
         return null; // Return a default message if result is not found
     }
 
+
     public static String findMouldingResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoMoulding FROM %s WHERE NoMoulding = ?";
+        String queryTemplate = "SELECT %s, NoMoulding FROM %s WHERE NoMoulding = ?";
         String[] tables = {
                 "S4SProduksiInputMoulding",
                 "SandingProduksiInputMoulding",
@@ -798,33 +1405,58 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "S4SProduksiInputMoulding":
+                    case "SandingProduksiInputMoulding":
+                    case "PackingProduksiInputMoulding":
+                    case "MouldingProduksiInputMoulding":
+                    case "LaminatingProduksiInputMoulding":
+                    case "CCAkhirProduksiInputMoulding":
+                        column = "NoProduksi"; // Kolom untuk tabel ini
+                        break;
+                    case "AdjustmentInputMoulding":
+                        column = "NoAdjustment"; // Kolom khusus untuk Adjustment
+                        break;
+                    case "BongkarSusunInputMoulding":
+                        column = "NoBongkarSusun"; // Kolom khusus untuk BongkarSusun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoMoulding value
+                    pstmt.setString(1, result); // Set NoMoulding value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noMoulding = rs.getString(column);
+
+                            // Return the message and NoMoulding based on the table
                             switch (table) {
                                 case "S4SProduksiInputMoulding":
-                                    return "Proses Produksi S4S";
+                                    return "Proses Produksi S4S : " + noMoulding;
                                 case "SandingProduksiInputMoulding":
-                                    return "Proses Produksi Sanding";
+                                    return "Proses Produksi Sanding : " + noMoulding;
                                 case "PackingProduksiInputMoulding":
-                                    return "Proses Packing Packing";
+                                    return "Proses Packing : " + noMoulding;
                                 case "MouldingProduksiInputMoulding":
-                                    return "Proses Produksi Moulding";
+                                    return "Proses Produksi Moulding : " + noMoulding;
                                 case "LaminatingProduksiInputMoulding":
-                                    return "Proses Produksi Laminating";
+                                    return "Proses Produksi Laminating : " + noMoulding;
                                 case "CCAkhirProduksiInputMoulding":
-                                    return "Proses Produksi Cross Cut";
+                                    return "Proses Produksi Cross Cut : " + noMoulding;
                                 case "AdjustmentInputMoulding":
-                                    return "Adjustment Moulding";
+                                    return "Adjustment Moulding : " + noMoulding;
                                 case "BongkarSusunInputMoulding":
-                                    return "Bongkar Susun Moulding";
+                                    return "Bongkar Susun Moulding : " + noMoulding;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noMoulding;
                             }
                         }
                     }
@@ -839,8 +1471,9 @@ public class ProductionApi {
     }
 
 
+
     public static String findFJResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoFJ FROM %s WHERE NoFJ = ?";
+        String queryTemplate = "SELECT %s, NoFJ FROM %s WHERE NoFJ = ?";
         String[] tables = {
                 "SandingProduksiInputFJ",
                 "S4SProduksiInputFJ",
@@ -852,29 +1485,52 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "SandingProduksiInputFJ":
+                    case "S4SProduksiInputFJ":
+                    case "MouldingProduksiInputFJ":
+                    case "CCAkhirProduksiInputFJ":
+                        column = "NoProduksi"; // Kolom untuk tabel ini
+                        break;
+                    case "AdjustmentInputFJ":
+                        column = "NoAdjustment"; // Kolom khusus untuk Adjustment
+                        break;
+                    case "BongkarSusunInputFJ":
+                        column = "NoBongkarSusun"; // Kolom khusus untuk BongkarSusun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoFJ value
+                    pstmt.setString(1, result); // Set NoFJ value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noFJ = rs.getString(column);
+
+                            // Return the message and NoFJ based on the table
                             switch (table) {
                                 case "SandingProduksiInputFJ":
-                                    return "Proses Produksi Sanding";
+                                    return "Proses Produksi Sanding : " + noFJ;
                                 case "S4SProduksiInputFJ":
-                                    return "Proses Produksi S4S";
+                                    return "Proses Produksi S4S : " + noFJ;
                                 case "MouldingProduksiInputFJ":
-                                    return "Proses Produksi Moulding";
+                                    return "Proses Produksi Moulding : " + noFJ;
                                 case "CCAkhirProduksiInputFJ":
-                                    return "Proses Produksi Cross Cut";
+                                    return "Proses Produksi Cross Cut : " + noFJ;
                                 case "AdjustmentInputFJ":
-                                    return "Adjustment FJ";
+                                    return "Adjustment FJ : " + noFJ;
                                 case "BongkarSusunInputFJ":
-                                    return "Bongkar Susun FJ";
+                                    return "Bongkar Susun FJ : " + noFJ;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noFJ;
                             }
                         }
                     }
@@ -890,7 +1546,7 @@ public class ProductionApi {
 
 
     public static String findCCAkhirResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoCCAkhir FROM %s WHERE NoCCAkhir = ?";
+        String queryTemplate = "SELECT %s, NoCCAkhir FROM %s WHERE NoCCAkhir = ?";
         String[] tables = {
                 "SandingProduksiInputCCAkhir",
                 "S4SProduksiInputCCAkhir",
@@ -903,31 +1559,55 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "SandingProduksiInputCCAkhir":
+                    case "S4SProduksiInputCCAkhir":
+                    case "MouldingProduksiInputCCAkhir":
+                    case "LaminatingProduksiInputCCAkhir":
+                    case "FJProduksiInputCCAkhir":
+                        column = "NoProduksi"; // Kolom untuk tabel ini
+                        break;
+                    case "AdjustmentInputCCAkhir":
+                        column = "NoAdjustment"; // Kolom khusus untuk Adjustment
+                        break;
+                    case "BongkarSusunInputCCAkhir":
+                        column = "NoBongkarSusun"; // Kolom khusus untuk BongkarSusun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoCCAkhir value
+                    pstmt.setString(1, result); // Set NoCCAkhir value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noCCAkhir = rs.getString(column);
+
+                            // Return the message and NoCCAkhir based on the table
                             switch (table) {
                                 case "SandingProduksiInputCCAkhir":
-                                    return "Proses Produksi Sanding";
+                                    return "Proses Produksi Sanding : " + noCCAkhir;
                                 case "S4SProduksiInputCCAkhir":
-                                    return "Proses Produksi S4S";
+                                    return "Proses Produksi S4S : " + noCCAkhir;
                                 case "MouldingProduksiInputCCAkhir":
-                                    return "Proses Produksi Moulding";
+                                    return "Proses Produksi Moulding : " + noCCAkhir;
                                 case "LaminatingProduksiInputCCAkhir":
-                                    return "Proses Produksi Laminating";
+                                    return "Proses Produksi Laminating : " + noCCAkhir;
                                 case "FJProduksiInputCCAkhir":
-                                    return "Proses Produksi Finger Joint";
+                                    return "Proses Produksi Finger Joint : " + noCCAkhir;
                                 case "AdjustmentInputCCAkhir":
-                                    return "Adjustment Cross Cut";
+                                    return "Adjustment Cross Cut : " + noCCAkhir;
                                 case "BongkarSusunInputCCAkhir":
-                                    return "Bongkar Susun Cross Cut";
+                                    return "Bongkar Susun Cross Cut : " + noCCAkhir;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noCCAkhir;
                             }
                         }
                     }
@@ -996,7 +1676,7 @@ public class ProductionApi {
     }
 
     public static String findLaminatingResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoLaminating FROM %s WHERE NoLaminating = ?";
+        String queryTemplate = "SELECT %s, NoLaminating FROM %s WHERE NoLaminating = ?";
         String[] tables = {
                 "CCAkhirProduksiInputLaminating",
                 "MouldingProduksiInputLaminating",
@@ -1006,25 +1686,46 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "CCAkhirProduksiInputLaminating":
+                    case "MouldingProduksiInputLaminating":
+                        column = "NoProduksi"; // Kolom untuk tabel ini
+                        break;
+                    case "AdjustmentInputLaminating":
+                        column = "NoAdjustment"; // Kolom khusus untuk Adjustment
+                        break;
+                    case "BongkarSusunInputLaminating":
+                        column = "NoBongkarSusun"; // Kolom khusus untuk BongkarSusun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoLaminating value
+                    pstmt.setString(1, result); // Set NoLaminating value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noLaminating = rs.getString(column);
+
+                            // Return the message and NoLaminating based on the table
                             switch (table) {
                                 case "CCAkhirProduksiInputLaminating":
-                                    return "Proses Produksi CC Akhir";
+                                    return "Proses Produksi CC Akhir : " + noLaminating;
                                 case "MouldingProduksiInputLaminating":
-                                    return "Proses Produksi Laminating";
+                                    return "Proses Produksi Laminating : " + noLaminating;
                                 case "AdjustmentInputLaminating":
-                                    return "Adjustment Laminating";
+                                    return "Adjustment Laminating : " + noLaminating;
                                 case "BongkarSusunInputLaminating":
-                                    return "Bongkar Susun Laminating";
+                                    return "Bongkar Susun Laminating : " + noLaminating;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noLaminating;
                             }
                         }
                     }
@@ -1038,8 +1739,9 @@ public class ProductionApi {
         return null; // Return a default message if result is not found
     }
 
+
     public static String findSandingResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoSanding FROM %s WHERE NoSanding = ?";
+        String queryTemplate = "SELECT %s, NoSanding FROM %s WHERE NoSanding = ?";
         String[] tables = {
                 "LaminatingProduksiInputSanding",
                 "PackingProduksiInputSanding",
@@ -1049,25 +1751,48 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "LaminatingProduksiInputSanding":
+                        column = "NoProduksi"; // Kolom untuk tabel Laminating
+                        break;
+                    case "PackingProduksiInputSanding":
+                        column = "NoProduksi"; // Kolom untuk tabel Packing
+                        break;
+                    case "AdjustmentInputSanding":
+                        column = "NoAdjustment"; // Kolom untuk Adjustment
+                        break;
+                    case "BongkarSusunInputSanding":
+                        column = "NoBongkarSusun"; // Kolom untuk Bongkar Susun
+                        break;
+                    default:
+                        column = "NoProduksi"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoLaminating value
+                    pstmt.setString(1, result); // Set NoSanding value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noSanding = rs.getString(column);
+
+                            // Return the message and NoSanding based on the table
                             switch (table) {
                                 case "LaminatingProduksiInputSanding":
-                                    return "Proses Produksi Laminating";
+                                    return "Proses Produksi Laminating : " + noSanding;
                                 case "PackingProduksiInputSanding":
-                                    return "Proses Produksi Sanding";
+                                    return "Proses Produksi Sanding : " + noSanding;
                                 case "AdjustmentInputSanding":
-                                    return "Adjustment Sanding";
+                                    return "Adjustment Sanding : " + noSanding;
                                 case "BongkarSusunInputSanding":
-                                    return "Bongkar Susun Input Sanding";
+                                    return "Bongkar Susun Input Sanding : " + noSanding;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noSanding;
                             }
                         }
                     }
@@ -1081,8 +1806,9 @@ public class ProductionApi {
         return null; // Return a default message if result is not found
     }
 
+
     public static String findPackingResultTable(String result) {
-        String queryTemplate = "SELECT ? AS TableName, NoBJ FROM %s WHERE NoBJ = ?";
+        String queryTemplate = "SELECT %s, NoBJ FROM %s WHERE NoBJ = ?";
         String[] tables = {
                 "CCAkhirProduksiInputBarangJadi",
                 "PackingProduksiInputBarangJadi",
@@ -1093,27 +1819,53 @@ public class ProductionApi {
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             for (String table : tables) {
-                String query = String.format(queryTemplate, table);
+                // Tentukan nama kolom berdasarkan tabel
+                String column;
+                switch (table) {
+                    case "CCAkhirProduksiInputBarangJadi":
+                        column = "NoProduksi"; // Kolom untuk tabel CC Akhir
+                        break;
+                    case "PackingProduksiInputBarangJadi":
+                        column = "NoPacking"; // Kolom untuk Packing
+                        break;
+                    case "LaminatingProduksiInputBarangJadi":
+                        column = "NoLaminating"; // Kolom untuk Laminating
+                        break;
+                    case "MouldingProduksiInputBarangJadi":
+                        column = "NoMoulding"; // Kolom untuk Moulding
+                        break;
+                    case "BongkarSusunInputBarangJadi":
+                        column = "NoBongkarSusun"; // Kolom untuk Bongkar Susun
+                        break;
+                    default:
+                        column = "NoBJ"; // Default kolom
+                }
+
+                // Buat query dengan kolom yang sesuai
+                String query = String.format(queryTemplate, column, table);
+
                 try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, table); // Set table name as parameter
-                    pstmt.setString(2, result); // Set NoBJ value
+                    pstmt.setString(1, result); // Set NoBJ value as parameter
 
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            // Return a message based on the table name
+                            // Ambil nilai dari kolom yang sesuai
+                            String noBJ = rs.getString(column);
+
+                            // Return the message and NoBJ based on the table
                             switch (table) {
                                 case "CCAkhirProduksiInputBarangJadi":
-                                    return "Proses Produksi CC Akhir";
+                                    return "Proses Produksi CC Akhir : " + noBJ;
                                 case "PackingProduksiInputBarangJadi":
-                                    return "Proses Produksi Packing";
-                                case "MouldingProduksiInputBarangJadi":
-                                    return "Proses Produksi Moulding";
+                                    return "Proses Produksi Packing : " + noBJ;
                                 case "LaminatingProduksiInputBarangJadi":
-                                    return "Proses Produksi Laminating";
+                                    return "Proses Produksi Laminating : " + noBJ;
+                                case "MouldingProduksiInputBarangJadi":
+                                    return "Proses Produksi Moulding : " + noBJ;
                                 case "BongkarSusunInputBarangJadi":
-                                    return "Bongkar Susun Packing";
+                                    return "Bongkar Susun Packing : " + noBJ;
                                 default:
-                                    return " " + table;
+                                    return "Unknown Table : " + noBJ;
                             }
                         }
                     }
@@ -1215,7 +1967,7 @@ public class ProductionApi {
                 }
             }
 
-            if (periodBulanan != null && produksiDate.before(periodBulanan)) {
+            if (periodBulanan != null && !produksiDate.after(periodBulanan)) {
                 return false;
             }
 
@@ -1227,9 +1979,10 @@ public class ProductionApi {
                 }
             }
 
-            if (periodHarian != null && produksiDate.before(periodHarian)) {
+            if (periodHarian != null && !produksiDate.after(periodHarian)) {
                 return false;
             }
+
 
             // Jika tglProduksi lebih kecil atau sama dengan kedua period, return true
             return true;

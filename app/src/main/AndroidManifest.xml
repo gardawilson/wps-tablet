@@ -32,6 +32,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".BongkarSusun"
+            android:exported="false" />
+        <activity
             android:name=".ProsesProduksiPacking"
             android:exported="false" />
         <activity
