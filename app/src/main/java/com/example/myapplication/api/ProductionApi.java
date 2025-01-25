@@ -1880,8 +1880,6 @@ public class ProductionApi {
     }
 
 
-
-
     public static List<HistoryItem> getHistoryItems(String noProduksi, String filterQuery, int tableCount) {
         List<HistoryItem> historyGroups = new ArrayList<>();
         String query = "SELECT DateTimeSaved, Label, COUNT(KodeLabel) AS Total, " +
