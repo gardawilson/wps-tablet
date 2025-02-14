@@ -5,8 +5,11 @@ import android.widget.TextView;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Locale;
 
@@ -65,5 +68,33 @@ public class DateTimeUtils {
         }
 
         return formattedDate;
+    }
+
+    public static String formatDateToDdYY(String dateString) {
+        try {
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
+            LocalDate localDate = LocalDate.parse(dateString, inputFormatter);
+
+            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMyy", Locale.ENGLISH);
+            return localDate.format(outputFormatter);
+
+        } catch (DateTimeParseException e) {
+            Log.e("DateFormatError", "Gagal memformat tanggal (dd-MMM-yyyy ke ddyy): " + e.getMessage());
+            return "ERROR"; // Atau nilai default lain yang sesuai
+        }
+    }
+
+    public static String formatTimeToHHmm(String timeString) {
+        try {
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ENGLISH);
+            LocalTime localTime = LocalTime.parse(timeString, inputFormatter);
+
+            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
+            return localTime.format(outputFormatter);
+
+        } catch (DateTimeParseException e) {
+            Log.e("TimeFormatError", "Gagal memformat waktu (HH:mm:ss ke HH:mm): " + e.getMessage());
+            return "ERROR"; // Atau nilai default lain yang sesuai
+        }
     }
 }

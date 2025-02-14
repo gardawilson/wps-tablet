@@ -3,6 +3,7 @@ import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.TableConfigUtils;
 
@@ -838,7 +839,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Tetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -875,7 +876,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noST, "ST_h", "ST_d", "NoST"));
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -911,7 +912,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -945,7 +946,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -979,7 +980,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -1211,6 +1212,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
+        String savedUsername = SharedPrefUtils.getUsername(this);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -1285,6 +1287,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
+
+            ProductionApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi S4S (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();

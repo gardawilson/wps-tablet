@@ -60,6 +60,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
+
+import com.example.myapplication.utils.DateTimeUtils;
 import com.itextpdf.kernel.geom.AffineTransform;
 import android.print.PrintManager;
 import android.print.PrintAttributes;
@@ -838,7 +840,7 @@ public class Moulding extends AppCompatActivity {
             public void onClick(View view) {
                 // Validasi input
                 if (NoMoulding.getQuery() == null || NoMoulding.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(Moulding.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Moulding.this, "Nomor Moulding tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -2603,7 +2605,7 @@ public class Moulding extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -2613,7 +2615,7 @@ public class Moulding extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -2639,7 +2641,7 @@ public class Moulding extends AppCompatActivity {
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(9)
+                .setFontSize(11)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -2665,6 +2667,7 @@ public class Moulding extends AppCompatActivity {
         table.addCell(valueCell);
     }
 
+
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
             PdfPage page = pdfDocument.getPage(i);
@@ -2688,7 +2691,7 @@ public class Moulding extends AppCompatActivity {
 
             // Posisi watermark di tengah halaman
             float centerX = width / 2 - 25;
-            float centerY = height / 2;
+            float centerY = height / 2 + 25;
 
             // Rotasi derajat
             double angle = Math.toRadians(0);
@@ -2733,27 +2736,33 @@ public class Moulding extends AppCompatActivity {
     private Uri createPdf(String noMoulding, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
         // Validasi parameter wajib
         if (noMoulding == null || noMoulding.trim().isEmpty()) {
-            throw new IOException("Nomor Moulding tidak boleh kosong");
+            throw new IOException("Nomor Laminating tidak boleh kosong");
         }
 
         if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
             throw new IOException("Data tidak boleh kosong");
         }
 
+        String formattedTime = DateTimeUtils.formatTimeToHHmm(time);
+
         // Validasi dan set default value untuk parameter opsional
         noMoulding = (noMoulding != null) ? noMoulding.trim() : "-";
         jenisKayu = (jenisKayu != null) ? jenisKayu.trim() : "-";
         date = (date != null) ? date.trim() : "-";
-        time = (time != null) ? time.trim() : "-";
+        formattedTime = (formattedTime != null) ? formattedTime.trim() : "-";
         grade = (grade != null) ? grade.trim() : "-";
         tellyBy = (tellyBy != null) ? tellyBy.trim() : "-";
         noSPK = (noSPK != null) ? noSPK.trim() : "-";
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
 
+        String[] nama = tellyBy.split(" ");
+        String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
+
+
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
-        String fileName = "Moulding_" + noMoulding + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        String fileName = "S4S_" + noMoulding + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         String relativePath = Environment.DIRECTORY_DOWNLOADS;
 
         try {
@@ -2778,7 +2787,7 @@ public class Moulding extends AppCompatActivity {
 
             try {
                 // Inisialisasi font dan dokumen
-                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
@@ -2794,17 +2803,16 @@ public class Moulding extends AppCompatActivity {
                 Document document = new Document(pdfDocument);
                 document.setMargins(0, 5, 0, 5);
 
-
                 // Header
                 Paragraph judul = new Paragraph("LABEL MOULDING")
                         .setUnderline()
                         .setBold()
-                        .setFontSize(10)
+                        .setFontSize(12)
                         .setTextAlignment(TextAlignment.CENTER);
 
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth * 0.4f, pageWidth * 0.6f};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
@@ -2812,29 +2820,32 @@ public class Moulding extends AppCompatActivity {
                         .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{50, 5, 80};
+                float[] infoColumnWidths = new float[]{15, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.4f - 5)
-                        .setBorder(Border.NO_BORDER);
+                        .setWidth(pageWidth * 0.4f)
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
+                ;
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No Mld.", noMoulding, timesNewRoman);
+                addInfoRow(leftColumn, "No", noMoulding, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
-                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
+//                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
                         .setWidth(pageWidth * 0.6f)
-                        .setBorder(Border.NO_BORDER);
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
 
                 // Isi kolom kanan
-                addInfoRow(rightColumn, "Tanggal", date + " (" + time + ")", timesNewRoman);
-                addInfoRow(rightColumn, "Telly", tellyBy, timesNewRoman);
-                addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
-                addInfoRow(rightColumn, "No SPK", noSPK, timesNewRoman);
+                addInfoRow(rightColumn, "Tgl", date + " (" + formattedTime + ")", timesNewRoman);
+                addInfoRow(rightColumn, "Telly", namaTelly, timesNewRoman);
+//                addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
+                addInfoRow(rightColumn, "SPK", noSPK, timesNewRoman);
 
                 // Tambahkan kolom kiri dan kanan ke tabel utama
                 Cell leftCell = new Cell()
@@ -2855,7 +2866,7 @@ public class Moulding extends AppCompatActivity {
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
                         .setMarginTop(10)
-                        .setFontSize(8);
+                        .setFontSize(12);
 
                 // Header tabel
                 String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
@@ -2882,73 +2893,63 @@ public class Moulding extends AppCompatActivity {
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {60f, 5f, 70f};
+                float[] columnWidths = {70f, 5f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                         .setMarginTop(10)
-                        .setFontSize(10)
+                        .setFontSize(12)
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("Jlh Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                Paragraph qrCodeID = new Paragraph(noMoulding).setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noMoulding).setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-10, 27, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noMoulding).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 47).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noMoulding);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-10, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noMoulding);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-10, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-55, 0, 0, 15);
 
-                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(25, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(25, 40, 0, 0).setFont(timesNewRoman);
+                String formattedDate = DateTimeUtils.formatDateToDdYY(date);
+                Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-75
+                        , 0, 0, 0).setFont(timesNewRoman).setBold();
 
-                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
-                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
-                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-40, 10, 0, 0).setFont(timesNewRoman);
+                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph namaMesin = new Paragraph("Mesin  : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
 
 
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
-
                 document.add(judul);
-                if (printCount > 1) {
+                if (printCount > 0) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
 
                 document.add(mainTable);
+                document.add(namaFisik);
+                document.add(namaMesin);
                 document.add(table);
                 document.add(sumTable);
+                document.add(qrCodeBottomImage);
+                document.add(qrCodeIDbottom);
+                document.add(textBulanTahunBold);
 
                 if(CBAfkirM.isChecked()){
                     document.add(afkirText);
                 }
 
-                if(printCount % 2 != 0) {
-                    document.add(outputText);
-                    document.add(qrCodeImage);
-                    document.add(qrCodeID);
-                    if(CBLemburM.isChecked()){
-                        document.add(lemburTextOutput);
-                    }
+                if(CBLemburM.isChecked()){
+                    document.add(lemburTextOutput);
                 }
-                else{
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                    if(CBLemburM.isChecked()){
-                        document.add(lemburTextInput);
-                    }
-                }
-
 
                 document.close();
                 pdfUri = uri;

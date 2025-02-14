@@ -32,6 +32,7 @@ public class MenuUtama extends AppCompatActivity {
 
     private CardView InputLabel;
     private CardView ProsesProduksi;
+    private CardView StockOpname;
     private TextView usernameView;
     private Button BtnLogout;
 
@@ -45,6 +46,7 @@ public class MenuUtama extends AppCompatActivity {
         usernameView = findViewById(R.id.usernameView);
         BtnLogout = findViewById(R.id.BtnLogout);
         ProsesProduksi = findViewById(R.id.ProsesProduksi);
+        StockOpname = findViewById(R.id.StockOpname);
 
         SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
         String username = prefs.getString("username", "");
@@ -82,6 +84,14 @@ public class MenuUtama extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
+                startActivity(intent);
+            }
+        });
+
+        StockOpname.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, StockOpname.class);
                 startActivity(intent);
             }
         });

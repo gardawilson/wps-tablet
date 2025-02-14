@@ -10,7 +10,7 @@ public class DatabaseConfig {
     private static String port = "1433";
     private static String username = "sa";
     private static String password = "Utama1234";
-    private static String databasename = "WPS";
+    private static String databasename = "WPS_Test";
 
     // Getter methods
     public static String getIp() { return ip; }

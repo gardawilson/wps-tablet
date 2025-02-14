@@ -19,6 +19,8 @@ zxing-core = "3.5.1"
 zxing-android-embedded = "4.3.0"
 rxjava = "3.1.7"
 rxandroid = "3.0.2"
+paging = "3.1.0"  # Versi terbaru Paging 3
+recyclerview = "1.2.1"  # Versi terbaru RecyclerView
 
 
 
@@ -46,6 +48,9 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-c
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxing-android-embedded" }
 rxjava = { group = "io.reactivex.rxjava3", name = "rxjava", version.ref = "rxjava" }
 rxandroid = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = "rxandroid" }
+paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+
 
 
 

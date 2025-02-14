@@ -11,7 +11,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.25"
+        versionName = "1.0.29"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -89,6 +89,8 @@ dependencies {
     implementation(libs.rxjava)
     implementation(libs.rxandroid)
 
+    implementation(libs.paging.runtime)
+    implementation(libs.recyclerview)
 
 
 

@@ -1,0 +1,8 @@
+<!-- res/drawable/item_border_pressed.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Kondisi saat ditekan -->
+    <item android:drawable="@drawable/item_border_hover" android:state_pressed="true" />
+
+    <!-- Kondisi normal (tidak ditekan) -->
+    <item android:drawable="@drawable/item_border" />
+</selector>

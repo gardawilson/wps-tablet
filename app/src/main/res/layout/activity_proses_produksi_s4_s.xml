@@ -662,19 +662,20 @@
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
+
                 <TableLayout
                     android:id="@+id/tableLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="0"
-                    android:background="#EFEFEF">
+                    android:background="#EFEFEF"
+                    android:stretchColumns="0">
 
                     <ProgressBar
                         android:id="@+id/loadingIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:visibility="gone"/>
+                        android:visibility="gone" />
 
                     <!-- Baris isi tabel akan dimuat secara dinamis -->
                 </TableLayout>

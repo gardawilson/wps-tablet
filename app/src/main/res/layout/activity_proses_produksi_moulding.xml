@@ -1161,10 +1161,10 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 android:background="#FFFFFF">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -1222,6 +1222,73 @@
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:background="#FFFFFF"
+                android:visibility="invisible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Header Tabel -->
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="SANDING"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                        </TableRow>
+                    </TableLayout>
+
+                    <!-- Isi Tabel -->
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <ProgressBar
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerInParent="true"
+                                android:visibility="gone" />
+
+                            <TableLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stretchColumns="1">
+
+                            </TableLayout>
+
+                        </RelativeLayout>
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
 
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"

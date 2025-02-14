@@ -98,7 +98,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 
-
+import com.example.myapplication.utils.DateTimeUtils;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -802,7 +802,7 @@ public class FingerJoint extends AppCompatActivity {
             public void onClick(View view) {
                 // Validasi input
                 if (NoFJ.getQuery() == null || NoFJ.getQuery().toString().trim().isEmpty()) {
-                    Toast.makeText(FingerJoint.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FingerJoint.this, "Nomor FJ tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -1110,7 +1110,7 @@ public class FingerJoint extends AppCompatActivity {
                     detailStmt.setString(1, noFJ);
                     ResultSet detailRs = detailStmt.executeQuery();
 
-                    String retrievedNoS4S = null;
+                    String retrievednoFJ = null;
                     String formattedDateTime = null;
                     String jenis = null;
                     String spkDetail = null;
@@ -1119,7 +1119,7 @@ public class FingerJoint extends AppCompatActivity {
                     boolean isLembur = false;
 
                     if (detailRs.next()) {
-                        retrievedNoS4S = detailRs.getString("NoFJ");
+                        retrievednoFJ = detailRs.getString("NoFJ");
                         String dateCreate = detailRs.getString("DateCreate");
                         String jam = detailRs.getString("Jam");
                         jenis = detailRs.getString("Jenis");
@@ -1169,7 +1169,7 @@ public class FingerJoint extends AppCompatActivity {
                     }
 
                     // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
-                    String finalRetrievedNoS4S = retrievedNoS4S;
+                    String finalRetrievednoFJ = retrievednoFJ;
                     String finalFormattedDateTime = formattedDateTime;
                     String finalJenis = jenis;
                     String finalSpkDetail = spkDetail;
@@ -1181,7 +1181,7 @@ public class FingerJoint extends AppCompatActivity {
 
                     runOnUiThread(() -> showTooltip(
                             anchorView,
-                            finalRetrievedNoS4S,
+                            finalRetrievednoFJ,
                             finalFormattedDateTime,
                             finalJenis,
                             finalSpkDetail,
@@ -2559,7 +2559,7 @@ public class FingerJoint extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -2569,7 +2569,7 @@ public class FingerJoint extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -2595,7 +2595,7 @@ public class FingerJoint extends AppCompatActivity {
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(9)
+                .setFontSize(11)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -2689,32 +2689,37 @@ public class FingerJoint extends AppCompatActivity {
     private Uri createPdf(String noFJ, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
         // Validasi parameter wajib
         if (noFJ == null || noFJ.trim().isEmpty()) {
-            throw new IOException("Nomor FingerJoint tidak boleh kosong");
+            throw new IOException("Nomor FJ tidak boleh kosong");
         }
 
         if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
             throw new IOException("Data tidak boleh kosong");
         }
 
+        String formattedTime = DateTimeUtils.formatTimeToHHmm(time);
+
         // Validasi dan set default value untuk parameter opsional
         noFJ = (noFJ != null) ? noFJ.trim() : "-";
         jenisKayu = (jenisKayu != null) ? jenisKayu.trim() : "-";
         date = (date != null) ? date.trim() : "-";
-        time = (time != null) ? time.trim() : "-";
+        formattedTime = (formattedTime != null) ? formattedTime.trim() : "-";
         grade = (grade != null) ? grade.trim() : "-";
         tellyBy = (tellyBy != null) ? tellyBy.trim() : "-";
         noSPK = (noSPK != null) ? noSPK.trim() : "-";
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
 
+        String[] nama = tellyBy.split(" ");
+        String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
+
+
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
-        String fileName = "FJ_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        String fileName = "S4S_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         String relativePath = Environment.DIRECTORY_DOWNLOADS;
 
         try {
             // Hapus file yang sudah ada jika perlu
-            deleteExistingPdfFJ(fileName, relativePath);
             Thread.sleep(500);
 
             ContentValues contentValues = new ContentValues();
@@ -2734,7 +2739,7 @@ public class FingerJoint extends AppCompatActivity {
 
             try {
                 // Inisialisasi font dan dokumen
-                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
@@ -2751,15 +2756,15 @@ public class FingerJoint extends AppCompatActivity {
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
-                Paragraph judul = new Paragraph("LABEL FINGER JOINT")
+                Paragraph judul = new Paragraph("LABEL FINGER JOIN")
                         .setUnderline()
                         .setBold()
-                        .setFontSize(8)
+                        .setFontSize(12)
                         .setTextAlignment(TextAlignment.CENTER);
 
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth * 0.4f, pageWidth * 0.6f};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
@@ -2767,29 +2772,32 @@ public class FingerJoint extends AppCompatActivity {
                         .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{50, 5, 80};
+                float[] infoColumnWidths = new float[]{15, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.4f - 5)
-                        .setBorder(Border.NO_BORDER);
+                        .setWidth(pageWidth * 0.4f)
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
+                ;
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No FJ", noFJ, timesNewRoman);
+                addInfoRow(leftColumn, "No", noFJ, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
-                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
+//                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
                         .setWidth(pageWidth * 0.6f)
-                        .setBorder(Border.NO_BORDER);
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
 
                 // Isi kolom kanan
-                addInfoRow(rightColumn, "Tanggal", date + " (" + time + ")", timesNewRoman);
-                addInfoRow(rightColumn, "Telly", tellyBy, timesNewRoman);
-                addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
-                addInfoRow(rightColumn, "No SPK", noSPK, timesNewRoman);
+                addInfoRow(rightColumn, "Tgl", date + " (" + formattedTime + ")", timesNewRoman);
+                addInfoRow(rightColumn, "Telly", namaTelly, timesNewRoman);
+//                addInfoRow(rightColumn, "Mesin", mesinSusun, timesNewRoman);
+                addInfoRow(rightColumn, "SPK", noSPK, timesNewRoman);
 
                 // Tambahkan kolom kiri dan kanan ke tabel utama
                 Cell leftCell = new Cell()
@@ -2810,7 +2818,7 @@ public class FingerJoint extends AppCompatActivity {
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
                         .setMarginTop(10)
-                        .setFontSize(8);
+                        .setFontSize(12);
 
                 // Header tabel
                 String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
@@ -2837,71 +2845,62 @@ public class FingerJoint extends AppCompatActivity {
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {60f, 5f, 70f};
+                float[] columnWidths = {70f, 5f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                         .setMarginTop(10)
-                        .setFontSize(10)
+                        .setFontSize(12)
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("Jlh Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                Paragraph qrCodeID = new Paragraph(noFJ).setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noFJ).setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-10, 27, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottom = new Paragraph(noFJ).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 47).setFont(timesNewRoman);
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noFJ);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.CENTER).setMargins(-10, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noFJ);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(100).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-10, 0, 0, 0);
+                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-55, 0, 0, 15);
 
-                Paragraph outputText = new Paragraph("Output").setTextAlignment(TextAlignment.CENTER).setFontSize(10).setMargins(25, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph inputText = new Paragraph("Input").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(25, 40, 0, 0).setFont(timesNewRoman);
+                String formattedDate = DateTimeUtils.formatDateToDdYY(date);
+                Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-75
+                        , 0, 0, 0).setFont(timesNewRoman).setBold();
 
-                Paragraph lemburTextInput = new Paragraph("Lembur").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-40, 0, 0, 10).setFont(timesNewRoman);
-                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.LEFT).setFontSize(10).setMargins(-30, 0, 0, 10).setFont(timesNewRoman);
-                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(10).setMargins(-40, 10, 0, 0).setFont(timesNewRoman);
+                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph namaMesin = new Paragraph("Mesin  : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
 
 
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
-
                 document.add(judul);
-                if (printCount > 1) {
+                if (printCount > 0) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
 
                 document.add(mainTable);
+                document.add(namaFisik);
+                document.add(namaMesin);
                 document.add(table);
                 document.add(sumTable);
+                document.add(qrCodeBottomImage);
+                document.add(qrCodeIDbottom);
+                document.add(textBulanTahunBold);
 
                 if(CBAfkirFJ.isChecked()){
                     document.add(afkirText);
                 }
 
-                if(printCount % 2 != 0) {
-                    document.add(outputText);
-                    document.add(qrCodeImage);
-                    document.add(qrCodeID);
-                    if(CBLemburFJ.isChecked()){
-                        document.add(lemburTextOutput);
-                    }
-                }
-                else{
-                    document.add(inputText);
-                    document.add(qrCodeBottomImage);
-                    document.add(qrCodeIDbottom);
-                    if(CBLemburFJ.isChecked()){
-                        document.add(lemburTextInput);
-                    }
+                if(CBLemburFJ.isChecked()){
+                    document.add(lemburTextOutput);
                 }
 
                 document.close();

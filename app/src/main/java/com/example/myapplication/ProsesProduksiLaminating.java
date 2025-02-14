@@ -5,6 +5,7 @@ import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
 
 import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
@@ -890,6 +891,7 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
+        String savedUsername = SharedPrefUtils.getUsername(this);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -942,6 +944,8 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
+
+            ProductionApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi Laminating (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();

@@ -30,7 +30,7 @@ public class ProductionApi {
         List<ProductionData> productionDataList = new ArrayList<>();
 
         // Query SQL dengan nama tabel dinamis
-        String query = "SELECT TOP 50 " +
+        String query = "SELECT " +
                 "p.NoProduksi, " +
                 "p.Shift, " +
                 "p.Tanggal, " +
@@ -41,6 +41,10 @@ public class ProductionApi {
                 "FROM " + tableName + " p " +
                 "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
                 "LEFT JOIN MstOperator o ON p.IdOperator = o.IdOperator " +
+                "INNER JOIN ( " +
+                "    SELECT MAX(PeriodHarian) AS LatestPeriod " +
+                "    FROM MstTutupTransaksiHarian " +
+                ") t ON p.Tanggal > t.LatestPeriod " +
                 "ORDER BY p.NoProduksi DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -2185,6 +2189,24 @@ public class ProductionApi {
         }
     }
 
+    public static void saveRiwayat(String nip, String tgl, String aktivitas) {
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO dbo.Riwayat (Nip, Tgl, Aktivitas) VALUES (?, ?, ?)")) {
+
+            // Set parameter untuk query
+            insertStmt.setString(1, nip);       // Set Nip
+            insertStmt.setString(2, tgl);       // Set Tgl
+            insertStmt.setString(3, aktivitas); // Set Aktivitas
+
+            // Eksekusi query insert
+            insertStmt.executeUpdate();
+
+            Log.d("SaveSuccess", "Data Riwayat berhasil disimpan.");
+
+        } catch (SQLException e) {
+            Log.e("SaveError", "Error saat menyimpan data Riwayat: " + e.getMessage());
+        }
+    }
 
 
 
