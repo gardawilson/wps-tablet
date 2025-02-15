@@ -1,10 +1,12 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class StockOpname extends AppCompatActivity {
+public class StockOpname extends AppCompatActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener {
 
     private ProgressBar loadingIndicator;
     private RecyclerView recyclerView;
@@ -80,7 +82,7 @@ public class StockOpname extends AppCompatActivity {
         recyclerViewBefore.setAdapter(stockOpnameDataAdapter);
 
         recyclerViewAfter.setLayoutManager(new LinearLayoutManager(this));
-        stockOpnameDataInputAdapter = new StockOpnameDataInputAdapter(stockOpnameDataInputByNoSOList);
+        stockOpnameDataInputAdapter = new StockOpnameDataInputAdapter(stockOpnameDataInputByNoSOList, this); // Menghubungkan activity dengan adapter
         recyclerViewAfter.setAdapter(stockOpnameDataInputAdapter);
     }
 
@@ -140,8 +142,6 @@ public class StockOpname extends AppCompatActivity {
         executorService.execute(() -> {
             List<StockOpnameDataByNoSO> data = StockOpnameApi.getStockOpnameDataByNoSO(noSO, tglSO, offset, limit);
             runOnUiThread(() -> {
-                stockOpnameDataByNoSOList.clear();
-
                 if (data != null && !data.isEmpty()) {
                     findViewById(R.id.dataLabelEmpty).setVisibility(View.GONE);
                     if (page == 0) stockOpnameDataByNoSOList.clear();
@@ -158,6 +158,7 @@ public class StockOpname extends AppCompatActivity {
                 } else {
                     hasMoreDataToFetchBefore = false;
 //                    showToast("Tidak ada data lagi untuk NoSO: " + noSO);
+                    stockOpnameDataByNoSOList.clear();
                     findViewById(R.id.dataLabelEmpty).setVisibility(View.VISIBLE); // Tampilkan pesan
                 }
 
@@ -187,7 +188,6 @@ public class StockOpname extends AppCompatActivity {
                             stockOpnameDataInputByNoSOList.add(item);
                         }
                     }
-                    stockOpnameDataInputAdapter.notifyDataSetChanged();
                     currentPageForNoSOInput++;
 
                     if (data.size() < limit) {
@@ -195,9 +195,11 @@ public class StockOpname extends AppCompatActivity {
                     }
                 } else {
                     hasMoreDataToFetchAfter = false;
-                    showToast("Tidak ada data lagi untuk NoSO: " + noSO);
+                    stockOpnameDataInputByNoSOList.clear();
+//                    showToast("Tidak ada data lagi untuk NoSO: " + noSO);
                 }
 
+                stockOpnameDataInputAdapter.notifyDataSetChanged();
                 showLoadingIndicatorAfter(false);
                 isLoadingAfter = false;
             });
@@ -264,6 +266,70 @@ public class StockOpname extends AppCompatActivity {
     private void showToast(String message) {
         Toast.makeText(StockOpname.this, message, Toast.LENGTH_SHORT).show();
     }
+
+    @Override
+    public void onDeleteConfirmation(StockOpnameDataInputByNoSO item, int position) {
+        showDeleteConfirmationDialog(item, position); // Menampilkan dialog konfirmasi penghapusan
+
+    }
+
+    private void showDeleteConfirmationDialog(StockOpnameDataInputByNoSO item, int position) {
+        new AlertDialog.Builder(this)
+                .setMessage("Apakah Anda yakin ingin menghapus item ini? " + item.getNoLabelInput())
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    // Memanggil method onItemDelete untuk menghapus item
+                    onItemDelete(item, position);
+                })
+                .setNegativeButton("No", null)  // Jika pengguna memilih "No", dialog akan ditutup
+                .show();
+    }
+
+//    public void onItemDelete(StockOpnameDataInputByNoSO item, int position) {
+//        Log.d("StockOpname", "Deleting item at position: " + position);
+//
+//        // Cari item berdasarkan ID
+//        for (int i = 0; i < stockOpnameDataInputByNoSOList.size(); i++) {
+//            if (stockOpnameDataInputByNoSOList.get(i).getNoLabelInput().equals(item.getNoLabelInput())) {
+//                stockOpnameDataInputByNoSOList.remove(i);
+//                stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
+//
+//                Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
+//                Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
+//                break;
+//            }
+//        }
+//    }
+
+    public void onItemDelete(StockOpnameDataInputByNoSO item, int position) {
+        Log.d("StockOpname", "Deleting item at position: " + position);
+
+        // Jalankan operasi penghapusan di background thread menggunakan ExecutorService
+        executorService.execute(() -> {
+            // Panggil API untuk menghapus data dari database
+            boolean isDeleted = StockOpnameApi.deleteStockOpnameDataInputByNoLabel(item.getNoLabelInput());
+
+            // Setelah operasi selesai, perbarui UI di main thread
+            runOnUiThread(() -> {
+                if (isDeleted) {
+            // Cari item berdasarkan ID
+            for (int i = 0; i < stockOpnameDataInputByNoSOList.size(); i++) {
+                if (stockOpnameDataInputByNoSOList.get(i).getNoLabelInput().equals(item.getNoLabelInput())) {
+                    stockOpnameDataInputByNoSOList.remove(i);
+                    stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
+
+                    Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
+                    Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
+                    break;
+                }
+            }
+                } else {
+                    Log.e("StockOpname", "Failed to delete item: " + item.getNoLabelInput());
+                    Toast.makeText(this, "Failed to delete item", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
 
     @Override
     protected void onDestroy() {

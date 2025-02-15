@@ -31,7 +31,8 @@ public class StockOpnameDataAdapter extends RecyclerView.Adapter<StockOpnameData
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         StockOpnameDataByNoSO item = dataList.get(position);
-        holder.noLabelTextView.setText(item.getNoLabel());
+        holder.noLabelTextView.setText(item.getNoLabel()); // Set NoLabel
+        holder.idLokasiTextView.setText(item.getIdLokasi()); // Set IdLokasi
     }
 
     @Override
@@ -41,10 +42,12 @@ public class StockOpnameDataAdapter extends RecyclerView.Adapter<StockOpnameData
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         TextView noLabelTextView;
+        TextView idLokasiTextView;
 
         public ViewHolder(View itemView) {
             super(itemView);
             noLabelTextView = itemView.findViewById(R.id.noLabelTextView); // Sesuaikan dengan ID di layout item
+            idLokasiTextView = itemView.findViewById(R.id.idLokasiTextView); // Sesuaikan dengan ID di layout item
         }
     }
 }

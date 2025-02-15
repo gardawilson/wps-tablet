@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:background="@drawable/item_hover">
 
     <TextView
         android:id="@+id/noLabelInput"
@@ -11,6 +11,35 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="NoSO"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        android:padding="8dp"/>
+
+    <View
+        android:layout_width="1px"
+        android:layout_height="match_parent"
+        android:background="@color/gray" />
+
+    <TextView
+        android:id="@+id/idLokasiInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="ID Lokasi"
+        android:textSize="16sp"
+        android:padding="8dp"/>
+
+    <View
+        android:layout_width="1px"
+        android:layout_height="match_parent"
+        android:background="@color/gray" />
+
+    <TextView
+        android:id="@+id/userIDInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Username"
+        android:textSize="16sp"
+        android:padding="8dp"/>
 
 </LinearLayout>

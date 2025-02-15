@@ -11,7 +11,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:layout_marginEnd="8dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
@@ -132,10 +132,25 @@
                             android:background="@color/hijau">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Before"
+                                android:layout_weight="1"
+                                android:text="No. SO"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:padding="8dp"
+                                android:text="Lokasi"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -149,14 +164,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical">
-
-                        <!-- Indikator Loading -->
-                        <ProgressBar
-                            android:id="@+id/loadingIndicatorBefore"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:visibility="gone"
-                            android:layout_gravity="center" />
 
                         <TextView
                             android:id="@+id/dataLabelEmpty"
@@ -172,6 +179,14 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent" />
 
+                        <!-- Indikator Loading -->
+                        <ProgressBar
+                            android:id="@+id/loadingIndicatorBefore"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone"
+                            android:layout_gravity="center" />
+
 
 
                     </LinearLayout>
@@ -183,7 +198,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 android:background="#FFFFFF">
@@ -203,10 +217,40 @@
                             android:background="@color/hijau">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="After"
+                                android:padding="8dp"
+                                android:text="Label"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:padding="8dp"
+                                android:text="Lokasi"
+                                android:gravity="center"
+                                android:layout_weight="1"
+                                android:textStyle="bold"
+                                android:textColor="@color/white" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:padding="8dp"
+                                android:text="User"
                                 android:gravity="center"
                                 android:layout_weight="1"
                                 android:textStyle="bold"
@@ -221,6 +265,12 @@
                         android:layout_height="match_parent"
                         android:orientation="vertical">
 
+                        <!-- RecyclerView untuk Data -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerViewAfter"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+
                         <!-- Indikator Loading -->
                         <ProgressBar
                             android:id="@+id/loadingIndicatorAfter"
@@ -228,12 +278,6 @@
                             android:layout_height="wrap_content"
                             android:visibility="gone"
                             android:layout_gravity="center" />
-
-                        <!-- RecyclerView untuk Data -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/recyclerViewAfter"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
 
                     </LinearLayout>
 
