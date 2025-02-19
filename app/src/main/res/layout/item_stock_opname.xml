@@ -4,6 +4,11 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal">
 
+    <View
+        android:layout_width="2px"
+        android:layout_height="match_parent"
+        android:background="@color/gray" />
+
     <TextView
         android:id="@+id/noSO"
         android:layout_width="0dp"
@@ -11,7 +16,8 @@
         android:layout_weight="1"
         android:text="NoSO"
         android:textSize="16sp"
-        android:padding="8dp"/>
+        android:padding="8dp"
+        android:gravity="center"/>
 
     <View
         android:layout_width="1px"
@@ -25,5 +31,11 @@
         android:layout_weight="1"
         android:text="Tanggal"
         android:textSize="16sp"
-        android:padding="8dp"/>
+        android:padding="8dp"
+        android:gravity="center"/>
+
+    <View
+        android:layout_width="2px"
+        android:layout_height="match_parent"
+        android:background="@color/gray" />
 </LinearLayout>

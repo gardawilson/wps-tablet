@@ -3,6 +3,7 @@ package com.example.myapplication.api;
 import android.util.Log;
 
 import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.model.LokasiBlok;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
@@ -13,7 +14,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StockOpnameApi {
 
@@ -200,11 +203,12 @@ public class StockOpnameApi {
         return stockOpnameDataInputByNoSOList;
     }
 
+
     public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputBySearch(String noSO, String searchTerm, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
-        Log.d("Paging", "fetchDataInputBySearch with noSO: " + noSO + ", searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
+        Log.d("Paging", "fetchDataInputBySearch with searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
 
-        // Memodifikasi query untuk menambahkan search term pada kondisi WHERE
+        // Modify the query to add the search term condition
         String query =
                 "SELECT NoLabel, IdLokasi, UserID FROM ( " +
                         "    SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? " +
@@ -223,41 +227,52 @@ public class StockOpnameApi {
                         "    UNION ALL " +
                         "    SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? " +
                         ") AS CombinedResults " +
-                        "WHERE 1=1 " + // For easy addition of further conditions
-                        (searchTerm != null && !searchTerm.isEmpty() ? "AND (NoLabel LIKE ? OR IdLokasi LIKE ?)" : "") +
+                        "WHERE 1=1 " +
+                        "AND (NoLabel LIKE ? OR IdLokasi LIKE ?)"  +
                         "ORDER BY NoLabel " +
-                        "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";  // Menambahkan OFFSET dan LIMIT
+                        "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";  // Added OFFSET and LIMIT
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
-            // Set parameter NoSO untuk setiap query
+            // Set parameter NoSO for each query
             for (int i = 1; i <= 8; i++) {
                 stmt.setString(i, noSO);
             }
 
             // If a search term is provided, set it for NoLabel and IdLokasi filters
             if (searchTerm != null && !searchTerm.isEmpty()) {
-                stmt.setString(9, "%" + searchTerm + "%");  // NoLabel search term
-                stmt.setString(10, "%" + searchTerm + "%"); // IdLokasi search term
-                stmt.setInt(11, offset); // OFFSET
-                stmt.setInt(12, limit); // LIMIT
+                stmt.setString(9, "%" + searchTerm + "%");  // Set search term for NoLabel
+                stmt.setString(10, "%" + searchTerm + "%"); // Set search term for IdLokasi
+                stmt.setInt(11, offset); // OFFSET for pagination
+                stmt.setInt(12, limit); // LIMIT for pagination
             } else {
                 // No search term provided, only set the OFFSET and LIMIT
                 stmt.setInt(9, offset); // OFFSET
                 stmt.setInt(10, limit); // LIMIT
             }
 
+            // Execute the query and process the result set
             try (ResultSet rs = stmt.executeQuery()) {
+                // Log the number of rows fetched
+                if (!rs.isBeforeFirst()) {
+                    Log.d("Paging", "No results found for the query.");
+                }
+
+                // Process the result set
                 while (rs.next()) {
                     String noLabel = rs.getString("NoLabel");
                     String idLokasi = rs.getString("IdLokasi");
                     String userId = rs.getString("UserID");
 
-                    // Menambahkan data ke dalam list
+                    Log.d("Paging", "Result - NoLabel: " + noLabel + ", IdLokasi: " + idLokasi + ", UserID: " + userId);
+
+                    // Add data to the list
                     stockOpnameDataInputByNoSOList.add(new StockOpnameDataInputByNoSO(noLabel, idLokasi, userId));
                 }
+
             }
+
         } catch (SQLException e) {
             Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
         }
@@ -357,6 +372,195 @@ public class StockOpnameApi {
                 return null; // NoLabel tidak valid
         }
     }
+
+    public static List<LokasiBlok> getLokasiAndBlok() {
+        List<LokasiBlok> lokasiBlokList = new ArrayList<>();
+
+        // Query untuk mengambil data lokasi dan blok
+        String query = "SELECT [IdLokasi], [Blok] FROM [dbo].[MstLokasi]";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String idLokasi = rs.getString("IdLokasi");
+                    String blok = rs.getString("Blok");
+
+                    lokasiBlokList.add(new LokasiBlok(idLokasi, blok));
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+        }
+
+        return lokasiBlokList;
+    }
+
+//    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String idLokasi, int offset, int limit) {
+//        List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
+//        Log.d("Paging", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
+//
+//        // Memodifikasi query untuk menambahkan filter berdasarkan NoSO dan IdLokasi
+//        String query =
+//                "SELECT NoLabel, IdLokasi, UserID FROM ( " +
+//                        "    SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        "    UNION ALL " +
+//                        "    SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? AND IdLokasi = ? " +
+//                        ") AS CombinedResults " +
+//                        "ORDER BY NoLabel " +
+//                        "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";  // Menambahkan OFFSET dan LIMIT
+//
+//        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+//             PreparedStatement stmt = con.prepareStatement(query)) {
+//
+//            // Set parameter NoSO dan IdLokasi untuk setiap query
+//            for (int i = 1; i <= 8; i++) {
+//                stmt.setString(i * 2 - 1, noSO);   // Set NoSO
+//                stmt.setString(i * 2, idLokasi);  // Set IdLokasi
+//            }
+//
+//            // Set parameter OFFSET dan LIMIT
+//            stmt.setInt(17, offset); // OFFSET
+//            stmt.setInt(18, limit); // LIMIT
+//
+//            try (ResultSet rs = stmt.executeQuery()) {
+//                while (rs.next()) {
+//                    String noLabel = rs.getString("NoLabel");
+//                    String idLokasiResult = rs.getString("IdLokasi");
+//                    String userId = rs.getString("UserID");
+//
+//                    // Menambahkan data ke dalam list
+//                    stockOpnameDataInputByNoSOList.add(new StockOpnameDataInputByNoSO(noLabel, idLokasiResult, userId));
+//                }
+//            }
+//        } catch (SQLException e) {
+//            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+//        }
+//
+//        return stockOpnameDataInputByNoSOList;
+//    }
+
+
+    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, String selectedLabel, int offset, int limit) {
+        List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
+        Log.d("Paging", "fetchDataInputByNoSO with label: " + selectedLabel + " and limit: " + limit);
+
+        // Menentukan query berdasarkan selectedLabel dan selectedLokasi
+        StringBuilder query = new StringBuilder("SELECT NoLabel, IdLokasi, UserID FROM ( ");
+        int noSOParamCount = 0; // Menghitung jumlah parameter NoSO
+        boolean isFirstQuery = true;  // Flag untuk memastikan UNION ALL tidak ditambahkan di awal
+
+        // Menambahkan bagian query untuk masing-masing label
+        if (selectedLabel.equals("ST") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false; // Set isFirstQuery to false after the first query
+        }
+        if (selectedLabel.equals("S4S") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("FJ") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("Moulding") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("Laminating") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("CCAkhir") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("Sanding") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+        if (selectedLabel.equals("BJ") || selectedLabel.equals("all")) {
+            if (!isFirstQuery) query.append("UNION ALL ");
+            query.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
+            noSOParamCount++;
+            isFirstQuery = false;
+        }
+
+        query.append(") AS CombinedResults WHERE 1=1 "); // Menambahkan WHERE clause dasar
+
+        // Tambahkan filter untuk IdLokasi jika tidak "all"
+        if (!selectedLokasi.equals("Semua")) {
+            query.append("AND IdLokasi = ? ");
+        }
+
+        query.append("ORDER BY NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        Log.d("SQL Query", query.toString()); // Log the query for debugging purposes
+        Log.d("Number of Parameters", String.valueOf(noSOParamCount)); // Log number of parameters
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query.toString())) {
+
+            int currentParamIndex = 1;
+
+            // Set parameter NoSO untuk setiap bagian query
+            for (int i = 0; i < noSOParamCount; i++) {
+                stmt.setString(currentParamIndex++, noSO);
+            }
+
+            // Set parameter IdLokasi jika ada
+            if (!selectedLokasi.equals("Semua")) {
+                stmt.setString(currentParamIndex++, selectedLokasi);
+            }
+
+            // Set parameter OFFSET dan LIMIT
+            stmt.setInt(currentParamIndex++, offset); // OFFSET
+            stmt.setInt(currentParamIndex, limit); // LIMIT
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String noLabel = rs.getString("NoLabel");
+                    String idLokasi = rs.getString("IdLokasi");
+                    String userId = rs.getString("UserID");
+
+                    // Menambahkan data ke dalam list
+                    stockOpnameDataInputByNoSOList.add(new StockOpnameDataInputByNoSO(noLabel, idLokasi, userId));
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+        }
+
+        return stockOpnameDataInputByNoSOList;
+    }
+
 
 
 
