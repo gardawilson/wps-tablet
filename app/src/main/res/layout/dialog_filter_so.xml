@@ -46,8 +46,7 @@
 
     </LinearLayout>
 
-        <!-- RadioGroup untuk Filter Radio Buttons -->
-        <RadioGroup
+        <LinearLayout
             android:id="@+id/filterGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -55,114 +54,115 @@
             android:layout_marginTop="8dp"
             android:gravity="center_horizontal">
 
-            <!-- RadioButton 1 -->
-            <RadioButton
+            <!-- CheckBox 1 -->
+            <CheckBox
                 android:id="@+id/filter_ST"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ST"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <!-- RadioButton 2 -->
-            <RadioButton
+            <!-- CheckBox 2 -->
+            <CheckBox
                 android:id="@+id/filter_S4S"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="S4S"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <!-- RadioButton 3 -->
-            <RadioButton
+            <!-- CheckBox 3 -->
+            <CheckBox
                 android:id="@+id/filter_FJ"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="FJ"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <!-- RadioButton 4 -->
-            <RadioButton
+            <!-- CheckBox 4 -->
+            <CheckBox
                 android:id="@+id/filter_Moulding"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Moulding"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <RadioButton
+            <CheckBox
                 android:id="@+id/filter_Laminating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Laminating"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <RadioButton
+            <CheckBox
                 android:id="@+id/filter_ccakhir"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CCAkhir"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <RadioButton
+            <CheckBox
                 android:id="@+id/filter_sanding"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Sanding"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
 
-            <RadioButton
+            <CheckBox
                 android:id="@+id/filter_bj"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="BJ"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:gravity="center"
-                android:background="@drawable/custom_radio_button"
                 android:textColor="#333333"
                 android:textSize="16sp"
-                android:button="@null" />
-        </RadioGroup>
+                android:gravity="center"
+                android:background="@drawable/custom_radio_button"
+                android:button="@null"/>
+        </LinearLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"

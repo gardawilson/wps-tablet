@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class StockOpnameApi {
 
@@ -454,63 +455,48 @@ public class StockOpnameApi {
 //    }
 
 
-    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, String selectedLabel, int offset, int limit) {
+    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, Set<String> selectedLabels, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
         Log.d("valuefilter", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
 
-        // Menentukan query berdasarkan selectedLabel dan selectedLokasi
+        // Menentukan query dasar
         StringBuilder query = new StringBuilder("SELECT NoLabel, IdLokasi, UserID FROM ( ");
         int noSOParamCount = 0; // Menghitung jumlah parameter NoSO
         boolean isFirstQuery = true;  // Flag untuk memastikan UNION ALL tidak ditambahkan di awal
 
-        // Menambahkan bagian query untuk masing-masing label
-        if (selectedLabel.equals("ST") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false; // Set isFirstQuery to false after the first query
-        }
-        if (selectedLabel.equals("S4S") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("FJ") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("Moulding") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("Laminating") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("CCAkhir") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("Sanding") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
-        }
-        if (selectedLabel.equals("BJ") || selectedLabel.equals("all")) {
-            if (!isFirstQuery) query.append("UNION ALL ");
-            query.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
-            noSOParamCount++;
-            isFirstQuery = false;
+        // Tambahkan kondisi berdasarkan selectedLabels (filter CheckBox)
+        for (String label : selectedLabels) {
+            if (!label.equals("all")) {  // Jangan menambahkan "all", karena akan mencakup semua
+                if (!isFirstQuery) query.append("UNION ALL ");
+                switch (label) {
+                    case "ST":
+                        query.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
+                        break;
+                    case "S4S":
+                        query.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
+                        break;
+                    case "FJ":
+                        query.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
+                        break;
+                    case "Moulding":
+                        query.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
+                        break;
+                    case "Laminating":
+                        query.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
+                        break;
+                    case "CCAkhir":
+                        query.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
+                        break;
+                    case "Sanding":
+                        query.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
+                        break;
+                    case "BJ":
+                        query.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
+                        break;
+                }
+                noSOParamCount++;
+                isFirstQuery = false; // Set isFirstQuery to false after the first query
+            }
         }
 
         query.append(") AS CombinedResults WHERE 1=1 "); // Menambahkan WHERE clause dasar
