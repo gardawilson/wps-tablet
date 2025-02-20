@@ -63,6 +63,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private Button filterButton;
     private Spinner blokSpinner;
     private Spinner idLokasiSpinner;
+    private String selectedLabel;
+    private String selectedIdLokasi;
 
 
 
@@ -132,18 +134,22 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Tombol Apply
         Button btnApply = dialogView.findViewById(R.id.btn_apply);
         btnApply.setOnClickListener(v -> {
+            // Reset paging
+            hasMoreDataToFetchBefore = true;
+            hasMoreDataToFetchAfter = true;
+            currentPageForNoSO = 0;
+            currentPageForNoSOInput = 0;
+
             // Ambil nilai yang dipilih dari Spinner
             Spinner blokSpinner = dialogView.findViewById(R.id.blok);
             Spinner idLokasiSpinner = dialogView.findViewById(R.id.idLokasi);
 
             String selectedBlok = (String) blokSpinner.getSelectedItem();
-            String selectedIdLokasi = (String) idLokasiSpinner.getSelectedItem();
+            selectedIdLokasi = (String) idLokasiSpinner.getSelectedItem();
 
             // Ambil nilai yang dipilih dari RadioGroup
             RadioGroup filterGroup = dialogView.findViewById(R.id.filterGroup);
             int selectedRadioButtonId = filterGroup.getCheckedRadioButtonId();
-
-            String selectedLabel = "all";  // Default nilai filter adalah "All"
 
             if (selectedRadioButtonId != -1) {  // Memastikan ada RadioButton yang dipilih
                 RadioButton selectedRadioButton = dialogView.findViewById(selectedRadioButtonId);
@@ -152,7 +158,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             // Tampilkan nilai yang dipilih dari Spinner dan RadioButton (atau default "All")
             Toast.makeText(StockOpname.this, selectedBlok + " " + selectedIdLokasi + " " + selectedLabel, Toast.LENGTH_SHORT).show();
-            filterDataInputByNoSO(selectedIdLokasi, selectedLabel, 0);
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabel, currentPageForNoSOInput);
 
             // Menutup dialog setelah tombol Apply ditekan
             dialog.dismiss();
@@ -297,7 +303,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
                     Log.d("SearchView", "Teks kosong, memanggil fetchDataInputByNoSO");
-                    fetchDataInputByNoSO(selectedNoSO, selectedTglSO, 0);
+                    filterDataInputByNoSO(selectedIdLokasi, selectedLabel, 0);
                 } else {
                     Log.d("SearchView", "Teks tidak kosong, memanggil searchDataInputByNoSO");
                     searchDataInputByNoSO(newText);
@@ -319,6 +325,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             StockOpnameData stockOpname = stockOpnames.get(position);
             selectedNoSO = stockOpname.getNoSO();
             selectedTglSO = stockOpname.getTgl();
+            selectedLabel = "all";
+            selectedIdLokasi = "Semua";
 
             // Reset paging
             hasMoreDataToFetchBefore = true;
@@ -327,8 +335,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             currentPageForNoSOInput = 0;
 
             // Mulai fetch dari awal
-            fetchDataByNoSO(selectedNoSO, selectedTglSO, 0);
-            fetchDataInputByNoSO(selectedNoSO, selectedTglSO, 0);
+            fetchDataByNoSO(selectedNoSO, selectedTglSO, currentPageForNoSO);
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabel, currentPageForNoSOInput);
         });
 
         recyclerView.addOnScrollListener(createScrollListener(true));
@@ -349,9 +357,13 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 } else {
                     if (!isLoadingBefore && isLastItemVisible(recyclerViewBefore)) {
                         fetchDataByNoSO(selectedNoSO, selectedTglSO, currentPageForNoSO);
+                        Log.d("valuefilter", "scroll with offset: " + currentPageForNoSO + " and limit: " + selectedLabel);
+
                     }
                     if (!isLoadingAfter && isLastItemVisible(recyclerViewAfter)) {
-                        fetchDataInputByNoSO(selectedNoSO, selectedTglSO, currentPageForNoSOInput);
+                        filterDataInputByNoSO(selectedIdLokasi, selectedLabel, currentPageForNoSOInput);
+//                        Log.d("valuefilter", "scroll with offset: " + selectedIdLokasi + " and limit: " + selectedLabel);
+
                     }
                 }
             }
@@ -359,11 +371,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     }
 
     private void filterDataInputByNoSO(String selectedIdLokasi, String selectedLabel, int page) {
-        // Show loading indicator while searching
-        showLoadingIndicatorAfter(true);
-        isLoadingAfter = true;
 
-        int limit = (page == 0) ? 100 : 50;
+        // Show loading indicator while searching
+        isLoadingAfter = true;
+        showLoadingIndicatorAfter(true);
+
+        int limit = 100;
         int offset = page * limit;
 
         // Run the network call in a background thread
@@ -375,13 +388,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             runOnUiThread(() -> {
                 if (data != null && !data.isEmpty()) {
                     // Iterate over the fetched data and add unique items to the list
-                    stockOpnameDataInputByNoSOList.clear();
+                    if (page == 0) stockOpnameDataInputByNoSOList.clear();
                     for (StockOpnameDataInputByNoSO item : data) {
                         if (!stockOpnameDataInputByNoSOList.contains(item)) {
                             stockOpnameDataInputByNoSOList.add(item);  // Add the item if it's not already in the list
                         }
                     }
                     currentPageForNoSOInput++;
+
+                    if (data.size() < limit) {
+                        hasMoreDataToFetchAfter = false;  // No more data to fetch
+                    }
 
                 } else {
                     hasMoreDataToFetchAfter = false;
@@ -399,7 +416,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             });
         });
     }
-
 
     private void searchDataInputByNoSO(String searchTerm) {
         // Show loading indicator while searching
@@ -441,11 +457,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     }
 
     private void fetchDataByNoSO(String noSO, String tglSO, int page) {
-        if (isLoadingBefore) return;  // Prevent fetching if already loading for RecyclerView "Before"
 
         isLoadingBefore = true;
         showLoadingIndicatorBefore(true);
-        int limit = (page == 0) ? 100 : 50;
+        int limit = 100;
         int offset = page * limit;
 
         executorService.execute(() -> {
@@ -457,6 +472,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     for (StockOpnameDataByNoSO item : data) {
                         if (!stockOpnameDataByNoSOList.contains(item)) {
                             stockOpnameDataByNoSOList.add(item);
+                            Log.d("before", ": " + item.getNoLabel());
+
                         }
                     }
                     currentPageForNoSO++;
@@ -464,6 +481,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     if (data.size() < limit) {
                         hasMoreDataToFetchBefore = false;  // No more data to fetch
                     }
+
                 } else {
                     hasMoreDataToFetchBefore = false;
 //                    showToast("Tidak ada data lagi untuk NoSO: " + noSO);
@@ -474,43 +492,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 stockOpnameDataAdapter.notifyDataSetChanged();
                 showLoadingIndicatorBefore(false);
                 isLoadingBefore = false;
-            });
-        });
-    }
-
-
-    private void fetchDataInputByNoSO(String noSO, String tglSO, int page) {
-        if (isLoadingAfter) return;  // Prevent fetching if already loading for RecyclerView "After"
-
-        isLoadingAfter = true;
-        showLoadingIndicatorAfter(true);
-        int limit = (page == 0) ? 100 : 50;
-        int offset = page * limit;
-
-        executorService.execute(() -> {
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByNoSO(noSO, offset, limit);
-            runOnUiThread(() -> {
-                if (data != null && !data.isEmpty()) {
-                    if (page == 0) stockOpnameDataInputByNoSOList.clear();
-                    for (StockOpnameDataInputByNoSO item : data) {
-                        if (!stockOpnameDataInputByNoSOList.contains(item)) {
-                            stockOpnameDataInputByNoSOList.add(item);
-                        }
-                    }
-                    currentPageForNoSOInput++;
-
-                    if (data.size() < limit) {
-                        hasMoreDataToFetchAfter = false;  // No more data to fetch
-                    }
-                } else {
-                    hasMoreDataToFetchAfter = false;
-                    stockOpnameDataInputByNoSOList.clear();
-//                    showToast("Tidak ada data lagi untuk NoSO: " + noSO);
-                }
-
-                stockOpnameDataInputAdapter.notifyDataSetChanged();
-                showLoadingIndicatorAfter(false);
-                isLoadingAfter = false;
             });
         });
     }
@@ -549,9 +530,13 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Periksa apakah ada data yang lebih untuk di-fetch, tergantung pada recyclerView yang sedang digunakan
         if (recyclerView == recyclerViewBefore) {
             // Mengontrol fetch untuk RecyclerView Before
+//            Log.d("ScrollCheck", "recyclerViewBefore last position: " + lastVisibleItemPosition + " total item count: " + totalItemCount);
+
             return lastVisibleItemPosition == totalItemCount - 1 && !isLoadingBefore && hasMoreDataToFetchBefore;
         } else if (recyclerView == recyclerViewAfter) {
             // Mengontrol fetch untuk RecyclerView After
+//            Log.d("ScrollCheck", "recyclerViewAfter last position: " + lastVisibleItemPosition + " total item count: " + totalItemCount);
+
             return lastVisibleItemPosition == totalItemCount - 1 && !isLoadingAfter && hasMoreDataToFetchAfter;
         }
 
@@ -604,17 +589,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             // Setelah operasi selesai, perbarui UI di main thread
             runOnUiThread(() -> {
                 if (isDeleted) {
-            // Cari item berdasarkan ID
-            for (int i = 0; i < stockOpnameDataInputByNoSOList.size(); i++) {
-                if (stockOpnameDataInputByNoSOList.get(i).getNoLabelInput().equals(item.getNoLabelInput())) {
-                    stockOpnameDataInputByNoSOList.remove(i);
-                    stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
+                    // Cari item berdasarkan ID
+                    for (int i = 0; i < stockOpnameDataInputByNoSOList.size(); i++) {
+                        if (stockOpnameDataInputByNoSOList.get(i).getNoLabelInput().equals(item.getNoLabelInput())) {
+                            stockOpnameDataInputByNoSOList.remove(i);
+                            stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
 
-                    Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
-                    Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
-                    break;
-                }
-            }
+                            Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
+                            Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
+                            break;
+                        }
+                    }
                 } else {
                     Log.e("StockOpname", "Failed to delete item: " + item.getNoLabelInput());
                     Toast.makeText(this, "Failed to delete item", Toast.LENGTH_SHORT).show();

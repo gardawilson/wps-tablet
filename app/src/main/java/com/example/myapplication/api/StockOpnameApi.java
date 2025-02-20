@@ -54,7 +54,7 @@ public class StockOpnameApi {
 
     public static List<StockOpnameDataByNoSO> getStockOpnameDataByNoSO(String noSO, String tglSO, int offset, int limit) {
         List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
-        Log.d("Paging", "fetchDataByNoSO " + offset + " - " + limit);
+        Log.d("DataByNoso", "fetchDataByNoSO " + offset + " - " + limit);
 
         // Memodifikasi query untuk menambahkan OFFSET dan LIMIT
         String query =
@@ -456,7 +456,7 @@ public class StockOpnameApi {
 
     public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, String selectedLabel, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
-        Log.d("Paging", "fetchDataInputByNoSO with label: " + selectedLabel + " and limit: " + limit);
+        Log.d("valuefilter", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
 
         // Menentukan query berdasarkan selectedLabel dan selectedLokasi
         StringBuilder query = new StringBuilder("SELECT NoLabel, IdLokasi, UserID FROM ( ");
