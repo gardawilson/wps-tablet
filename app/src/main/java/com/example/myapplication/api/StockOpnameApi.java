@@ -1,12 +1,14 @@
 package com.example.myapplication.api;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.myapplication.DatabaseConfig;
 import com.example.myapplication.model.LokasiBlok;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
+import com.example.myapplication.model.UserIDSO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -597,6 +599,43 @@ public class StockOpnameApi {
         return lokasiBlokList;
     }
 
+    public static List<UserIDSO> getUserIdsForNoSO(String noSO) {
+        List<UserIDSO> userList = new ArrayList<>();
+
+        // Query untuk mengambil data UserID
+        String query = "SELECT DISTINCT ISNULL(sh.[UserID], '-') AS [UserID] " +
+                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_ST] sh " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_S4S] s4s ON s4s.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_FJ] fj ON fj.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_Moulding] moulding ON moulding.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_Laminating] laminating ON laminating.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_CCAkhir] cca ON cca.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_Sanding] sanding ON sanding.NoSO = sh.NoSO " +
+                "LEFT JOIN [WPS_Test].[dbo].[StockOpname_Hasil_d_BJ] bj ON bj.NoSO = sh.NoSO " +
+                "WHERE sh.NoSO = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noSO);  // Set parameter NoSO
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String userIDSO = rs.getString("UserID");
+
+                    // Menambahkan UserIDSO ke list
+                    userList.add(new UserIDSO(userIDSO));
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+        }
+
+        return userList;
+    }
+
+
+
 //    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String idLokasi, int offset, int limit) {
 //        List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
 //        Log.d("Paging", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
@@ -654,7 +693,7 @@ public class StockOpnameApi {
 //    }
 
 
-    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, Set<String> selectedLabels, int offset, int limit) {
+    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByFilter(String noSO, String selectedLokasi, Set<String> selectedLabels, String selectedUserID, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
         Log.d("valuefilter", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
 
@@ -700,9 +739,21 @@ public class StockOpnameApi {
 
         query.append(") AS CombinedResults WHERE 1=1 "); // Menambahkan WHERE clause dasar
 
-        // Tambahkan filter untuk IdLokasi jika tidak "all"
+        // Tambahkan filter untuk IdLokasi jika tidak "Semua"
         if (!selectedLokasi.equals("Semua")) {
             query.append("AND IdLokasi = ? ");
+        }
+
+        // Tambahkan filter untuk UserID jika tidak "Semua"
+        if (selectedUserID != null && !selectedUserID.equals("Semua")) {
+            if(selectedUserID.equals("-")){
+                Log.d("UserID", selectedUserID); // Log the query for debugging purposes
+                query.append("AND UserID IS NULL ");
+            }
+            else{
+                query.append("AND UserID = ? ");
+
+            }
         }
 
         query.append("ORDER BY NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
@@ -725,6 +776,11 @@ public class StockOpnameApi {
                 stmt.setString(currentParamIndex++, selectedLokasi);
             }
 
+            // Set parameter UserID jika ada
+            if (selectedUserID != null && !selectedUserID.equals("Semua") && !selectedUserID.equals("-")) {
+                stmt.setString(currentParamIndex++, selectedUserID);
+            }
+
             // Set parameter OFFSET dan LIMIT
             stmt.setInt(currentParamIndex++, offset); // OFFSET
             stmt.setInt(currentParamIndex, limit); // LIMIT
@@ -745,7 +801,6 @@ public class StockOpnameApi {
 
         return stockOpnameDataInputByNoSOList;
     }
-
 
 
 

@@ -26,6 +26,7 @@ import com.example.myapplication.model.LokasiBlok;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
+import com.example.myapplication.model.UserIDSO;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -65,6 +66,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private Spinner blokSpinner;
     private Spinner idLokasiSpinner;
     private String selectedLabel;
+    private String selectedUserID;
     private String selectedIdLokasi;
     private String selectedBlok;
     private Set<String> selectedLabels = new HashSet<>();
@@ -118,6 +120,36 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         });
     }
 
+    private void setupUserSpinner() {
+        // Jalankan operasi pengambilan data di background thread menggunakan ExecutorService
+        executorService.execute(() -> {
+            // Ambil data UserIDSO dari database
+            List<UserIDSO> userList = StockOpnameApi.getUserIdsForNoSO("Q.000012");
+
+            // Update UI di thread utama setelah data diambil
+            runOnUiThread(() -> {
+                if (userList != null && !userList.isEmpty()) {
+                    // Pastikan spinner ditemukan
+                    Spinner userSpinner = findViewById(R.id.userIDSO);
+
+                    if (userSpinner == null) {
+                        Log.e("SetupUserSpinner", "Spinner tidak ditemukan!");
+                        return;
+                    }
+
+                    // Membuat adapter dan menghubungkannya ke spinner
+                    ArrayAdapter<UserIDSO> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, userList);
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+                    userSpinner.setAdapter(adapter);
+                } else {
+                    Toast.makeText(StockOpname.this, "Tidak ada data UserIDSO", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+
 
     private void openFilterDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -155,6 +187,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Ambil nilai yang dipilih dari Spinner
         Spinner blokSpinner = dialogView.findViewById(R.id.blok);
         Spinner idLokasiSpinner = dialogView.findViewById(R.id.idLokasi);
+        Spinner userSpinner = dialogView.findViewById(R.id.userIDSO);
 
         // Cek jika semua checkbox tercentang, jika ya, sembunyikan status ceklis
         boolean allChecked = selectedLabels.contains("ST") && selectedLabels.contains("S4S") &&
@@ -186,6 +219,9 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             selectedBlok = (String) blokSpinner.getSelectedItem();
             selectedIdLokasi = (String) idLokasiSpinner.getSelectedItem();
+            // Ambil UserIDSO yang dipilih
+            UserIDSO selectedUser = (UserIDSO) userSpinner.getSelectedItem();
+            selectedUserID = selectedUser.getUserIDSO(); // Mengambil nilai String dari objek UserIDSO
 
             // Setelah pengguna mengklik checkbox, ambil nilai yang dipilih
             if (filterST.isChecked() && !selectedLabels.contains("ST")) {
@@ -227,16 +263,15 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             }
 
             // Tampilkan nilai yang dipilih dari Spinner dan CheckBox dalam Toast
-            Toast.makeText(StockOpname.this, selectedBlok + " " + selectedIdLokasi + " " + selectedLabels, Toast.LENGTH_SHORT).show();
+            Toast.makeText(StockOpname.this, selectedBlok + " " + selectedIdLokasi + " " + selectedLabels + " " + selectedUserID, Toast.LENGTH_SHORT).show();
 
             // Lakukan aksi dengan data yang dipilih (filter data)
-            filterDataInputByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSOInput);
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabels, selectedUserID, currentPageForNoSOInput);
             fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
 
             // Menutup dialog setelah tombol Apply ditekan
             dialog.dismiss();
         });
-
 
 
         // Tombol Cancel
@@ -260,6 +295,9 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             selectedIdLokasi = "Semua";
             idLokasiSpinner.setSelection(0);
 
+            selectedUserID = "Semua";
+            userSpinner.setSelection(0);
+
             // Kosongkan selectedLabels
             selectedLabels.clear();
             // Menutup dialog tanpa aksi
@@ -274,12 +312,15 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
     private void setupSpinnersInDialog(View dialogView) {
         executorService.execute(() -> {
-            // Ambil data dari API di background thread
+            // Ambil data lokasi dan blok dari API di background thread
             List<LokasiBlok> lokasiBlokList = StockOpnameApi.getLokasiAndBlok();
+
+            // Ambil data UserIDSO
+            List<UserIDSO> userIDSOList = StockOpnameApi.getUserIdsForNoSO(selectedNoSO);
 
             // Update UI di main thread setelah data diambil
             runOnUiThread(() -> {
-                if (lokasiBlokList != null && !lokasiBlokList.isEmpty()) {
+                if (lokasiBlokList != null && !lokasiBlokList.isEmpty() && userIDSOList != null) {
                     // Pisahkan data blok dan idLokasi
                     Set<String> blokSet = new HashSet<>(); // Menggunakan Set untuk menghilangkan duplikasi
                     List<LokasiBlok> idLokasiList = new ArrayList<>();
@@ -308,19 +349,39 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                     idLokasiSpinner.setAdapter(idLokasiAdapter);
 
-                    // Reset selectedBlok to "Semua" if needed (on new data load)
+                    // Setup adapter untuk spinner UserIDSO
+                    userIDSOList.add(0, new UserIDSO("Semua")); // Menambahkan "Semua" ke dalam daftar
+                    Spinner userSpinner = dialogView.findViewById(R.id.userIDSO);
+                    ArrayAdapter<UserIDSO> userAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, userIDSOList);
+                    userAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                    userSpinner.setAdapter(userAdapter);
+
+                    // Mengatur nilai spinner userIDSO yang dipilih sebelumnya
+                    if (selectedUserID != null) {
+                        int userIDIndex = -1;
+                        for (int i = 0; i < userIDSOList.size(); i++) {
+                            if (userIDSOList.get(i).getUserIDSO().equals(selectedUserID)) {
+                                userIDIndex = i;
+                                break;
+                            }
+                        }
+                        if (userIDIndex != -1) {
+                            userSpinner.setSelection(userIDIndex); // Set spinner ke nilai yang dipilih sebelumnya
+                        }
+                    }
+
+
+                    // Set nilai yang dipilih sebelumnya (selectedBlok dan selectedIdLokasi)
                     if (selectedBlok == null || !blokList.contains(selectedBlok)) {
                         selectedBlok = "Semua"; // Reset to "Semua" if no valid selection
                     }
 
-                    // Setel nilai yang dipilih sebelumnya (selectedBlok dan selectedIdLokasi)
-                    if (blokList.contains(selectedBlok)) {
-                        int blokIndex = blokList.indexOf(selectedBlok);
-                        blokSpinner.setSelection(blokIndex);  // Set spinner blok ke nilai yang dipilih sebelumnya
-                    }
+                    // Setel nilai yang dipilih sebelumnya
+                    int blokIndex = blokList.indexOf(selectedBlok);
+                    blokSpinner.setSelection(blokIndex);  // Set spinner blok ke nilai yang dipilih sebelumnya
 
                     // Set adapter untuk spinner idLokasi
-                    if (selectedIdLokasi != null && !selectedIdLokasi.isEmpty()) {
+                    if (selectedBlok != null && !"Semua".equals(selectedBlok)) {
                         // Filter lokasi berdasarkan blok yang dipilih
                         List<String> filteredLokasiList = new ArrayList<>();
                         for (LokasiBlok lokasiBlok : lokasiBlokList) {
@@ -328,6 +389,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                                 filteredLokasiList.add(lokasiBlok.getIdLokasi());
                             }
                         }
+
                         // Set adapter dan pilih idLokasi yang sesuai
                         idLokasiAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, filteredLokasiList);
                         idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
@@ -337,6 +399,14 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                             int lokasiIndex = filteredLokasiList.indexOf(selectedIdLokasi);
                             idLokasiSpinner.setSelection(lokasiIndex); // Set spinner idLokasi ke nilai yang dipilih sebelumnya
                         }
+                    } else {
+                        // Jika "Semua" dipilih untuk blok, set idLokasi juga menjadi "Semua"
+                        List<String> allLokasiList = new ArrayList<>();
+                        allLokasiList.add("Semua"); // Menambahkan "Semua" ke daftar idLokasi
+                        idLokasiAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, allLokasiList);
+                        idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                        idLokasiSpinner.setAdapter(idLokasiAdapter);
+                        selectedIdLokasi = "Semua"; // Set selectedIdLokasi ke "Semua"
                     }
 
                     // Tambahkan listener untuk blokSpinner
@@ -388,11 +458,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                         }
                     });
                 } else {
-                    Toast.makeText(StockOpname.this, "Tidak ada data lokasi dan blok", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(StockOpname.this, "Tidak ada data lokasi dan blok atau UserIDSO", Toast.LENGTH_SHORT).show();
                 }
             });
         });
     }
+
 
 
 
@@ -439,7 +510,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
                     Log.d("SearchView", "Teks kosong, memanggil fetchDataInputByNoSO");
-                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , 0);
+                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID,0);
                     fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
                 } else {
                     Log.d("SearchView", "Teks tidak kosong, memanggil searchDataInputByNoSO");
@@ -453,6 +524,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         filterButton.setOnClickListener(v -> {
             // Membuka dialog untuk memilih filter
             setupSpinners();
+            setupUserSpinner();
             openFilterDialog();
         });
     }
@@ -466,6 +538,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             selectedBlok = "Semua";
             selectedIdLokasi = "Semua";
+            selectedUserID = "Semua";
 
             selectedLabels.add("ST");
             selectedLabels.add("S4S");
@@ -486,7 +559,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             // Mulai fetch dari awal
             fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
-            filterDataInputByNoSO(selectedIdLokasi, selectedLabels , currentPageForNoSOInput);
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID, currentPageForNoSOInput);
         });
 
         recyclerView.addOnScrollListener(createScrollListener(true));
@@ -511,7 +584,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
                     }
                     if (!isLoadingAfter && isLastItemVisible(recyclerViewAfter)) {
-                        filterDataInputByNoSO(selectedIdLokasi, selectedLabels , currentPageForNoSOInput);
+                        filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID, currentPageForNoSOInput);
 //                        Log.d("valuefilter", "scroll with offset: " + selectedIdLokasi + " and limit: " + selectedLabel);
 
                     }
@@ -520,7 +593,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         };
     }
 
-    private void filterDataInputByNoSO(String selectedIdLokasi, Set<String> selectedLabels, int page) {
+    private void filterDataInputByNoSO(String selectedIdLokasi, Set<String> selectedLabels, String selectedUserID, int page) {
 
         // Show loading indicator while searching
         isLoadingAfter = true;
@@ -537,7 +610,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(safeSelectedNoSO, safeSelectedIdLokasi, safeSelectedLabels, offset, limit);
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(safeSelectedNoSO, safeSelectedIdLokasi, safeSelectedLabels, selectedUserID, offset, limit);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
