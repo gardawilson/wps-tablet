@@ -53,86 +53,121 @@ public class StockOpnameApi {
         return stockOpnames;
     }
 
-    public static List<StockOpnameDataByNoSO> getStockOpnameDataByNoSO(String noSO, String tglSO, int offset, int limit) {
+    public static List<StockOpnameDataByNoSO> getStockOpnameDataByNoSO(String noSO, String tglSO, String selectedLokasi, Set<String> selectedLabels, int offset, int limit) {
         List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
-        Log.d("DataByNoso", "fetchDataByNoSO " + offset + " - " + limit);
+        Log.d("DataByNoso", "fetchDataByNoSO with offset: " + offset + " and limit: " + limit);
 
-        // Memodifikasi query untuk menambahkan OFFSET dan LIMIT
-        String query =
-                "SELECT [NoLabel], [IdLokasi] " +
-                        "FROM ( " +
-                        "    SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameST] sost " +
-                        "    INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
-                        "    WHERE sost.[NoSO] = ? " +
-                        "    AND sost.[NoST] NOT IN (SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ?) " +
-                        "    AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameS4S] sos4s " +
-                        "    INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
-                        "    WHERE sos4s.[NoSO] = ? " +
-                        "    AND sos4s.[NoS4S] NOT IN (SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ?) " +
-                        "    AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameFJ] sofj " +
-                        "    INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
-                        "    WHERE sofj.[NoSO] = ? " +
-                        "    AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
-                        "    AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameMoulding] som " +
-                        "    INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
-                        "    WHERE som.[NoSO] = ? " +
-                        "    AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
-                        "    AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameLaminating] sol " +
-                        "    INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
-                        "    WHERE sol.[NoSO] = ? " +
-                        "    AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
-                        "    AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameCCAkhir] soc " +
-                        "    INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
-                        "    WHERE soc.[NoSO] = ? " +
-                        "    AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
-                        "    AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameSanding] sosand " +
-                        "    INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
-                        "    WHERE sosand.[NoSO] = ? " +
-                        "    AND sosand.[NoSanding] NOT IN (SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ?) " +
-                        "    AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) " +
-                        "    UNION ALL " +
-                        "    SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
-                        "    FROM [dbo].[StockOpnameBJ] sobj " +
-                        "    INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
-                        "    WHERE sobj.[NoSO] = ? " +
-                        "    AND sobj.[NoBJ] NOT IN (SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ?) " +
-                        "    AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) " +
-                        ") AS CombinedResults " +
-                        "ORDER BY NoLabel " +
-                        "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        // Membangun query secara dinamis
+        StringBuilder query = new StringBuilder("SELECT NoLabel, IdLokasi FROM ( ");
+        int noSOParamCount = 0; // Menghitung jumlah parameter NoSO
+        boolean isFirstQuery = true; // Flag untuk memastikan UNION ALL tidak ditambahkan di awal
+
+        // Tambahkan subquery berdasarkan selectedLabels
+        for (String label : selectedLabels) {
+            if (!label.equals("all")) { // Skip jika label adalah "all"
+                if (!isFirstQuery) query.append("UNION ALL ");
+                switch (label) {
+                    case "ST":
+                        query.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
+                                "FROM [dbo].[StockOpnameST] sost " +
+                                "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
+                                "WHERE sost.[NoSO] = ? " +
+                                "AND sost.[NoST] NOT IN (SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ?) " +
+                                "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) ");
+                        break;
+                    case "S4S":
+                        query.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
+                                "FROM [dbo].[StockOpnameS4S] sos4s " +
+                                "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
+                                "WHERE sos4s.[NoSO] = ? " +
+                                "AND sos4s.[NoS4S] NOT IN (SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ?) " +
+                                "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) ");
+                        break;
+                    case "FJ":
+                        query.append("SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
+                                "FROM [dbo].[StockOpnameFJ] sofj " +
+                                "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
+                                "WHERE sofj.[NoSO] = ? " +
+                                "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
+                                "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
+                        break;
+                    case "Moulding":
+                        query.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
+                                "FROM [dbo].[StockOpnameMoulding] som " +
+                                "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
+                                "WHERE som.[NoSO] = ? " +
+                                "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
+                                "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
+                        break;
+                    case "Laminating":
+                        query.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
+                                "FROM [dbo].[StockOpnameLaminating] sol " +
+                                "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
+                                "WHERE sol.[NoSO] = ? " +
+                                "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
+                                "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
+                        break;
+                    case "CCAkhir":
+                        query.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
+                                "FROM [dbo].[StockOpnameCCAkhir] soc " +
+                                "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
+                                "WHERE soc.[NoSO] = ? " +
+                                "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
+                                "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
+                        break;
+                    case "Sanding":
+                        query.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
+                                "FROM [dbo].[StockOpnameSanding] sosand " +
+                                "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
+                                "WHERE sosand.[NoSO] = ? " +
+                                "AND sosand.[NoSanding] NOT IN (SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ?) " +
+                                "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) ");
+                        break;
+                    case "BJ":
+                        query.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
+                                "FROM [dbo].[StockOpnameBJ] sobj " +
+                                "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
+                                "WHERE sobj.[NoSO] = ? " +
+                                "AND sobj.[NoBJ] NOT IN (SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ?) " +
+                                "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) ");
+                        break;
+                }
+                noSOParamCount += 3; // Setiap subquery membutuhkan 3 parameter: NoSO, NoSO, dan tglSO
+                isFirstQuery = false;
+            }
+        }
+
+        query.append(") AS CombinedResults WHERE 1=1 "); // Tambahkan WHERE clause dasar
+
+        // Tambahkan filter untuk IdLokasi jika tidak "Semua"
+        if (!selectedLokasi.equals("Semua")) {
+            query.append("AND IdLokasi = ? ");
+        }
+
+        query.append("ORDER BY NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        Log.d("SQL Query", query.toString()); // Log query untuk debugging
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement stmt = con.prepareStatement(query)) {
+             PreparedStatement stmt = con.prepareStatement(query.toString())) {
 
-            int parameterIndex = 1;
-            for (int i = 0; i < 8; i++) {
-                stmt.setString(parameterIndex++, noSO);
-                stmt.setString(parameterIndex++, noSO);
-                stmt.setString(parameterIndex++, tglSO);
+            int currentParamIndex = 1;
+
+            // Set parameter NoSO dan tglSO untuk setiap subquery
+            for (int i = 0; i < noSOParamCount / 3; i++) {
+                stmt.setString(currentParamIndex++, noSO);
+                stmt.setString(currentParamIndex++, noSO);
+                stmt.setString(currentParamIndex++, tglSO);
             }
 
-            // Set OFFSET dan LIMIT
-            stmt.setInt(parameterIndex++, offset); // OFFSET
-            stmt.setInt(parameterIndex++, limit); // LIMIT
+            // Set parameter IdLokasi jika ada
+            if (!selectedLokasi.equals("Semua")) {
+                stmt.setString(currentParamIndex++, selectedLokasi);
+            }
+
+            // Set parameter OFFSET dan LIMIT
+            stmt.setInt(currentParamIndex++, offset); // OFFSET
+            stmt.setInt(currentParamIndex, limit); // LIMIT
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -142,7 +177,7 @@ public class StockOpnameApi {
                 }
             }
         } catch (SQLException e) {
-            Log.e("Database Fetch Error", "Error fetching " + e.getMessage());
+            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
         }
 
         return stockOpnameDataByNoSOList;
@@ -204,54 +239,217 @@ public class StockOpnameApi {
         return stockOpnameDataInputByNoSOList;
     }
 
+    public static List<StockOpnameDataByNoSO> searchStockOpnameDataByNoSO(String noSO, String tglSO, String searchTerm, Set<String> selectedLabels, int offset, int limit) {
+        List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
+        Log.d("DataByNoso", "fetchDataBySearchTerm with searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
 
-    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputBySearch(String noSO, String searchTerm, int offset, int limit) {
+        // Start building the query dynamically
+        StringBuilder queryBuilder = new StringBuilder("SELECT NoLabel, IdLokasi FROM ( ");
+        boolean isFirstQuery = true;
+
+        // Loop through selectedLabels to build the subqueries dynamically
+        for (String label : selectedLabels) {
+            if (!label.equals("all")) { // Skip if the label is "all"
+                if (!isFirstQuery) {
+                    queryBuilder.append("UNION ALL ");
+                }
+                switch (label) {
+                    case "ST":
+                        queryBuilder.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
+                                "FROM [dbo].[StockOpnameST] sost " +
+                                "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
+                                "WHERE sost.[NoSO] = ? " +
+                                "AND sost.[NoST] NOT IN (SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ?) " +
+                                "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) ");
+                        break;
+                    case "S4S":
+                        queryBuilder.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
+                                "FROM [dbo].[StockOpnameS4S] sos4s " +
+                                "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
+                                "WHERE sos4s.[NoSO] = ? " +
+                                "AND sos4s.[NoS4S] NOT IN (SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ?) " +
+                                "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) ");
+                        break;
+                    case "FJ":
+                        queryBuilder.append("SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
+                                "FROM [dbo].[StockOpnameFJ] sofj " +
+                                "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
+                                "WHERE sofj.[NoSO] = ? " +
+                                "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
+                                "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
+                        break;
+                    case "Moulding":
+                        queryBuilder.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
+                                "FROM [dbo].[StockOpnameMoulding] som " +
+                                "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
+                                "WHERE som.[NoSO] = ? " +
+                                "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
+                                "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
+                        break;
+                    case "Laminating":
+                        queryBuilder.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
+                                "FROM [dbo].[StockOpnameLaminating] sol " +
+                                "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
+                                "WHERE sol.[NoSO] = ? " +
+                                "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
+                                "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
+                        break;
+                    case "CCAkhir":
+                        queryBuilder.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
+                                "FROM [dbo].[StockOpnameCCAkhir] soc " +
+                                "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
+                                "WHERE soc.[NoSO] = ? " +
+                                "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
+                                "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
+                        break;
+                    case "Sanding":
+                        queryBuilder.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
+                                "FROM [dbo].[StockOpnameSanding] sosand " +
+                                "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
+                                "WHERE sosand.[NoSO] = ? " +
+                                "AND sosand.[NoSanding] NOT IN (SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ?) " +
+                                "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) ");
+                        break;
+                    case "BJ":
+                        queryBuilder.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
+                                "FROM [dbo].[StockOpnameBJ] sobj " +
+                                "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
+                                "WHERE sobj.[NoSO] = ? " +
+                                "AND sobj.[NoBJ] NOT IN (SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ?) " +
+                                "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) ");
+                        break;
+                }
+                isFirstQuery = false;
+            }
+        }
+
+        // Add WHERE clause after the UNION ALL
+        queryBuilder.append(") AS CombinedResults WHERE 1=1 ");
+
+        // Add the condition to search by searchTerm (NoLabel or IdLokasi)
+        queryBuilder.append("AND (NoLabel LIKE ? OR IdLokasi LIKE ?) ");
+
+        // Add pagination (OFFSET and LIMIT)
+        queryBuilder.append("ORDER BY NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        Log.d("SQL Query", queryBuilder.toString()); // Log query for debugging
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(queryBuilder.toString())) {
+
+            int parameterIndex = 1;
+
+            // Set parameter NoSO and tglSO for each subquery
+            for (int i = 0; i < selectedLabels.size(); i++) {
+                stmt.setString(parameterIndex++, noSO);
+                stmt.setString(parameterIndex++, noSO);
+                stmt.setString(parameterIndex++, tglSO);
+            }
+
+            // Set search term for NoLabel and IdLokasi
+            stmt.setString(parameterIndex++, "%" + searchTerm + "%"); // Search for NoLabel
+            stmt.setString(parameterIndex++, "%" + searchTerm + "%"); // Search for IdLokasi
+
+            // Set OFFSET and LIMIT
+            stmt.setInt(parameterIndex++, offset); // OFFSET
+            stmt.setInt(parameterIndex++, limit); // LIMIT
+
+            // Execute query and process results
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String noLabel = rs.getString("NoLabel");
+                    String idLokasi = rs.getString("IdLokasi");
+                    stockOpnameDataByNoSOList.add(new StockOpnameDataByNoSO(noLabel, idLokasi));
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching " + e.getMessage());
+        }
+
+        return stockOpnameDataByNoSOList;
+    }
+
+
+
+
+    public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputBySearch(String noSO, String searchTerm, Set<String> selectedLabels, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
         Log.d("Paging", "fetchDataInputBySearch with searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
 
-        // Modify the query to add the search term condition
-        String query =
-                "SELECT NoLabel, IdLokasi, UserID FROM ( " +
-                        "    SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? " +
-                        "    UNION ALL " +
-                        "    SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? " +
-                        ") AS CombinedResults " +
-                        "WHERE 1=1 " +
-                        "AND (NoLabel LIKE ? OR IdLokasi LIKE ?)"  +
-                        "ORDER BY NoLabel " +
-                        "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";  // Added OFFSET and LIMIT
+        // Build query dynamically based on selectedLabels
+        StringBuilder queryBuilder = new StringBuilder("SELECT NoLabel, IdLokasi, UserID FROM ( ");
+        boolean isFirstQuery = true;
+
+        // Loop through selectedLabels to dynamically build subqueries
+        for (String label : selectedLabels) {
+            if (!label.equals("all")) { // Skip if the label is "all"
+                if (!isFirstQuery) {
+                    queryBuilder.append("UNION ALL ");
+                }
+                switch (label) {
+                    case "ST":
+                        queryBuilder.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
+                        break;
+                    case "S4S":
+                        queryBuilder.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
+                        break;
+                    case "FJ":
+                        queryBuilder.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
+                        break;
+                    case "Moulding":
+                        queryBuilder.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
+                        break;
+                    case "Laminating":
+                        queryBuilder.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
+                        break;
+                    case "CCAkhir":
+                        queryBuilder.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
+                        break;
+                    case "Sanding":
+                        queryBuilder.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
+                        break;
+                    case "BJ":
+                        queryBuilder.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
+                        break;
+                }
+                isFirstQuery = false;
+            }
+        }
+
+        // Complete the query by adding the WHERE clause
+        queryBuilder.append(") AS CombinedResults WHERE 1=1 ");
+
+        // If searchTerm is provided, add it to the WHERE condition for NoLabel and IdLokasi
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            queryBuilder.append("AND (NoLabel LIKE ? OR IdLokasi LIKE ?) ");
+        }
+
+        // Add pagination (OFFSET and LIMIT)
+        queryBuilder.append("ORDER BY NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        Log.d("SQL Query", queryBuilder.toString()); // Log query for debugging
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement stmt = con.prepareStatement(query)) {
+             PreparedStatement stmt = con.prepareStatement(queryBuilder.toString())) {
 
-            // Set parameter NoSO for each query
-            for (int i = 1; i <= 8; i++) {
-                stmt.setString(i, noSO);
+            int parameterIndex = 1;
+
+            // Set parameter NoSO for each query in the subqueries
+            for (String label : selectedLabels) {
+                if (!label.equals("all")) {
+                    stmt.setString(parameterIndex++, noSO); // Set NoSO for each subquery
+                }
             }
 
             // If a search term is provided, set it for NoLabel and IdLokasi filters
             if (searchTerm != null && !searchTerm.isEmpty()) {
-                stmt.setString(9, "%" + searchTerm + "%");  // Set search term for NoLabel
-                stmt.setString(10, "%" + searchTerm + "%"); // Set search term for IdLokasi
-                stmt.setInt(11, offset); // OFFSET for pagination
-                stmt.setInt(12, limit); // LIMIT for pagination
-            } else {
-                // No search term provided, only set the OFFSET and LIMIT
-                stmt.setInt(9, offset); // OFFSET
-                stmt.setInt(10, limit); // LIMIT
+                stmt.setString(parameterIndex++, "%" + searchTerm + "%");  // Set search term for NoLabel
+                stmt.setString(parameterIndex++, "%" + searchTerm + "%"); // Set search term for IdLokasi
             }
+
+            // Set OFFSET and LIMIT for pagination
+            stmt.setInt(parameterIndex++, offset); // OFFSET
+            stmt.setInt(parameterIndex++, limit); // LIMIT
 
             // Execute the query and process the result set
             try (ResultSet rs = stmt.executeQuery()) {
@@ -280,6 +478,7 @@ public class StockOpnameApi {
 
         return stockOpnameDataInputByNoSOList;
     }
+
 
 
     public static boolean deleteStockOpnameDataInputByNoLabel(String noLabel) {

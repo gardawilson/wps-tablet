@@ -66,6 +66,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private Spinner idLokasiSpinner;
     private String selectedLabel;
     private String selectedIdLokasi;
+    private String selectedBlok;
     private Set<String> selectedLabels = new HashSet<>();
 
 
@@ -129,52 +130,89 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawableResource(R.drawable.rounded_background);
 
-
         // Setup spinners di dalam dialog
         setupSpinnersInDialog(dialogView);
+
+        CheckBox filterST = dialogView.findViewById(R.id.filter_ST);
+        CheckBox filterS4S = dialogView.findViewById(R.id.filter_S4S);
+        CheckBox filterFJ = dialogView.findViewById(R.id.filter_FJ);
+        CheckBox filterMoulding = dialogView.findViewById(R.id.filter_Moulding);
+        CheckBox filterLaminating = dialogView.findViewById(R.id.filter_Laminating);
+        CheckBox filterCCAkhir = dialogView.findViewById(R.id.filter_ccakhir);
+        CheckBox filterSanding = dialogView.findViewById(R.id.filter_sanding);
+        CheckBox filterBJ = dialogView.findViewById(R.id.filter_bj);
+
+        // Setel checkbox berdasarkan nilai dalam selectedLabels
+        filterST.setChecked(selectedLabels.contains("ST"));
+        filterS4S.setChecked(selectedLabels.contains("S4S"));
+        filterFJ.setChecked(selectedLabels.contains("FJ"));
+        filterMoulding.setChecked(selectedLabels.contains("Moulding"));
+        filterLaminating.setChecked(selectedLabels.contains("Laminating"));
+        filterCCAkhir.setChecked(selectedLabels.contains("CCAkhir"));
+        filterSanding.setChecked(selectedLabels.contains("Sanding"));
+        filterBJ.setChecked(selectedLabels.contains("BJ"));
+
+        // Ambil nilai yang dipilih dari Spinner
+        Spinner blokSpinner = dialogView.findViewById(R.id.blok);
+        Spinner idLokasiSpinner = dialogView.findViewById(R.id.idLokasi);
+
+        // Cek jika semua checkbox tercentang, jika ya, sembunyikan status ceklis
+        boolean allChecked = selectedLabels.contains("ST") && selectedLabels.contains("S4S") &&
+                selectedLabels.contains("FJ") && selectedLabels.contains("Moulding") &&
+                selectedLabels.contains("Laminating") && selectedLabels.contains("CCAkhir") &&
+                selectedLabels.contains("Sanding") && selectedLabels.contains("BJ");
+
+        // Jika semua sudah dicentang, tidak perlu tampilkan tanda centang di checkbox
+        if (allChecked) {
+            filterST.setChecked(false);
+            filterS4S.setChecked(false);
+            filterFJ.setChecked(false);
+            filterMoulding.setChecked(false);
+            filterLaminating.setChecked(false);
+            filterCCAkhir.setChecked(false);
+            filterSanding.setChecked(false);
+            filterBJ.setChecked(false);
+        }
 
         // Tombol Apply
         Button btnApply = dialogView.findViewById(R.id.btn_apply);
         btnApply.setOnClickListener(v -> {
             // Reset paging
-//            hasMoreDataToFetchBefore = true;
+            hasMoreDataToFetchBefore = true;
             hasMoreDataToFetchAfter = true;
-//            currentPageForNoSO = 0;
+            currentPageForNoSO = 0;
             currentPageForNoSOInput = 0;
             selectedLabels.clear();
 
-            // Ambil nilai yang dipilih dari Spinner
-            Spinner blokSpinner = dialogView.findViewById(R.id.blok);
-            Spinner idLokasiSpinner = dialogView.findViewById(R.id.idLokasi);
-
-            String selectedBlok = (String) blokSpinner.getSelectedItem();
+            selectedBlok = (String) blokSpinner.getSelectedItem();
             selectedIdLokasi = (String) idLokasiSpinner.getSelectedItem();
 
-            // Ambil nilai yang dipilih dari CheckBox
-            if (((CheckBox) dialogView.findViewById(R.id.filter_ST)).isChecked()) {
+            // Setelah pengguna mengklik checkbox, ambil nilai yang dipilih
+            if (filterST.isChecked() && !selectedLabels.contains("ST")) {
                 selectedLabels.add("ST");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_S4S)).isChecked()) {
+            if (filterS4S.isChecked() && !selectedLabels.contains("S4S")) {
                 selectedLabels.add("S4S");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_FJ)).isChecked()) {
+            if (filterFJ.isChecked() && !selectedLabels.contains("FJ")) {
                 selectedLabels.add("FJ");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_Moulding)).isChecked()) {
+            if (filterMoulding.isChecked() && !selectedLabels.contains("Moulding")) {
                 selectedLabels.add("Moulding");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_Laminating)).isChecked()) {
+            if (filterLaminating.isChecked() && !selectedLabels.contains("Laminating")) {
                 selectedLabels.add("Laminating");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_ccakhir)).isChecked()) {
+            if (filterCCAkhir.isChecked() && !selectedLabels.contains("CCAkhir")) {
                 selectedLabels.add("CCAkhir");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_sanding)).isChecked()) {
+            if (filterSanding.isChecked() && !selectedLabels.contains("Sanding")) {
                 selectedLabels.add("Sanding");
             }
-            if (((CheckBox) dialogView.findViewById(R.id.filter_bj)).isChecked()) {
+            if (filterBJ.isChecked() && !selectedLabels.contains("BJ")) {
                 selectedLabels.add("BJ");
             }
+
 
             // Cek apakah ada filter yang dipilih
             if (selectedLabels.isEmpty()) {
@@ -193,6 +231,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             // Lakukan aksi dengan data yang dipilih (filter data)
             filterDataInputByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSOInput);
+            fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
 
             // Menutup dialog setelah tombol Apply ditekan
             dialog.dismiss();
@@ -203,8 +242,28 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Tombol Cancel
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         btnCancel.setOnClickListener(v -> {
+
+            // Menyetel checkbox ke false (tidak tercentang)
+            filterST.setChecked(false);
+            filterS4S.setChecked(false);
+            filterFJ.setChecked(false);
+            filterMoulding.setChecked(false);
+            filterLaminating.setChecked(false);
+            filterCCAkhir.setChecked(false);
+            filterSanding.setChecked(false);
+            filterBJ.setChecked(false);
+
+
+            selectedBlok = "Semua";
+            blokSpinner.setSelection(0);
+
+            selectedIdLokasi = "Semua";
+            idLokasiSpinner.setSelection(0);
+
+            // Kosongkan selectedLabels
+            selectedLabels.clear();
             // Menutup dialog tanpa aksi
-            dialog.dismiss();
+//            dialog.dismiss();
         });
 
         // Tampilkan dialog
@@ -249,12 +308,43 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                     idLokasiSpinner.setAdapter(idLokasiAdapter);
 
+                    // Reset selectedBlok to "Semua" if needed (on new data load)
+                    if (selectedBlok == null || !blokList.contains(selectedBlok)) {
+                        selectedBlok = "Semua"; // Reset to "Semua" if no valid selection
+                    }
+
+                    // Setel nilai yang dipilih sebelumnya (selectedBlok dan selectedIdLokasi)
+                    if (blokList.contains(selectedBlok)) {
+                        int blokIndex = blokList.indexOf(selectedBlok);
+                        blokSpinner.setSelection(blokIndex);  // Set spinner blok ke nilai yang dipilih sebelumnya
+                    }
+
+                    // Set adapter untuk spinner idLokasi
+                    if (selectedIdLokasi != null && !selectedIdLokasi.isEmpty()) {
+                        // Filter lokasi berdasarkan blok yang dipilih
+                        List<String> filteredLokasiList = new ArrayList<>();
+                        for (LokasiBlok lokasiBlok : lokasiBlokList) {
+                            if (lokasiBlok.getBlok().equals(selectedBlok)) {
+                                filteredLokasiList.add(lokasiBlok.getIdLokasi());
+                            }
+                        }
+                        // Set adapter dan pilih idLokasi yang sesuai
+                        idLokasiAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, filteredLokasiList);
+                        idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                        idLokasiSpinner.setAdapter(idLokasiAdapter);
+
+                        if (filteredLokasiList.contains(selectedIdLokasi)) {
+                            int lokasiIndex = filteredLokasiList.indexOf(selectedIdLokasi);
+                            idLokasiSpinner.setSelection(lokasiIndex); // Set spinner idLokasi ke nilai yang dipilih sebelumnya
+                        }
+                    }
+
                     // Tambahkan listener untuk blokSpinner
                     blokSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                             // Ambil blok yang dipilih
-                            String selectedBlok = blokList.get(position);
+                            selectedBlok = blokList.get(position);
 
                             // Jika "Semua" dipilih, set idLokasi juga menjadi "Semua"
                             if ("Semua".equals(selectedBlok)) {
@@ -265,6 +355,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                                 ArrayAdapter<String> idLokasiAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, allLokasiList);
                                 idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                                 idLokasiSpinner.setAdapter(idLokasiAdapter);
+
+                                selectedIdLokasi = "Semua"; // Set selectedIdLokasi ke "Semua"
                             } else {
                                 // Filter lokasi berdasarkan blok yang dipilih
                                 List<String> filteredLokasiList = new ArrayList<>();
@@ -278,6 +370,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                                 ArrayAdapter<String> idLokasiAdapter = new ArrayAdapter<>(StockOpname.this, android.R.layout.simple_spinner_item, filteredLokasiList);
                                 idLokasiAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                                 idLokasiSpinner.setAdapter(idLokasiAdapter);
+
+                                // If the selectedIdLokasi exists in filtered list, set it
+                                if (filteredLokasiList.contains(selectedIdLokasi)) {
+                                    int lokasiIndex = filteredLokasiList.indexOf(selectedIdLokasi);
+                                    idLokasiSpinner.setSelection(lokasiIndex);
+                                }
                             }
                         }
 
@@ -295,6 +393,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             });
         });
     }
+
+
 
 
 
@@ -340,9 +440,11 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 if (newText.isEmpty()) {
                     Log.d("SearchView", "Teks kosong, memanggil fetchDataInputByNoSO");
                     filterDataInputByNoSO(selectedIdLokasi, selectedLabels , 0);
+                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
                 } else {
                     Log.d("SearchView", "Teks tidak kosong, memanggil searchDataInputByNoSO");
                     searchDataInputByNoSO(newText);
+                    searchDataByNoSO(newText);
                 }
                 return true;
             }
@@ -361,7 +463,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             StockOpnameData stockOpname = stockOpnames.get(position);
             selectedNoSO = stockOpname.getNoSO();
             selectedTglSO = stockOpname.getTgl();
+
+            selectedBlok = "Semua";
             selectedIdLokasi = "Semua";
+
             selectedLabels.add("ST");
             selectedLabels.add("S4S");
             selectedLabels.add("FJ");
@@ -371,6 +476,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             selectedLabels.add("Sanding");
             selectedLabels.add("BJ");
 
+
+
             // Reset paging
             hasMoreDataToFetchBefore = true;
             hasMoreDataToFetchAfter = true;
@@ -378,7 +485,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             currentPageForNoSOInput = 0;
 
             // Mulai fetch dari awal
-            fetchDataByNoSO(selectedNoSO, selectedTglSO, currentPageForNoSO);
+            fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
             filterDataInputByNoSO(selectedIdLokasi, selectedLabels , currentPageForNoSOInput);
         });
 
@@ -399,7 +506,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     }
                 } else {
                     if (!isLoadingBefore && isLastItemVisible(recyclerViewBefore)) {
-                        fetchDataByNoSO(selectedNoSO, selectedTglSO, currentPageForNoSO);
+                        fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
                         Log.d("valuefilter", "scroll with offset: " + currentPageForNoSO + " and limit: " + selectedLabel);
 
                     }
@@ -422,10 +529,15 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         int limit = 100;
         int offset = page * limit;
 
+        // Pastikan parameter tidak null, beri nilai default jika perlu
+        String safeSelectedNoSO = (selectedNoSO == null) ? "" : selectedNoSO;
+        String safeSelectedIdLokasi = (selectedIdLokasi == null) ? "" : selectedIdLokasi;
+        Set<String> safeSelectedLabels = (selectedLabels == null) ? new HashSet<>() : selectedLabels;
+
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(selectedNoSO, selectedIdLokasi, selectedLabels, offset, limit);
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(safeSelectedNoSO, safeSelectedIdLokasi, safeSelectedLabels, offset, limit);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -460,6 +572,45 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         });
     }
 
+    private void searchDataByNoSO(String searchTerm) {
+        // Show loading indicator while searching
+        showLoadingIndicatorBefore(true);
+        isLoadingBefore = true;
+
+        // Run the network call in a background thread
+        executorService.execute(() -> {
+            // Perform the network or database call in the background
+            List<StockOpnameDataByNoSO> data = StockOpnameApi.searchStockOpnameDataByNoSO(selectedNoSO, selectedTglSO, searchTerm, selectedLabels,0, 10);
+
+            // Now update the UI on the main thread after the data is fetched
+            runOnUiThread(() -> {
+                if (data != null && !data.isEmpty()) {
+                    // Iterate over the fetched data and add unique items to the list
+                    stockOpnameDataByNoSOList.clear();
+                    for (StockOpnameDataByNoSO item : data) {
+                        if (!stockOpnameDataByNoSOList.contains(item)) {
+                            stockOpnameDataByNoSOList.add(item);  // Add the item if it's not already in the list
+                        }
+                    }
+                    currentPageForNoSO++;
+
+                } else {
+                    hasMoreDataToFetchBefore = false;
+                    stockOpnameDataByNoSOList.clear();  // Clear the list if no data is found
+                    // You can display a toast message or any other indicator if no data is found.
+                    // showToast("Tidak ada data lagi untuk NoSO: " + noSO);
+                }
+
+                // Notify the adapter that data has been updated
+                stockOpnameDataAdapter.notifyDataSetChanged();
+
+                // Hide the loading indicator
+                showLoadingIndicatorBefore(false);
+                isLoadingBefore = false;
+            });
+        });
+    }
+
     private void searchDataInputByNoSO(String searchTerm) {
         // Show loading indicator while searching
         showLoadingIndicatorAfter(true);
@@ -468,7 +619,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, 0, 10);
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, selectedLabels,0, 10);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -499,15 +650,20 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         });
     }
 
-    private void fetchDataByNoSO(String noSO, String tglSO, int page) {
+    private void fetchDataByNoSO(String selectedIdLokasi, Set<String> selectedLabels, int page) {
 
         isLoadingBefore = true;
         showLoadingIndicatorBefore(true);
         int limit = 100;
         int offset = page * limit;
 
+        String safeSelectedNoSO = (selectedNoSO == null) ? "" : selectedNoSO;
+        String safeSelectedTglSO = (selectedTglSO == null) ? "" : selectedTglSO;
+        String safeSelectedIdLokasi = (selectedIdLokasi == null) ? "" : selectedIdLokasi;
+        Set<String> safeSelectedLabels = (selectedLabels == null) ? new HashSet<>() : selectedLabels;
+
         executorService.execute(() -> {
-            List<StockOpnameDataByNoSO> data = StockOpnameApi.getStockOpnameDataByNoSO(noSO, tglSO, offset, limit);
+            List<StockOpnameDataByNoSO> data = StockOpnameApi.getStockOpnameDataByNoSO(safeSelectedNoSO, safeSelectedTglSO, safeSelectedIdLokasi, safeSelectedLabels, offset, limit);
             runOnUiThread(() -> {
                 if (data != null && !data.isEmpty()) {
                     findViewById(R.id.dataLabelEmpty).setVisibility(View.GONE);
