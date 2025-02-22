@@ -23,18 +23,17 @@ import java.util.Set;
 
 public class StockOpnameApi {
 
-    public static List<StockOpnameData> getStockOpnameData(int offset, int limit) {
+    public static List<StockOpnameData> getStockOpnameData() {
         List<StockOpnameData> stockOpnames = new ArrayList<>();
 
-        // Menyesuaikan query dengan offset dan limit
-        String query = "SELECT [NoSO], [Tgl] FROM [dbo].[StockOpname_h] ORDER BY NoSO DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        // Query untuk mengambil seluruh data tanpa OFFSET dan LIMIT
+        String query = "SELECT [NoSO], [Tgl] " +
+                        "FROM [dbo].[StockOpname_h] " +
+                        "WHERE [Tgl] > (SELECT MAX(PeriodHarian) FROM [dbo].[MstTutupTransaksiHarian]) " +
+                        "ORDER BY [NoSO] DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
-
-            // Menetapkan parameter OFFSET dan LIMIT
-            stmt.setInt(1, offset);  // OFFSET
-            stmt.setInt(2, limit);    // LIMIT
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -54,6 +53,7 @@ public class StockOpnameApi {
 
         return stockOpnames;
     }
+
 
     public static List<StockOpnameDataByNoSO> getStockOpnameDataByNoSO(String noSO, String tglSO, String selectedLokasi, Set<String> selectedLabels, int offset, int limit) {
         List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
@@ -93,7 +93,7 @@ public class StockOpnameApi {
                                 "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
                                 "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
                         break;
-                    case "Moulding":
+                    case "MLD":
                         query.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
                                 "FROM [dbo].[StockOpnameMoulding] som " +
                                 "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
@@ -101,7 +101,7 @@ public class StockOpnameApi {
                                 "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
                                 "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
                         break;
-                    case "Laminating":
+                    case "LMT":
                         query.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
                                 "FROM [dbo].[StockOpnameLaminating] sol " +
                                 "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
@@ -109,7 +109,7 @@ public class StockOpnameApi {
                                 "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
                                 "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
                         break;
-                    case "CCAkhir":
+                    case "CC":
                         query.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
                                 "FROM [dbo].[StockOpnameCCAkhir] soc " +
                                 "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
@@ -117,7 +117,7 @@ public class StockOpnameApi {
                                 "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
                                 "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
                         break;
-                    case "Sanding":
+                    case "SND":
                         query.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
                                 "FROM [dbo].[StockOpnameSanding] sosand " +
                                 "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
@@ -280,7 +280,7 @@ public class StockOpnameApi {
                                 "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
                                 "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
                         break;
-                    case "Moulding":
+                    case "MLD":
                         queryBuilder.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
                                 "FROM [dbo].[StockOpnameMoulding] som " +
                                 "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
@@ -288,7 +288,7 @@ public class StockOpnameApi {
                                 "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
                                 "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
                         break;
-                    case "Laminating":
+                    case "LMT":
                         queryBuilder.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
                                 "FROM [dbo].[StockOpnameLaminating] sol " +
                                 "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
@@ -296,7 +296,7 @@ public class StockOpnameApi {
                                 "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
                                 "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
                         break;
-                    case "CCAkhir":
+                    case "CC":
                         queryBuilder.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
                                 "FROM [dbo].[StockOpnameCCAkhir] soc " +
                                 "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
@@ -304,7 +304,7 @@ public class StockOpnameApi {
                                 "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
                                 "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
                         break;
-                    case "Sanding":
+                    case "SND":
                         queryBuilder.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
                                 "FROM [dbo].[StockOpnameSanding] sosand " +
                                 "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
@@ -372,8 +372,6 @@ public class StockOpnameApi {
     }
 
 
-
-
     public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputBySearch(String noSO, String searchTerm, Set<String> selectedLabels, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
         Log.d("Paging", "fetchDataInputBySearch with searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
@@ -398,16 +396,16 @@ public class StockOpnameApi {
                     case "FJ":
                         queryBuilder.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
                         break;
-                    case "Moulding":
+                    case "MLD":
                         queryBuilder.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
                         break;
-                    case "Laminating":
+                    case "LMT":
                         queryBuilder.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
                         break;
-                    case "CCAkhir":
+                    case "CC":
                         queryBuilder.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
                         break;
-                    case "Sanding":
+                    case "SND":
                         queryBuilder.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
                         break;
                     case "BJ":
@@ -716,16 +714,16 @@ public class StockOpnameApi {
                     case "FJ":
                         query.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
                         break;
-                    case "Moulding":
+                    case "MLD":
                         query.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
                         break;
-                    case "Laminating":
+                    case "LMT":
                         query.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
                         break;
-                    case "CCAkhir":
+                    case "CC":
                         query.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
                         break;
-                    case "Sanding":
+                    case "SND":
                         query.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
                         break;
                     case "BJ":

@@ -16,7 +16,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Pilih Filter"
-            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textSize="20sp"
             android:textColor="#333333"
             android:layout_marginBottom="16dp"
             android:layout_gravity="center"/>
@@ -25,44 +26,68 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="16dp"
             android:padding="8dp"
             android:gravity="center_vertical">
 
-            <!-- Spinner untuk memilih kategori -->
-            <Spinner
-                android:id="@+id/blok"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/spinner_background"
-                android:padding="10dp"
-                android:textColor="#333333"
-                android:textSize="16sp"
-                android:layout_marginEnd="8dp"/>
+                android:orientation="vertical"
+                android:padding="8dp">
 
-            <!-- Spinner untuk memilih lokasi -->
-            <Spinner
-                android:id="@+id/idLokasi"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/spinner_background"
-                android:padding="10dp"
-                android:textColor="#333333"
-                android:textSize="16sp"
-                android:layout_marginEnd="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Blok :"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:layout_gravity="start"
+                    android:textStyle="bold" />
 
-            <!-- Spinner untuk memilih lokasi -->
-            <Spinner
-                android:id="@+id/userIDSO"
+                <!-- Spinner untuk memilih kategori -->
+                <Spinner
+                    android:id="@+id/blok"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/spinner_background"
+                    android:padding="10dp"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="8dp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/spinner_background"
-                android:padding="10dp"
-                android:textColor="#333333"
-                android:textSize="16sp" />
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ID Lokasi :"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:layout_gravity="start"
+                    android:textStyle="bold" />
+
+                <!-- Spinner untuk memilih kategori -->
+                <Spinner
+                    android:id="@+id/idLokasi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/spinner_background"
+                    android:padding="10dp"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="8dp"/>
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="0dp"
@@ -77,15 +102,67 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:padding="8dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="User :"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:layout_gravity="start"
+                    android:textStyle="bold" />
+
+                <!-- Spinner untuk memilih kategori -->
+                <Spinner
+                    android:id="@+id/userIDSO"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/spinner_background"
+                    android:padding="10dp"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="8dp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:layout_gravity="start"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp"
+                android:visibility="invisible"/>
+
+        </LinearLayout>
+
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Kategori Label :"
-            android:textSize="14sp"
+            android:textSize="18sp"
             android:textColor="#333333"
             android:layout_gravity="start"
             android:textStyle="bold"
-            android:layout_marginStart="8dp"/>
+            android:layout_marginStart="16dp"/>
 
 
         <LinearLayout
@@ -142,7 +219,7 @@
                 android:id="@+id/filter_Moulding"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Moulding"
+                android:text="MLD"
                 android:padding="8dp"
                 android:layout_margin="4dp"
                 android:textColor="#333333"
@@ -155,7 +232,7 @@
                 android:id="@+id/filter_Laminating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Laminating"
+                android:text="LMT"
                 android:padding="8dp"
                 android:layout_margin="4dp"
                 android:textColor="#333333"
@@ -168,7 +245,7 @@
                 android:id="@+id/filter_ccakhir"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CCAkhir"
+                android:text="CC"
                 android:padding="8dp"
                 android:layout_margin="4dp"
                 android:textColor="#333333"
@@ -181,7 +258,7 @@
                 android:id="@+id/filter_sanding"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sanding"
+                android:text="SND"
                 android:padding="8dp"
                 android:layout_margin="4dp"
                 android:textColor="#333333"

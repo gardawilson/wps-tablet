@@ -1,5 +1,7 @@
 package com.example.myapplication.model;
 
+import com.example.myapplication.utils.DateTimeUtils;  // Import DateTimeUtils
+
 public class StockOpnameData {
     private String noSO;
     private String tgl;
@@ -10,20 +12,19 @@ public class StockOpnameData {
         this.tgl = tgl;
     }
 
-    // Getter dan Setter
+    // Getter methods
     public String getNoSO() {
         return noSO;
-    }
-
-    public void setNoSO(String noSO) {
-        this.noSO = noSO;
     }
 
     public String getTgl() {
         return tgl;
     }
 
-    public void setTgl(String tgl) {
-        this.tgl = tgl;
+    // Override toString() untuk menampilkan NoSO dan tanggal yang diformat
+    @Override
+    public String toString() {
+        String formattedDate = DateTimeUtils.formatDate(tgl);  // Format tanggal
+        return noSO + " (" + formattedDate + ")";  // Contoh: "SO123 (01 Okt 2023)"
     }
 }

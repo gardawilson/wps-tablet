@@ -70,6 +70,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private String selectedIdLokasi;
     private String selectedBlok;
     private Set<String> selectedLabels = new HashSet<>();
+    private Spinner spinnerNoSO;
 
 
 
@@ -84,70 +85,15 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         loadMoreData();
 
+        setupNoSOSpinner();
+
         setListeners();
 
     }
 
 
-    private void setupSpinners() {
-        // Jalankan operasi pengambilan data di background thread menggunakan ExecutorService
-        executorService.execute(() -> {
-            // Ambil data dari API atau database di background thread
-            List<LokasiBlok> lokasiBlokList = StockOpnameApi.getLokasiAndBlok();
 
-            // Update UI di thread utama setelah data diambil
-            runOnUiThread(() -> {
-                if (lokasiBlokList != null && !lokasiBlokList.isEmpty()) {
-                    // Pastikan spinner ditemukan
-                    Spinner blokSpinner = findViewById(R.id.blok);
-                    Spinner idLokasiSpinner = findViewById(R.id.idLokasi);
 
-                    if (blokSpinner == null || idLokasiSpinner == null) {
-                        Log.e("SetupSpinners", "Spinner tidak ditemukan!");
-                        return;
-                    }
-
-                    // Membuat adapter dan menghubungkannya ke spinner
-                    ArrayAdapter<LokasiBlok> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, lokasiBlokList);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-                    blokSpinner.setAdapter(adapter);
-                    idLokasiSpinner.setAdapter(adapter);
-                } else {
-                    Toast.makeText(StockOpname.this, "Tidak ada data lokasi dan blok", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-    }
-
-    private void setupUserSpinner() {
-        // Jalankan operasi pengambilan data di background thread menggunakan ExecutorService
-        executorService.execute(() -> {
-            // Ambil data UserIDSO dari database
-            List<UserIDSO> userList = StockOpnameApi.getUserIdsForNoSO("Q.000012");
-
-            // Update UI di thread utama setelah data diambil
-            runOnUiThread(() -> {
-                if (userList != null && !userList.isEmpty()) {
-                    // Pastikan spinner ditemukan
-                    Spinner userSpinner = findViewById(R.id.userIDSO);
-
-                    if (userSpinner == null) {
-                        Log.e("SetupUserSpinner", "Spinner tidak ditemukan!");
-                        return;
-                    }
-
-                    // Membuat adapter dan menghubungkannya ke spinner
-                    ArrayAdapter<UserIDSO> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, userList);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-                    userSpinner.setAdapter(adapter);
-                } else {
-                    Toast.makeText(StockOpname.this, "Tidak ada data UserIDSO", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-    }
 
 
 
@@ -178,10 +124,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         filterST.setChecked(selectedLabels.contains("ST"));
         filterS4S.setChecked(selectedLabels.contains("S4S"));
         filterFJ.setChecked(selectedLabels.contains("FJ"));
-        filterMoulding.setChecked(selectedLabels.contains("Moulding"));
-        filterLaminating.setChecked(selectedLabels.contains("Laminating"));
-        filterCCAkhir.setChecked(selectedLabels.contains("CCAkhir"));
-        filterSanding.setChecked(selectedLabels.contains("Sanding"));
+        filterMoulding.setChecked(selectedLabels.contains("MLD"));
+        filterLaminating.setChecked(selectedLabels.contains("LMT"));
+        filterCCAkhir.setChecked(selectedLabels.contains("CC"));
+        filterSanding.setChecked(selectedLabels.contains("SND"));
         filterBJ.setChecked(selectedLabels.contains("BJ"));
 
         // Ambil nilai yang dipilih dari Spinner
@@ -191,9 +137,9 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         // Cek jika semua checkbox tercentang, jika ya, sembunyikan status ceklis
         boolean allChecked = selectedLabels.contains("ST") && selectedLabels.contains("S4S") &&
-                selectedLabels.contains("FJ") && selectedLabels.contains("Moulding") &&
-                selectedLabels.contains("Laminating") && selectedLabels.contains("CCAkhir") &&
-                selectedLabels.contains("Sanding") && selectedLabels.contains("BJ");
+                selectedLabels.contains("FJ") && selectedLabels.contains("MLD") &&
+                selectedLabels.contains("LMT") && selectedLabels.contains("CC") &&
+                selectedLabels.contains("SND") && selectedLabels.contains("BJ");
 
         // Jika semua sudah dicentang, tidak perlu tampilkan tanda centang di checkbox
         if (allChecked) {
@@ -233,17 +179,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             if (filterFJ.isChecked() && !selectedLabels.contains("FJ")) {
                 selectedLabels.add("FJ");
             }
-            if (filterMoulding.isChecked() && !selectedLabels.contains("Moulding")) {
-                selectedLabels.add("Moulding");
+            if (filterMoulding.isChecked() && !selectedLabels.contains("MLD")) {
+                selectedLabels.add("MLD");
             }
-            if (filterLaminating.isChecked() && !selectedLabels.contains("Laminating")) {
-                selectedLabels.add("Laminating");
+            if (filterLaminating.isChecked() && !selectedLabels.contains("LMT")) {
+                selectedLabels.add("LMT");
             }
-            if (filterCCAkhir.isChecked() && !selectedLabels.contains("CCAkhir")) {
-                selectedLabels.add("CCAkhir");
+            if (filterCCAkhir.isChecked() && !selectedLabels.contains("CC")) {
+                selectedLabels.add("CC");
             }
-            if (filterSanding.isChecked() && !selectedLabels.contains("Sanding")) {
-                selectedLabels.add("Sanding");
+            if (filterSanding.isChecked() && !selectedLabels.contains("SND")) {
+                selectedLabels.add("SND");
             }
             if (filterBJ.isChecked() && !selectedLabels.contains("BJ")) {
                 selectedLabels.add("BJ");
@@ -255,10 +201,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 selectedLabels.add("ST");
                 selectedLabels.add("S4S");
                 selectedLabels.add("FJ");
-                selectedLabels.add("Moulding");
-                selectedLabels.add("Laminating");
-                selectedLabels.add("CCAkhir");
-                selectedLabels.add("Sanding");
+                selectedLabels.add("MLD");
+                selectedLabels.add("LMT");
+                selectedLabels.add("CC");
+                selectedLabels.add("SND");
                 selectedLabels.add("BJ");
             }
 
@@ -308,6 +254,80 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         dialog.show();
     }
 
+    private void setupNoSOSpinner() {
+        // Jalankan operasi pengambilan data di background thread menggunakan ExecutorService
+        executorService.execute(() -> {
+            List<StockOpnameData> noSOList = StockOpnameApi.getStockOpnameData();
+
+            // Update UI di thread utama setelah data diambil
+            runOnUiThread(() -> {
+                if (noSOList != null && !noSOList.isEmpty()) {
+                    // Pastikan spinner ditemukan
+                    if (spinnerNoSO == null) {
+                        Log.e("SetupUserSpinner", "Spinner tidak ditemukan!");
+                        return;
+                    }
+
+                    // Membuat adapter dan menghubungkannya ke spinner
+                    ArrayAdapter<StockOpnameData> adapter = new ArrayAdapter<>(this, R.layout.spinner_display_item, noSOList);
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                    spinnerNoSO.setAdapter(adapter);
+
+                    // Set listener untuk item click
+                    spinnerNoSO.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            // Ambil item yang dipilih
+                            StockOpnameData selectedItem = (StockOpnameData) parent.getItemAtPosition(position);
+
+                            // Jalankan logika yang sama seperti di setListeners()
+                            onSpinnerItemSelected(selectedItem);
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                            // Handle ketika tidak ada item yang dipilih
+                        }
+                    });
+                } else {
+                    Toast.makeText(StockOpname.this, "Tidak ada data spinnerNoSO", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    // Method yang akan dijalankan ketika item dipilih
+    private void onSpinnerItemSelected(StockOpnameData selectedItem) {
+        // Set nilai yang dipilih
+        selectedNoSO = selectedItem.getNoSO();
+        selectedTglSO = selectedItem.getTgl();
+
+        // Set nilai default untuk filter lainnya
+        selectedBlok = "Semua";
+        selectedIdLokasi = "Semua";
+        selectedUserID = "Semua";
+
+        // Set label yang dipilih
+        selectedLabels.clear();
+        selectedLabels.add("ST");
+        selectedLabels.add("S4S");
+        selectedLabels.add("FJ");
+        selectedLabels.add("MLD");
+        selectedLabels.add("LMT");
+        selectedLabels.add("CC");
+        selectedLabels.add("SND");
+        selectedLabels.add("BJ");
+
+        // Reset paging
+        hasMoreDataToFetchBefore = true;
+        hasMoreDataToFetchAfter = true;
+        currentPageForNoSO = 0;
+        currentPageForNoSOInput = 0;
+
+        // Mulai fetch dari awal
+        fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
+        filterDataInputByNoSO(selectedIdLokasi, selectedLabels, selectedUserID, currentPageForNoSOInput);
+    }
 
 
     private void setupSpinnersInDialog(View dialogView) {
@@ -481,6 +501,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         filterButton = findViewById(R.id.filterButton);
         blokSpinner = findViewById(R.id.blok);
         idLokasiSpinner = findViewById(R.id.idLokasi);
+        spinnerNoSO = findViewById(R.id.spinnerNoSO);
 
 
 
@@ -523,8 +544,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         filterButton.setOnClickListener(v -> {
             // Membuka dialog untuk memilih filter
-            setupSpinners();
-            setupUserSpinner();
             openFilterDialog();
         });
     }
@@ -543,10 +562,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             selectedLabels.add("ST");
             selectedLabels.add("S4S");
             selectedLabels.add("FJ");
-            selectedLabels.add("Moulding");
-            selectedLabels.add("Laminating");
-            selectedLabels.add("CCAkhir");
-            selectedLabels.add("Sanding");
+            selectedLabels.add("MLD");
+            selectedLabels.add("LMT");
+            selectedLabels.add("CC");
+            selectedLabels.add("SND");
             selectedLabels.add("BJ");
 
 
@@ -775,7 +794,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         showLoadingIndicator(true);
 
         executorService.execute(() -> {
-            List<StockOpnameData> newStockOpnames = StockOpnameApi.getStockOpnameData(currentPage * LIMIT, LIMIT);
+            List<StockOpnameData> newStockOpnames = StockOpnameApi.getStockOpnameData();
             runOnUiThread(() -> {
                 if (newStockOpnames != null && !newStockOpnames.isEmpty()) {
                     stockOpnames.addAll(newStockOpnames);
