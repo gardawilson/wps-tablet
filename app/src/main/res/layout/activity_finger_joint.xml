@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary_dark"
@@ -21,10 +22,15 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintWidth_percent="0.4"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:backgroundTint="@color/white">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -54,7 +60,7 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="No. FJ"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <FrameLayout
@@ -65,7 +71,7 @@
                     <SearchView
                         android:id="@+id/NoFJ"
                         android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                        android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
                         app:iconifiedByDefault="false"
@@ -75,9 +81,9 @@
                     <EditText
                         android:id="@+id/NoFJ_display"
                         android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                        android:layout_height="36dp"
                         android:padding="6dp"
-                        android:textSize="14sp"
+                        android:textSize="18sp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
                         android:visibility="gone"
@@ -99,17 +105,17 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="Tgl / Jam"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <EditText
                     android:id="@+id/DateFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:padding="6dp"
                     android:layout_marginRight="10dp"
-                    android:textSize="14sp"
+                    android:textSize="18sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
                     android:hint="Tanggal"
@@ -119,9 +125,9 @@
                     android:id="@+id/TimeFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:padding="6dp"
-                    android:textSize="14sp"
+                    android:textSize="18sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
                     android:hint="Jam"
@@ -141,14 +147,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="Jenis Kayu"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinKayuFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -171,6 +177,7 @@
                         android:id="@+id/radioButtonMesinFJ"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textSize="18sp"
                         android:text="Mesin"
                         android:layout_marginEnd="4dp"
                         android:minWidth="0dp"
@@ -181,6 +188,7 @@
                         android:id="@+id/radioButtonBSusunFJ"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textSize="18sp"
                         android:text="Susun"
                         android:layout_marginEnd="4dp"
                         android:minWidth="0dp"
@@ -197,7 +205,7 @@
                     <Spinner
                         android:id="@+id/SpinMesinFJ"
                         android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                        android:layout_height="36dp"
                         android:layout_weight="1"
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
@@ -206,7 +214,7 @@
                     <Spinner
                         android:id="@+id/SpinSusunFJ"
                         android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                        android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp" />
 
@@ -227,14 +235,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="Telly"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinTellyFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -251,14 +259,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="No SPK"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinSPKFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -275,14 +283,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="No SPK Asal"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinSPKAsalFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -299,14 +307,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="Grade"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinGradeFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -323,14 +331,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="FJ Profile"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinProfileFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -346,14 +354,14 @@
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="Fisik"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <Spinner
                     android:id="@+id/SpinFisikFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
             </LinearLayout>
@@ -363,29 +371,66 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
+                android:layout_marginBottom="15dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:text="No ST Asal"
-                    android:textSize="15sp"
+                    android:textSize="18sp"
                     android:textColor="@color/black" />
 
                 <EditText
                     android:id="@+id/NoSTAFJ"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="32dp"
+                    android:layout_height="36dp"
                     android:padding="6dp"
-                    android:textSize="14sp"
+                    android:textSize="18sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
                     android:hint="-" />
 
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Remark"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/remarkLabel"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Maks 50 Karakter"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:maxLines="5"
+                    android:maxLength="50"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"/>
+
+            </LinearLayout>
+
         </LinearLayout>
+
+        </ScrollView>
+
 
     </androidx.cardview.widget.CardView>
 
@@ -399,12 +444,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/card_bottom_right"
-        app:layout_constraintHeight_percent="0.8"
+        app:layout_constraintHeight_percent="0.9"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-
-        android:layout_marginBottom="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
         android:backgroundTint="@color/white">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -427,141 +469,147 @@
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
                 app:layout_constraintHorizontal_weight="1">
 
-                <LinearLayout
+                <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/title_top_right"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Detail"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginBottom="20dp" />
+                    android:fillViewport="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:id="@+id/title_top_right"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Tebal"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
+                            android:text="Detail"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginBottom="20dp" />
 
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailTebalFJ"
-                            android:layout_width="0dp"
-                            android:layout_height="32dp"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Tebal"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Tebal"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailTebalFJ"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Tebal"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Lebar"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailLebarFJ"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Lebar"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Panjang"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailPanjangFJ"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Panjang"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pcs"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <EditText
+                                android:id="@+id/DetailPcsFJ"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Pcs"
+                                android:inputType="number"
+                                android:completionThreshold="1"
+                                android:imeOptions="actionDone" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Lebar"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailLebarFJ"
-                            android:layout_width="0dp"
-                            android:layout_height="32dp"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Lebar"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Panjang"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailPanjangFJ"
-                            android:layout_width="0dp"
-                            android:layout_height="32dp"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Panjang"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Pcs"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/DetailPcsFJ"
-                            android:layout_width="0dp"
-                            android:layout_height="32dp"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Pcs"
-                            android:inputType="number"
-                            android:completionThreshold="1"
-                            android:imeOptions="actionDone"
-                            />
-                    </LinearLayout>
-
-                </LinearLayout>
+                </ScrollView>
 
             </androidx.cardview.widget.CardView>
 
@@ -592,7 +640,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Satuan Panjang"
-                        android:textSize="12sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginStart="4dp"
@@ -619,7 +667,7 @@
                                 android:layout_height="28dp"
                                 android:text="Millimeter"
                                 android:checked="true"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:layout_marginBottom="2dp"/>
 
                             <RadioButton
@@ -627,7 +675,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Meter"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:enabled="false"
                                 android:layout_marginBottom="2dp"/>
 
@@ -637,7 +685,7 @@
                                 android:layout_height="28dp"
                                 android:text="Feet"
                                 android:enabled="false"
-                                android:textSize="12sp"/>
+                                android:textSize="15sp"/>
 
                         </RadioGroup>
 
@@ -647,7 +695,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Satuan Tebal-Lebar"
-                        android:textSize="12sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginStart="4dp"
@@ -674,7 +722,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Millimeter"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:checked="true"
                                 android:layout_marginBottom="2dp"/>
 
@@ -684,7 +732,7 @@
                                 android:layout_height="28dp"
                                 android:text="Inch"
                                 android:enabled="false"
-                                android:textSize="12sp"/>
+                                android:textSize="15sp"/>
 
                         </RadioGroup>
 
@@ -724,6 +772,7 @@
                             android:layout_height="wrap_content"
                             android:layout_margin="4dp"
                             android:text="Total Label: 0"
+                            android:textSize="18sp"
                             android:textStyle="bold"
                             android:padding="4dp" />
 
@@ -741,6 +790,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
+                                android:textSize="18sp"
                                 android:text="Label"
                                 android:gravity="center"
                                 android:layout_weight="1"
@@ -757,6 +807,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
                                 android:text="I"
+                                android:textSize="18sp"
                                 android:gravity="center"
                                 android:layout_weight="0.5"
                                 android:textStyle="bold"
@@ -772,6 +823,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_margin="8dp"
                                 android:text="O"
+                                android:textSize="18sp"
                                 android:gravity="center"
                                 android:layout_weight="0.5"
                                 android:textStyle="bold"
@@ -862,7 +914,7 @@
                                     android:padding="10sp"
                                     android:text="No"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -871,7 +923,7 @@
                                     android:padding="10sp"
                                     android:text="Tebal"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -880,7 +932,7 @@
                                     android:padding="10sp"
                                     android:text="Lebar"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -889,7 +941,7 @@
                                     android:padding="10sp"
                                     android:text="Panjang"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -898,7 +950,7 @@
                                     android:padding="10sp"
                                     android:text="Pcs"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -907,7 +959,7 @@
                                     android:padding="10sp"
                                     android:text="Aksi"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
                             </TableRow>
 
                         </TableLayout>
@@ -930,9 +982,11 @@
                                 android:layout_width="200dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Jumlah Pcs :"
-                                android:textSize="14sp"
-                                android:textColor="@color/black" />
+                                android:text="Jlh Pcs :"
+                                android:textSize="18sp"
+                                android:textColor="@color/black"
+                                android:gravity="right"
+                                android:textStyle="bold"/>
 
                             <TextView
                                 android:id="@+id/JumlahPcsFJ"
@@ -940,7 +994,8 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="0"
-                                android:textSize="14sp"
+                                android:layout_marginStart="8dp"
+                                android:textSize="18sp"
                                 android:textColor="@color/black" />
 
                         </LinearLayout>
@@ -955,9 +1010,11 @@
                                 android:layout_width="200dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="M3 :"
-                                android:textSize="14sp"
-                                android:textColor="@color/black" />
+                                android:text="M³ :"
+                                android:textSize="18sp"
+                                android:textColor="@color/black"
+                                android:gravity="right"
+                                android:textStyle="bold"/>
 
                             <TextView
                                 android:id="@+id/M3FJ"
@@ -965,7 +1022,8 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="0"
-                                android:textSize="14sp"
+                                android:layout_marginStart="8dp"
+                                android:textSize="18sp"
                                 android:textColor="@color/black" />
 
                         </LinearLayout>
@@ -984,7 +1042,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Afkir / Reject"
-                            android:textSize="14sp"
+                            android:textSize="18sp"
                             android:layout_marginRight="20dp" />
 
                         <com.google.android.material.checkbox.MaterialCheckBox
@@ -992,7 +1050,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lembur"
-                            android:textSize="14sp" />
+                            android:textSize="18sp" />
 
                     </LinearLayout>
 
@@ -1017,7 +1075,6 @@
         app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:backgroundTint="@color/primary_dark">
 
 
@@ -1026,23 +1083,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center_horizontal">
 
             <Button
                 android:id="@+id/BtnDataBaruFJ"
                 android:layout_width="150dp"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Data Baru"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
                 android:layout_marginEnd="8dp"/>
 
             <Button
                 android:id="@+id/BtnSimpanFJ"
                 android:layout_width="150dp"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Simpan"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
                 android:layout_marginEnd="8dp"
                 android:visibility="gone"/>
@@ -1050,35 +1107,35 @@
             <Button
                 android:id="@+id/BtnBatalFJ"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Batal"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
                 android:layout_marginEnd="8dp"/>
 
             <Button
                 android:id="@+id/BtnPrintFJ"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Print"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"/>
 
             <Button
                 android:id="@+id/BtnInputDetailFJ"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Input Detail"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
                 android:visibility="gone"/>
 
             <Button
                 android:id="@+id/BtnHapusDetailFJ"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:text="Hapus"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
                 android:visibility="gone"/>
 

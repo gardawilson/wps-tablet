@@ -10,8 +10,11 @@ import com.example.myapplication.utils.TableConfigUtils;
 
 import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
 
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
@@ -19,10 +22,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -52,6 +59,7 @@ import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
 import com.example.myapplication.utils.CameraXAnalyzer;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -105,6 +113,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private TextInputLayout textLayoutSearchMainTable;
     private ImageButton btnInputKodeLabel;
     private LinearLayout inputKodeManual;
+    private LinearLayout textScanQR;
     private List<String> noS4SList = new ArrayList<>(); // Daftar untuk kode 'R'
     private List<String> noSTList = new ArrayList<>();  // Daftar untuk kode 'E'
     private List<String> noMouldingList = new ArrayList<>();  // Daftar untuk kode 'T'
@@ -156,6 +165,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoLaminating;
     private ProgressBar loadingIndicatorNoSanding;
     private ProgressBar loadingIndicatorNoPacking;
+    private Button btnInputManual;
 
 
     @Override
@@ -178,6 +188,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         searchMainTable = findViewById(R.id.searchMainTable);
         btnInputKodeLabel = findViewById(R.id.btnInputKodeLabel);
         inputKodeManual = findViewById(R.id.inputKodeManual);
+        textScanQR = findViewById(R.id.textScanQR);
         textLayoutSearchMainTable = findViewById(R.id.textLayoutSearchMainTable);
         loadingIndicator = findViewById(R.id.loadingIndicator);
         noS4STableLayout = findViewById(R.id.noS4STableLayout);
@@ -209,6 +220,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         loadingIndicatorNoLaminating = findViewById(R.id.loadingIndicatorNoLaminating);
         loadingIndicatorNoSanding = findViewById(R.id.loadingIndicatorNoSanding);
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
+        btnInputManual = findViewById(R.id.btnInputManual);
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -221,6 +233,96 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
+
+        btnInputManual.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String noProduksi = noProduksiView.getText().toString();
+
+                if (!noProduksi.isEmpty()) {
+                    // Membuat layout untuk dialog
+                    LinearLayout layout = new LinearLayout(ProsesProduksiMoulding.this);
+                    layout.setOrientation(LinearLayout.VERTICAL);
+                    layout.setPadding(50, 50, 50, 50);
+                    layout.setGravity(Gravity.CENTER_HORIZONTAL);
+
+                    // Membuat TextInputLayout untuk EditText yang lebih modern
+                    TextInputLayout textInputLayout = new TextInputLayout(ProsesProduksiMoulding.this);
+                    textInputLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+                    textInputLayout.setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_FILLED);
+
+                    // Membuat EditText di dalam TextInputLayout
+                    final EditText inputNoLabelManual = new EditText(ProsesProduksiMoulding.this);  // Nama diganti menjadi inputNoLabelManual
+                    inputNoLabelManual.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+                    inputNoLabelManual.setHint("No. Label");
+                    inputNoLabelManual.setPadding(40, 40, 40, 40);
+                    inputNoLabelManual.setTextColor(Color.BLACK);
+                    inputNoLabelManual.setBackgroundColor(getResources().getColor(R.color.white));
+
+                    // Set input type untuk huruf kapital
+                    inputNoLabelManual.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+
+                    // Menambahkan filter untuk membatasi panjang input menjadi 8 karakter
+                    inputNoLabelManual.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8)});
+
+                    // Menambahkan EditText ke dalam TextInputLayout
+                    textInputLayout.addView(inputNoLabelManual);
+
+                    // Menambahkan TextInputLayout ke dalam LinearLayout
+                    layout.addView(textInputLayout);
+
+                    // Membuat MaterialAlertDialogBuilder untuk tampilan modern
+                    MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(ProsesProduksiMoulding.this);
+                    builder.setTitle("Input Label")
+                            .setView(layout)
+                            .setBackground(ContextCompat.getDrawable(ProsesProduksiMoulding.this, R.drawable.tooltip_background))
+                            .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    String result = inputNoLabelManual.getText().toString();  // Menggunakan inputNoLabelManual
+                                    if (!result.isEmpty()) {
+                                        // Panggil metode yang sama dengan hasil scan
+                                        addScanResultToTable(result);
+                                    } else {
+                                        Toast.makeText(ProsesProduksiMoulding.this, "Kode tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            })
+                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+
+                    // Buat dialog dan tampilkan
+                    final androidx.appcompat.app.AlertDialog dialog = builder.create();
+                    dialog.show();
+
+                    // Menghitung 40% dari lebar layar
+                    WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                    Display display = windowManager.getDefaultDisplay();
+                    Point size = new Point();
+                    display.getSize(size);
+                    int width = (int) (size.x * 0.4); // 40% dari lebar layar
+
+                    // Mengatur ukuran dialog
+                    if (dialog.getWindow() != null) {
+                        WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
+                        layoutParams.width = width; // Atur lebar 40% dari layar
+                        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT; // Ukuran tinggi mengikuti konten
+                        dialog.getWindow().setAttributes(layoutParams);
+                    }
+                }
+                else{
+                    Toast.makeText(ProsesProduksiMoulding.this, "Kode tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         searchMainTable.addTextChangedListener(new TextWatcher() {
             @Override
@@ -301,7 +403,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                 cameraProvider = cameraProviderFuture.get();
                 setupCameraControlButton();
             } catch (Exception e) {
-                Log.e("ProsesProduksiS4S", "Error initializing camera provider: " + e.getMessage());
+                Log.e("ProsesProduksiMoulding", "Error initializing camera provider: " + e.getMessage());
             }
         }, ContextCompat.getMainExecutor(this));
 
@@ -416,14 +518,16 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                 ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
                 scanLayout.setVisibility(View.VISIBLE);
                 cameraPreview.setVisibility(View.VISIBLE);
-                inputKodeManual.setVisibility(View.VISIBLE);
+//                inputKodeManual.setVisibility(View.VISIBLE);
                 tableLayout.setVisibility(View.GONE);
                 headerTableProduksi.setVisibility(View.GONE);
-                searchMainTable.setVisibility(View.INVISIBLE);
-                textLayoutSearchMainTable.setVisibility(View.INVISIBLE);
+//                searchMainTable.setVisibility(View.INVISIBLE);
+//                textLayoutSearchMainTable.setVisibility(View.INVISIBLE);
                 jumlahLabelHeader.setVisibility(View.VISIBLE);
                 jumlahLabel.setVisibility(View.VISIBLE);
+                textScanQR.setVisibility(View.VISIBLE);
                 btnSimpan.setEnabled(true);
+                btnInputManual.setEnabled(true);
 
                 isCameraActive = true;
 //                Toast.makeText(this, "Kamera diaktifkan", Toast.LENGTH_SHORT).show();
@@ -446,15 +550,16 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             ScannerAnimationUtils.stopScanningAnimation();
             scanLayout.setVisibility(View.GONE);
             cameraPreview.setVisibility(View.GONE);
-            inputKodeManual.setVisibility(View.GONE);
+//            inputKodeManual.setVisibility(View.GONE);
             jumlahLabelHeader.setVisibility(View.GONE);
             jumlahLabel.setVisibility(View.GONE);
             tableLayout.setVisibility(View.VISIBLE);
             headerTableProduksi.setVisibility(View.VISIBLE);
-            searchMainTable.setVisibility(View.VISIBLE);
-            textLayoutSearchMainTable.setVisibility(View.VISIBLE);
+            textScanQR.setVisibility(View.GONE);
+//            searchMainTable.setVisibility(View.VISIBLE);
+//            textLayoutSearchMainTable.setVisibility(View.VISIBLE);
             btnSimpan.setEnabled(false);
-
+            btnInputManual.setEnabled(false);
 
 
             isCameraActive = false;

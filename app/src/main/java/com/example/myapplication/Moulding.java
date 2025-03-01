@@ -204,6 +204,7 @@ public class Moulding extends AppCompatActivity {
     private String rawDate;
     private TableLayout TabelOutput;
     private TextView tvLabelCount;
+    private EditText remarkLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -219,7 +220,7 @@ public class Moulding extends AppCompatActivity {
             }
         });
 
-        EdgeToEdge.enable(this);
+//        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_moulding);
 
         //deklarasi semua item yang ada di xml yang akan digunakan sesuai ID yang tertera di XML
@@ -258,6 +259,7 @@ public class Moulding extends AppCompatActivity {
         NoMoulding_display = findViewById(R.id.NoMoulding_display);
         TabelOutput = findViewById(R.id.TabelOutput);
         tvLabelCount = findViewById(R.id.labelCount);
+        remarkLabel = findViewById(R.id.remarkLabel);
 
         // Set imeOptions untuk memungkinkan pindah fokus
         DetailTebalM.setImeOptions(EditorInfo.IME_ACTION_NEXT);
@@ -552,6 +554,7 @@ public class Moulding extends AppCompatActivity {
             String noMoulding = NoMoulding.getQuery().toString();
             String dateCreate = rawDate;
             String time = TimeM.getText().toString();
+            String remark = remarkLabel.getText().toString();
 
             Telly selectedTelly = (Telly) SpinTellyM.getSelectedItem();
             SPK selectedSPK = (SPK) SpinSPKM.getSelectedItem();
@@ -617,7 +620,7 @@ public class Moulding extends AppCompatActivity {
 
                                     new UpdateDatabaseTask(
                                             noMoulding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
-                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang
+                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark
                                     ).execute();
 
                                     if (radioButtonMesinM.isChecked() && SpinMesinM.isEnabled() && noProduksi != null) {
@@ -874,6 +877,8 @@ public class Moulding extends AppCompatActivity {
                             String fisik = SpinFisikM.getSelectedItem() != null ? SpinFisikM.getSelectedItem().toString().trim() : "";
                             String jumlahPcs = JumlahPcsM.getText() != null ? JumlahPcsM.getText().toString().trim() : "";
                             String m3 = M3M.getText() != null ? M3M.getText().toString().trim() : "";
+                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
+
                             if (radioButtonMesinM.isChecked()) {
                                 mesinSusun = SpinMesinM.getSelectedItem() != null ? SpinMesinM.getSelectedItem().toString().trim() : "";
                             } else {
@@ -882,7 +887,7 @@ public class Moulding extends AppCompatActivity {
 
                             // Buat PDF dengan parameter printCount
                             Uri pdfUri = createPdf(noMoulding, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
-                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik);
+                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
@@ -1818,6 +1823,7 @@ public class Moulding extends AppCompatActivity {
         BtnInputDetailM.setEnabled(true);
         CBLemburM.setEnabled(true);
         CBAfkirM.setEnabled(true);
+        remarkLabel.setEnabled(true);
     }
 
     
@@ -1843,6 +1849,7 @@ public class Moulding extends AppCompatActivity {
         BtnSimpanM.setEnabled(false);
         CBAfkirM.setEnabled(false);
         CBLemburM.setEnabled(false);
+        remarkLabel.setEnabled(false);
 
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
@@ -1864,6 +1871,7 @@ public class Moulding extends AppCompatActivity {
         TimeM.setText("");
         NoMoulding.setQuery("",false);
         NoSTAM.setText("");
+        remarkLabel.setText("");
 
         setSpinnerValue(SpinKayuM, "-");
         setSpinnerValue(SpinTellyM, "-");
@@ -1901,7 +1909,7 @@ public class Moulding extends AppCompatActivity {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_item,
                     Collections.singletonList(displayValue));
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
             spinner.setAdapter(adapter);
         }
     }
@@ -1936,7 +1944,8 @@ public class Moulding extends AppCompatActivity {
                             "h.IdJenisKayu, " +
                             "k.Jenis, " +
                             "h.IsLembur, " +
-                            "h.IsReject " +
+                            "h.IsReject, " +
+                            "h.Remark " +
                             "FROM Moulding_h h " +
                             "LEFT JOIN MouldingProduksiOutput o ON h.NoMoulding = o.NoMoulding " +
                             "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
@@ -1975,6 +1984,7 @@ public class Moulding extends AppCompatActivity {
                                 final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
                                 final int isLembur = rs.getInt("IsLembur");
                                 final int isReject = rs.getInt("IsReject");
+                                final String remark = rs.getString("Remark") != null ? rs.getString("Remark") : "-";
 
 
 
@@ -2024,6 +2034,8 @@ public class Moulding extends AppCompatActivity {
                                         setSpinnerValue(SpinSusunM, noBongkarSusun);
                                         CBAfkirM.setChecked(isReject == 1);
                                         CBLemburM.setChecked(isLembur == 1);
+                                        remarkLabel.setText(remark);
+
 
                                         // Update tabel detail
                                         updateTableFromTemporaryData();
@@ -2466,6 +2478,8 @@ public class Moulding extends AppCompatActivity {
         SpinMesinM.setEnabled(false);
         SpinSusunM.setEnabled(false);
         radioGroupM.clearCheck();
+        remarkLabel.setText("");
+
     }
 
 
@@ -2512,15 +2526,21 @@ public class Moulding extends AppCompatActivity {
         TableLayout table = findViewById(R.id.Tabel);
         int childCount = table.getChildCount();
 
-        int totalPcs = 0;
+        long totalPcs = 0;  // Menggunakan long untuk menangani angka besar
 
         for (int i = 1; i < childCount; i++) {
             TableRow row = (TableRow) table.getChildAt(i);
             TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
 
-            String pcsString = pcsTextView.getText().toString().replace(",", "");
-            int pcs = Integer.parseInt(pcsString);
-            totalPcs += pcs;
+            String pcsString = pcsTextView.getText().toString().replace(",", "").replace(".", ""); // Hapus koma dan titik
+
+            try {
+                long pcs = Long.parseLong(pcsString);  // Gunakan Long.parseLong untuk angka lebih besar
+                totalPcs += pcs;
+            } catch (NumberFormatException e) {
+                // Menangani jika ada input yang tidak valid
+                Log.e("JumlahPcs", "Format angka tidak valid: " + pcsString);
+            }
         }
 
         JumlahPcsM.setText(String.valueOf(totalPcs));
@@ -2667,7 +2687,6 @@ public class Moulding extends AppCompatActivity {
         table.addCell(valueCell);
     }
 
-
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
             PdfPage page = pdfDocument.getPage(i);
@@ -2691,7 +2710,7 @@ public class Moulding extends AppCompatActivity {
 
             // Posisi watermark di tengah halaman
             float centerX = width / 2 - 25;
-            float centerY = height / 2 + 25;
+            float centerY = height / 2 + 100;
 
             // Rotasi derajat
             double angle = Math.toRadians(0);
@@ -2733,10 +2752,10 @@ public class Moulding extends AppCompatActivity {
         }
     }
 
-    private Uri createPdf(String noMoulding, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
+    private Uri createPdf(String noMoulding, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik, String remark) throws IOException {
         // Validasi parameter wajib
         if (noMoulding == null || noMoulding.trim().isEmpty()) {
-            throw new IOException("Nomor Laminating tidak boleh kosong");
+            throw new IOException("Nomor FJ tidak boleh kosong");
         }
 
         if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
@@ -2755,6 +2774,7 @@ public class Moulding extends AppCompatActivity {
         noSPK = (noSPK != null) ? noSPK.trim() : "-";
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
+        remark = (remark != null) ? remark.trim() : "-";
 
         String[] nama = tellyBy.split(" ");
         String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
@@ -2767,7 +2787,6 @@ public class Moulding extends AppCompatActivity {
 
         try {
             // Hapus file yang sudah ada jika perlu
-            deleteExistingPdf(fileName, relativePath);
             Thread.sleep(500);
 
             ContentValues contentValues = new ContentValues();
@@ -2788,6 +2807,8 @@ public class Moulding extends AppCompatActivity {
             try {
                 // Inisialisasi font dan dokumen
                 PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+                PdfFont timesNewRomanBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
@@ -2804,7 +2825,7 @@ public class Moulding extends AppCompatActivity {
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
-                Paragraph judul = new Paragraph("LABEL MOULDING")
+                Paragraph judul = new Paragraph("LABEL FINGER JOIN")
                         .setUnderline()
                         .setBold()
                         .setFontSize(12)
@@ -2817,23 +2838,22 @@ public class Moulding extends AppCompatActivity {
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
                 float[] infoColumnWidths = new float[]{15, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.4f)
+                        .setWidth(pageWidth * 0.453f)
                         .setBorder(Border.NO_BORDER)
                         .setTextAlignment(TextAlignment.LEFT);
                 ;
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No", noMoulding, timesNewRoman);
+//                addInfoRow(leftColumn, "No", noMoulding, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
-//                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
+                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
@@ -2862,14 +2882,14 @@ public class Moulding extends AppCompatActivity {
                 mainTable.addCell(rightCell);
 
                 // Tabel data
-                float[] width = {60f, 60f, 60f, 60f};
+                float[] width = {70f, 70f, 70f, 70f};
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
-                        .setFontSize(12);
+                        .setMarginTop(5)
+                        .setFontSize(13);
 
                 // Header tabel
-                String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
+                String[] headers = {"Tebal", "Lebar", "Panjang", "Pcs"};
                 for (String header : headers) {
                     table.addCell(new Cell()
                             .add(new Paragraph(header)
@@ -2886,27 +2906,27 @@ public class Moulding extends AppCompatActivity {
                     String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
                     String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
-                    table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(panjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(tebal + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(lebar + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(panjang + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {70f, 5f, 70f};
+                float[] columnWidths = {30f, 10f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMarginTop(10)
-                        .setFontSize(12)
+                        .setMarginTop(5)
+                        .setFontSize(14)
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jlh Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
                 Paragraph qrCodeIDbottom = new Paragraph(noMoulding).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 47).setFont(timesNewRoman);
 
@@ -2921,21 +2941,26 @@ public class Moulding extends AppCompatActivity {
                 Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-75
                         , 0, 0, 0).setFont(timesNewRoman).setBold();
 
-                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-                Paragraph namaMesin = new Paragraph("Mesin  : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-
+//                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph namaMesin = new Paragraph("Mesin   : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph textHeader = new Paragraph("LABEL MLD").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
+                Paragraph textHeaderNomor = new Paragraph("NO : " + noMoulding).setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(-21, 0, 0, 148).setFont(timesNewRomanBold);
 
                 Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
                 Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph remarkText = new Paragraph("Remark : " + remark).setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(0, 0, 0, 0).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
-                document.add(judul);
+                document.add(textHeader);
+                document.add(textHeaderNomor);
+
+//                document.add(judul);
                 if (printCount > 0) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
 
                 document.add(mainTable);
-                document.add(namaFisik);
+//                document.add(namaFisik);
                 document.add(namaMesin);
                 document.add(table);
                 document.add(sumTable);
@@ -2950,6 +2975,11 @@ public class Moulding extends AppCompatActivity {
                 if(CBLemburM.isChecked()){
                     document.add(lemburTextOutput);
                 }
+
+                if (!remark.isEmpty() && !remark.equals("-")) {
+                    document.add(remarkText);
+                }
+
 
                 document.close();
                 pdfUri = uri;
@@ -3091,12 +3121,12 @@ public class Moulding extends AppCompatActivity {
 
     //mengupdate data berdasarkan nomor moulding
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
-        private String noMoulding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
+        private String noMoulding, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile, remark;
         private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noMoulding, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang ){
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang, String remark ){
             this.noMoulding = noMoulding;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -3110,6 +3140,7 @@ public class Moulding extends AppCompatActivity {
             this.isLembur = isLembur;
             this.IdUOMTblLebar = IdUOMTblLebar;
             this.IdUOMPanjang = IdUOMPanjang;
+            this.remark = remark;
         }
 
         @Override
@@ -3118,7 +3149,7 @@ public class Moulding extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.Moulding_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 6, IdJenisKayu = ?, IdWarehouse = 6, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoMoulding = ?";
+                            "IdFJProfile = ?, IdFisik = 6, IdJenisKayu = ?, IdWarehouse = 6, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, Remark = ? WHERE NoMoulding = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -3133,7 +3164,8 @@ public class Moulding extends AppCompatActivity {
                     ps.setInt(10, isLembur);
                     ps.setInt(11, IdUOMTblLebar);
                     ps.setInt(12, IdUOMPanjang);
-                    ps.setString(13, noMoulding);
+                    ps.setString(13, remark);
+                    ps.setString(14, noMoulding);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -3249,7 +3281,7 @@ public class Moulding extends AppCompatActivity {
             jenisKayuList.add(0, dummyKayu);
 
             ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, jenisKayuList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             SpinKayuM.setAdapter(adapter);
             SpinKayuM.setSelection(0);
@@ -3305,7 +3337,7 @@ public class Moulding extends AppCompatActivity {
         protected void onPostExecute(List<JenisKayu> jenisKayuList) {
             if (!jenisKayuList.isEmpty()) {
                 ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, jenisKayuList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinKayuM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load jenis kayu.");
@@ -3363,7 +3395,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Telly> tellyList) {
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, tellyList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             // Set adapter ke spinner
             SpinTellyM.setAdapter(adapter);
@@ -3419,7 +3451,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Telly> tellyList) {
             if (!tellyList.isEmpty()) {
                 ArrayAdapter<Telly> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, tellyList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinTellyM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load telly data.");
@@ -3470,7 +3502,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
 
             ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Moulding.this,
                     android.R.layout.simple_spinner_item, spkList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             SpinSPKM.setAdapter(adapter);
             SpinSPKM.setSelection(0);
@@ -3517,7 +3549,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             spkAsalList.add(0, dummySPKAsal);
 
             ArrayAdapter<SPKAsal> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkAsalList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             SpinSPKAsalM.setAdapter(adapter);
 
@@ -3569,7 +3601,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<SPK> spkList) {
             if (!spkList.isEmpty()) {
                 ArrayAdapter<SPK> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, spkList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinSPKM.setAdapter(adapter);
 
                 SpinSPKM.setEnabled(true);
@@ -3619,7 +3651,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             profileList.add(0, dummyProfile);
 
             ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, profileList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             SpinProfileM.setAdapter(adapter);
             SpinProfileM.setSelection(0);
@@ -3673,7 +3705,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Profile> profileList) {
             if (!profileList.isEmpty()) {
                 ArrayAdapter<Profile> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, profileList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinProfileM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load profile data.");
@@ -3689,12 +3721,12 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NamaWarehouse FROM dbo.MstWarehouse WHERE IdWarehouse = 6";
+                    String query = "SELECT Singkatan FROM dbo.MstWarehouse WHERE IdWarehouse = 6";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaWarehouse");
+                        String namaWarehouse = rs.getString("Singkatan");
 
                         Fisik fisik = new Fisik(namaWarehouse);
                         fisikList.add(fisik);
@@ -3716,7 +3748,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Fisik> fisikList) {
             if (!fisikList.isEmpty()) {
                 ArrayAdapter<Fisik> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, fisikList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinFisikM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load fisik data.");
@@ -3794,7 +3826,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
             }
 
             ArrayAdapter<Grade> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, gradeList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
             SpinGradeM.setAdapter(adapter);
             SpinGradeM.setSelection(0);
         }
@@ -3843,7 +3875,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Mesin> mesinList) {
             if (!mesinList.isEmpty()) {
                 ArrayAdapter<Mesin> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, mesinList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinMesinM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load mesin data.");
@@ -3894,7 +3926,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Susun> susunList) {
             if (!susunList.isEmpty()) {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, susunList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinSusunM.setAdapter(adapter);
             } else {
                 Log.e("Error", "Failed to load susun data");
@@ -3947,7 +3979,7 @@ private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
         protected void onPostExecute(List<Susun> susunList) {
             if (!susunList.isEmpty()) {
                 ArrayAdapter<Susun> adapter = new ArrayAdapter<>(Moulding.this, android.R.layout.simple_spinner_item, susunList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinSusunM.setAdapter(adapter);
 
                 radioButtonMesinM.setEnabled(false);

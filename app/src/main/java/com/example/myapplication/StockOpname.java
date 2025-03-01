@@ -3,6 +3,7 @@ package com.example.myapplication;
 import static com.example.myapplication.api.StockOpnameApi.getLokasiAndBlok;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -13,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.SearchView;
@@ -72,6 +74,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private Set<String> selectedLabels = new HashSet<>();
     private Spinner spinnerNoSO;
 
+    private final Handler handler = new Handler();
+
+    private final Runnable fetchDataRunnable = new Runnable() {
+        @Override
+        public void run() {
+            Log.d("Polling", "Fetching data...");
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabels, selectedUserID, 0);
+            fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
+            handler.postDelayed(this, 5000); // Jalankan lagi setelah 5 detik
+        }
+    };
 
 
     @Override
@@ -90,11 +103,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         setListeners();
 
     }
-
-
-
-
-
 
 
     private void openFilterDialog() {
@@ -450,6 +458,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                             } else {
                                 // Filter lokasi berdasarkan blok yang dipilih
                                 List<String> filteredLokasiList = new ArrayList<>();
+                                filteredLokasiList.add("Semua"); // Tambahkan "Semua" di awal daftar
+
                                 for (LokasiBlok lokasiBlok : lokasiBlokList) {
                                     if (lokasiBlok.getBlok().equals(selectedBlok)) {
                                         filteredLokasiList.add(lokasiBlok.getIdLokasi());
@@ -623,16 +633,22 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         // Pastikan parameter tidak null, beri nilai default jika perlu
         String safeSelectedNoSO = (selectedNoSO == null) ? "" : selectedNoSO;
+        String safeSelectedBlok = (selectedBlok == null) ? "" : selectedBlok;
         String safeSelectedIdLokasi = (selectedIdLokasi == null) ? "" : selectedIdLokasi;
         Set<String> safeSelectedLabels = (selectedLabels == null) ? new HashSet<>() : selectedLabels;
+        String safeSelectedUserID = (selectedUserID == null) ? "" : selectedUserID;
 
         // Run the network call in a background thread
         executorService.execute(() -> {
-            // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(safeSelectedNoSO, safeSelectedIdLokasi, safeSelectedLabels, selectedUserID, offset, limit);
+            // Fetching the data with the filter applied
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputByFilter(
+                    safeSelectedNoSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels, safeSelectedUserID, offset, limit);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
+
+                updateLabelCount( safeSelectedNoSO, selectedTglSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels, safeSelectedUserID);
+
                 if (data != null && !data.isEmpty()) {
                     // Iterate over the fetched data and add unique items to the list
                     if (page == 0) stockOpnameDataInputByNoSOList.clear();
@@ -643,6 +659,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     }
                     currentPageForNoSOInput++;
 
+                    // Check if there are no more data to fetch
                     if (data.size() < limit) {
                         hasMoreDataToFetchAfter = false;  // No more data to fetch
                     }
@@ -650,9 +667,9 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 } else {
                     hasMoreDataToFetchAfter = false;
                     stockOpnameDataInputByNoSOList.clear();  // Clear the list if no data is found
-                    // Optionally, you can show a message if no data is found
-                    // showToast("Tidak ada data lagi untuk NoSO: " + selectedNoSO);
                 }
+
+                // Update UI with total count of data
 
                 // Notify the adapter that data has been updated
                 stockOpnameDataInputAdapter.notifyDataSetChanged();
@@ -664,6 +681,24 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         });
     }
 
+    private void updateLabelCount(String safeSelectedNoSO, String safeSelectedTglSO, String safeSelectedBlok, String safeSelectedIdLokasi, Set<String> safeSelectedLabels, String safeSelectedUserID) {
+
+        executorService.execute(() -> {
+            int totalCountBefore = StockOpnameApi.getTotalStockOpnameDataCount(safeSelectedNoSO, selectedTglSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels);
+            int totalCountAfter = StockOpnameApi.getStockOpnameDataInputCountByFilter(safeSelectedNoSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels, safeSelectedUserID);
+
+            runOnUiThread(() -> {
+                TextView totalCountLabelBefore = findViewById(R.id.countLabelBefore);
+                TextView totalCountLabelAfter = findViewById(R.id.countLabelAfter);
+                if (totalCountLabelBefore != null && totalCountLabelAfter != null) {
+                    totalCountLabelBefore.setText("Total : " + totalCountBefore); // Menampilkan total count
+                    totalCountLabelAfter.setText("Total : " + totalCountAfter); // Menampilkan total count
+                }
+            });
+        });
+    }
+
+
     private void searchDataByNoSO(String searchTerm) {
         // Show loading indicator while searching
         showLoadingIndicatorBefore(true);
@@ -672,7 +707,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataByNoSO> data = StockOpnameApi.searchStockOpnameDataByNoSO(selectedNoSO, selectedTglSO, searchTerm, selectedLabels,0, 10);
+            List<StockOpnameDataByNoSO> data = StockOpnameApi.searchStockOpnameDataByNoSO(selectedNoSO, selectedTglSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 10);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -711,7 +746,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, selectedLabels,0, 10);
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 10);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -755,15 +790,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         Set<String> safeSelectedLabels = (selectedLabels == null) ? new HashSet<>() : selectedLabels;
 
         executorService.execute(() -> {
-            List<StockOpnameDataByNoSO> data = StockOpnameApi.getStockOpnameDataByNoSO(safeSelectedNoSO, safeSelectedTglSO, safeSelectedIdLokasi, safeSelectedLabels, offset, limit);
+            List<StockOpnameDataByNoSO> data = StockOpnameApi.getStockOpnameDataByNoSO(safeSelectedNoSO, safeSelectedTglSO, selectedBlok, safeSelectedIdLokasi, safeSelectedLabels, offset, limit);
             runOnUiThread(() -> {
+
+                updateLabelCount( safeSelectedNoSO, selectedTglSO, selectedBlok, safeSelectedIdLokasi, safeSelectedLabels, selectedUserID);
+
                 if (data != null && !data.isEmpty()) {
                     findViewById(R.id.dataLabelEmpty).setVisibility(View.GONE);
                     if (page == 0) stockOpnameDataByNoSOList.clear();
                     for (StockOpnameDataByNoSO item : data) {
                         if (!stockOpnameDataByNoSOList.contains(item)) {
                             stockOpnameDataByNoSOList.add(item);
-                            Log.d("before", ": " + item.getNoLabel());
 
                         }
                     }
@@ -885,6 +922,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                         if (stockOpnameDataInputByNoSOList.get(i).getNoLabelInput().equals(item.getNoLabelInput())) {
                             stockOpnameDataInputByNoSOList.remove(i);
                             stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
+                            updateLabelCount(selectedNoSO, selectedTglSO, selectedBlok, selectedIdLokasi, selectedLabels, selectedUserID);
+
 
                             Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
                             Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
@@ -898,6 +937,21 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             });
         });
     }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        // Mulai polling saat Activity aktif
+//        handler.post(fetchDataRunnable);
+//    }
+//
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+//        // Hentikan polling saat Activity tidak aktif
+//        handler.removeCallbacks(fetchDataRunnable);
+//    }
+
 
 
     @Override

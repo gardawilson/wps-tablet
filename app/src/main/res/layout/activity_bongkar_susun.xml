@@ -143,33 +143,42 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
 
                 <Button
                     android:id="@+id/btnCameraControl"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_marginRight="8dp"
-                    android:layout_weight="0.1"
+                    android:layout_weight="1"
                     android:text="Aktif"
                     android:drawableTint="@color/white" />
 
                 <Button
-                    android:id="@+id/btnSimpan"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/btnInputManual"
+                    android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_marginRight="8dp"
-                    android:layout_weight="0.1"
-                    android:text="Save"
+                    android:layout_weight="1"
+                    android:text="Tambah"
+                    android:enabled="false"/>
+
+                <Button
+                    android:id="@+id/btnSimpan"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="1"
+                    android:text="Simpan"
                     android:enabled="false"/>
 
                 <Button
                     android:id="@+id/btnHistorySave"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="50dp"
-                    android:layout_marginRight="16dp"
-                    android:layout_weight="0.1"
-                    android:text="History" />
+                    android:layout_weight="1"
+                    android:text="Riwayat" />
 
 
                 <!-- Search Bar -->
@@ -177,7 +186,8 @@
                     android:id="@+id/textLayoutSearchMainTable"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:layout_weight="1"
+                    android:visibility="gone">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/searchMainTable"
@@ -240,12 +250,30 @@
 
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/textScanQR"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="5dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="SCAN QR"
+                    android:textStyle="bold"
+                    android:textSize="18sp" />
+
+            </LinearLayout>
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/scanLayout"
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:layout_width="600dp"
-                android:layout_height="275dp"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
                 android:layout_marginTop="5dp"
                 android:layout_gravity="center"
                 android:visibility="gone">
@@ -376,7 +404,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Jumlah Label"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:textSize="18sp" />
 
             </LinearLayout>
 
@@ -413,7 +442,7 @@
                                 android:layout_weight="1"
                                 android:text="ST"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -421,7 +450,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumSTLabel"
@@ -430,7 +459,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -438,7 +467,7 @@
                                 android:layout_weight="1"
                                 android:text="S4S"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -446,7 +475,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumS4SLabel"
@@ -455,7 +484,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -463,7 +492,7 @@
                                 android:layout_weight="1"
                                 android:text="FJ"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -471,7 +500,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumFJLabel"
@@ -480,7 +509,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -488,7 +517,7 @@
                                 android:layout_weight="1"
                                 android:text="Mld."
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -496,7 +525,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumMouldingLabel"
@@ -505,7 +534,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 
@@ -520,7 +549,7 @@
                                 android:layout_weight="1"
                                 android:text="Lam."
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -528,7 +557,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumLaminatingLabel"
@@ -537,7 +566,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -545,7 +574,7 @@
                                 android:layout_weight="1"
                                 android:text="CC"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -553,7 +582,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumCCLabel"
@@ -562,7 +591,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -570,7 +599,7 @@
                                 android:layout_weight="1"
                                 android:text="Sand."
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -578,7 +607,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumSandingLabel"
@@ -587,7 +616,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="0dp"
@@ -595,7 +624,7 @@
                                 android:layout_weight="1"
                                 android:text="Pack."
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -603,7 +632,7 @@
                                 android:text=":"
                                 android:padding="4dp"
                                 android:gravity="center"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                             <TextView
                                 android:id="@+id/sumPackingLabel"
@@ -612,7 +641,7 @@
                                 android:layout_weight="1"
                                 android:text="0"
                                 android:padding="4dp"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
 
                         </LinearLayout>
 

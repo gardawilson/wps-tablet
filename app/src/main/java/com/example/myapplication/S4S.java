@@ -171,7 +171,7 @@ public class S4S extends AppCompatActivity {
     private String rawDate;
     private TableLayout TabelOutput;
     private TextView tvLabelCount;
-
+    private EditText remarkLabel;
 
 
     @Override
@@ -188,7 +188,7 @@ public class S4S extends AppCompatActivity {
             }
         });
 
-        EdgeToEdge.enable(this);
+//        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_s4_s);
 
         NoSTAsal = findViewById(R.id.NoSTAsal);
@@ -226,6 +226,7 @@ public class S4S extends AppCompatActivity {
         NoS4S_display = findViewById(R.id.NoS4S_display);
         TabelOutput = findViewById(R.id.TabelOutput);
         tvLabelCount = findViewById(R.id.labelCount);
+        remarkLabel = findViewById(R.id.remarkLabel);
 
         // Set imeOptions untuk memungkinkan pindah fokus
         DetailTebalS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
@@ -512,6 +513,7 @@ public class S4S extends AppCompatActivity {
             String noS4S = NoS4S.getQuery().toString();
             String dateCreate = rawDate;
             String time = Time.getText().toString();
+            String remark = remarkLabel.getText().toString();
 
             Telly selectedTelly = (Telly) SpinTelly.getSelectedItem();
             SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
@@ -581,7 +583,7 @@ public class S4S extends AppCompatActivity {
                                     new UpdateDatabaseTask(
                                             noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
                                             idGrade, idJenisKayu, idProfile, isReject, isLembur,
-                                            idUOMTblLebar, idUOMPanjang
+                                            idUOMTblLebar, idUOMPanjang, remark
                                     ).execute();
 
                                     if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
@@ -657,6 +659,7 @@ public class S4S extends AppCompatActivity {
                 BtnSimpan.setVisibility(View.GONE);
                 CBAfkir.setChecked(false);
                 CBLembur.setChecked(false);
+
             }
         });
 
@@ -833,6 +836,8 @@ public class S4S extends AppCompatActivity {
                             String fisik = SpinFisik.getSelectedItem() != null ? SpinFisik.getSelectedItem().toString().trim() : "";
                             String jumlahPcs = JumlahPcs.getText() != null ? JumlahPcs.getText().toString().trim() : "";
                             String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
+                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
+
                             if (radioButtonMesin.isChecked()) {
                                 mesinSusun = SpinMesin.getSelectedItem() != null ? SpinMesin.getSelectedItem().toString().trim() : "";
                             } else {
@@ -841,7 +846,7 @@ public class S4S extends AppCompatActivity {
 
                             // Buat PDF dengan parameter printCount
                             Uri pdfUri = createPdf(noS4S, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
-                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik);
+                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
 
                             if (pdfUri != null) {
                                 // Siapkan PrintManager
@@ -1777,6 +1782,7 @@ public class S4S extends AppCompatActivity {
         BtnInputDetail.setEnabled(true);
         CBLembur.setEnabled(true);
         CBAfkir.setEnabled(true);
+        remarkLabel.setEnabled(true);
     }
 
     private void disableForm(){
@@ -1801,6 +1807,7 @@ public class S4S extends AppCompatActivity {
         BtnSimpan.setEnabled(false);
         CBLembur.setEnabled(false);
         CBAfkir.setEnabled(false);
+        remarkLabel.setEnabled(false);
 
 
 
@@ -1824,6 +1831,7 @@ public class S4S extends AppCompatActivity {
         Time.setText("");
         NoS4S.setQuery("",false);
         NoSTAsal.setText("");
+        remarkLabel.setText("");
 
         setSpinnerValue(SpinKayu, "-");
         setSpinnerValue(SpinTelly, "-");
@@ -1834,9 +1842,6 @@ public class S4S extends AppCompatActivity {
         setSpinnerValue(SpinFisik, "-");
         setSpinnerValue(SpinMesin, "-");
         setSpinnerValue(SpinSusun, "-");
-
-        radioButtonBSusun.setEnabled(false);
-        radioButtonMesin.setEnabled(false);
 
     }
 
@@ -1894,7 +1899,8 @@ public class S4S extends AppCompatActivity {
                             "h.IdJenisKayu, " +
                             "k.Jenis, " +
                             "h.IsLembur, " +
-                            "h.IsReject " +
+                            "h.IsReject, " +
+                            "h.Remark " +
                             "FROM S4S_h h " +
                             "LEFT JOIN S4SProduksiOutput o ON h.NoS4S = o.NoS4S " +
                             "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
@@ -1933,6 +1939,8 @@ public class S4S extends AppCompatActivity {
                                 final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
                                 final int isLembur = rs.getInt("IsLembur");
                                 final int isReject = rs.getInt("IsReject");
+                                final String remark = rs.getString("Remark") != null ? rs.getString("Remark") : "-";
+
 
 
                                 // Mengambil data detail
@@ -1981,6 +1989,8 @@ public class S4S extends AppCompatActivity {
                                         setSpinnerValue(SpinSusun, noBongkarSusun);
                                         CBAfkir.setChecked(isReject == 1);
                                         CBLembur.setChecked(isLembur == 1);
+                                        remarkLabel.setText(remark);
+
 
                                         // Update tabel detail
                                         updateTableFromTemporaryData();
@@ -2393,6 +2403,7 @@ public class S4S extends AppCompatActivity {
         textView.setLayoutParams(params);
         textView.setGravity(Gravity.CENTER);
         textView.setPadding(10, 10, 10, 10);
+        textView.setTextSize(18);
         row.addView(textView);
     }
 
@@ -2501,7 +2512,7 @@ public class S4S extends AppCompatActivity {
         SpinSusun.setEnabled(false);
         SpinMesin.setEnabled(false);
         radioGroup.clearCheck();
-        tvLabelCount.setText("Total Label : 0");
+        remarkLabel.setText("");
 
     }
 
@@ -2548,15 +2559,21 @@ public class S4S extends AppCompatActivity {
         TableLayout table = findViewById(R.id.Tabel);
         int childCount = table.getChildCount();
 
-        int totalPcs = 0;
+        long totalPcs = 0;  // Menggunakan long untuk menangani angka besar
 
         for (int i = 1; i < childCount; i++) {
             TableRow row = (TableRow) table.getChildAt(i);
             TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
 
-            String pcsString = pcsTextView.getText().toString().replace(",", "");
-            int pcs = Integer.parseInt(pcsString);
-            totalPcs += pcs;
+            String pcsString = pcsTextView.getText().toString().replace(",", "").replace(".", ""); // Hapus koma dan titik
+
+            try {
+                long pcs = Long.parseLong(pcsString);  // Gunakan Long.parseLong untuk angka lebih besar
+                totalPcs += pcs;
+            } catch (NumberFormatException e) {
+                // Menangani jika ada input yang tidak valid
+                Log.e("JumlahPcs", "Format angka tidak valid: " + pcsString);
+            }
         }
 
         JumlahPcs.setText(String.valueOf(totalPcs));
@@ -2703,7 +2720,6 @@ public class S4S extends AppCompatActivity {
         table.addCell(valueCell);
     }
 
-
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
             PdfPage page = pdfDocument.getPage(i);
@@ -2727,7 +2743,7 @@ public class S4S extends AppCompatActivity {
 
             // Posisi watermark di tengah halaman
             float centerX = width / 2 - 25;
-            float centerY = height / 2 + 25;
+            float centerY = height / 2 + 100;
 
             // Rotasi derajat
             double angle = Math.toRadians(0);
@@ -2769,10 +2785,10 @@ public class S4S extends AppCompatActivity {
         }
     }
 
-    private Uri createPdf(String noS4S, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik) throws IOException {
+    private Uri createPdf(String noS4S, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<DataRow> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik, String remark) throws IOException {
         // Validasi parameter wajib
         if (noS4S == null || noS4S.trim().isEmpty()) {
-            throw new IOException("Nomor S4S tidak boleh kosong");
+            throw new IOException("Nomor FJ tidak boleh kosong");
         }
 
         if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
@@ -2791,6 +2807,7 @@ public class S4S extends AppCompatActivity {
         noSPK = (noSPK != null) ? noSPK.trim() : "-";
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
+        remark = (remark != null) ? remark.trim() : "-";
 
         String[] nama = tellyBy.split(" ");
         String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
@@ -2803,7 +2820,6 @@ public class S4S extends AppCompatActivity {
 
         try {
             // Hapus file yang sudah ada jika perlu
-            deleteExistingPdf(fileName, relativePath);
             Thread.sleep(500);
 
             ContentValues contentValues = new ContentValues();
@@ -2824,6 +2840,8 @@ public class S4S extends AppCompatActivity {
             try {
                 // Inisialisasi font dan dokumen
                 PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+                PdfFont timesNewRomanBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
@@ -2840,7 +2858,7 @@ public class S4S extends AppCompatActivity {
                 document.setMargins(0, 5, 0, 5);
 
                 // Header
-                Paragraph judul = new Paragraph("LABEL S4S")
+                Paragraph judul = new Paragraph("LABEL FINGER JOIN")
                         .setUnderline()
                         .setBold()
                         .setFontSize(12)
@@ -2853,23 +2871,22 @@ public class S4S extends AppCompatActivity {
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
                 float[] infoColumnWidths = new float[]{15, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.4f)
+                        .setWidth(pageWidth * 0.453f)
                         .setBorder(Border.NO_BORDER)
                         .setTextAlignment(TextAlignment.LEFT);
                 ;
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "No", noS4S, timesNewRoman);
+//                addInfoRow(leftColumn, "No", noS4S, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Grade", grade, timesNewRoman);
-//                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
+                addInfoRow(leftColumn, "Fisik", fisik, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
@@ -2898,14 +2915,14 @@ public class S4S extends AppCompatActivity {
                 mainTable.addCell(rightCell);
 
                 // Tabel data
-                float[] width = {60f, 60f, 60f, 60f};
+                float[] width = {70f, 70f, 70f, 70f};
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
-                        .setFontSize(12);
+                        .setMarginTop(5)
+                        .setFontSize(13);
 
                 // Header tabel
-                String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
+                String[] headers = {"Tebal", "Lebar", "Panjang", "Pcs"};
                 for (String header : headers) {
                     table.addCell(new Cell()
                             .add(new Paragraph(header)
@@ -2922,27 +2939,27 @@ public class S4S extends AppCompatActivity {
                     String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
                     String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
 
-                    table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(panjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(tebal + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(lebar + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(panjang + " mm").setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {70f, 5f, 70f};
+                float[] columnWidths = {30f, 10f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMarginTop(10)
-                        .setFontSize(12)
+                        .setMarginTop(5)
+                        .setFontSize(14)
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jlh Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
                 Paragraph qrCodeIDbottom = new Paragraph(noS4S).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 47).setFont(timesNewRoman);
 
@@ -2957,21 +2974,26 @@ public class S4S extends AppCompatActivity {
                 Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-75
                         , 0, 0, 0).setFont(timesNewRoman).setBold();
 
-                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-                Paragraph namaMesin = new Paragraph("Mesin  : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-
+//                Paragraph namaFisik = new Paragraph("Fisik\t: " + fisik).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph namaMesin = new Paragraph("Mesin   : " + mesinSusun).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph textHeader = new Paragraph("LABEL S4S").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
+                Paragraph textHeaderNomor = new Paragraph("NO : " + noS4S).setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(-21, 0, 0, 148).setFont(timesNewRomanBold);
 
                 Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
                 Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph remarkText = new Paragraph("Remark : " + remark).setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(0, 0, 0, 0).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
-                document.add(judul);
+                document.add(textHeader);
+                document.add(textHeaderNomor);
+
+//                document.add(judul);
                 if (printCount > 0) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
 
                 document.add(mainTable);
-                document.add(namaFisik);
+//                document.add(namaFisik);
                 document.add(namaMesin);
                 document.add(table);
                 document.add(sumTable);
@@ -2985,6 +3007,10 @@ public class S4S extends AppCompatActivity {
 
                 if(CBLembur.isChecked()){
                     document.add(lemburTextOutput);
+                }
+
+                if (!remark.isEmpty() && !remark.equals("-")) {
+                    document.add(remarkText);
                 }
 
                 document.close();
@@ -3004,6 +3030,7 @@ public class S4S extends AppCompatActivity {
 
         return pdfUri;
     }
+
 
     private void deleteExistingPdf(String fileName, String relativePath) {
         Uri uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
@@ -3119,12 +3146,12 @@ public class S4S extends AppCompatActivity {
 
     @SuppressWarnings("deprecation")
     private class UpdateDatabaseTask extends AsyncTask<Void, Void, Boolean> {
-        private String noS4S, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile;
+        private String noS4S, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu, idFJProfile, remark;
         private int isReject, isLembur, IdUOMTblLebar, IdUOMPanjang;
 
         public UpdateDatabaseTask(String noS4S, String dateCreate, String time, String idTelly, String noSPK, String noSPKasal,
                                   String idGrade, String idJenisKayu, String idFJProfile,
-                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang) {
+                                  int isReject, int isLembur, int IdUOMTblLebar, int IdUOMPanjang, String remark) {
             this.noS4S = noS4S;
             this.dateCreate = dateCreate;
             this.time = time;
@@ -3138,6 +3165,7 @@ public class S4S extends AppCompatActivity {
             this.isLembur = isLembur;
             this.IdUOMTblLebar = IdUOMTblLebar;
             this.IdUOMPanjang = IdUOMPanjang;
+            this.remark = remark;
         }
 
         @Override
@@ -3146,7 +3174,7 @@ public class S4S extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query = "UPDATE dbo.S4S_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ? WHERE NoS4S = ?";
+                            "IdFJProfile = ?, IdFisik = 4, IdJenisKayu = ?, IdWarehouse = 4, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, Remark = ? WHERE NoS4S = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, dateCreate);
@@ -3161,7 +3189,8 @@ public class S4S extends AppCompatActivity {
                     ps.setInt(10, isLembur);
                     ps.setInt(11, IdUOMTblLebar);
                     ps.setInt(12, IdUOMPanjang);
-                    ps.setString(13, noS4S);
+                    ps.setString(13, remark);
+                    ps.setString(14, noS4S);
 
 
                     int rowsUpdated = ps.executeUpdate();
@@ -3780,12 +3809,12 @@ public class S4S extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NamaWarehouse FROM dbo.MstWarehouse WHERE IdWarehouse = 4";
+                    String query = "SELECT Singkatan FROM dbo.MstWarehouse WHERE IdWarehouse = 4";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
-                        String namaWarehouse = rs.getString("NamaWarehouse");
+                        String namaWarehouse = rs.getString("Singkatan");
 
                         Fisik fisik = new Fisik(namaWarehouse);
                         fisikList.add(fisik);
@@ -4084,7 +4113,6 @@ public class S4S extends AppCompatActivity {
                 Log.e("Error", "Failed to load mesin data.");
                 SpinMesin.setAdapter(null);
                 TabelOutput.removeAllViews();
-                tvLabelCount.setText("Total Label : 0");
 
             }
         }
@@ -4141,8 +4169,6 @@ public class S4S extends AppCompatActivity {
                 Log.e("Error", "Failed to load susun data");
                 SpinSusun.setAdapter(null);
                 TabelOutput.removeAllViews();
-                tvLabelCount.setText("Total Label : 0");
-
             }
         }
     }

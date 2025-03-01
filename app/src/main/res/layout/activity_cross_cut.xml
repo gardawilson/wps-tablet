@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary_dark"
@@ -20,399 +21,442 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintWidth_percent="0.4"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:backgroundTint="@color/white">
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:fillViewport="true">
 
-            <TextView
-                android:id="@+id/title_left"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
-                android:text="LABEL CROSS CUT"
-                android:textColor="@color/black"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <!-- Search Section -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <TextView
-                    android:layout_width="120dp"
+                    android:id="@+id/title_left"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No. CC"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
+                    android:layout_marginBottom="15dp"
+                    android:text="LABEL CROSS CUT"
+                    android:textColor="@color/black"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
 
-                <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
-                    <SearchView
-                        android:id="@+id/NoCC"
-                        android:layout_width="match_parent"
-                        android:layout_height="32dp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        app:iconifiedByDefault="false"
-                        app:queryHint="Search here..."
-                        style="@style/Widget.AppCompat.SearchView.ActionBar" />
-
-                    <EditText
-                        android:id="@+id/NoCC_display"
-                        android:layout_width="match_parent"
-                        android:layout_height="32dp"
-                        android:padding="6dp"
-                        android:textSize="14sp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        android:visibility="gone"
-                        android:hint="NoS4S_display" />
-                </FrameLayout>
-
-            </LinearLayout>
-
-            <!-- EditText Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Tgl / Jam"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/DateCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:padding="6dp"
-                    android:layout_marginRight="10dp"
-                    android:textSize="14sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Tanggal"
-                    android:focusable="false"/>
-
-                <EditText
-                    android:id="@+id/TimeCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:padding="6dp"
-                    android:textSize="14sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Jam"
-                    android:focusable="false"/>
-            </LinearLayout>
-
-            <!-- Spinner 1 Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Jenis Kayu"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinKayuCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
-
-                <!-- RadioGroup dengan RadioButton -->
-                <RadioGroup
-                    android:id="@+id/RadioGroupCC"
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <RadioButton
-                        android:id="@+id/radioButtonMesinCC"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Mesin"
-                        android:layout_marginEnd="4dp"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp"
-                        android:layout_marginBottom="10dp"/>
-
-                    <RadioButton
-                        android:id="@+id/radioButtonBSusunCC"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Susun"
-                        android:layout_marginEnd="4dp"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp" />
-                </RadioGroup>
-
-                <!-- Spinner di sebelah kanan RadioButton -->
+                <!-- Search Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
 
-                    <Spinner
-                        android:id="@+id/SpinMesinCC"
-                        android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No. CC"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <SearchView
+                            android:id="@+id/NoCC"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            app:iconifiedByDefault="false"
+                            app:queryHint="Search here..."
+                            style="@style/Widget.AppCompat.SearchView.ActionBar" />
+
+                        <EditText
+                            android:id="@+id/NoCC_display"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:padding="6dp"
+                            android:textSize="18sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:visibility="gone"
+                            android:hint="NoS4S_display" />
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <!-- EditText Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Tgl / Jam"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/DateCC"
+                        android:layout_width="0dp"
                         android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:layout_marginRight="10dp"
+                        android:textSize="18sp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
-                        android:layout_marginBottom="10dp"/>
+                        android:hint="Tanggal"
+                        android:focusable="false"/>
+
+                    <EditText
+                        android:id="@+id/TimeCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Jam"
+                        android:focusable="false"/>
+                </LinearLayout>
+
+                <!-- Spinner 1 Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Jenis Kayu"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
 
                     <Spinner
-                        android:id="@+id/SpinSusunCC"
-                        android:layout_width="match_parent"
-                        android:layout_height="32dp"
+                        android:id="@+id/SpinKayuCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <!-- RadioGroup dengan RadioButton -->
+                    <RadioGroup
+                        android:id="@+id/RadioGroupCC"
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <RadioButton
+                            android:id="@+id/radioButtonMesinCC"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mesin"
+                            android:textSize="18sp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:layout_marginBottom="10dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioButtonBSusunCC"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Susun"
+                            android:textSize="18sp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp" />
+                    </RadioGroup>
+
+                    <!-- Spinner di sebelah kanan RadioButton -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_vertical">
+
+                        <Spinner
+                            android:id="@+id/SpinMesinCC"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:layout_marginBottom="10dp"/>
+
+                        <Spinner
+                            android:id="@+id/SpinSusunCC"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Telly"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinTellyCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No SPK"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinSPKCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No SPK Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinSPKAsalCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Grade"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinGradeCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="FJ Profile"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinProfileCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Fisik"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinFisikCC"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No FJ Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoFJAsal"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="-" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No. Lam Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoLaminatingAsal"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="-" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Remark"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/remarkLabel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Maks 50 Karakter"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:maxLength="50"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"/>
 
                 </LinearLayout>
 
             </LinearLayout>
 
+        </ScrollView>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Telly"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinTellyCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No SPK"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinSPKCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No SPK Asal"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinSPKAsalCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Grade"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinGradeCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="FJ Profile"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinProfileCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Fisik"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinFisikCC"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No FJ Asal"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/NoFJAsal"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:padding="6dp"
-                    android:textSize="14sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="-" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No. Lam Asal"
-                    android:textSize="15sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/NoLaminatingAsal"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="32dp"
-                    android:padding="6dp"
-                    android:textSize="14sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="-" />
-
-            </LinearLayout>
-
-        </LinearLayout>
 
     </androidx.cardview.widget.CardView>
 
@@ -426,12 +470,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/card_bottom_right"
-        app:layout_constraintHeight_percent="0.8"
+        app:layout_constraintHeight_percent="0.9"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-
-        android:layout_marginBottom="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
         android:backgroundTint="@color/white">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -454,141 +495,147 @@
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
                 app:layout_constraintHorizontal_weight="1">
 
-                <LinearLayout
+                <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/title_top_right"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Detail"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginBottom="20dp" />
+                    android:fillViewport="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:id="@+id/title_top_right"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Tebal"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
+                            android:text="Detail"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginBottom="20dp" />
 
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailTebalCC"
-                            android:layout_width="0dp"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Tebal"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Tebal"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailTebalCC"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Tebal"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Lebar"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailLebarCC"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Lebar"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Panjang"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailPanjangCC"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Panjang"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pcs"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <EditText
+                                android:id="@+id/DetailPcsCC"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Pcs"
+                                android:inputType="number"
+                                android:completionThreshold="1"
+                                android:imeOptions="actionDone" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Lebar"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailLebarCC"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Lebar"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Panjang"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/DetailPanjangCC"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Panjang"
-                            android:inputType="numberDecimal"
-                            android:completionThreshold="1" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.7"
-                            android:text="Pcs"
-                            android:textSize="15sp"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/DetailPcsCC"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:padding="6dp"
-                            android:textSize="14sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:hint="Pcs"
-                            android:inputType="number"
-                            android:completionThreshold="1"
-                            android:imeOptions="actionDone"
-                            />
-                    </LinearLayout>
-
-                </LinearLayout>
+                </ScrollView>
 
             </androidx.cardview.widget.CardView>
 
@@ -619,7 +666,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Satuan Panjang"
-                        android:textSize="12sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginStart="4dp"
@@ -646,7 +693,7 @@
                                 android:layout_height="28dp"
                                 android:text="Millimeter"
                                 android:checked="true"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:layout_marginBottom="2dp"/>
 
                             <RadioButton
@@ -654,7 +701,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Meter"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:enabled="false"
                                 android:layout_marginBottom="2dp"/>
 
@@ -664,7 +711,7 @@
                                 android:layout_height="28dp"
                                 android:text="Feet"
                                 android:enabled="false"
-                                android:textSize="12sp"/>
+                                android:textSize="15sp"/>
 
                         </RadioGroup>
 
@@ -674,7 +721,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Satuan Tebal-Lebar"
-                        android:textSize="12sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginStart="4dp"
@@ -701,7 +748,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="28dp"
                                 android:text="Millimeter"
-                                android:textSize="12sp"
+                                android:textSize="15sp"
                                 android:checked="true"
                                 android:layout_marginBottom="2dp"/>
 
@@ -711,7 +758,7 @@
                                 android:layout_height="28dp"
                                 android:text="Inch"
                                 android:enabled="false"
-                                android:textSize="12sp"/>
+                                android:textSize="15sp"/>
 
                         </RadioGroup>
 
@@ -749,6 +796,7 @@
                             android:id="@+id/labelCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:textSize="18sp"
                             android:layout_margin="4dp"
                             android:text="Total Label: 0"
                             android:textStyle="bold"
@@ -767,6 +815,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:textSize="18sp"
                                 android:layout_margin="8dp"
                                 android:text="Label"
                                 android:gravity="center"
@@ -782,6 +831,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:textSize="18sp"
                                 android:layout_margin="8dp"
                                 android:text="I"
                                 android:gravity="center"
@@ -797,6 +847,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:textSize="18sp"
                                 android:layout_margin="8dp"
                                 android:text="O"
                                 android:gravity="center"
@@ -890,7 +941,7 @@
                                     android:padding="10sp"
                                     android:text="No"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -899,7 +950,7 @@
                                     android:padding="10sp"
                                     android:text="Tebal"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -908,7 +959,7 @@
                                     android:padding="10sp"
                                     android:text="Lebar"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -917,7 +968,7 @@
                                     android:padding="10sp"
                                     android:text="Panjang"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -926,7 +977,7 @@
                                     android:padding="10sp"
                                     android:text="Pcs"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
 
                                 <TextView
                                     android:layout_width="100dp"
@@ -935,7 +986,7 @@
                                     android:padding="10sp"
                                     android:text="Aksi"
                                     android:textColor="@android:color/white"
-                                    android:textSize="14sp" />
+                                    android:textSize="18sp" />
                             </TableRow>
 
                         </TableLayout>
@@ -958,9 +1009,11 @@
                                 android:layout_width="200dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Jumlah Pcs :"
-                                android:textSize="14sp"
-                                android:textColor="@color/black" />
+                                android:text="Jlh Pcs :"
+                                android:textSize="18sp"
+                                android:textColor="@color/black"
+                                android:gravity="right"
+                                android:textStyle="bold"/>
 
                             <TextView
                                 android:id="@+id/JumlahPcsCC"
@@ -968,7 +1021,8 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="0"
-                                android:textSize="14sp"
+                                android:textSize="18sp"
+                                android:layout_marginStart="8dp"
                                 android:textColor="@color/black" />
 
                         </LinearLayout>
@@ -983,9 +1037,11 @@
                                 android:layout_width="200dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="M3 :"
-                                android:textSize="14sp"
-                                android:textColor="@color/black" />
+                                android:text="M³ :"
+                                android:textSize="18sp"
+                                android:textColor="@color/black"
+                                android:gravity="right"
+                                android:textStyle="bold"/>
 
                             <TextView
                                 android:id="@+id/M3CC"
@@ -993,7 +1049,8 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="0"
-                                android:textSize="14sp"
+                                android:layout_marginStart="8dp"
+                                android:textSize="18sp"
                                 android:textColor="@color/black" />
 
                         </LinearLayout>
@@ -1012,7 +1069,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Afkir / Reject"
-                            android:textSize="14sp"
+                            android:textSize="18sp"
                             android:layout_marginRight="20dp" />
 
                         <com.google.android.material.checkbox.MaterialCheckBox
@@ -1020,7 +1077,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lembur"
-                            android:textSize="14sp" />
+                            android:textSize="18sp" />
 
                     </LinearLayout>
 
@@ -1034,8 +1091,7 @@
 
 
 
-    <!-- CardView Kanan Bawah -->
-    <androidx.cardview.widget.CardView
+    <LinearLayout
         android:id="@+id/card_bottom_right"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -1044,80 +1100,72 @@
         app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:backgroundTint="@color/primary_dark">
 
+
+        <!-- Button Container -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
 
+            <Button
+                android:id="@+id/BtnDataBaruCC"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Data Baru"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
-            <!-- Button Container -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
+            <Button
+                android:id="@+id/BtnSimpanCC"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Simpan"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
 
-                <Button
-                    android:id="@+id/BtnDataBaruCC"
-                    android:layout_width="150dp"
-                    android:layout_height="wrap_content"
-                    android:text="Data Baru"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/BtnBatalCC"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Batal"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
-                <Button
-                    android:id="@+id/BtnSimpanCC"
-                    android:layout_width="150dp"
-                    android:layout_height="wrap_content"
-                    android:text="Simpan"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"
-                    android:visibility="gone"/>
+            <Button
+                android:id="@+id/BtnPrintCC"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Print"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"/>
 
-                <Button
-                    android:id="@+id/BtnBatalCC"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Batal"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/BtnInputDetailCC"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Input Detail"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
 
-                <Button
-                    android:id="@+id/BtnPrintCC"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Print"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"/>
-
-                <Button
-                    android:id="@+id/BtnInputDetailCC"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Input Detail"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:visibility="gone"/>
-
-                <Button
-                    android:id="@+id/BtnHapusDetailCC"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hapus"
-                    android:textSize="20sp"
-                    android:backgroundTint="@color/hijau"
-                    android:visibility="gone"/>
-
-            </LinearLayout>
+            <Button
+                android:id="@+id/BtnHapusDetailCC"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Hapus"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
