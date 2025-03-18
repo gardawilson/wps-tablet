@@ -515,7 +515,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Mld."
+                                android:text="MLD"
                                 android:padding="4dp"
                                 android:textSize="16sp" />
 
@@ -547,7 +547,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Lam."
+                                android:text="LMT"
                                 android:padding="4dp"
                                 android:textSize="16sp" />
 
@@ -572,7 +572,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="CC"
+                                android:text="CCA"
                                 android:padding="4dp"
                                 android:textSize="16sp" />
 
@@ -597,7 +597,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Sand."
+                                android:text="SND"
                                 android:padding="4dp"
                                 android:textSize="16sp" />
 
@@ -622,7 +622,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Pack."
+                                android:text="BJ"
                                 android:padding="4dp"
                                 android:textSize="16sp" />
 

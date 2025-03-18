@@ -1829,13 +1829,13 @@ public class ProductionApi {
                         column = "NoProduksi"; // Kolom untuk tabel CC Akhir
                         break;
                     case "PackingProduksiInputBarangJadi":
-                        column = "NoPacking"; // Kolom untuk Packing
+                        column = "NoProduksi"; // Kolom untuk Packing
                         break;
                     case "LaminatingProduksiInputBarangJadi":
-                        column = "NoLaminating"; // Kolom untuk Laminating
+                        column = "NoProduksi"; // Kolom untuk Laminating
                         break;
                     case "MouldingProduksiInputBarangJadi":
-                        column = "NoMoulding"; // Kolom untuk Moulding
+                        column = "NoProduksi"; // Kolom untuk Moulding
                         break;
                     case "BongkarSusunInputBarangJadi":
                         column = "NoBongkarSusun"; // Kolom untuk Bongkar Susun

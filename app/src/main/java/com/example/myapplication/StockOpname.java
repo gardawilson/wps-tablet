@@ -2,18 +2,29 @@ package com.example.myapplication;
 
 import static com.example.myapplication.api.StockOpnameApi.getLokasiAndBlok;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,13 +34,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.api.StockOpnameApi;
 import com.example.myapplication.model.LokasiBlok;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
+import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.model.UserIDSO;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,40 +53,52 @@ import java.util.concurrent.Executors;
 
 public class StockOpname extends AppCompatActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener {
 
+    // UI Elements
     private ProgressBar loadingIndicator;
-    private RecyclerView recyclerView;
-    private StockOpnameAdapter adapter;
-    private ExecutorService executorService;
-    private List<StockOpnameData> stockOpnames = new ArrayList<>();
-    private boolean isLoading = false;
-    private boolean isLoadingBefore = false;
-    private boolean isLoadingAfter = false;
-    private int currentPage = 0;  // Halaman pertama
-    private final int LIMIT = 100;  // Data per halaman
-
-    // Data untuk RecyclerView kedua
-    private RecyclerView recyclerViewBefore;
-    private RecyclerView recyclerViewAfter;
     private ProgressBar loadingIndicatorBefore;
     private ProgressBar loadingIndicatorAfter;
-    private StockOpnameDataAdapter stockOpnameDataAdapter;
-    private StockOpnameDataInputAdapter stockOpnameDataInputAdapter;
-    private List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
-    private List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
-    private String selectedNoSO;
-    private String selectedTglSO;
-    private int currentPageForNoSO = 0;
-    private int currentPageForNoSOInput = 0;
+    private RecyclerView recyclerView;
+    private RecyclerView recyclerViewBefore;
+    private RecyclerView recyclerViewAfter;
     private SearchView searchView;
     private Button filterButton;
     private Spinner blokSpinner;
     private Spinner idLokasiSpinner;
+    private Spinner spinnerNoSO;
+
+    // Adapters
+    private StockOpnameAdapter adapter;
+    private StockOpnameDataAdapter stockOpnameDataAdapter;
+    private StockOpnameDataInputAdapter stockOpnameDataInputAdapter;
+
+    // Data Lists
+    private List<StockOpnameData> stockOpnames = new ArrayList<>();
+    private List<StockOpnameDataByNoSO> stockOpnameDataByNoSOList = new ArrayList<>();
+    private List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
+
+    // State Flags
+    private boolean isLoading = false;
+    private boolean isLoadingBefore = false;
+    private boolean isLoadingAfter = false;
+
+    // Pagination
+    private int currentPage = 0;  // Halaman pertama
+    private final int LIMIT = 100;  // Data per halaman
+    private int currentPageForNoSO = 0;
+    private int currentPageForNoSOInput = 0;
+
+    // Selected Values
+    private String selectedNoSO;
+    private String selectedTglSO;
     private String selectedLabel;
     private String selectedUserID;
     private String selectedIdLokasi;
     private String selectedBlok;
     private Set<String> selectedLabels = new HashSet<>();
-    private Spinner spinnerNoSO;
+
+    // Executor for background tasks
+    private ExecutorService executorService;
+
 
     private final Handler handler = new Handler();
 
@@ -102,6 +128,279 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         setListeners();
 
+    }
+
+    // Mengambil data tooltip dan menampilkan tooltip
+    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn, boolean isLeft) {
+        executorService.execute(() -> {
+            // Ambil data tooltip menggunakan ProductionApi
+            Log.d("TooltipDebug", "Tooltip dijalankan");
+
+            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+
+            runOnUiThread(() -> {
+                if (tooltipData != null) {
+                    // Pengecekan lebih lanjut jika data dalam tooltipData null
+                    if (tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
+
+                        // Tampilkan tooltip dengan data yang diperoleh
+                        showTooltip(
+                                anchorView,
+                                tooltipData.getNoLabel(),
+                                tooltipData.getFormattedDateTime(),
+                                tooltipData.getJenis(),
+                                tooltipData.getSpkDetail(),
+                                tooltipData.getSpkAsalDetail(),
+                                tooltipData.getNamaGrade(),
+                                tooltipData.isLembur(),
+                                tooltipData.getTableData(),
+                                tooltipData.getTotalPcs(),
+                                tooltipData.getTotalM3(),
+                                tooltipData.getTotalTon(),
+                                tooltipData.getNoPlat(),
+                                tooltipData.getNoKBSuket(),
+                                tableH,
+                                isLeft
+                        );
+
+
+
+                    } else {
+                        // Tampilkan pesan error jika data utama tidak ada
+                        Toast.makeText(this, "Data tooltip tidak lengkap", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Tampilkan pesan error jika tooltipData null
+                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        });
+    }
+
+    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, double totalTon, String noPlat, String noKBSuket, String tableH, boolean isLeft) {
+        // Inflate layout tooltip
+
+        View tooltipView;
+
+        if (isLeft) {
+            tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_left, null);
+        } else {
+            tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        }
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+        ((TextView) tooltipView.findViewById(R.id.tvNoPlat)).setText(noPlat);
+        ((TextView) tooltipView.findViewById(R.id.tvNoKBSuket)).setText(noKBSuket);
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        //TOOLTIP VIEW PRECONDITION
+        if (tableH.equals("ST_h")) {
+            tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
+
+            // Tambahkan Baris untuk Total Ton
+            TableRow tonRow = new TableRow(this);
+            tonRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+
+            tonRow.setBackgroundColor(Color.WHITE);
+
+            // Cell kosong untuk memisahkan m3 dengan tabel
+            for (int i = 0; i < 2; i++) {
+                TextView emptyCell = new TextView(this);
+                emptyCell.setText(""); // Cell kosong
+                tonRow.addView(emptyCell);
+            }
+
+            TextView tonLabel = new TextView(this);
+            tonLabel.setText("Ton :");
+            tonLabel.setGravity(Gravity.END);
+            tonLabel.setPadding(8, 8, 8, 8);
+            tonLabel.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonLabel);
+
+            // Cell untuk Total Ton
+            TextView tonValue = new TextView(this);
+            tonValue.setText(df.format(totalTon));
+            tonValue.setGravity(Gravity.CENTER);
+            tonValue.setPadding(8, 8, 8, 8);
+            tonValue.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonValue);
+
+            // Tambahkan m3Row ke TableLayout
+            tableLayout.addView(tonRow);
+        } else {
+            tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+        }
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = isLeft ? location[0] + anchorView.getWidth() : location[0] - tooltipWidth;
+
+        // Setelah itu, gunakan nilai x untuk menampilkan tooltip atau menempatkan elemen di posisi yang diinginkan
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int screenHeight = displayMetrics.heightPixels;
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        Log.d("TooltipDebug", "TrianglePointer Y: " + y);
+        Log.d("TooltipDebug", "TrianglePointer tooltip : " + (screenHeight - tooltipHeight) );
+
+        if (y < 60) {
+            trianglePointer.setY(y - 60);
+        }
+        else if(y > (screenHeight - tooltipHeight)){
+            trianglePointer.setY(y - (screenHeight - tooltipHeight));
+        }
+
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
     }
 
 
@@ -298,7 +597,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                         }
                     });
                 } else {
-                    Toast.makeText(StockOpname.this, "Tidak ada data spinnerNoSO", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(StockOpname.this, "Tidak ada Nomor Stock Opname yang aktif", Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -541,12 +840,16 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
                     Log.d("SearchView", "Teks kosong, memanggil fetchDataInputByNoSO");
-                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID,0);
-                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
+//                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID,0);
+//                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
+                    handler.post(fetchDataRunnable);  // Jalankan kembali fetchDataRunnable
+
                 } else {
                     Log.d("SearchView", "Teks tidak kosong, memanggil searchDataInputByNoSO");
                     searchDataInputByNoSO(newText);
                     searchDataByNoSO(newText);
+                    handler.removeCallbacks(fetchDataRunnable);  // Hentikan polling sementara
+
                 }
                 return true;
             }
@@ -589,6 +892,89 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             // Mulai fetch dari awal
             fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
             filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID, currentPageForNoSOInput);
+        });
+
+        stockOpnameDataAdapter.setOnItemClickListener(new StockOpnameDataAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                // Ambil data item yang diklik
+                StockOpnameDataByNoSO clickedItem = stockOpnameDataByNoSOList.get(position);
+
+                // Gunakan post() untuk memastikan eksekusi setelah RecyclerView selesai memperbarui tampilan
+                recyclerViewBefore.post(() -> {
+                    RecyclerView.ViewHolder holder = recyclerViewBefore.findViewHolderForAdapterPosition(position);
+                    if (holder != null) {
+                        // Dapatkan view item dari ViewHolder
+                        View itemView = holder.itemView;
+
+                        if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("E")) {
+                            // Panggil fungsi fetchDataAndShowTooltip dengan itemView
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "ST_h", "ST_d", "NoST", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("R")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "S4S_h", "S4S_d", "NoS4S", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("S")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "FJ_h", "FJ_d", "NoFJ", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("T")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Moulding_h", "Moulding_d", "NoMoulding", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("U")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Laminating_h", "Laminating_d", "NoLaminating", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("V")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "CCAkhir_h", "CCAkhir_d", "NoCCAkhir", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("W")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Sanding_h", "Sanding_d", "NoSanding", true);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("I")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "BarangJadi_h", "BarangJadi_d", "NoBJ", true);
+                        } else {
+                            Toast.makeText(StockOpname.this, "Tidak ada data " + clickedItem.getNoLabel(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+                // Menampilkan toast sebagai feedback
+//                Toast.makeText(StockOpname.this, "Item clicked: " + clickedItem.getNoLabel(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+        stockOpnameDataInputAdapter.setOnItemClickListener(new StockOpnameDataInputAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                // Ambil data item yang diklik
+                StockOpnameDataByNoSO clickedItem = stockOpnameDataByNoSOList.get(position);
+
+                // Gunakan post() untuk memastikan eksekusi setelah RecyclerView selesai memperbarui tampilan
+                recyclerViewBefore.post(() -> {
+                    RecyclerView.ViewHolder holder = recyclerViewAfter.findViewHolderForAdapterPosition(position);
+                    if (holder != null) {
+                        // Dapatkan view item dari ViewHolder
+                        View itemView = holder.itemView;
+
+                        if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("E")) {
+                            // Panggil fungsi fetchDataAndShowTooltip dengan itemView
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "ST_h", "ST_d", "NoST", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("R")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "S4S_h", "S4S_d", "NoS4S", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("S")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "FJ_h", "FJ_d", "NoFJ", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("T")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Moulding_h", "Moulding_d", "NoMoulding", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("U")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Laminating_h", "Laminating_d", "NoLaminating", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("V")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "CCAkhir_h", "CCAkhir_d", "NoCCAkhir", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("W")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Sanding_h", "Sanding_d", "NoSanding", false);
+                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("I")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "BarangJadi_h", "BarangJadi_d", "NoBJ", false);
+                        } else {
+                            Toast.makeText(StockOpname.this, "Tidak ada data " + clickedItem.getNoLabel(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+                // Menampilkan toast sebagai feedback
+//                Toast.makeText(StockOpname.this, "Item clicked: " + clickedItem.getNoLabel(), Toast.LENGTH_SHORT).show();
+            }
         });
 
         recyclerView.addOnScrollListener(createScrollListener(true));
@@ -838,7 +1224,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     adapter.notifyDataSetChanged();
                     currentPage++;
                 } else {
-                    showToast("Tidak ada data lagi");
+                    showToast("Tidak ada data");
                 }
                 showLoadingIndicator(false);
                 isLoading = false;
@@ -938,19 +1324,19 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         });
     }
 
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        // Mulai polling saat Activity aktif
-//        handler.post(fetchDataRunnable);
-//    }
-//
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        // Hentikan polling saat Activity tidak aktif
-//        handler.removeCallbacks(fetchDataRunnable);
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Mulai polling saat Activity aktif
+        handler.post(fetchDataRunnable);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Hentikan polling saat Activity tidak aktif
+        handler.removeCallbacks(fetchDataRunnable);
+    }
 
 
 

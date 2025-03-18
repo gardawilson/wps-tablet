@@ -1,0 +1,328 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <!-- Bubble Background -->
+    <LinearLayout
+        android:id="@+id/tooltipContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:layout_marginLeft="15dp"
+        android:background="@drawable/tooltip_background"
+        android:elevation="4dp">
+
+        <!-- NoS4S -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Label -->
+            <TextView
+                android:id="@+id/tvNoLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <!-- No Kayu Bulat -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Label -->
+            <TextView
+                android:id="@+id/tvNoKBSuket"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Date -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <!-- Label -->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Tanggal/Jam"
+                android:textColor="@android:color/black"
+                android:singleLine="true" />
+
+            <!-- Titik Dua -->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <!-- Nilai Data -->
+            <TextView
+                android:id="@+id/tvDateTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- Jenis -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Jenis"
+                android:textColor="@android:color/black"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvJenis"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- SPK -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="SPK"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvNoSPK"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Plat Truk -->
+        <LinearLayout
+            android:id="@+id/fieldPlatTruk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Plat Truk"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvNoPlat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- SPK Asal -->
+        <LinearLayout
+            android:id="@+id/fieldNoSPKAsal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="SPK Asal"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvNoSPKAsal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Grade -->
+        <LinearLayout
+            android:id="@+id/fieldGrade"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Grade"
+                android:textColor="@android:color/black"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvNamaGrade"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:singleLine="true"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- IsLembur -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:text="Lembur"
+                android:textColor="@android:color/black"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.1"
+                android:text=":"
+                android:textColor="@android:color/black"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/tvIsLembur"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                android:text="-"
+                android:textColor="@android:color/black"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical">
+
+            <!-- Isi Tabel -->
+            <ScrollView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TableLayout
+                        android:id="@+id/tabelDetailTooltip"
+                        android:layout_width="300dp"
+                        android:layout_height="match_parent"
+                        android:background="#EFEFEF"
+                        android:stretchColumns="*">
+
+                    </TableLayout>
+
+                </RelativeLayout>
+            </ScrollView>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Triangle Pointer -->
+    <ImageView
+        android:id="@+id/trianglePointer"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/triangle_pointer"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/tooltipContent"
+        android:layout_marginRight="-17dp"
+        android:elevation="10dp"
+        android:rotation="180"/>
+
+</RelativeLayout>

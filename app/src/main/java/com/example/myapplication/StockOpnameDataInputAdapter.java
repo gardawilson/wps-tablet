@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -15,6 +16,17 @@ public class StockOpnameDataInputAdapter extends RecyclerView.Adapter<StockOpnam
 
     private List<StockOpnameDataInputByNoSO> dataList;
     private OnDeleteConfirmationListener deleteListener;  // Menyimpan listener untuk menghubungkan dengan activity
+    private OnItemClickListener listener;
+
+    // Interface untuk menangani item klik
+    public interface OnItemClickListener {
+        void onItemClick(int position);
+    }
+
+    // Setter untuk listener
+    public void setOnItemClickListener(StockOpnameDataInputAdapter.OnItemClickListener listener) {
+        this.listener = listener;
+    }
 
     // Konstruktor untuk menerima listener
     public StockOpnameDataInputAdapter(List<StockOpnameDataInputByNoSO> dataList, OnDeleteConfirmationListener deleteListener) {
@@ -37,6 +49,13 @@ public class StockOpnameDataInputAdapter extends RecyclerView.Adapter<StockOpnam
         holder.noLabelInput.setText(item.getNoLabelInput());
         holder.idLokasiInput.setText(item.getIdLokasiInput());
         holder.userIDInput.setText(item.getUserIdInput());
+
+        // Menambahkan listener untuk klik pada itemView
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(position);  // Panggil listener ketika item diklik
+            }
+        });
 
         // Menambahkan listener untuk long press pada itemView
         holder.itemView.setOnLongClickListener(v -> {

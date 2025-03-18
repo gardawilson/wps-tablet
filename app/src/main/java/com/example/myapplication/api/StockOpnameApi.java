@@ -73,68 +73,91 @@ public class StockOpnameApi {
                 if (!isFirstQuery) query.append("UNION ALL ");
                 switch (label) {
                     case "ST":
-                        query.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
-                                "FROM [dbo].[StockOpnameST] sost " +
-                                "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
-                                "WHERE sost.[NoSO] = ? " +
-                                "AND sost.[NoST] NOT IN (SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ?) " +
-                                "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) ");
+                        query.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi "
+                                + "FROM [dbo].[StockOpnameST] sost "
+                                + "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] "
+                                + "WHERE sost.[NoSO] = ? "
+                                + "AND sost.[NoST] NOT IN ( "
+                                + "    SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL)");
                         break;
                     case "S4S":
-                        query.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
-                                "FROM [dbo].[StockOpnameS4S] sos4s " +
-                                "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
-                                "WHERE sos4s.[NoSO] = ? " +
-                                "AND sos4s.[NoS4S] NOT IN (SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ?) " +
-                                "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) ");
+                        query.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi "
+                                + "FROM [dbo].[StockOpnameS4S] sos4s "
+                                + "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] "
+                                + "INNER JOIN [dbo].[S4S_d] s4d ON sos4s.[NoS4S] = s4d.NoS4S " // INNER JOIN dengan S4S_d
+                                + "WHERE sos4s.[NoSO] = ? "
+                                + "AND sos4s.[NoS4S] NOT IN ( "
+                                + "    SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL)");
                         break;
                     case "FJ":
-                        query.append("SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
-                                "FROM [dbo].[StockOpnameFJ] sofj " +
-                                "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
-                                "WHERE sofj.[NoSO] = ? " +
-                                "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
-                                "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi "
+                                + "FROM [dbo].[StockOpnameFJ] sofj "
+                                + "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] "
+                                + "INNER JOIN [dbo].[FJ_d] fjd ON sofj.[NoFJ] = fjd.NoFJ " // INNER JOIN dengan FJ_d
+                                + "WHERE sofj.[NoSO] = ? "
+                                + "AND sofj.[NoFJ] NOT IN ( "
+                                + "    SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL)");
                         break;
                     case "MLD":
-                        query.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
-                                "FROM [dbo].[StockOpnameMoulding] som " +
-                                "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
-                                "WHERE som.[NoSO] = ? " +
-                                "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
-                                "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
+                        query.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi "
+                                + "FROM [dbo].[StockOpnameMoulding] som "
+                                + "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] "
+                                + "INNER JOIN [dbo].[Moulding_d] mould ON som.[NoMoulding] = mould.NoMoulding "
+                                + "WHERE som.[NoSO] = ? "
+                                + "AND som.[NoMoulding] NOT IN ( "
+                                + "    SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL)");
                         break;
                     case "LMT":
-                        query.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
-                                "FROM [dbo].[StockOpnameLaminating] sol " +
-                                "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
-                                "WHERE sol.[NoSO] = ? " +
-                                "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
-                                "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi "
+                                + "FROM [dbo].[StockOpnameLaminating] sol "
+                                + "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] "
+                                + "INNER JOIN [dbo].[Laminating_d] ld ON sol.[NoLaminating] = ld.NoLaminating " // INNER JOIN dengan Laminating_d
+                                + "WHERE sol.[NoSO] = ? "
+                                + "AND sol.[NoLaminating] NOT IN ( "
+                                + "    SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL)");
                         break;
                     case "CC":
-                        query.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
-                                "FROM [dbo].[StockOpnameCCAkhir] soc " +
-                                "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
-                                "WHERE soc.[NoSO] = ? " +
-                                "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
-                                "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
+                        query.append( "SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi "
+                                + "FROM [dbo].[StockOpnameCCAkhir] soc "
+                                + "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] "
+                                + "INNER JOIN [dbo].[CCAkhir_d] ccad ON soc.[NoCCAkhir] = ccad.NoCCAkhir " // INNER JOIN dengan CCAkhir_d
+                                + "WHERE soc.[NoSO] = ? "
+                                + "AND soc.[NoCCAkhir] NOT IN ( "
+                                + "    SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL)");
                         break;
                     case "SND":
-                        query.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
-                                "FROM [dbo].[StockOpnameSanding] sosand " +
-                                "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
-                                "WHERE sosand.[NoSO] = ? " +
-                                "AND sosand.[NoSanding] NOT IN (SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ?) " +
-                                "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi "
+                                + "FROM [dbo].[StockOpnameSanding] sosand "
+                                + "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] "
+                                + "INNER JOIN [dbo].[Sanding_d] sandd ON sosand.[NoSanding] = sandd.NoSanding " // INNER JOIN dengan Sanding_d
+                                + "WHERE sosand.[NoSO] = ? "
+                                + "AND sosand.[NoSanding] NOT IN ( "
+                                + "    SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL)");
                         break;
                     case "BJ":
-                        query.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
-                                "FROM [dbo].[StockOpnameBJ] sobj " +
-                                "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
-                                "WHERE sobj.[NoSO] = ? " +
-                                "AND sobj.[NoBJ] NOT IN (SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ?) " +
-                                "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) ");
+                        query.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi "
+                                + "FROM [dbo].[StockOpnameBJ] sobj "
+                                + "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] "
+                                + "INNER JOIN [dbo].[BarangJadi_d] bjd ON sobj.[NoBJ] = bjd.NoBJ " // INNER JOIN dengan BarangJadi_d
+                                + "WHERE sobj.[NoSO] = ? "
+                                + "AND sobj.[NoBJ] NOT IN ( "
+                                + "    SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL)");
                         break;
                 }
                 noSOParamCount += 3; // Setiap subquery membutuhkan 3 parameter: NoSO, NoSO, dan tglSO
@@ -145,7 +168,7 @@ public class StockOpnameApi {
         query.append(") AS c LEFT JOIN [dbo].[MstLokasi] AS m ON c.IdLokasi = m.IdLokasi WHERE 1=1 "); // Gabungkan dengan MstLokasi
 
         // Tambahkan filter untuk Blok jika tidak "Semua"
-        if (!selectedBlok.equals("Semua")) {
+        if (selectedBlok != null && !selectedBlok.equals("Semua")) {
             query.append("AND m.Blok = ? ");
         }
 
@@ -171,7 +194,7 @@ public class StockOpnameApi {
             }
 
             // Set parameter Blok jika ada
-            if (!selectedBlok.equals("Semua")) {
+            if (selectedBlok != null && !selectedBlok.equals("Semua")) {
                 stmt.setString(currentParamIndex++, selectedBlok);
             }
 
@@ -215,68 +238,91 @@ public class StockOpnameApi {
                 if (!isFirstQuery) query.append("UNION ALL ");
                 switch (label) {
                     case "ST":
-                        query.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
-                                "FROM [dbo].[StockOpnameST] sost " +
-                                "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
-                                "WHERE sost.[NoSO] = ? " +
-                                "AND sost.[NoST] NOT IN (SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ?) " +
-                                "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) ");
+                        query.append("SELECT sost.[NoST] AS NoLabel, sost.IdLokasi "
+                                + "FROM [dbo].[StockOpnameST] sost "
+                                + "INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] "
+                                + "WHERE sost.[NoSO] = ? "
+                                + "AND sost.[NoST] NOT IN ( "
+                                + "    SELECT [NoST] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL)");
                         break;
                     case "S4S":
-                        query.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
-                                "FROM [dbo].[StockOpnameS4S] sos4s " +
-                                "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
-                                "WHERE sos4s.[NoSO] = ? " +
-                                "AND sos4s.[NoS4S] NOT IN (SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ?) " +
-                                "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) ");
+                        query.append("SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi "
+                                + "FROM [dbo].[StockOpnameS4S] sos4s "
+                                + "INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] "
+                                + "INNER JOIN [dbo].[S4S_d] s4d ON sos4s.[NoS4S] = s4d.NoS4S " // INNER JOIN dengan S4S_d
+                                + "WHERE sos4s.[NoSO] = ? "
+                                + "AND sos4s.[NoS4S] NOT IN ( "
+                                + "    SELECT [NoS4S] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL)");
                         break;
                     case "FJ":
-                        query.append("SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
-                                "FROM [dbo].[StockOpnameFJ] sofj " +
-                                "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
-                                "WHERE sofj.[NoSO] = ? " +
-                                "AND sofj.[NoFJ] NOT IN (SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ?) " +
-                                "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi "
+                                + "FROM [dbo].[StockOpnameFJ] sofj "
+                                + "INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] "
+                                + "INNER JOIN [dbo].[FJ_d] fjd ON sofj.[NoFJ] = fjd.NoFJ " // INNER JOIN dengan FJ_d
+                                + "WHERE sofj.[NoSO] = ? "
+                                + "AND sofj.[NoFJ] NOT IN ( "
+                                + "    SELECT [NoFJ] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL)");
                         break;
                     case "MLD":
-                        query.append("SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
-                                "FROM [dbo].[StockOpnameMoulding] som " +
-                                "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
-                                "WHERE som.[NoSO] = ? " +
-                                "AND som.[NoMoulding] NOT IN (SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ?) " +
-                                "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi "
+                                + "FROM [dbo].[StockOpnameMoulding] som "
+                                + "INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] "
+                                + "INNER JOIN [dbo].[Moulding_d] mould ON som.[NoMoulding] = mould.nomoulding "
+                                + "WHERE som.[NoSO] = ? "
+                                + "AND som.[NoMoulding] NOT IN ( "
+                                + "    SELECT [NoMoulding] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL)");
                         break;
                     case "LMT":
-                        query.append("SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
-                                "FROM [dbo].[StockOpnameLaminating] sol " +
-                                "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
-                                "WHERE sol.[NoSO] = ? " +
-                                "AND sol.[NoLaminating] NOT IN (SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ?) " +
-                                "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) ");
+                        query.append( "SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi "
+                                + "FROM [dbo].[StockOpnameLaminating] sol "
+                                + "INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] "
+                                + "INNER JOIN [dbo].[Laminating_d] ld ON sol.[NoLaminating] = ld.NoLaminating " // INNER JOIN dengan Laminating_d
+                                + "WHERE sol.[NoSO] = ? "
+                                + "AND sol.[NoLaminating] NOT IN ( "
+                                + "    SELECT [NoLaminating] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL)");
                         break;
                     case "CC":
-                        query.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
-                                "FROM [dbo].[StockOpnameCCAkhir] soc " +
-                                "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
-                                "WHERE soc.[NoSO] = ? " +
-                                "AND soc.[NoCCAkhir] NOT IN (SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ?) " +
-                                "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) ");
+                        query.append("SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi "
+                                + "FROM [dbo].[StockOpnameCCAkhir] soc "
+                                + "INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] "
+                                + "INNER JOIN [dbo].[CCAkhir_d] ccad ON soc.[NoCCAkhir] = ccad.NoCCAkhir " // INNER JOIN dengan CCAkhir_d
+                                + "WHERE soc.[NoSO] = ? "
+                                + "AND soc.[NoCCAkhir] NOT IN ( "
+                                + "    SELECT [NoCCAkhir] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL)");
                         break;
                     case "SND":
-                        query.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
-                                "FROM [dbo].[StockOpnameSanding] sosand " +
-                                "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
-                                "WHERE sosand.[NoSO] = ? " +
-                                "AND sosand.[NoSanding] NOT IN (SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ?) " +
-                                "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) ");
+                        query.append("SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi "
+                                + "FROM [dbo].[StockOpnameSanding] sosand "
+                                + "INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] "
+                                + "INNER JOIN [dbo].[Sanding_d] sandd ON sosand.[NoSanding] = sandd.NoSanding " // INNER JOIN dengan Sanding_d
+                                + "WHERE sosand.[NoSO] = ? "
+                                + "AND sosand.[NoSanding] NOT IN ( "
+                                + "    SELECT [NoSanding] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL)");
                         break;
                     case "BJ":
-                        query.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
-                                "FROM [dbo].[StockOpnameBJ] sobj " +
-                                "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
-                                "WHERE sobj.[NoSO] = ? " +
-                                "AND sobj.[NoBJ] NOT IN (SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ?) " +
-                                "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) ");
+                        query.append("SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi "
+                                + "FROM [dbo].[StockOpnameBJ] sobj "
+                                + "INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] "
+                                + "INNER JOIN [dbo].[BarangJadi_d] bjd ON sobj.[NoBJ] = bjd.NoBJ " // INNER JOIN dengan BarangJadi_d
+                                + "WHERE sobj.[NoSO] = ? "
+                                + "AND sobj.[NoBJ] NOT IN ( "
+                                + "    SELECT [NoBJ] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? "
+                                + ") "
+                                + "AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL)");
                         break;
                 }
                 noSOParamCount += 3; // Setiap subquery membutuhkan 3 parameter: NoSO, NoSO, dan tglSO
@@ -287,7 +333,7 @@ public class StockOpnameApi {
         query.append(") AS c LEFT JOIN [dbo].[MstLokasi] AS m ON c.IdLokasi = m.IdLokasi WHERE 1=1 "); // Gabungkan dengan MstLokasi
 
         // Tambahkan filter untuk Blok jika tidak "Semua"
-        if (!selectedBlok.equals("Semua")) {
+        if (selectedBlok != null && !selectedBlok.equals("Semua")) {
             query.append("AND m.Blok = ? ");
         }
 
@@ -312,7 +358,7 @@ public class StockOpnameApi {
             }
 
             // Set parameter Blok jika ada
-            if (!selectedBlok.equals("Semua")) {
+            if (selectedBlok != null && !selectedBlok.equals("Semua")) {
                 stmt.setString(currentParamIndex++, selectedBlok);
             }
 
@@ -794,35 +840,35 @@ public class StockOpnameApi {
 
         // Query untuk mengambil data UserID dengan UNION
         String query = "SELECT sh.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_ST] sh " +
+                "FROM [dbo].[StockOpname_Hasil_d_ST] sh " +
                 "WHERE sh.NoSO = ? " +
                 "UNION " +
                 "SELECT s4s.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_S4S] s4s " +
+                "FROM [dbo].[StockOpname_Hasil_d_S4S] s4s " +
                 "WHERE s4s.NoSO = ? " +
                 "UNION " +
                 "SELECT fj.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_FJ] fj " +
+                "FROM [dbo].[StockOpname_Hasil_d_FJ] fj " +
                 "WHERE fj.NoSO = ? " +
                 "UNION " +
                 "SELECT moulding.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_Moulding] moulding " +
+                "FROM [dbo].[StockOpname_Hasil_d_Moulding] moulding " +
                 "WHERE moulding.NoSO = ? " +
                 "UNION " +
                 "SELECT laminating.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_Laminating] laminating " +
+                "FROM [dbo].[StockOpname_Hasil_d_Laminating] laminating " +
                 "WHERE laminating.NoSO = ? " +
                 "UNION " +
                 "SELECT cca.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_CCAkhir] cca " +
+                "FROM [dbo].[StockOpname_Hasil_d_CCAkhir] cca " +
                 "WHERE cca.NoSO = ? " +
                 "UNION " +
                 "SELECT sanding.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_Sanding] sanding " +
+                "FROM [dbo].[StockOpname_Hasil_d_Sanding] sanding " +
                 "WHERE sanding.NoSO = ? " +
                 "UNION " +
                 "SELECT bj.UserID " +
-                "FROM [WPS_Test].[dbo].[StockOpname_Hasil_d_BJ] bj " +
+                "FROM [dbo].[StockOpname_Hasil_d_BJ] bj " +
                 "WHERE bj.NoSO = ?";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -832,6 +878,7 @@ public class StockOpnameApi {
             for (int i = 1; i <= 8; i++) {
                 stmt.setString(i, noSO);  // Set parameter NoSO
             }
+            Log.d("Database Query", "Executing query with NoSO: " + noSO);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -842,10 +889,12 @@ public class StockOpnameApi {
 
                     // Menambahkan UserIDSO ke list
                     userList.add(new UserIDSO(userIDSO));
+                    Log.d("Database Result", "Fetched UserID: " + userIDSO);
+
                 }
             }
         } catch (SQLException e) {
-            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+            Log.e("Database Fetch Error", "Error fetching UserID: " + e.getMessage());
         }
 
         return userList;
@@ -919,7 +968,7 @@ public class StockOpnameApi {
         Log.d("valuefilter", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
 
         // Menentukan query dasar
-        StringBuilder query = new StringBuilder("SELECT s.NoLabel, s.IdLokasi, s.UserID FROM ( ");
+        StringBuilder query = new StringBuilder("SELECT s.NoLabel, s.IdLokasi, s.UserID, s.DateTimeScan FROM ( ");
         int noSOParamCount = 0; // Menghitung jumlah parameter NoSO
         boolean isFirstQuery = true;  // Flag untuk memastikan UNION ALL tidak ditambahkan di awal
 
@@ -929,28 +978,28 @@ public class StockOpnameApi {
                 if (!isFirstQuery) query.append("UNION ALL ");
                 switch (label) {
                     case "ST":
-                        query.append("SELECT [NoST] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoST] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
                         break;
                     case "S4S":
-                        query.append("SELECT [NoS4S] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoS4S] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
                         break;
                     case "FJ":
-                        query.append("SELECT [NoFJ] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoFJ] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
                         break;
                     case "MLD":
-                        query.append("SELECT [NoMoulding] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoMoulding] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
                         break;
                     case "LMT":
-                        query.append("SELECT [NoLaminating] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoLaminating] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
                         break;
                     case "CC":
-                        query.append("SELECT [NoCCAkhir] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoCCAkhir] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
                         break;
                     case "SND":
-                        query.append("SELECT [NoSanding] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoSanding] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
                         break;
                     case "BJ":
-                        query.append("SELECT [NoBJ] AS NoLabel, [IdLokasi], [UserID] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
+                        query.append("SELECT [NoBJ] AS NoLabel, [IdLokasi], [UserID], [DateTimeScan] FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
                         break;
                 }
                 noSOParamCount++;
@@ -981,7 +1030,7 @@ public class StockOpnameApi {
             }
         }
 
-        query.append("ORDER BY s.NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        query.append("ORDER BY s.DateTimeScan DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         Log.d("SQL Query", query.toString()); // Log the query for debugging purposes
         Log.d("Number of Parameters", String.valueOf(noSOParamCount)); // Log number of parameters
@@ -1079,7 +1128,7 @@ public class StockOpnameApi {
         query.append(") AS s LEFT JOIN [dbo].[MstLokasi] AS m ON s.IdLokasi = m.IdLokasi WHERE 1=1 "); // Gunakan LEFT JOIN
 
         // Filter berdasarkan Blok dan IdLokasi
-        if (!selectedBlok.equals("Semua")) {
+        if (selectedBlok != null && !selectedBlok.equals("Semua")) {
             if (selectedIdLokasi.equals("Semua")) {
                 // Jika Blok = "A" dan IdLokasi = "Semua", filter berdasarkan Blok saja
                 query.append("AND m.Blok = ? ");
@@ -1112,7 +1161,7 @@ public class StockOpnameApi {
             }
 
             // Set parameter Blok dan IdLokasi jika ada
-            if (!selectedBlok.equals("Semua")) {
+            if (selectedBlok != null && !selectedBlok.equals("Semua")) {
                 stmt.setString(currentParamIndex++, selectedBlok); // Set Blok
                 if (!selectedIdLokasi.equals("Semua")) {
                     stmt.setString(currentParamIndex++, selectedIdLokasi); // Set IdLokasi

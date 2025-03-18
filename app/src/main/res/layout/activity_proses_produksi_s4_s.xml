@@ -400,197 +400,246 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/jumlahLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/jumlahLabel"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E0E0E0">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_weight="1"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#E0E0E0">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                        android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="S4S"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="ST"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:id="@+id/sumS4SLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="ST"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:id="@+id/sumSTLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="S4S"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:id="@+id/sumSTLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Mld."
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:id="@+id/sumS4SLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="FJ"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
 
-                        <TextView
-                            android:id="@+id/sumMouldingLabel"
-                            android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumFJLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="MLD"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumMouldingLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="LMT"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumLaminatingLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="CCA"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumCCLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="SND"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumSandingLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="BJ"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=":"
+                                android:padding="4dp"
+                                android:gravity="center"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/sumReprosesLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="0"
+                                android:padding="4dp"
+                                android:textSize="16sp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                </com.google.android.material.card.MaterialCardView>
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="FJ"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/sumFJLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="CC"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/sumCCLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Repro."
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=":"
-                            android:padding="4dp"
-                            android:gravity="center"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/sumReprosesLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0"
-                            android:padding="4dp"
-                            android:textSize="16sp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-        </LinearLayout>
+            </LinearLayout>
 
 
             <TableLayout
