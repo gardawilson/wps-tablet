@@ -1077,8 +1077,8 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 TextView totalCountLabelBefore = findViewById(R.id.countLabelBefore);
                 TextView totalCountLabelAfter = findViewById(R.id.countLabelAfter);
                 if (totalCountLabelBefore != null && totalCountLabelAfter != null) {
-                    totalCountLabelBefore.setText("Total : " + totalCountBefore); // Menampilkan total count
-                    totalCountLabelAfter.setText("Total : " + totalCountAfter); // Menampilkan total count
+                    totalCountLabelBefore.setText("Sisa Label : " + totalCountBefore); // Menampilkan total count
+                    totalCountLabelAfter.setText("Total Label : " + totalCountAfter); // Menampilkan total count
                 }
             });
         });

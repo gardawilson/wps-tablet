@@ -85,7 +85,7 @@
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
                         android:visibility="gone"
-                        android:hint="NoS4S_display" />
+                        android:hint="U.XXXXXX" />
                 </FrameLayout>
 
             </LinearLayout>

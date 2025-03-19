@@ -47,6 +47,8 @@ import android.view.View;
 import android.app.AlertDialog;
 import android.Manifest;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.OnBackPressedDispatcher;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
@@ -189,7 +191,6 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         sumMouldingLabel = findViewById(R.id.sumMouldingLabel);
         sumFJLabel = findViewById(R.id.sumFJLabel);
         sumCCLabel = findViewById(R.id.sumCCLabel);
-        sumReprosesLabel = findViewById(R.id.sumReprosesLabel);
         borderTop = findViewById(R.id.borderTop);
         borderBottom = findViewById(R.id.borderBottom);
         borderLeft = findViewById(R.id.borderLeft);
@@ -210,6 +211,23 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
+
+
+        // Menangani tombol back menggunakan OnBackPressedDispatcher
+        OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
+
+        onBackPressedDispatcher.addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (scannedResults != null && !scannedResults.isEmpty()) {
+                    showExitConfirmationDialog();
+                } else {
+                    remove();  // Hapus callback agar tidak dipanggil lagi
+                    // Jika tidak ada data di list, lakukan back seperti biasa
+                    onBackPressedDispatcher.onBackPressed();  // Memanggil aksi default back
+                }
+            }
+        });
 
 
         btnInputManual.setOnClickListener(new View.OnClickListener() {
@@ -610,7 +628,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             // Tetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -620,7 +638,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                 if (selectedRow != null) {
                     int previousRowIndex = (int) selectedRow.getTag();
                     if (previousRowIndex % 2 == 0) {
-                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.gray));
+                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
                     } else {
                         selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
                     }
@@ -674,7 +692,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             // Tetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -711,7 +729,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             // Tetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.gray)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
             } else {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
@@ -1200,7 +1218,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT,
                     TableRow.LayoutParams.WRAP_CONTENT
             ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
 
             for (String cell : row) {
                 TextView textView = new TextView(this);
@@ -1330,6 +1348,46 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------HELPER METHOD-------------------------- -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void showExitConfirmationDialog() {
+        // Inflate layout custom_dialog_layout
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.custom_dialog_confirmation_layout, null);
+
+        // Buat AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        builder.setCancelable(false);  // Nonaktifkan untuk tidak bisa keluar tanpa konfirmasi
+
+        // Ambil referensi tombol dari layout dan set listeners
+        Button btnSave = dialogView.findViewById(R.id.btn_save);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        Button btnNo = dialogView.findViewById(R.id.btn_no);
+
+        // Buat dan tampilkan dialog
+        AlertDialog dialog = builder.create();
+
+        // Set listener untuk tombol "Simpan"
+        btnSave.setOnClickListener(v -> {
+            saveScannedResultsToDatabase();  // Simpan data
+            dialog.dismiss();  // Tutup dialog setelah simpan
+        });
+
+        // Set listener untuk tombol "Tidak"
+        btnNo.setOnClickListener(v -> {
+            scannedResults.clear();
+            getOnBackPressedDispatcher().onBackPressed();  // Menyimulasikan tombol back untuk keluar dari halaman
+            dialog.dismiss();  // Tutup dialog setelah aksi "Tidak"
+        });
+
+        // Set listener untuk tombol "Batal"
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();  // Tutup dialog tanpa melakukan aksi lainnya
+        });
+
+        // Tampilkan dialog
+        dialog.show();
+    }
 
 
     private void playSound(int soundResource) {

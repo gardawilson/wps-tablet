@@ -122,6 +122,8 @@ import com.itextpdf.kernel.geom.Rectangle;
 
 import java.io.File;
 import java.text.ParseException;
+import java.util.concurrent.CountDownLatch;
+
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 
@@ -132,6 +134,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class FingerJoint extends AppCompatActivity {
 
     private String username;
+    private String noFJ;
     private SearchView NoFJ;
     private EditText DateFJ;
     private EditText TimeFJ;
@@ -179,16 +182,6 @@ public class FingerJoint extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-
-                new DeleteLatestNoFJTask().execute();
-
-                finish();
-            }
-        });
 
 //        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_finger_joint);
@@ -291,7 +284,7 @@ public class FingerJoint extends AppCompatActivity {
                     String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
 
                     // Validasi input kosong
-                    if (noFJ.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                    if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                         Toast.makeText(FingerJoint.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
                         return true;
                     }
@@ -471,7 +464,7 @@ public class FingerJoint extends AppCompatActivity {
             Completable.mergeArray(
                             Completable.fromAction(this::setCurrentDateTime),
                             Completable.fromAction(() -> setCreateMode(true)),
-                            Completable.fromAction(() -> new SetAndSaveNoFJoinTaskFJ().execute()),
+//                            Completable.fromAction(() -> new SetAndSaveNoFJoinTaskFJ().execute()),
                             Completable.fromAction(() -> new LoadJenisKayuTaskFJ().execute()),
                             Completable.fromAction(() -> new LoadTellyTaskFJ().execute()),
                             Completable.fromAction(() -> new LoadSPKTaskFJ().execute()),
@@ -493,6 +486,9 @@ public class FingerJoint extends AppCompatActivity {
                         BtnDataBaruFJ.setEnabled(false);
                         BtnDataBaruFJ.setVisibility(View.GONE);
                         BtnSimpanFJ.setVisibility(View.VISIBLE);
+                        NoFJ.setVisibility(View.GONE);
+                        NoFJ_display.setVisibility(View.VISIBLE);
+                        NoFJ_display.setEnabled(false);
 
                         clearData();
                         resetDetailData();
@@ -512,12 +508,7 @@ public class FingerJoint extends AppCompatActivity {
 
 
         BtnSimpanFJ.setOnClickListener(v -> {
-            ProgressDialog progressDialog = new ProgressDialog(FingerJoint.this);
-            progressDialog.setMessage("Menyimpan data...");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
 
-            String noFJ = NoFJ.getQuery().toString();
             String dateCreate = rawDate;
             String time = TimeFJ.getText().toString();
             String remark = remarkLabel.getText().toString();
@@ -545,12 +536,11 @@ public class FingerJoint extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
 
             if (!isInternetAvailable()) {
-                progressDialog.dismiss();
                 Toast.makeText(FingerJoint.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (noFJ.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
+            if (dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKasal == null || selectedSPKasal.getNoSPKAsal().equals("PILIH") ||
@@ -562,85 +552,100 @@ public class FingerJoint extends AppCompatActivity {
                     (radioButtonBSusunFJ.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
                     temporaryDataListDetail.isEmpty()) {
 
-                progressDialog.dismiss();
                 Toast.makeText(FingerJoint.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Completable.create(emitter -> {
-                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
-                            if (!canProceed) {
-                                emitter.onError(new Exception(message));
-                            } else {
-                                try {
-                                    int isReject = CBAfkirFJ.isChecked() ? 1 : 0;
-                                    int isLembur = CBLemburFJ.isChecked() ? 1 : 0;
-                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-                                    int idUOMPanjang;
-                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                                        idUOMPanjang = 1;
-                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                                        idUOMPanjang = 2;
-                                    } else {
-                                        idUOMPanjang = 3;
-                                    }
+            CountDownLatch latch = new CountDownLatch(1);
+            setAndSaveNoFJ(latch);
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-                                    new UpdateDatabaseTaskFJ(
-                                            noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
-                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark
-                                    ).execute();
+            if (latch.getCount() == 0) {
 
-                                    if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
-                                        new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
-                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                                            saveDataDetailToDatabase(noFJ, i + 1,
-                                                    Double.parseDouble(dataRow.tebal),
-                                                    Double.parseDouble(dataRow.lebar),
-                                                    Double.parseDouble(dataRow.panjang),
-                                                    Integer.parseInt(dataRow.pcs));
+                ProgressDialog progressDialog = new ProgressDialog(FingerJoint.this);
+                progressDialog.setMessage("Menyimpan data...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
+
+                Completable.create(emitter -> {
+                            checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                                if (!canProceed) {
+                                    emitter.onError(new Exception(message));
+                                } else {
+                                    try {
+                                        int isReject = CBAfkirFJ.isChecked() ? 1 : 0;
+                                        int isLembur = CBLemburFJ.isChecked() ? 1 : 0;
+                                        int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                        int idUOMPanjang;
+                                        if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                            idUOMPanjang = 1;
+                                        } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                            idUOMPanjang = 2;
+                                        } else {
+                                            idUOMPanjang = 3;
                                         }
-                                    } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
-                                        new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
-                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                            FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
-                                            saveDataDetailToDatabase(noFJ, i + 1,
-                                                    Double.parseDouble(dataRow.tebal),
-                                                    Double.parseDouble(dataRow.lebar),
-                                                    Double.parseDouble(dataRow.panjang),
-                                                    Integer.parseInt(dataRow.pcs));
+
+                                        new UpdateDatabaseTaskFJ(
+                                                noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                                idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark
+                                        ).execute();
+
+                                        if (radioButtonMesinFJ.isChecked() && SpinMesinFJ.isEnabled() && noProduksi != null) {
+                                            new SaveToDatabaseTaskFJ(noProduksi, noFJ).execute();
+                                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                                saveDataDetailToDatabase(noFJ, i + 1,
+                                                        Double.parseDouble(dataRow.tebal),
+                                                        Double.parseDouble(dataRow.lebar),
+                                                        Double.parseDouble(dataRow.panjang),
+                                                        Integer.parseInt(dataRow.pcs));
+                                            }
+                                        } else if (radioButtonBSusunFJ.isChecked() && SpinSusunFJ.isEnabled() && noBongkarSusun != null) {
+                                            new SaveBongkarSusunTaskFJ(noBongkarSusun, noFJ).execute();
+                                            for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                                FingerJoint.DataRow dataRow = temporaryDataListDetail.get(i);
+                                                saveDataDetailToDatabase(noFJ, i + 1,
+                                                        Double.parseDouble(dataRow.tebal),
+                                                        Double.parseDouble(dataRow.lebar),
+                                                        Double.parseDouble(dataRow.panjang),
+                                                        Integer.parseInt(dataRow.pcs));
+                                            }
                                         }
+
+                                        SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                        String username = prefs.getString("username", "");
+                                        String capitalizedUsername = capitalizeFirstLetter(username);
+                                        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                        String activity = String.format("Menyimpan Data %s Pada Label Finger Joint (Mobile)", noFJ);
+                                        new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+                                        emitter.onComplete();
+                                    } catch (Exception e) {
+                                        emitter.onError(e);
                                     }
-
-                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                                    String username = prefs.getString("username", "");
-                                    String capitalizedUsername = capitalizeFirstLetter(username);
-                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                                    String activity = String.format("Menyimpan Data %s Pada Label Finger Joint (Mobile)", noFJ);
-                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-                                    emitter.onComplete();
-                                } catch (Exception e) {
-                                    emitter.onError(e);
                                 }
-                            }
+                            });
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(() -> {
+                            progressDialog.dismiss();
+                            BtnDataBaruFJ.setEnabled(true);
+                            BtnPrintFJ.setEnabled(true);
+                            BtnSimpanFJ.setEnabled(false);
+                            BtnDataBaruFJ.setVisibility(View.VISIBLE);
+                            BtnSimpanFJ.setVisibility(View.GONE);
+                            disableForm();
+                            Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                        }, throwable -> {
+                            progressDialog.dismiss();
+                            Toast.makeText(FingerJoint.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                         });
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(() -> {
-                        progressDialog.dismiss();
-                        BtnDataBaruFJ.setEnabled(true);
-                        BtnPrintFJ.setEnabled(true);
-                        BtnSimpanFJ.setEnabled(false);
-                        BtnDataBaruFJ.setVisibility(View.VISIBLE);
-                        BtnSimpanFJ.setVisibility(View.GONE);
-                        disableForm();
-                        Toast.makeText(FingerJoint.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
-                    }, throwable -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(FingerJoint.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    });
+            }
         });
 
 
@@ -651,8 +656,6 @@ public class FingerJoint extends AppCompatActivity {
                 resetDetailData();
                 resetAllForm();
                 disableForm();
-
-                new DeleteLatestNoFJTask().execute();
 
                 BtnDataBaruFJ.setEnabled(true);
                 BtnSimpanFJ.setEnabled(false);
@@ -966,12 +969,14 @@ public class FingerJoint extends AppCompatActivity {
                         query = "SELECT po.NoFJ, th.HasBeenPrinted " +
                                 "FROM dbo.FJProduksiOutput po " +
                                 "JOIN dbo.FJ_h th ON po.NoFJ = th.NoFJ " +
-                                "WHERE po.NoProduksi = ?";
+                                "WHERE po.NoProduksi = ?" +
+                                "ORDER BY po.NoFJ DESC";
                     } else {
                         query = "SELECT bs.NoFJ, th.HasBeenPrinted " +
                                 "FROM dbo.BongkarSusunOutputFJ bs " +
                                 "JOIN dbo.FJ_h th ON bs.NoFJ = th.NoFJ " +
-                                "WHERE bs.NoBongkarSusun = ?";
+                                "WHERE bs.NoBongkarSusun = ?" +
+                                "ORDER BY bs.NoFJ DESC";
                     }
 
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -1277,7 +1282,7 @@ public class FingerJoint extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT,
                     TableRow.LayoutParams.WRAP_CONTENT
             ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
 
             for (String cell : row) {
                 TextView textView = new TextView(this);
@@ -1547,42 +1552,6 @@ public class FingerJoint extends AppCompatActivity {
     }
 
 
-    private class DeleteLatestNoFJTask extends AsyncTask<Void, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            String noFJ = NoFJ_display.getText().toString().trim();
-            boolean success = false;
-            if (con != null) {
-                try {
-                    String query = "DELETE FROM dbo.FJ_h WHERE NoFJ = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noFJ);
-                    int rowsAffected = ps.executeUpdate();
-                    ps.close();
-                    con.close();
-
-                    success = rowsAffected > 0;
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(FingerJoint.this, "NoFJ terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Log.e("Error", "Failed to delete the latest NoFJ.");
-//                Toast.makeText(FingerJoint.this, "Gagal menghapus NoFJ terbaru.", Toast.LENGTH_SHORT).show();
-//            }
-        }
-    }
-
 
     private class CheckSPKDataTask extends AsyncTask<Void, Void, String> {
         private final String noSPK;
@@ -1815,6 +1784,7 @@ public class FingerJoint extends AppCompatActivity {
         CBAfkirFJ.setEnabled(false);
         CBLemburFJ.setEnabled(false);
         remarkLabel.setEnabled(false);
+        SpinFisikFJ.setEnabled(false);
 
         // Disable semua tombol hapus yang ada di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
@@ -2181,7 +2151,7 @@ public class FingerJoint extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
                     // Query untuk menambah 1 pada nilai HasBeenPrinted
-                    String query = "UPDATE FJ_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1 WHERE NoFJ = ?";
+                    String query = "UPDATE FJ_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1, LastPrintDate = GETDATE() WHERE NoFJ = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noFJ);
                         int rowsAffected = stmt.executeUpdate();
@@ -2436,6 +2406,7 @@ public class FingerJoint extends AppCompatActivity {
         SpinSusunFJ.setEnabled(false);
         radioGroupFJ.clearCheck();
         remarkLabel.setText("");
+        NoFJ_display.setText("");
 
     }
 
@@ -3098,24 +3069,27 @@ public class FingerJoint extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "UPDATE dbo.FJ_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdJenisKayu = ?, IdFisik = 5, IdWarehouse = 5, IsReject = ?, IsLembur = ?, IdUOMTblLebar =?, IdUOMPanjang = ?, Remark = ? WHERE NoFJ = ?";
+                    String query = "INSERT INTO dbo.FJ_h (NoFJ, DateCreate, Jam, IdOrgTelly, NoSPK, NoSPKAsal, IdGrade, " +
+                            "IdFJProfile, IdJenisKayu, IdFisik, IdWarehouse, IsReject, IsLembur, IdUOMTblLebar, IdUOMPanjang, Remark) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                     PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, dateCreate);
-                    ps.setString(2, time);
-                    ps.setString(3, idTelly);
-                    ps.setString(4, noSPK);
-                    ps.setString(5, noSPKasal);
-                    ps.setString(6, idGrade);
-                    ps.setString(7, idFJProfile);
-                    ps.setString(8, idJenisKayu);
-                    ps.setInt(9, isReject);
-                    ps.setInt(10, isLembur);
-                    ps.setInt(11, IdUOMTblLebar);
-                    ps.setInt(12, IdUOMPanjang);
-                    ps.setString(13, remark);
-                    ps.setString(14, noFJ);
+                    ps.setString(1, noFJ);  // NoFJ sebagai Primary Key
+                    ps.setString(2, dateCreate);
+                    ps.setString(3, time);
+                    ps.setString(4, idTelly);
+                    ps.setString(5, noSPK);
+                    ps.setString(6, noSPKasal);
+                    ps.setString(7, idGrade);
+                    ps.setString(8, idFJProfile);
+                    ps.setString(9, idJenisKayu);
+                    ps.setInt(10, 5);
+                    ps.setInt(11, 5);
+                    ps.setInt(12, isReject);
+                    ps.setInt(13, isLembur);
+                    ps.setInt(14, IdUOMTblLebar);
+                    ps.setInt(15, IdUOMPanjang);
+                    ps.setString(16, remark);
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -3132,65 +3106,77 @@ public class FingerJoint extends AppCompatActivity {
         }
     }
 
-    private class SetAndSaveNoFJoinTaskFJ extends AsyncTask<Void, Void, String> {
-        @Override
-        protected String doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            String newNoJoin = null;
-            if (con != null) {
-                try {
-                    String query = "SELECT MAX(NoFJ) FROM dbo.FJ_h";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
+    private void setAndSaveNoFJ(final CountDownLatch latch) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Connection con = ConnectionClass();
+                noFJ = null;
+                boolean success = false;
 
-                    if (rs.next()) {
-                        String lastNoFJoin = rs.getString(1);
+                if (con != null) {
+                    try {
+                        // Query untuk mendapatkan NoFJ terakhir
+                        String query = "SELECT MAX(NoFJ) FROM dbo.FJ_h";
+                        PreparedStatement ps = con.prepareStatement(query);
+                        ResultSet rs = ps.executeQuery();
 
-                        if (lastNoFJoin != null && lastNoFJoin.startsWith("S.")) {
-                            String numericPart = lastNoFJoin.substring(2);
-                            int numericValue = Integer.parseInt(numericPart);
-                            int newNumericValue = numericValue + 1;
+                        if (rs.next()) {
+                            String lastNoFJoin = rs.getString(1);
 
-                            newNoJoin = "S." + String.format("%06d", newNumericValue);
+                            if (lastNoFJoin != null && lastNoFJoin.startsWith("S.")) {
+                                String numericPart = lastNoFJoin.substring(2);
+                                int numericValue = Integer.parseInt(numericPart);
+                                int newNumericValue = numericValue + 1;
+
+                                // Membuat NoFJ baru
+                                noFJ = "S." + String.format("%06d", newNumericValue);
+                            }
                         }
+
+                        rs.close();
+                        ps.close();
+                        con.close();
+                        success = true;
+                    } catch (Exception e) {
+                        Log.e("Database Error", e.getMessage());
+                        success = false;
                     }
-
-                    rs.close();
-                    ps.close();
-
-                    if (newNoJoin != null) {
-                        String insertQuery = "INSERT INTO dbo.FJ_h (NoFJ) VALUES (?)";
-                        PreparedStatement insertPs = con.prepareStatement(insertQuery);
-                        insertPs.setString(1, newNoJoin);
-                        insertPs.executeUpdate();
-                        insertPs.close();
-                    }
-
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
+                } else {
+                    Log.e("Connection Error", "Failed to connect to the database.");
+                    success = false;
                 }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return newNoJoin;
-        }
 
-        @Override
-        protected void onPostExecute(String newNoJoin) {
-            if (newNoJoin != null) {
-                NoFJ.setQuery(newNoJoin, true);
-                NoFJ.setVisibility(View.GONE);
-                NoFJ_display.setVisibility(View.VISIBLE);
-                NoFJ_display.setText(newNoJoin);
-                NoFJ_display.setEnabled(false);
-                Toast.makeText(FingerJoint.this, "NoFJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.e("Error", "Failed to set or save NoFJ.");
-                Toast.makeText(FingerJoint.this, "Gagal mengatur atau menyimpan NoFJ.", Toast.LENGTH_SHORT).show();
+                // Setelah operasi selesai, lakukan update UI di thread utama
+                if (success && noFJ != null) {
+                    final String finalNewNoJoin = noFJ;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            NoFJ.setQuery(finalNewNoJoin, true);
+                            NoFJ.setVisibility(View.GONE);
+                            NoFJ_display.setVisibility(View.VISIBLE);
+                            NoFJ_display.setText(finalNewNoJoin);
+                            NoFJ_display.setEnabled(false);
+//                            Toast.makeText(FingerJoint.this, "NoFJ berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e("Error", "Failed to set or save NoFJ.");
+                            Toast.makeText(FingerJoint.this, "Gagal mengatur atau menyimpan NoFJ.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                // Memberitahukan bahwa thread selesai
+                latch.countDown();
             }
-        }
+        }).start();
     }
+
 
     public class LoadJenisKayuTaskFJ extends AsyncTask<Void, Void, List<JenisKayuFJ>> {
         @Override
@@ -3247,13 +3233,13 @@ public class FingerJoint extends AppCompatActivity {
             if (con != null) {
                 try {
                     String query =  "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
-                                    "FROM MstOrgTelly A " +
-                                    "INNER JOIN ( " +
-                                    "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
-                                    "    FROM MstUsername " +
-                                    "    WHERE Username = ? " +
-                                    ") B ON B.NamaTelly = A.NamaOrgTelly " +
-                                    "WHERE A.Enable = 1";
+                            "FROM MstOrgTelly A " +
+                            "INNER JOIN ( " +
+                            "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
+                            "    FROM MstUsername " +
+                            "    WHERE Username = ? " +
+                            ") B ON B.NamaTelly = A.NamaOrgTelly " +
+                            "WHERE A.Enable = 1";
                     PreparedStatement ps = con.prepareStatement(query);
 
                     ps.setString(1, username);

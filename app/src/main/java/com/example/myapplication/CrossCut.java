@@ -151,6 +151,7 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+import java.util.concurrent.CountDownLatch;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -159,6 +160,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class CrossCut extends AppCompatActivity {
 
     private String username;
+    private String noCC;
     private SearchView NoCC;
     private EditText DateCC;
     private EditText TimeCC;
@@ -211,15 +213,6 @@ public class CrossCut extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-
-                new DeleteLatestNoCCTask().execute();
-
-                finish();
-            }
-        });
 
 //        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_cross_cut);
@@ -324,7 +317,7 @@ public class CrossCut extends AppCompatActivity {
                     String idJenisKayu = selectedJenisKayu != null ? selectedJenisKayu.getIdJenisKayu() : null;
 
                     // Validasi input kosong
-                    if (noCC.isEmpty() || tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                    if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                         Toast.makeText(CrossCut.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
                         return true;
                     }
@@ -506,7 +499,7 @@ public class CrossCut extends AppCompatActivity {
 
                     // Jalankan tugas asinkron untuk memuat data
                     runOnUiThread(() -> {
-                        new SetAndSaveNoCCTask().execute();
+//                        new SetAndSaveNoCCTask().execute();
                         new LoadJenisKayuTask().execute();
                         new LoadTellyTask().execute();
                         new LoadSPKTask().execute();
@@ -521,6 +514,9 @@ public class CrossCut extends AppCompatActivity {
                         BtnDataBaruCC.setEnabled(false);
                         BtnDataBaruCC.setVisibility(View.GONE);
                         BtnSimpanCC.setVisibility(View.VISIBLE);
+                        NoCC.setVisibility(View.GONE);
+                        NoCC_display.setVisibility(View.VISIBLE);
+                        NoCC_display.setEnabled(false);
 
                         clearData();
                         resetDetailData();
@@ -543,12 +539,7 @@ public class CrossCut extends AppCompatActivity {
         });
 
         BtnSimpanCC.setOnClickListener(v -> {
-            ProgressDialog progressDialog = new ProgressDialog(CrossCut.this);
-            progressDialog.setMessage("Menyimpan data...");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
 
-            String noCC = NoCC.getQuery().toString();
             String dateCreate = rawDate;
             String time = TimeCC.getText().toString();
             String remark = remarkLabel.getText().toString();
@@ -575,12 +566,11 @@ public class CrossCut extends AppCompatActivity {
             String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
 
             if (!isInternetAvailable()) {
-                progressDialog.dismiss();
                 Toast.makeText(CrossCut.this, "Tidak ada koneksi internet. Coba lagi nanti.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (noCC.isEmpty() || dateCreate.isEmpty() || time.isEmpty() ||
+            if (dateCreate.isEmpty() || time.isEmpty() ||
                     selectedTelly == null || selectedTelly.getIdTelly().isEmpty() ||
                     selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH") ||
                     selectedSPKAsal == null || selectedSPKAsal.getNoSPKAsal().equals("PILIH") ||
@@ -592,85 +582,100 @@ public class CrossCut extends AppCompatActivity {
                     (radioButtonBSusunCC.isChecked() && (selectedSusun == null || selectedSusun.getNoBongkarSusun().isEmpty())) ||
                     temporaryDataListDetail.isEmpty()) {
 
-                progressDialog.dismiss();
                 Toast.makeText(CrossCut.this, "Pastikan semua field terisi dengan benar.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Completable.create(emitter -> {
-                        checkMaxPeriod(dateCreate, (canProceed, message) -> {
-                            if (!canProceed) {
-                                emitter.onError(new Exception(message));
-                            } else {
-                                try {
-                                    int isReject = CBAfkirCC.isChecked() ? 1 : 0;
-                                    int isLembur = CBLemburCC.isChecked() ? 1 : 0;
-                                    int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
-                                    int idUOMPanjang;
-                                    if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
-                                        idUOMPanjang = 1;
-                                    } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
-                                        idUOMPanjang = 2;
-                                    } else {
-                                        idUOMPanjang = 3;
-                                    }
+            CountDownLatch latch = new CountDownLatch(1);
+            setAndSaveNoCC(latch);
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-                                    new UpdateDatabaseTask(
-                                            noCC, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
-                                            idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark
-                                    ).execute();
+                    if (latch.getCount() == 0) {
 
-                                    if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
-                                        new SaveToDatabaseTask(noProduksi, noCC).execute();
-                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
-                                            saveDataDetailToDatabase(noCC, i + 1,
-                                                    Double.parseDouble(dataRow.tebal),
-                                                    Double.parseDouble(dataRow.lebar),
-                                                    Double.parseDouble(dataRow.panjang),
-                                                    Integer.parseInt(dataRow.pcs));
+                        ProgressDialog progressDialog = new ProgressDialog(CrossCut.this);
+                        progressDialog.setMessage("Menyimpan data...");
+                        progressDialog.setCancelable(false);
+                        progressDialog.show();
+
+                        Completable.create(emitter -> {
+                                    checkMaxPeriod(dateCreate, (canProceed, message) -> {
+                                        if (!canProceed) {
+                                            emitter.onError(new Exception(message));
+                                        } else {
+                                            try {
+                                                int isReject = CBAfkirCC.isChecked() ? 1 : 0;
+                                                int isLembur = CBLemburCC.isChecked() ? 1 : 0;
+                                                int idUOMTblLebar = radioGroupUOMTblLebar.getCheckedRadioButtonId() == R.id.radioMillimeter ? 1 : 4;
+                                                int idUOMPanjang;
+                                                if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioCentimeter) {
+                                                    idUOMPanjang = 1;
+                                                } else if (radioGroupUOMPanjang.getCheckedRadioButtonId() == R.id.radioMeter) {
+                                                    idUOMPanjang = 2;
+                                                } else {
+                                                    idUOMPanjang = 3;
+                                                }
+
+                                                new UpdateDatabaseTask(
+                                                        noCC, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                                                        idJenisKayu, idProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark
+                                                ).execute();
+
+                                                if (radioButtonMesinCC.isChecked() && SpinMesinCC.isEnabled() && noProduksi != null) {
+                                                    new SaveToDatabaseTask(noProduksi, noCC).execute();
+                                                    for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                                        CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                                                        saveDataDetailToDatabase(noCC, i + 1,
+                                                                Double.parseDouble(dataRow.tebal),
+                                                                Double.parseDouble(dataRow.lebar),
+                                                                Double.parseDouble(dataRow.panjang),
+                                                                Integer.parseInt(dataRow.pcs));
+                                                    }
+                                                } else if (radioButtonBSusunCC.isChecked() && SpinSusunCC.isEnabled() && noBongkarSusun != null) {
+                                                    new SaveBongkarSusunTask(noBongkarSusun, noCC).execute();
+                                                    for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                                        CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
+                                                        saveDataDetailToDatabase(noCC, i + 1,
+                                                                Double.parseDouble(dataRow.tebal),
+                                                                Double.parseDouble(dataRow.lebar),
+                                                                Double.parseDouble(dataRow.panjang),
+                                                                Integer.parseInt(dataRow.pcs));
+                                                    }
+                                                }
+
+                                                SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                                                String username = prefs.getString("username", "");
+                                                String capitalizedUsername = capitalizeFirstLetter(username);
+                                                String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                                String activity = String.format("Menyimpan Data %s Pada Label Cross Cut (Mobile)", noCC);
+                                                new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+                                                emitter.onComplete();
+                                            } catch (Exception e) {
+                                                emitter.onError(e);
+                                            }
                                         }
-                                    } else if (radioButtonBSusunCC.isChecked() && SpinSusunCC.isEnabled() && noBongkarSusun != null) {
-                                        new SaveBongkarSusunTask(noBongkarSusun, noCC).execute();
-                                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                            CrossCut.DataRow dataRow = temporaryDataListDetail.get(i);
-                                            saveDataDetailToDatabase(noCC, i + 1,
-                                                    Double.parseDouble(dataRow.tebal),
-                                                    Double.parseDouble(dataRow.lebar),
-                                                    Double.parseDouble(dataRow.panjang),
-                                                    Integer.parseInt(dataRow.pcs));
-                                        }
-                                    }
-
-                                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                                    String username = prefs.getString("username", "");
-                                    String capitalizedUsername = capitalizeFirstLetter(username);
-                                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                                    String activity = String.format("Menyimpan Data %s Pada Label Cross Cut (Mobile)", noCC);
-                                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
-
-                                    emitter.onComplete();
-                                } catch (Exception e) {
-                                    emitter.onError(e);
-                                }
-                            }
-                        });
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(() -> {
-                        progressDialog.dismiss();
-                        BtnDataBaruCC.setEnabled(true);
-                        BtnPrintCC.setEnabled(true);
-                        BtnSimpanCC.setEnabled(false);
-                        BtnDataBaruCC.setVisibility(View.VISIBLE);
-                        BtnSimpanCC.setVisibility(View.GONE);
-                        disableForm();
-                        Toast.makeText(CrossCut.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
-                    }, throwable -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(CrossCut.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    });
+                                    });
+                                })
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(() -> {
+                                    progressDialog.dismiss();
+                                    BtnDataBaruCC.setEnabled(true);
+                                    BtnPrintCC.setEnabled(true);
+                                    BtnSimpanCC.setEnabled(false);
+                                    BtnDataBaruCC.setVisibility(View.VISIBLE);
+                                    BtnSimpanCC.setVisibility(View.GONE);
+                                    disableForm();
+                                    Toast.makeText(CrossCut.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                                }, throwable -> {
+                                    progressDialog.dismiss();
+                                    Toast.makeText(CrossCut.this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                                });
+                    }
         });
 
         BtnHapusDetailCC.setOnClickListener(v -> {
@@ -686,7 +691,6 @@ public class CrossCut extends AppCompatActivity {
                 resetAllForm();
                 disableForm();
 
-                new DeleteLatestNoCCTask().execute();
 
                 BtnDataBaruCC.setEnabled(true);
                 BtnSimpanCC.setEnabled(false);
@@ -996,12 +1000,14 @@ public class CrossCut extends AppCompatActivity {
                         query = "SELECT spo.NoCCAkhir, h.HasBeenPrinted " +
                                 "FROM dbo.CCAkhirProduksiOutput spo " +
                                 "JOIN dbo.CCAkhir_h h ON spo.NoCCAkhir = h.NoCCAkhir " +
-                                "WHERE spo.NoProduksi = ?";
+                                "WHERE spo.NoProduksi = ?" +
+                                "ORDER BY spo.NoCCAkhir DESC";
                     } else {
                         query = "SELECT bs.NoCCAkhir, h.HasBeenPrinted " +
                                 "FROM dbo.BongkarSusunOutputCCAkhir bs " +
                                 "JOIN dbo.CCAkhir_h h ON bs.NoCCAkhir = h.NoCCAkhir " +
-                                "WHERE bs.NoBongkarSusun = ?";
+                                "WHERE bs.NoBongkarSusun = ?" +
+                                "ORDER BY bs.NoCCAkhir DESC";
                     }
 
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -1307,7 +1313,7 @@ public class CrossCut extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT,
                     TableRow.LayoutParams.WRAP_CONTENT
             ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
 
             for (String cell : row) {
                 TextView textView = new TextView(this);
@@ -1574,43 +1580,6 @@ public class CrossCut extends AppCompatActivity {
     // Interface for callback
     interface OnPeriodCheckListener {
         void onResult(boolean canProceed, String message);
-    }
-
-    private class DeleteLatestNoCCTask extends AsyncTask<Void, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            String noCC = NoCC_display.getText().toString().trim();
-            boolean success = false;
-            if (con != null) {
-                try {
-                    String query = "DELETE FROM dbo.CCAkhir_h WHERE NoCCAkhir = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noCC);
-                    int rowsAffected = ps.executeUpdate();
-                    ps.close();
-                    con.close();
-
-                    success = rowsAffected > 0;
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-//            if (success) {
-//                Toast.makeText(CrossCut.this, "NoCC terbaru berhasil dihapus.", Toast.LENGTH_SHORT).show();
-//                // Lakukan tindakan lain setelah penghapusan NoCC, jika diperlukan
-//            } else {
-//                Log.e("Error", "Failed to delete the latest NoCC.");
-//                Toast.makeText(CrossCut.this, "Gagal menghapus NoCC terbaru.", Toast.LENGTH_SHORT).show();
-//            }
-        }
     }
 
     // Deklarasi CheckSPKDataTask di level class
@@ -2220,7 +2189,7 @@ public class CrossCut extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
                     // Query untuk menambah 1 pada nilai HasBeenPrinted
-                    String query = "UPDATE CCAkhir_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1 WHERE NoCCAkhir = ?";
+                    String query = "UPDATE CCAkhir_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1, LastPrintDate = GETDATE() WHERE NoCCAkhir = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noCC);
                         int rowsAffected = stmt.executeUpdate();
@@ -2475,6 +2444,7 @@ public class CrossCut extends AppCompatActivity {
         SpinSusunCC.setEnabled(false);
         RadioGroupCC.clearCheck();
         remarkLabel.setText("");
+        NoCC_display.setText("");
 
     }
 
@@ -3108,24 +3078,28 @@ public class CrossCut extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "UPDATE dbo.CCAkhir_h SET DateCreate = ?, Jam = ?, IdOrgTelly = ?, NoSPK = ?, NoSPKAsal = ?, IdGrade = ?, " +
-                            "IdFJProfile = ?, IdFisik = 8, IdJenisKayu = ?, IdWarehouse = 8, IsReject = ?, IsLembur = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, Remark = ? WHERE NoCCAkhir = ?";
+                    String query = "INSERT INTO dbo.CCAkhir_h (NoCCAkhir, DateCreate, Jam, IdOrgTelly, NoSPK, NoSPKAsal, IdGrade, " +
+                            "IdFJProfile, IdFisik, IdJenisKayu, IdWarehouse, IsReject, IsLembur, IdUOMTblLebar, IdUOMPanjang, Remark) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                     PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, dateCreate);
-                    ps.setString(2, time);
-                    ps.setString(3, idTelly);
-                    ps.setString(4, noSPK);
-                    ps.setString(5, noSPKasal);
-                    ps.setString(6, idGrade);
-                    ps.setString(7, idFJProfile);
-                    ps.setString(8, idJenisKayu);
-                    ps.setInt(9, isReject);
-                    ps.setInt(10, isLembur);
-                    ps.setInt(11, IdUOMTblLebar);
-                    ps.setInt(12, IdUOMPanjang);
-                    ps.setString(13, remark);
-                    ps.setString(14, noCC);
+                    ps.setString(1, noCC); // Menyisipkan NoCC sebagai primary key
+                    ps.setString(2, dateCreate);
+                    ps.setString(3, time);
+                    ps.setString(4, idTelly);
+                    ps.setString(5, noSPK);
+                    ps.setString(6, noSPKasal);
+                    ps.setString(7, idGrade);
+                    ps.setString(8, idFJProfile);
+                    ps.setInt(9, 8); // Menyisipkan angka 8 untuk IdFisik
+                    ps.setString(10, idJenisKayu);
+                    ps.setInt(11, 8); // Menyisipkan angka 8 untuk IdWarehouse
+                    ps.setInt(12, isReject);
+                    ps.setInt(13, isLembur);
+                    ps.setInt(14, IdUOMTblLebar);
+                    ps.setInt(15, IdUOMPanjang);
+                    ps.setString(16, remark);
+
 
                     int rowsUpdated = ps.executeUpdate();
                     ps.close();
@@ -3141,64 +3115,76 @@ public class CrossCut extends AppCompatActivity {
             }
         }
     }
-    private class SetAndSaveNoCCTask extends AsyncTask<Void, Void, String> {
-        @Override
-        protected String doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            String newNoCC = null;
-            if (con != null) {
-                try {
-                    String query = "SELECT MAX(NoCCAkhir) FROM dbo.CCAkhir_h";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
 
-                    if (rs.next()) {
-                        String lastNoCC = rs.getString(1);
+    private void setAndSaveNoCC(final CountDownLatch latch) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Connection con = ConnectionClass();
+                noCC = null;
+                boolean success = false;
 
-                        if (lastNoCC != null && lastNoCC.startsWith("V.")) {
-                            String numericPart = lastNoCC.substring(2);
-                            int numericValue = Integer.parseInt(numericPart);
-                            int newNumericValue = numericValue + 1;
+                if (con != null) {
+                    try {
+                        // Query untuk mendapatkan NoCCAkhir terakhir
+                        String query = "SELECT MAX(NoCCAkhir) FROM dbo.CCAkhir_h";
+                        PreparedStatement ps = con.prepareStatement(query);
+                        ResultSet rs = ps.executeQuery();
 
-                            newNoCC = "V." + String.format("%06d", newNumericValue);
+                        if (rs.next()) {
+                            String lastNoCC = rs.getString(1);
+
+                            if (lastNoCC != null && lastNoCC.startsWith("V.")) {
+                                String numericPart = lastNoCC.substring(2);
+                                int numericValue = Integer.parseInt(numericPart);
+                                int newNumericValue = numericValue + 1;
+
+                                // Membuat NoCC baru
+                                noCC = "V." + String.format("%06d", newNumericValue);
+                            }
                         }
+
+                        rs.close();
+                        ps.close();
+                        con.close();
+                        success = true;
+                    } catch (Exception e) {
+                        Log.e("Database Error", e.getMessage());
+                        success = false;
                     }
-
-                    rs.close();
-                    ps.close();
-
-                    if (newNoCC != null) {
-                        String insertQuery = "INSERT INTO dbo.CCAkhir_h (NoCCAkhir) VALUES (?)";
-                        PreparedStatement insertPs = con.prepareStatement(insertQuery);
-                        insertPs.setString(1, newNoCC);
-                        insertPs.executeUpdate();
-                        insertPs.close();
-                    }
-
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
+                } else {
+                    Log.e("Connection Error", "Failed to connect to the database.");
+                    success = false;
                 }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return newNoCC;
-        }
 
-        @Override
-        protected void onPostExecute(String newNoCC) {
-            if (newNoCC != null) {
-                NoCC.setQuery(newNoCC, false);
-                NoCC.setVisibility(View.GONE);
-                NoCC_display.setVisibility(View.VISIBLE);
-                NoCC_display.setText(newNoCC);
-                NoCC_display.setEnabled(false);
-                Toast.makeText(CrossCut.this, "NoCCAkhir berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.e("Error", "Failed to set or save NoCCAkhir.");
-                Toast.makeText(CrossCut.this, "Gagal mengatur atau menyimpan NoCCAkhir.", Toast.LENGTH_SHORT).show();
+                // Setelah operasi selesai, lakukan update UI di thread utama
+                if (success) {
+                    final String finalNewNoCC = noCC;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            NoCC.setQuery(finalNewNoCC, true);
+                            NoCC.setVisibility(View.GONE);
+                            NoCC_display.setVisibility(View.VISIBLE);
+                            NoCC_display.setText(finalNewNoCC);
+                            NoCC_display.setEnabled(false);
+//                            Toast.makeText(CrossCut.this, "NoCCAkhir berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e("Error", "Failed to set or save NoCCAkhir.");
+                            Toast.makeText(CrossCut.this, "Gagal mengatur atau menyimpan NoCCAkhir.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                // Memberitahukan bahwa thread selesai
+                latch.countDown();
             }
-        }
+        }).start();
     }
 
 
