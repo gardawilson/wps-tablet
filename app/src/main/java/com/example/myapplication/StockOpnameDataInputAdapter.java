@@ -50,6 +50,13 @@ public class StockOpnameDataInputAdapter extends RecyclerView.Adapter<StockOpnam
         holder.idLokasiInput.setText(item.getIdLokasiInput());
         holder.userIDInput.setText(item.getUserIdInput());
 
+        // Set background color bergantian berdasarkan posisi item
+        if (position % 2 == 0) {
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));  // Warna putih untuk posisi genap
+        } else {
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.background_cream));  // Warna abu-abu untuk posisi ganjil
+        }
+
         // Menambahkan listener untuk klik pada itemView
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {

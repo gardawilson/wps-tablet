@@ -32,6 +32,7 @@ import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.api.ProductionApi;
@@ -42,6 +43,7 @@ import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.model.UserIDSO;
+import com.example.myapplication.utils.WebSocketConnection;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -51,7 +53,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class StockOpname extends AppCompatActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener {
+public class StockOpname extends AppCompatActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener, WebSocketConnection.WebSocketListener {
+
+    private WebSocketConnection webSocketConnection;
+
+    private String currentSearchText = "";
+
+
 
     // UI Elements
     private ProgressBar loadingIndicator;
@@ -86,6 +94,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private final int LIMIT = 100;  // Data per halaman
     private int currentPageForNoSO = 0;
     private int currentPageForNoSOInput = 0;
+    private int countNewDataNotification = 1;
 
     // Selected Values
     private String selectedNoSO;
@@ -125,6 +134,11 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         loadMoreData();
 
         setupNoSOSpinner();
+
+        // Inisialisasi WebSocketConnection
+        webSocketConnection = WebSocketConnection.getInstance();
+        webSocketConnection.setListener(this); // Set listener ke Activity ini
+        webSocketConnection.connect(); // Mulai koneksi WebSocket
 
         setListeners();
 
@@ -229,7 +243,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                     TableRow.LayoutParams.WRAP_CONTENT,
                     TableRow.LayoutParams.WRAP_CONTENT
             ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.gray));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
 
             for (String cell : row) {
                 TextView textView = new TextView(this);
@@ -463,6 +477,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Tombol Apply
         Button btnApply = dialogView.findViewById(R.id.btn_apply);
         btnApply.setOnClickListener(v -> {
+
+            //Tutup Notifikasi NewData
+            LinearLayout notificationLayout = findViewById(R.id.notificationLayout);
+            notificationLayout.setVisibility(View.GONE);
+            countNewDataNotification = 1;
+
             // Reset paging
             hasMoreDataToFetchBefore = true;
             hasMoreDataToFetchAfter = true;
@@ -589,6 +609,11 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
                             // Jalankan logika yang sama seperti di setListeners()
                             onSpinnerItemSelected(selectedItem);
+
+                            //Tutup Notifikasi NewData
+                            LinearLayout notificationLayout = findViewById(R.id.notificationLayout);
+                            notificationLayout.setVisibility(View.GONE);
+                            countNewDataNotification = 1;
                         }
 
                         @Override
@@ -838,18 +863,17 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
             @Override
             public boolean onQueryTextChange(String newText) {
+                currentSearchText = newText; // Simpan teks pencarian dalam variabel global
+
                 if (newText.isEmpty()) {
-                    Log.d("SearchView", "Teks kosong, memanggil fetchDataInputByNoSO");
-//                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID,0);
-//                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
-                    handler.post(fetchDataRunnable);  // Jalankan kembali fetchDataRunnable
+                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID,0);
+                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
 
                 } else {
+                    // Jika ada teks, hentikan sementara WebSocket
                     Log.d("SearchView", "Teks tidak kosong, memanggil searchDataInputByNoSO");
                     searchDataInputByNoSO(newText);
                     searchDataByNoSO(newText);
-                    handler.removeCallbacks(fetchDataRunnable);  // Hentikan polling sementara
-
                 }
                 return true;
             }
@@ -892,6 +916,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             // Mulai fetch dari awal
             fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
             filterDataInputByNoSO(selectedIdLokasi, selectedLabels , selectedUserID, currentPageForNoSOInput);
+
         });
 
         stockOpnameDataAdapter.setOnItemClickListener(new StockOpnameDataAdapter.OnItemClickListener() {
@@ -943,7 +968,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                 StockOpnameDataByNoSO clickedItem = stockOpnameDataByNoSOList.get(position);
 
                 // Gunakan post() untuk memastikan eksekusi setelah RecyclerView selesai memperbarui tampilan
-                recyclerViewBefore.post(() -> {
+                recyclerViewAfter.post(() -> {
                     RecyclerView.ViewHolder holder = recyclerViewAfter.findViewHolderForAdapterPosition(position);
                     if (holder != null) {
                         // Dapatkan view item dari ViewHolder
@@ -1012,7 +1037,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         // Show loading indicator while searching
         isLoadingAfter = true;
-        showLoadingIndicatorAfter(true);
+        showLoadingIndicatorAfter(false);
 
         int limit = 100;
         int offset = page * limit;
@@ -1070,15 +1095,18 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private void updateLabelCount(String safeSelectedNoSO, String safeSelectedTglSO, String safeSelectedBlok, String safeSelectedIdLokasi, Set<String> safeSelectedLabels, String safeSelectedUserID) {
 
         executorService.execute(() -> {
+            int totalCountStock = StockOpnameApi.getTotalDataStockCount(safeSelectedNoSO, selectedTglSO);
             int totalCountBefore = StockOpnameApi.getTotalStockOpnameDataCount(safeSelectedNoSO, selectedTglSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels);
             int totalCountAfter = StockOpnameApi.getStockOpnameDataInputCountByFilter(safeSelectedNoSO, safeSelectedBlok, safeSelectedIdLokasi, safeSelectedLabels, safeSelectedUserID);
 
             runOnUiThread(() -> {
+                TextView totalCountDataStock = findViewById(R.id.countDataStock);
                 TextView totalCountLabelBefore = findViewById(R.id.countLabelBefore);
                 TextView totalCountLabelAfter = findViewById(R.id.countLabelAfter);
-                if (totalCountLabelBefore != null && totalCountLabelAfter != null) {
+                if (totalCountDataStock != null && totalCountLabelBefore != null && totalCountLabelAfter != null) {
+                    totalCountDataStock.setText("Total Label : " + totalCountStock); // Menampilkan total count
                     totalCountLabelBefore.setText("Sisa Label : " + totalCountBefore); // Menampilkan total count
-                    totalCountLabelAfter.setText("Total Label : " + totalCountAfter); // Menampilkan total count
+                    totalCountLabelAfter.setText("Total Scan : " + totalCountAfter); // Menampilkan total count
                 }
             });
         });
@@ -1093,7 +1121,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataByNoSO> data = StockOpnameApi.searchStockOpnameDataByNoSO(selectedNoSO, selectedTglSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 10);
+            List<StockOpnameDataByNoSO> data = StockOpnameApi.searchStockOpnameDataByNoSO(selectedNoSO, selectedTglSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 25);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -1126,13 +1154,13 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
     private void searchDataInputByNoSO(String searchTerm) {
         // Show loading indicator while searching
-        showLoadingIndicatorAfter(true);
+        showLoadingIndicatorAfter(false);
         isLoadingAfter = true;
 
         // Run the network call in a background thread
         executorService.execute(() -> {
             // Perform the network or database call in the background
-            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 10);
+            List<StockOpnameDataInputByNoSO> data = StockOpnameApi.getStockOpnameDataInputBySearch(selectedNoSO, searchTerm, selectedBlok, selectedIdLokasi, selectedLabels,0, 25);
 
             // Now update the UI on the main thread after the data is fetched
             runOnUiThread(() -> {
@@ -1257,6 +1285,15 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         return false;
     }
 
+    private boolean isFirstItemVisible(RecyclerView recyclerView) {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+        int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+
+        // Cek apakah item pertama (index 0) terlihat
+        return firstVisibleItemPosition == 0;
+    }
+
+
 
 
     private void showLoadingIndicator(boolean isVisible) {
@@ -1310,6 +1347,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                             stockOpnameDataInputAdapter.notifyItemRemoved(i); // Hapus item di posisi yang benar
                             updateLabelCount(selectedNoSO, selectedTglSO, selectedBlok, selectedIdLokasi, selectedLabels, selectedUserID);
 
+                            if (currentSearchText.isEmpty()) {
+                                fetchDataByNoSO(selectedIdLokasi, selectedLabels, 0);
+                            } else {
+                                searchDataByNoSO(currentSearchText);
+                            }
+
 
                             Log.d("StockOpname", "Item deleted, new list size: " + stockOpnameDataInputByNoSOList.size());
                             Toast.makeText(this, "Item deleted: " + item.getNoLabelInput(), Toast.LENGTH_SHORT).show();
@@ -1328,16 +1371,106 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     protected void onResume() {
         super.onResume();
         // Mulai polling saat Activity aktif
-        handler.post(fetchDataRunnable);
+//        handler.post(fetchDataRunnable);
+        // Membuat koneksi WebSocket saat Activity aktif
     }
+
+    @Override
+    public void onMessageReceived(String noso) {
+        Log.d("WebSocket", "Triggering data fetch after receiving message.");
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (noso.equals(selectedNoSO)) {
+
+                    LinearLayout notificationLayout = findViewById(R.id.notificationLayout);
+                    TextView notificationText = findViewById(R.id.tvNewDataNotification);
+
+                    hasMoreDataToFetchBefore = true;
+                    currentPageForNoSO = 0;
+
+
+                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
+
+                    // Periksa apakah item pertama terlihat
+                    if (isFirstItemVisible(recyclerViewAfter)) {
+                        // Jika item pertama terlihat, langsung jalankan fungsi untuk mengambil data
+                        triggerDataFetch();
+                        // Sembunyikan notifikasi setelah data di-fetch
+                        notificationLayout.setVisibility(View.GONE);
+                        countNewDataNotification = 1;
+                    } else {
+                        // Jika item pertama tidak terlihat, tampilkan notifikasi
+                        notificationText.setText("Terdapat " + countNewDataNotification + " label baru!");
+                        notificationLayout.setVisibility(View.VISIBLE); // Menampilkan notifikasi
+
+                        // Set OnClickListener untuk tombol notifikasi
+                        notificationText.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                // Panggil fungsi untuk mengambil data
+                                triggerDataFetch();
+                                // Scroll ke index 0 (item pertama)
+                                scrollToTop(recyclerViewAfter);
+                                // Sembunyikan notifikasi setelah klik
+                                notificationLayout.setVisibility(View.GONE);
+                                countNewDataNotification = 1;
+
+                            }
+                        });
+                        countNewDataNotification++;
+                    }
+                }
+            }
+        });
+    }
+
+
+
+    private void scrollToTop(RecyclerView recyclerView) {
+        // Ambil LayoutManager dari RecyclerView
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+
+        if (layoutManager != null) {
+            // Membuat LinearSmoothScroller untuk animasi halus
+            LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
+                @Override
+                public int getVerticalSnapPreference() {
+                    return LinearSmoothScroller.SNAP_TO_START;  // Menempatkan item di posisi awal layar
+                }
+            };
+
+            // Set target posisi ke 0 (index pertama)
+            smoothScroller.setTargetPosition(0);
+
+            // Mulai scroll dengan animasi halus
+            layoutManager.startSmoothScroll(smoothScroller);
+        }
+    }
+
+
+    private void triggerDataFetch() {
+        if (currentSearchText.isEmpty()) {
+            // Lakukan fetch data
+            hasMoreDataToFetchAfter = true;
+            currentPageForNoSOInput = 0;
+            filterDataInputByNoSO(selectedIdLokasi, selectedLabels, selectedUserID, currentPageForNoSOInput);
+        } else {
+            // Lakukan pencarian data
+            searchDataInputByNoSO(currentSearchText);
+            searchDataByNoSO(currentSearchText);
+            updateLabelCount(selectedNoSO, selectedTglSO, selectedBlok, selectedIdLokasi, selectedLabels, selectedUserID);
+        }
+    }
+
+
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Hentikan polling saat Activity tidak aktif
-        handler.removeCallbacks(fetchDataRunnable);
     }
-
 
 
     @Override
@@ -1345,6 +1478,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         super.onDestroy();
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();  // Graceful shutdown
+        }
+        // Pastikan untuk menutup WebSocket saat activity dihentikan
+        if (WebSocketConnection.getInstance().isConnected()) {
+            WebSocketConnection.getInstance().closeConnection();
         }
     }
 }

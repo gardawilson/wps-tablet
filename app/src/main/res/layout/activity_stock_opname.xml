@@ -334,11 +334,38 @@
                         </TableRow>
                     </TableLayout>
 
-                    <!-- Isi Tabel -->
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical">
+                        android:layout_height="match_parent">
+
+                        <!-- Bagian Notifikasi (akan muncul di atas RecyclerView) -->
+                        <LinearLayout
+                            android:id="@+id/notificationLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:background="@android:color/white"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp"
+                            android:layout_alignParentTop="true"
+                            android:elevation="8dp"
+                            android:alpha="0.7"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/tvNewDataNotification"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:text="New data available!"
+                                android:textColor="@android:color/white"
+                                android:background="@color/primary_dark"
+                                android:padding="8dp"
+                                android:textSize="14sp"
+                                android:gravity="center"
+                                android:layout_gravity="center_vertical"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
 
                         <!-- RecyclerView untuk Data -->
                         <androidx.recyclerview.widget.RecyclerView
@@ -354,7 +381,9 @@
                             android:visibility="gone"
                             android:layout_gravity="center" />
 
-                    </LinearLayout>
+                    </FrameLayout>
+
+
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -365,26 +394,37 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/countLabelBefore"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:text="Total data Before: 0"
-            android:layout_marginEnd="8dp"/>
+            <TextView
+                android:id="@+id/countDataStock"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:text="total_data_stock: 0"
+                android:layout_marginEnd="8dp"/>
 
-        <TextView
-            android:id="@+id/countLabelAfter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.5"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:text="Total data After: 0" />
+            <TextView
+                android:id="@+id/countLabelBefore"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:text="total_data_before: 0"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/countLabelAfter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:textSize="18sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:text="total_data_after: 0" />
 
         </LinearLayout>
 

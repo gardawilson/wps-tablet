@@ -221,6 +221,98 @@ public class StockOpnameApi {
         return stockOpnameDataByNoSOList;
     }
 
+    public static int getTotalDataStockCount(String noSO, String tglSO) {
+        int totalCount = 0;
+        Log.d("Database", "Fetching total count for NoSO: " + noSO + " and TglSO: " + tglSO);
+
+        String query = "SELECT COUNT(*) AS totalCount " +
+                "FROM ( " +
+                "    SELECT sost.[NoST] AS NoLabel, sost.IdLokasi " +
+                "    FROM [dbo].[StockOpnameST] sost " +
+                "    INNER JOIN [dbo].[ST_h] sth ON sost.[NoST] = sth.[NoST] " +
+                "    WHERE sost.[NoSO] = ? " +
+                "    AND (sth.[DateUsage] > ? OR sth.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT sos4s.[NoS4S] AS NoLabel, sos4s.IdLokasi " +
+                "    FROM [dbo].[StockOpnameS4S] sos4s " +
+                "    INNER JOIN [dbo].[S4S_h] s4h ON sos4s.[NoS4S] = s4h.[NoS4S] " +
+                "    INNER JOIN [dbo].[S4S_d] s4d ON sos4s.[NoS4S] = s4d.NoS4S " +
+                "    WHERE sos4s.[NoSO] = ? " +
+                "    AND (s4h.[DateUsage] > ? OR s4h.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT sofj.[NoFJ] AS NoLabel, sofj.IdLokasi " +
+                "    FROM [dbo].[StockOpnameFJ] sofj " +
+                "    INNER JOIN [dbo].[FJ_h] fjh ON sofj.[NoFJ] = fjh.[NoFJ] " +
+                "    INNER JOIN [dbo].[FJ_d] fjd ON sofj.[NoFJ] = fjd.NoFJ " +
+                "    WHERE sofj.[NoSO] = ? " +
+                "    AND (fjh.[DateUsage] > ? OR fjh.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT som.[NoMoulding] AS NoLabel, som.IdLokasi " +
+                "    FROM [dbo].[StockOpnameMoulding] som " +
+                "    INNER JOIN [dbo].[Moulding_h] mh ON som.[NoMoulding] = mh.[NoMoulding] " +
+                "    INNER JOIN [dbo].[Moulding_d] mould ON som.[NoMoulding] = mould.nomoulding " +
+                "    WHERE som.[NoSO] = ? " +
+                "    AND (mh.[DateUsage] > ? OR mh.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT sol.[NoLaminating] AS NoLabel, sol.IdLokasi " +
+                "    FROM [dbo].[StockOpnameLaminating] sol " +
+                "    INNER JOIN [dbo].[Laminating_h] lh ON sol.[NoLaminating] = lh.[NoLaminating] " +
+                "    INNER JOIN [dbo].[Laminating_d] ld ON sol.[NoLaminating] = ld.NoLaminating " +
+                "    WHERE sol.[NoSO] = ? " +
+                "    AND (lh.[DateUsage] > ? OR lh.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT soc.[NoCCAkhir] AS NoLabel, soc.IdLokasi " +
+                "    FROM [dbo].[StockOpnameCCAkhir] soc " +
+                "    INNER JOIN [dbo].[CCAkhir_h] ccah ON soc.[NoCCAkhir] = ccah.[NoCCAkhir] " +
+                "    INNER JOIN [dbo].[CCAkhir_d] ccad ON soc.[NoCCAkhir] = ccad.NoCCAkhir " +
+                "    WHERE soc.[NoSO] = ? " +
+                "    AND (ccah.[DateUsage] > ? OR ccah.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT sosand.[NoSanding] AS NoLabel, sosand.IdLokasi " +
+                "    FROM [dbo].[StockOpnameSanding] sosand " +
+                "    INNER JOIN [dbo].[Sanding_h] sh ON sosand.[NoSanding] = sh.[NoSanding] " +
+                "    INNER JOIN [dbo].[Sanding_d] sandd ON sosand.[NoSanding] = sandd.NoSanding " +
+                "    WHERE sosand.[NoSO] = ? " +
+                "    AND (sh.[DateUsage] > ? OR sh.[DateUsage] IS NULL) " +
+                "    UNION ALL " +
+                "    SELECT sobj.[NoBJ] AS NoLabel, sobj.IdLokasi " +
+                "    FROM [dbo].[StockOpnameBJ] sobj " +
+                "    INNER JOIN [dbo].[BarangJadi_h] bjh ON sobj.[NoBJ] = bjh.[NoBJ] " +
+                "    INNER JOIN [dbo].[BarangJadi_d] bjd ON sobj.[NoBJ] = bjd.NoBJ " +
+                "    WHERE sobj.[NoSO] = ? " +
+                "    AND (bjh.[DateUsage] > ? OR bjh.[DateUsage] IS NULL) " +
+                ") AS c";
+
+
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            // Loop untuk mengisi parameter NoSO dan tglSO
+            int paramIndex = 1;
+            for (int i = 0; i < 8; i++) { // Ada 8 subquery, masing-masing membutuhkan 2 parameter
+                stmt.setString(paramIndex++, noSO);  // Set NoSO
+                stmt.setString(paramIndex++, tglSO); // Set tglSO
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    totalCount = rs.getInt("totalCount");
+                    Log.d("Database", "Total count: " + totalCount);
+                } else {
+                    Log.d("Database", "No data found");
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching total count: " + e.getMessage());
+        }
+
+        return totalCount;
+    }
+
+
+
     public static int getTotalStockOpnameDataCount(
             String noSO, String tglSO, String selectedBlok, String selectedLokasi,
             Set<String> selectedLabels) {
@@ -383,7 +475,6 @@ public class StockOpnameApi {
 
     public static List<StockOpnameDataInputByNoSO> getStockOpnameDataInputByNoSO(String noSO, int offset, int limit) {
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
-        Log.d("Paging", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
 
         // Memodifikasi query untuk menambahkan OFFSET dan LIMIT
         String query =
@@ -597,7 +688,7 @@ public class StockOpnameApi {
         Log.d("Paging", "fetchDataInputBySearch with searchTerm: " + searchTerm + ", offset: " + offset + " and limit: " + limit);
 
         // Build query dynamically based on selectedLabels
-        StringBuilder queryBuilder = new StringBuilder("SELECT c.NoLabel, c.IdLokasi, c.UserID FROM ( ");
+        StringBuilder queryBuilder = new StringBuilder("SELECT c.NoLabel, c.IdLokasi, c.UserID, c.DateTimeScan FROM ( ");
         boolean isFirstQuery = true;
 
         // Loop through selectedLabels to dynamically build subqueries
@@ -608,28 +699,28 @@ public class StockOpnameApi {
                 }
                 switch (label) {
                     case "ST":
-                        queryBuilder.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoST] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_ST] WHERE [NoSO] = ? ");
                         break;
                     case "S4S":
-                        queryBuilder.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoS4S] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_S4S] WHERE [NoSO] = ? ");
                         break;
                     case "FJ":
-                        queryBuilder.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoFJ] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_FJ] WHERE [NoSO] = ? ");
                         break;
                     case "MLD":
-                        queryBuilder.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoMoulding] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_Moulding] WHERE [NoSO] = ? ");
                         break;
                     case "LMT":
-                        queryBuilder.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoLaminating] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_Laminating] WHERE [NoSO] = ? ");
                         break;
                     case "CC":
-                        queryBuilder.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoCCAkhir] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_CCAkhir] WHERE [NoSO] = ? ");
                         break;
                     case "SND":
-                        queryBuilder.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoSanding] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_Sanding] WHERE [NoSO] = ? ");
                         break;
                     case "BJ":
-                        queryBuilder.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
+                        queryBuilder.append("SELECT [NoBJ] AS NoLabel, IdLokasi, UserID, DateTimeScan FROM [dbo].[StockOpname_Hasil_d_BJ] WHERE [NoSO] = ? ");
                         break;
                 }
                 isFirstQuery = false;
@@ -655,7 +746,7 @@ public class StockOpnameApi {
         }
 
         // Add pagination (OFFSET and LIMIT)
-        queryBuilder.append("ORDER BY c.NoLabel OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        queryBuilder.append("ORDER BY c.DateTimeScan DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         Log.d("SQL Query", queryBuilder.toString()); // Log query for debugging
 
@@ -965,7 +1056,7 @@ public class StockOpnameApi {
             String selectedUserID, int offset, int limit) {
 
         List<StockOpnameDataInputByNoSO> stockOpnameDataInputByNoSOList = new ArrayList<>();
-        Log.d("valuefilter", "fetchDataInputByNoSO with offset: " + offset + " and limit: " + limit);
+        Log.d("valuefilter", "stockOpnameDataInput with offset: " + offset + " and limit: " + limit);
 
         // Menentukan query dasar
         StringBuilder query = new StringBuilder("SELECT s.NoLabel, s.IdLokasi, s.UserID, s.DateTimeScan FROM ( ");
@@ -1185,9 +1276,6 @@ public class StockOpnameApi {
 
         return count;
     }
-
-
-
 
 
 

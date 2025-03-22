@@ -45,6 +45,13 @@ public class StockOpnameDataAdapter extends RecyclerView.Adapter<StockOpnameData
         holder.noLabelTextView.setText(item.getNoLabel()); // Set NoLabel
         holder.idLokasiTextView.setText(item.getIdLokasi()); // Set IdLokasi
 
+        // Set background color bergantian berdasarkan posisi item
+        if (position % 2 == 0) {
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));  // Warna putih untuk posisi genap
+        } else {
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.background_cream));  // Warna abu-abu untuk posisi ganjil
+        }
+
         // Set listener klik pada item
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
