@@ -712,13 +712,17 @@ public class Packing extends AppCompatActivity {
                     String selectedSPK = parent.getItemAtPosition(position) != null ?
                             parent.getItemAtPosition(position).toString() : "";
 
+                    // Memisahkan string berdasarkan " - " dan mengambil bagian pertama (noSPK)
+                    String[] parts = selectedSPK.split(" - ");
+                    String noSPK = parts.length > 0 ? parts[0] : ""; // Mengambil bagian pertama (noSPK)
+
                     // Pindahkan operasi berat ke thread terpisah
                     new Thread(() -> {
                         // Pengecekan sinkron apakah SPK terkunci
-                        boolean isLocked = isSPKLocked(selectedSPK);
+                        boolean isLocked = isSPKLocked(noSPK);
 
                         // Ambil rekomendasi dari database (operasi berat)
-                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(selectedSPK);
+                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(noSPK);
 
                         // Update UI di main thread
                         handler.post(() -> {
@@ -750,11 +754,9 @@ public class Packing extends AppCompatActivity {
                             DetailPanjangP.setThreshold(0);
 
                             // Tampilkan status lock
-//                            if (isLocked) {
-//                                Toast.makeText(Packing.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-//                            } else {
-//                                Toast.makeText(Packing.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-//                            }
+                            if (isLocked) {
+                                Toast.makeText(Packing.this, "Dimensi Kunci Aktif", Toast.LENGTH_SHORT).show();
+                            }
                         });
                     }).start();
                 }
@@ -1595,6 +1597,17 @@ public class Packing extends AppCompatActivity {
                     return "Koneksi database gagal";
                 }
 
+                // Query untuk cek UnlockGrade
+                String unlockQuery = "SELECT UnlockGradeBJ FROM MstSPK_h WHERE NoSPK = ?";
+                PreparedStatement unlockStmt = connection.prepareStatement(unlockQuery);
+                unlockStmt.setString(1, noSPK);
+                ResultSet unlockRs = unlockStmt.executeQuery();
+                boolean isUnlockGrade = false;
+
+                if (unlockRs.next()) {
+                    isUnlockGrade = unlockRs.getInt("UnlockGradeBJ") == 1;
+                }
+
                 // Query untuk validasi data
                 String query = "SELECT * FROM MstSPK_d WHERE NoSPK = ?";
                 PreparedStatement stmt = connection.prepareStatement(query);
@@ -1602,15 +1615,20 @@ public class Packing extends AppCompatActivity {
                 ResultSet rs = stmt.executeQuery();
 
                 boolean matchFound = false;
+
                 while (rs.next()) {
-                    // Bandingkan setiap kolom
                     if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
                             Double.parseDouble(lebar) == rs.getDouble("Lebar") &&
                             Double.parseDouble(panjang) == rs.getDouble("Panjang") &&
-                            idJenisKayu.equals(rs.getString("IdJenisKayu")) &&
-                            idBarangJadi.equals(rs.getString("IdBarangJadi"))) {
-                        matchFound = true;
-                        break;
+                            idJenisKayu.equals(rs.getString("IdJenisKayu"))) {
+
+                        if (!isUnlockGrade && idBarangJadi.equals(rs.getString("IdBarangJadi"))) {
+                            matchFound = true;
+                            break;
+                        } else if (isUnlockGrade) {
+                            matchFound = true;
+                            break;
+                        }
                     }
                 }
 
@@ -1629,7 +1647,7 @@ public class Packing extends AppCompatActivity {
                     if (!columnMatches(connection, "IdJenisKayu", noSPK, idJenisKayu)) {
                         mismatchMessage.append("Jenis Kayu, ");
                     }
-                    if (!columnMatches(connection, "IdBarangJadi", noSPK, idBarangJadi)) {
+                    if (!isUnlockGrade && !columnMatches(connection, "IdBarangJadi", noSPK, idBarangJadi)) {
                         mismatchMessage.append("Barang Jadi, ");
                     }
 
@@ -1691,17 +1709,9 @@ public class Packing extends AppCompatActivity {
 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
-                    // Menggunakan metode 1
-                    float tebal = rs.getFloat("Tebal");
-                    float lebar = rs.getFloat("Lebar");
-                    float panjang = rs.getFloat("Panjang");
-
-                    dimensionData.get("tebal").add((tebal == (int)tebal) ?
-                            String.valueOf((int)tebal) : String.valueOf(tebal));
-                    dimensionData.get("lebar").add((lebar == (int)lebar) ?
-                            String.valueOf((int)lebar) : String.valueOf(lebar));
-                    dimensionData.get("panjang").add((panjang == (int)panjang) ?
-                            String.valueOf((int)panjang) : String.valueOf(panjang));
+                    dimensionData.get("tebal").add(rs.getString("Tebal"));
+                    dimensionData.get("lebar").add(rs.getString("Lebar"));
+                    dimensionData.get("panjang").add(rs.getString("Panjang"));
                 }
             } else {
                 Log.e("Database", "Koneksi database gagal");

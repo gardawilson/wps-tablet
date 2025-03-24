@@ -694,13 +694,17 @@ public class FingerJoint extends AppCompatActivity {
                     String selectedSPK = parent.getItemAtPosition(position) != null ?
                             parent.getItemAtPosition(position).toString() : "";
 
+                    // Memisahkan string berdasarkan " - " dan mengambil bagian pertama (noSPK)
+                    String[] parts = selectedSPK.split(" - ");
+                    String noSPK = parts.length > 0 ? parts[0] : ""; // Mengambil bagian pertama (noSPK)
+
                     // Pindahkan operasi berat ke thread terpisah
                     new Thread(() -> {
                         // Pengecekan sinkron apakah SPK terkunci
-                        boolean isLocked = isSPKLocked(selectedSPK);
+                        boolean isLocked = isSPKLocked(noSPK);
 
                         // Ambil rekomendasi dari database (operasi berat)
-                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(selectedSPK);
+                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(noSPK);
 
                         // Update UI di main thread
                         handler.post(() -> {
@@ -732,11 +736,9 @@ public class FingerJoint extends AppCompatActivity {
                             DetailPanjangFJ.setThreshold(0);
 
                             // Tampilkan status lock
-//                            if (isLocked) {
-//                                Toast.makeText(FingerJoint.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-//                            } else {
-//                                Toast.makeText(FingerJoint.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-//                            }
+                            if (isLocked) {
+                                Toast.makeText(FingerJoint.this, "Dimensi Kunci Aktif", Toast.LENGTH_SHORT).show();
+                            }
                         });
                     }).start();
                 }
@@ -1584,6 +1586,17 @@ public class FingerJoint extends AppCompatActivity {
                     return "Koneksi database gagal";
                 }
 
+                // Query untuk cek UnlockGrade
+                String unlockQuery = "SELECT UnlockGradeFJ FROM MstSPK_h WHERE NoSPK = ?";
+                PreparedStatement unlockStmt = connection.prepareStatement(unlockQuery);
+                unlockStmt.setString(1, noSPK);
+                ResultSet unlockRs = unlockStmt.executeQuery();
+                boolean isUnlockGrade = false;
+
+                if (unlockRs.next()) {
+                    isUnlockGrade = unlockRs.getInt("UnlockGradeFJ") == 1;
+                }
+
                 // Query untuk validasi data
                 String query = "SELECT * FROM MstSPK_dFJ WHERE NoSPK = ?";
                 PreparedStatement stmt = connection.prepareStatement(query);
@@ -1591,15 +1604,20 @@ public class FingerJoint extends AppCompatActivity {
                 ResultSet rs = stmt.executeQuery();
 
                 boolean matchFound = false;
+
                 while (rs.next()) {
-                    // Bandingkan setiap kolom
                     if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
                             Double.parseDouble(lebar) == rs.getDouble("Lebar") &&
                             Double.parseDouble(panjang) == rs.getDouble("Panjang") &&
-                            idJenisKayu.equals(rs.getString("IdJenisKayu")) &&
-                            idGrade.equals(rs.getString("IdGrade"))) {
-                        matchFound = true;
-                        break;
+                            idJenisKayu.equals(rs.getString("IdJenisKayu"))) {
+
+                        if (!isUnlockGrade && idGrade.equals(rs.getString("IdGrade"))) {
+                            matchFound = true;
+                            break;
+                        } else if (isUnlockGrade) {
+                            matchFound = true;
+                            break;
+                        }
                     }
                 }
 
@@ -1618,7 +1636,7 @@ public class FingerJoint extends AppCompatActivity {
                     if (!columnMatches(connection, "IdJenisKayu", noSPK, idJenisKayu)) {
                         mismatchMessage.append("Jenis Kayu, ");
                     }
-                    if (!columnMatches(connection, "IdGrade", noSPK, idGrade)) {
+                    if (!isUnlockGrade && !columnMatches(connection, "IdGrade", noSPK, idGrade)) {
                         mismatchMessage.append("Grade, ");
                     }
 

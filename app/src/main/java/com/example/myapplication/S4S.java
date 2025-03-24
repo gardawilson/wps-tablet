@@ -695,13 +695,17 @@ public class S4S extends AppCompatActivity {
                     String selectedSPK = parent.getItemAtPosition(position) != null ?
                             parent.getItemAtPosition(position).toString() : "";
 
+                    // Memisahkan string berdasarkan " - " dan mengambil bagian pertama (noSPK)
+                    String[] parts = selectedSPK.split(" - ");
+                    String noSPK = parts.length > 0 ? parts[0] : ""; // Mengambil bagian pertama (noSPK)
+
                     // Pindahkan operasi berat ke thread terpisah
                     new Thread(() -> {
                         // Pengecekan sinkron apakah SPK terkunci
-                        boolean isLocked = isSPKLocked(selectedSPK);
+                        boolean isLocked = isSPKLocked(noSPK);
 
                         // Ambil rekomendasi dari database (operasi berat)
-                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(selectedSPK);
+                        Map<String, List<String>> dimensionData = listSPKDetailRecommendation(noSPK);
 
                         // Update UI di main thread
                         handler.post(() -> {
@@ -733,11 +737,9 @@ public class S4S extends AppCompatActivity {
                             DetailPanjangS4S.setThreshold(0);
 
                             // Tampilkan status lock
-//                            if (isLocked) {
-//                                Toast.makeText(S4S.this, "Dimension terkunci", Toast.LENGTH_SHORT).show();
-//                            } else {
-//                                Toast.makeText(S4S.this, "Dimension tidak terkunci", Toast.LENGTH_SHORT).show();
-//                            }
+                            if (isLocked) {
+                                Toast.makeText(S4S.this, "Dimensi Kunci Aktif", Toast.LENGTH_SHORT).show();
+                            }
                         });
                     }).start();
                 }
@@ -966,12 +968,20 @@ public class S4S extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
                     String query;
-                    if (isNoProduksi) {
+                    if (isNoProduksi && parameter.startsWith("RA")) {
                         query = "SELECT spo.NoS4S, h.HasBeenPrinted " +
                                 "FROM dbo.S4SProduksiOutput spo " +
                                 "JOIN dbo.S4S_h h ON spo.NoS4S = h.NoS4S " +
                                 "WHERE spo.NoProduksi = ?" +
                                 "ORDER BY spo.NoS4S DESC";
+
+                    } else if (isNoProduksi && parameter.startsWith("VA")){
+                        query = "SELECT spo.NoS4S, h.HasBeenPrinted " +
+                                "FROM dbo.CCAkhirProduksiOutputS4S spo " +
+                                "JOIN dbo.S4S_h h ON spo.NoS4S = h.NoS4S " +
+                                "WHERE spo.NoProduksi = ?" +
+                                "ORDER BY spo.NoS4S DESC";
+
                     } else {
                         query = "SELECT bs.NoS4S, h.HasBeenPrinted " +
                                 "FROM dbo.BongkarSusunOutputS4S bs " +
@@ -1586,6 +1596,19 @@ public class S4S extends AppCompatActivity {
                     return "Koneksi database gagal";
                 }
 
+                // Query untuk cek UnlockGradeS4S
+                String unlockQuery = "SELECT UnlockGradeS4S FROM MstSPK_h WHERE NoSPK = ?";
+                PreparedStatement unlockStmt = connection.prepareStatement(unlockQuery);
+                unlockStmt.setString(1, noSPK);
+                ResultSet unlockRs = unlockStmt.executeQuery();
+                boolean isUnlockGrade = false;
+
+                if (unlockRs.next()) {
+                    // Jika UnlockGradeS4S = 1, set isUnlockGrade menjadi true
+                    isUnlockGrade = unlockRs.getInt("UnlockGradeS4S") == 1;
+                }
+
+
                 // Query untuk validasi data
                 String query = "SELECT * FROM MstSPK_dS4S WHERE NoSPK = ?";
                 PreparedStatement stmt = connection.prepareStatement(query);
@@ -1598,10 +1621,16 @@ public class S4S extends AppCompatActivity {
                     if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
                             Double.parseDouble(lebar) == rs.getDouble("Lebar") &&
                             Double.parseDouble(panjang) == rs.getDouble("Panjang") &&
-                            idJenisKayu.equals(rs.getString("IdJenisKayu")) &&
-                            idGrade.equals(rs.getString("IdGrade"))) {
-                        matchFound = true;
-                        break;
+                            idJenisKayu.equals(rs.getString("IdJenisKayu"))) {
+                        // Jika UnlockGradeS4S adalah 1, lewati pengecekan IdGrade
+                        if (!isUnlockGrade && idGrade.equals(rs.getString("IdGrade"))) {
+                            matchFound = true;
+                            break;
+                        } else if (isUnlockGrade) {
+                            // Jika UnlockGradeS4S adalah 1, lewati pengecekan IdGrade
+                            matchFound = true;
+                            break;
+                        }
                     }
                 }
 
@@ -1620,7 +1649,7 @@ public class S4S extends AppCompatActivity {
                     if (!columnMatches(connection, "IdJenisKayu", noSPK, idJenisKayu)) {
                         mismatchMessage.append("Jenis Kayu, ");
                     }
-                    if (!columnMatches(connection, "IdGrade", noSPK, idGrade)) {
+                    if (!isUnlockGrade && !columnMatches(connection, "IdGrade", noSPK, idGrade)) {
                         mismatchMessage.append("Grade, ");
                     }
 
@@ -1860,39 +1889,62 @@ public class S4S extends AppCompatActivity {
                 if (connection != null) {
                     // Query untuk header
                     String queryHeader = "SELECT " +
-                            "o.NoProduksi, " +
-                            "h.DateCreate, " +
-                            "h.Jam, " +
-                            "h.IdOrgTelly, " +
-                            "t.NamaOrgTelly, " +
-                            "h.NoSPK, " +
-                            "h.NoSPKAsal, " +
-                            "h.IdGrade, " +
-                            "g.NamaGrade, " +
-                            "h.IdFJProfile, " +
-                            "h.IdFisik, " +
-                            "o.NoS4S, " +
-                            "p.IdMesin, " +
-                            "m.NamaMesin, " +
-                            "s.NoBongkarSusun, " +
-                            "f.Profile, " +
-                            "w.NamaWarehouse, " +
-                            "h.IdJenisKayu, " +
-                            "k.Jenis, " +
-                            "h.IsLembur, " +
-                            "h.IsReject, " +
-                            "h.Remark " +
-                            "FROM S4S_h h " +
-                            "LEFT JOIN S4SProduksiOutput o ON h.NoS4S = o.NoS4S " +
-                            "LEFT JOIN MstGrade g ON h.IdGrade = g.IdGrade " +
-                            "LEFT JOIN S4SProduksi_h p ON o.NoProduksi = p.NoProduksi " +
-                            "LEFT JOIN BongkarSusunOutputS4S s ON h.NoS4S = s.NoS4S " +
-                            "LEFT JOIN MstMesin m ON p.IdMesin = m.IdMesin " +
-                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
-                            "LEFT JOIN MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
-                            "LEFT JOIN MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
-                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
-                            "WHERE h.NoS4S = ?";
+                            "    o.NoProduksi, " +
+                            "    h.DateCreate, " +
+                            "    h.Jam, " +
+                            "    h.IdOrgTelly, " +
+                            "    t.NamaOrgTelly, " +
+                            "    h.NoSPK, " +
+                            "    h.NoSPKAsal, " +
+                            "    h.IdGrade, " +
+                            "    g.NamaGrade, " +
+                            "    h.IdFJProfile, " +
+                            "    h.IdFisik, " +
+                            "    o.NoS4S, " +
+                            "    p.IdMesin, " +
+                            "    m.NamaMesin, " +
+                            "    s.NoBongkarSusun, " +
+                            "    f.Profile, " +
+                            "    w.NamaWarehouse, " +
+                            "    h.IdJenisKayu, " +
+                            "    k.Jenis, " +
+                            "    h.IsLembur, " +
+                            "    h.IsReject, " +
+                            "    h.Remark " +
+                            "FROM " +
+                            "    S4S_h h " +
+                            "LEFT JOIN " +
+                            "    ( " +
+                            "        SELECT NoProduksi, NoS4S " +
+                            "        FROM S4SProduksiOutput " +
+                            "        UNION " +
+                            "        SELECT NoProduksi, NoS4S " +
+                            "        FROM CCAkhirProduksiOutputS4S " +
+                            "    ) o ON h.NoS4S = o.NoS4S " +
+                            "LEFT JOIN " +
+                            "    MstGrade g ON h.IdGrade = g.IdGrade " +
+                            "LEFT JOIN " +
+                            "    ( " +
+                            "        SELECT NoProduksi, IdMesin " +
+                            "        FROM S4SProduksi_h " +
+                            "        UNION " +
+                            "        SELECT NoProduksi, IdMesin " +
+                            "        FROM CCAkhirProduksi_h " +
+                            "    ) p ON o.NoProduksi = p.NoProduksi " +
+                            "LEFT JOIN " +
+                            "    BongkarSusunOutputS4S s ON h.NoS4S = s.NoS4S " +
+                            "LEFT JOIN " +
+                            "    MstMesin m ON p.IdMesin = m.IdMesin " +
+                            "LEFT JOIN " +
+                            "    MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN " +
+                            "    MstFJProfile f ON h.IdFJProfile = f.IdFJProfile " +
+                            "LEFT JOIN " +
+                            "    MstWarehouse w ON h.IdFisik = w.IdWarehouse " +
+                            "LEFT JOIN " +
+                            "    MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                            "WHERE " +
+                            "    h.NoS4S = ?";
 
                     // Query untuk detail
                     String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
@@ -3100,15 +3152,35 @@ public class S4S extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "INSERT INTO dbo.S4SProduksiOutput (NoProduksi, NoS4S) VALUES (?, ?)";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noProduksi);
-                    ps.setString(2, noS4S);
+                    // Mengecek huruf awal noProduksi
+                    String query;
+                    if (noProduksi.startsWith("RA")) {
+                        // Query untuk noProduksi yang dimulai dengan "RA"
+                        query = "INSERT INTO dbo.S4SProduksiOutput (NoProduksi, NoS4S) VALUES (?, ?)";
+                        PreparedStatement ps = con.prepareStatement(query);
+                        ps.setString(1, noProduksi);
+                        ps.setString(2, noS4S);
 
-                    int rowsInserted = ps.executeUpdate();
-                    ps.close();
-                    con.close();
-                    return rowsInserted > 0;
+                        int rowsInserted = ps.executeUpdate();
+                        ps.close();
+
+                        return rowsInserted > 0;
+                    } else if (noProduksi.startsWith("VA")) {
+                        // Query untuk noProduksi yang dimulai dengan "VA"
+                        query = "INSERT INTO dbo.CCAkhirProduksiOutputS4S (NoProduksi, NoS4S) VALUES (?, ?)";
+                        PreparedStatement ps = con.prepareStatement(query);
+                        ps.setString(1, noProduksi);
+                        ps.setString(2, noS4S);
+
+                        int rowsInserted = ps.executeUpdate();
+                        ps.close();
+
+                        return rowsInserted > 0;
+                    } else {
+                        // Jika noProduksi tidak dimulai dengan "RA" atau "VA"
+                        Log.e("Invalid Prefix", "NoProduksi does not start with RA or VA.");
+                        return false;
+                    }
                 } catch (Exception e) {
                     Log.e("Database Error", e.getMessage());
                     return false;
@@ -4069,11 +4141,19 @@ public class S4S extends AppCompatActivity {
                         selectedDate = Date.getText().toString();
                     }
 
-                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi FROM dbo.S4SProduksi_h a " +
-                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin WHERE CONVERT(date, a.Tanggal) = CONVERT(date, ?)";
+                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi " +
+                            "FROM dbo.S4SProduksi_h a " +
+                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
+                            "WHERE CONVERT(date, a.Tanggal) = CONVERT(date, ?) " +
+                            "UNION ALL " +
+                            "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi " +
+                            "FROM dbo.CCAkhirProduksi_h a " +
+                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
+                            "WHERE a.Tanggal = ?";
 
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, selectedDate);
+                    ps.setString(2, selectedDate);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {

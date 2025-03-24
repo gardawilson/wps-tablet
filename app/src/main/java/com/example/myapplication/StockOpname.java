@@ -965,7 +965,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             @Override
             public void onItemClick(int position) {
                 // Ambil data item yang diklik
-                StockOpnameDataByNoSO clickedItem = stockOpnameDataByNoSOList.get(position);
+                StockOpnameDataInputByNoSO clickedItem = stockOpnameDataInputByNoSOList.get(position);
 
                 // Gunakan post() untuk memastikan eksekusi setelah RecyclerView selesai memperbarui tampilan
                 recyclerViewAfter.post(() -> {
@@ -974,25 +974,25 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
                         // Dapatkan view item dari ViewHolder
                         View itemView = holder.itemView;
 
-                        if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("E")) {
+                        if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("E")) {
                             // Panggil fungsi fetchDataAndShowTooltip dengan itemView
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "ST_h", "ST_d", "NoST", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("R")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "S4S_h", "S4S_d", "NoS4S", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("S")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "FJ_h", "FJ_d", "NoFJ", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("T")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Moulding_h", "Moulding_d", "NoMoulding", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("U")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Laminating_h", "Laminating_d", "NoLaminating", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("V")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "CCAkhir_h", "CCAkhir_d", "NoCCAkhir", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("W")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "Sanding_h", "Sanding_d", "NoSanding", false);
-                        } else if (clickedItem.getNoLabel() != null && clickedItem.getNoLabel().startsWith("I")) {
-                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabel(), "BarangJadi_h", "BarangJadi_d", "NoBJ", false);
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "ST_h", "ST_d", "NoST", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("R")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "S4S_h", "S4S_d", "NoS4S", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("S")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "FJ_h", "FJ_d", "NoFJ", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("T")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "Moulding_h", "Moulding_d", "NoMoulding", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("U")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "Laminating_h", "Laminating_d", "NoLaminating", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("V")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "CCAkhir_h", "CCAkhir_d", "NoCCAkhir", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("W")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "Sanding_h", "Sanding_d", "NoSanding", false);
+                        } else if (clickedItem.getNoLabelInput() != null && clickedItem.getNoLabelInput().startsWith("I")) {
+                            fetchDataAndShowTooltip(itemView, clickedItem.getNoLabelInput(), "BarangJadi_h", "BarangJadi_d", "NoBJ", false);
                         } else {
-                            Toast.makeText(StockOpname.this, "Tidak ada data " + clickedItem.getNoLabel(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(StockOpname.this, "Tidak ada data " + clickedItem.getNoLabelInput(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
