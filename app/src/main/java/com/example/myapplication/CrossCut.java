@@ -2033,15 +2033,15 @@ public class CrossCut extends AppCompatActivity {
                                         m3();
                                         jumlahpcs();
 
-                                        Toast.makeText(getApplicationContext(),
-                                                "Data berhasil dimuat",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Data berhasil dimuat",
+//                                                Toast.LENGTH_SHORT).show();
                                     } catch (Exception e) {
 
                                         Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
-                                        Toast.makeText(getApplicationContext(),
-                                                "Gagal memperbarui tampilan",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Gagal memperbarui tampilan",
+//                                                Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } else {
@@ -2135,6 +2135,8 @@ public class CrossCut extends AppCompatActivity {
             int hasBeenPrintedValue = -1;
             boolean existsInH = false;
             boolean existsInD = false;
+            String dateUsage = null;
+            boolean hasBeenProcess = false;
             Connection connection = null;
 
             try {
@@ -2142,7 +2144,7 @@ public class CrossCut extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
 
-                    String queryCheckH = "SELECT HasBeenPrinted FROM CCAkhir_h WHERE NoCCAkhir = ?";
+                    String queryCheckH = "SELECT HasBeenPrinted, DateUsage FROM CCAkhir_h WHERE NoCCAkhir = ?";
                     String queryCheckD = "SELECT 1 FROM CCAkhir_d WHERE NoCCAkhir = ?";
 
                     // Cek keberadaan di ccakhir_h
@@ -2151,7 +2153,11 @@ public class CrossCut extends AppCompatActivity {
                         try (ResultSet rsH = stmtH.executeQuery()) {
                             if (rsH.next()) {
                                 hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
-                                existsInH = true; // Data ditemukan di ccakhir_h
+                                dateUsage = rsH.getString("DateUsage");
+                                existsInH = true;
+                                if (dateUsage != null) {
+                                    hasBeenProcess = true;
+                                }
                             }
                         }
                     }
@@ -2183,13 +2189,23 @@ public class CrossCut extends AppCompatActivity {
 
             final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
             final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+            final boolean finalHasBeenProcess = hasBeenProcess;
+            final String finalDateUsage =  DateTimeUtils.formatDate(dateUsage);
 
             runOnUiThread(() -> {
                 if (!finalIsAvailable) {
                     // Data tidak ditemukan di kedua tabel
                     Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
                     callback.onResult(-1); // Indikasikan gagal
-                } else {
+                }
+
+                else if (finalHasBeenProcess) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Label Telah diproses pada " + finalDateUsage + "!", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else {
                     // Data ditemukan, kirimkan hasil HasBeenPrinted
                     callback.onResult(finalHasBeenPrintedValue);
                 }

@@ -90,13 +90,13 @@ private CardView SawnTimber;
             }
         });
 
-//        SawnTimber.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent intent = new Intent(InputLabel.this,SawnTimber.class);
-//                startActivity(intent);
-//            }
-//        });
+        SawnTimber.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(InputLabel.this,SawnTimber.class);
+                startActivity(intent);
+            }
+        });
 
     }
 }

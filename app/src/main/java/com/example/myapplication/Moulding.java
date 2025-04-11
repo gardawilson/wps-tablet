@@ -2030,15 +2030,15 @@ public class Moulding extends AppCompatActivity {
                                         m3();
                                         jumlahpcs();
 
-                                        Toast.makeText(getApplicationContext(),
-                                                "Data berhasil dimuat",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Data berhasil dimuat",
+//                                                Toast.LENGTH_SHORT).show();
                                     } catch (Exception e) {
 
-                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
-                                        Toast.makeText(getApplicationContext(),
-                                                "Gagal memperbarui tampilan",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Gagal memperbarui tampilan",
+//                                                Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } else {
@@ -2130,35 +2130,42 @@ public class Moulding extends AppCompatActivity {
     private void checkHasBeenPrinted(String noMoulding, Moulding.HasBeenPrintedCallback callback) {
         new Thread(() -> {
             int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
-            boolean existsInH = false; // Cek keberadaan di s4s_h
-            boolean existsInD = false; // Cek keberadaan di s4s_d
+            boolean existsInH = false; // Cek keberadaan di moulding_h
+            boolean existsInD = false; // Cek keberadaan di moulding_d
+            String dateUsage = null;
+            boolean hasBeenProcess = false;
             Connection connection = null;
 
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    // Query untuk mengecek keberadaan di s4s_h dan mengambil HasBeenPrinted
-                    String queryCheckH = "SELECT HasBeenPrinted FROM Moulding_h WHERE NoMoulding = ?";
+                    // Query untuk mengecek keberadaan di moulding_h dan mengambil HasBeenPrinted
+                    String queryCheckH = "SELECT HasBeenPrinted, DateUsage FROM Moulding_h WHERE NoMoulding = ?";
                     String queryCheckD = "SELECT 1 FROM Moulding_d WHERE NoMoulding = ?";
 
-                    // Cek keberadaan di s4s_h
+                    // Cek keberadaan di moulding_h
                     try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
                         stmtH.setString(1, noMoulding);
                         try (ResultSet rsH = stmtH.executeQuery()) {
                             if (rsH.next()) {
                                 hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
-                                existsInH = true; // Data ditemukan di s4s_h
+                                dateUsage = rsH.getString("DateUsage");
+                                existsInH = true;
+
+                                if (dateUsage != null) {
+                                    hasBeenProcess = true;
+                                }
                             }
                         }
                     }
 
-                    // Cek keberadaan di s4s_d
+                    // Cek keberadaan di moulding_d
                     try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
                         stmtD.setString(1, noMoulding);
                         try (ResultSet rsD = stmtD.executeQuery()) {
                             if (rsD.next()) {
-                                existsInD = true; // Data ditemukan di s4s_d
+                                existsInD = true; // Data ditemukan di moulding_d
                             }
                         }
                     }
@@ -2180,13 +2187,23 @@ public class Moulding extends AppCompatActivity {
 
             final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
             final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+            final boolean finalHasBeenProcess = hasBeenProcess;
+            final String finalDateUsage =  DateTimeUtils.formatDate(dateUsage);
 
             runOnUiThread(() -> {
                 if (!finalIsAvailable) {
                     // Data tidak ditemukan di kedua tabel
                     Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
                     callback.onResult(-1); // Indikasikan gagal
-                } else {
+                }
+
+                else if (finalHasBeenProcess) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Label Telah diproses pada " + finalDateUsage + "!", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else {
                     // Data ditemukan, kirimkan hasil HasBeenPrinted
                     callback.onResult(finalHasBeenPrintedValue);
                 }

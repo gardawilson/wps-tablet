@@ -2030,15 +2030,15 @@ public class S4S extends AppCompatActivity {
                                         m3();
                                         jumlahpcs();
 
-                                        Toast.makeText(getApplicationContext(),
-                                                "Data berhasil dimuat",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Data berhasil dimuat",
+//                                                Toast.LENGTH_SHORT).show();
                                     } catch (Exception e) {
 
                                         Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
-                                        Toast.makeText(getApplicationContext(),
-                                                "Gagal memperbarui tampilan",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Gagal memperbarui tampilan",
+//                                                Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } else {
@@ -2131,6 +2131,8 @@ public class S4S extends AppCompatActivity {
             int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
             boolean existsInH = false; // Cek keberadaan di s4s_h
             boolean existsInD = false; // Cek keberadaan di s4s_d
+            String dateUsage = null;
+            boolean hasBeenProcess = false;
             Connection connection = null;
 
             try {
@@ -2138,7 +2140,7 @@ public class S4S extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
                     // Query untuk mengecek keberadaan di s4s_h dan mengambil HasBeenPrinted
-                    String queryCheckH = "SELECT HasBeenPrinted FROM S4S_h WHERE NoS4S = ?";
+                    String queryCheckH = "SELECT HasBeenPrinted, DateUsage FROM S4S_h WHERE NoS4S = ?";
                     String queryCheckD = "SELECT 1 FROM S4S_d WHERE NoS4S = ?";
 
                     // Cek keberadaan di s4s_h
@@ -2147,7 +2149,12 @@ public class S4S extends AppCompatActivity {
                         try (ResultSet rsH = stmtH.executeQuery()) {
                             if (rsH.next()) {
                                 hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                dateUsage = rsH.getString("DateUsage");
                                 existsInH = true; // Data ditemukan di s4s_h
+
+                                if (dateUsage != null) {
+                                    hasBeenProcess = true;
+                                }
                             }
                         }
                     }
@@ -2178,14 +2185,24 @@ public class S4S extends AppCompatActivity {
             }
 
             final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
-            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel\
+            final boolean finalHasBeenProcess = hasBeenProcess;
+            final String finalDateUsage =  DateTimeUtils.formatDate(dateUsage);
 
             runOnUiThread(() -> {
                 if (!finalIsAvailable) {
                     // Data tidak ditemukan di kedua tabel
                     Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
                     callback.onResult(-1); // Indikasikan gagal
-                } else {
+                }
+
+                else if (finalHasBeenProcess) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Label Telah diproses pada " + finalDateUsage + "!", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else {
                     // Data ditemukan, kirimkan hasil HasBeenPrinted
                     callback.onResult(finalHasBeenPrintedValue);
                 }

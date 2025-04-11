@@ -1994,15 +1994,15 @@ public class FingerJoint extends AppCompatActivity {
                                         m3();
                                         jumlahpcs();
 
-                                        Toast.makeText(getApplicationContext(),
-                                                "Data berhasil dimuat",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Data berhasil dimuat",
+//                                                Toast.LENGTH_SHORT).show();
                                     } catch (Exception e) {
 
                                         Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
-                                        Toast.makeText(getApplicationContext(),
-                                                "Gagal memperbarui tampilan",
-                                                Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Gagal memperbarui tampilan",
+//                                                Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } else {
@@ -2097,6 +2097,8 @@ public class FingerJoint extends AppCompatActivity {
             int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
             boolean existsInH = false; // Cek keberadaan di FJ_h
             boolean existsInD = false; // Cek keberadaan di FJ_d
+            String dateUsage = null;
+            boolean hasBeenProcess = false;
             Connection connection = null;
 
             try {
@@ -2104,7 +2106,7 @@ public class FingerJoint extends AppCompatActivity {
                 connection = ConnectionClass();
                 if (connection != null) {
                     // Query untuk mengecek keberadaan di FJ_h dan mengambil HasBeenPrinted
-                    String queryCheckH = "SELECT HasBeenPrinted FROM FJ_h WHERE NoFJ = ?";
+                    String queryCheckH = "SELECT HasBeenPrinted, DateUsage FROM FJ_h WHERE NoFJ = ?";
                     String queryCheckD = "SELECT 1 FROM FJ_d WHERE NoFJ = ?";
 
                     // Cek keberadaan di FJ_h
@@ -2113,7 +2115,12 @@ public class FingerJoint extends AppCompatActivity {
                         try (ResultSet rsH = stmtH.executeQuery()) {
                             if (rsH.next()) {
                                 hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
-                                existsInH = true; // Data ditemukan di FJ_h
+                                dateUsage = rsH.getString("DateUsage");
+                                existsInH = true;
+
+                                if (dateUsage != null) {
+                                    hasBeenProcess = true;
+                                }
                             }
                         }
                     }
@@ -2145,13 +2152,23 @@ public class FingerJoint extends AppCompatActivity {
 
             final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
             final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel
+            final boolean finalHasBeenProcess = hasBeenProcess;
+            final String finalDateUsage =  DateTimeUtils.formatDate(dateUsage);
 
             runOnUiThread(() -> {
                 if (!finalIsAvailable) {
                     // Data tidak ditemukan di kedua tabel
                     Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
                     callback.onResult(-1); // Indikasikan gagal
-                } else {
+                }
+
+                else if (finalHasBeenProcess) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Label Telah diproses pada " + finalDateUsage + "!", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else {
                     // Data ditemukan, kirimkan hasil HasBeenPrinted
                     callback.onResult(finalHasBeenPrintedValue);
                 }
