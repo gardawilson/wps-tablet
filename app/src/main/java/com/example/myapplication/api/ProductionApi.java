@@ -24,7 +24,6 @@ import java.util.Map;
 
 public class ProductionApi {
 
-
     // GETTER DAN SETTER PROSES PRODUKSI
     public static List<ProductionData> getProductionData(String tableName) {
         List<ProductionData> productionDataList = new ArrayList<>();

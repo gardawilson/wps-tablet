@@ -26,6 +26,7 @@ java_websocket = "1.5.2"
 
 
 
+
 [libraries]
 itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7Core" }
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
@@ -53,6 +54,7 @@ rxandroid = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = 
 paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java_websocket" }
+
 
 
 

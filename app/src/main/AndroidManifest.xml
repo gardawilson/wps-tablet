@@ -32,6 +32,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".SawnTimberPembelian"
+            android:exported="false" />
+        <activity
+            android:name=".SawnTimberCategory"
+            android:exported="false" />
+        <activity
             android:name=".StockOpname"
             android:exported="false" />
         <activity
@@ -61,7 +67,6 @@
         <activity
             android:name=".ProsesProduksi"
             android:exported="false" />
-
         <activity
             android:name=".SawnTimber"
             android:exported="false" />
@@ -88,8 +93,8 @@
             android:exported="false" />
         <activity
             android:name=".S4S"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".InputLabel"
             android:exported="false" />
@@ -102,7 +107,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
-
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -113,7 +117,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
 
         <provider
             android:name="androidx.core.content.FileProvider"

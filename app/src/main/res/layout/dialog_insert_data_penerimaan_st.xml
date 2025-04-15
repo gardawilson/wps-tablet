@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:id="@+id/title_left"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.9"
+            android:text="PENERIMAAN ST (Pembelian)"
+            android:textColor="@color/black"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseDialogInputNoPST"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/ic_close"
+            android:layout_weight="0.1"
+            android:contentDescription="Close"
+            android:scaleType="fitEnd"/>
+
+    </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="15dp">
+
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:text="No. P. ST"
+                android:textSize="18sp"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=":"
+                android:textSize="18sp"
+                android:paddingRight="8dp"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/tvNoPenerimaanST"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="B.XXXXXX"
+                android:textSize="18sp"
+                android:layout_weight="1"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp"
+        >
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Tgl Laporan"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editTglLaporan"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:layout_marginRight="10dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Tanggal"
+            android:focusable="false"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp"
+        >
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Tgl Msk Ton"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editTglMasuk"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:layout_marginRight="10dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Tanggal"
+            android:focusable="false"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp" >
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Supplier"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <Spinner
+            android:id="@+id/spinIdSupplier"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="No Truk "
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editNoTruk"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:padding="6dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Nomor Truk"
+            android:inputType="number"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:text="No. Plat : "
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:gravity="end"/>
+
+        <EditText
+            android:id="@+id/editNoPlat"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:padding="6dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Nomor Plat Truk"
+            android:inputType="textCapCharacters"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="No. Suket"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editSuket"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Nomor Suket"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="15dp"
+        >
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Ton SJ"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editTonSJ"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:layout_marginRight="10dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Ton Surat Jalan"
+            android:inputType="numberDecimal"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Note"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textSize="18sp"
+            android:paddingRight="8dp"
+            android:textColor="@color/black" />
+
+        <EditText
+            android:id="@+id/editNote"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textSize="18sp"
+            android:background="@drawable/border_input"
+            android:elevation="1dp"
+            android:hint="Maks 50 Karakter"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:maxLines="5"
+            android:maxLength="50"
+            android:focusable="true"
+            android:focusableInTouchMode="true"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnSimpan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Simpan" />
+</LinearLayout>

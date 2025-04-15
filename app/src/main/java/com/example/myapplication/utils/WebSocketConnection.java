@@ -6,7 +6,7 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 public class WebSocketConnection {
-    private static final String SERVER_URI = "ws://192.168.11.153:5001";  // Ganti dengan alamat WebSocket Anda
+    private static final String SERVER_URI = "ws://192.168.10.100:5001";  // Ganti dengan alamat WebSocket Anda
     private static WebSocketConnection instance;
     private WebSocketClient webSocketClient;
     private boolean isConnected = false;
