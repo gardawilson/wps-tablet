@@ -8,11 +8,13 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,6 +24,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.LinearLayout;
@@ -150,8 +153,6 @@ public class SawnTimber extends AppCompatActivity {
     private Button BtnHapusDetailST;
     private Button BtnPrintST;
     private Button BtnTambahStickST;
-    private Button BtnHapusStickST;
-    private Button BtnHapusSemuaStickST;
     private SearchView NoST;
     private SearchView NoKayuBulat;
     private EditText Supplier;
@@ -193,19 +194,18 @@ public class SawnTimber extends AppCompatActivity {
     boolean isCreateMode = false;
     private EditText NoST_display;
     private EditText NoKB_display;
-
+    private TableLayout TabelInputPjgPcs;
+    private Button addRowButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+//        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_sawn_timber);
 
         BtnBatalST = findViewById(R.id.BtnBatalST);
         BtnDataBaruST = findViewById(R.id.BtnDataBaruST);
         BtnPrintST = findViewById(R.id.BtnPrintST);
-        BtnHapusSemuaStickST = findViewById(R.id.BtnHapusSemuaStickST);
-        BtnHapusStickST = findViewById(R.id.BtnHapusStickST);
         BtnTambahStickST = findViewById(R.id.BtnTambahStickST);
         BtnSimpanST = findViewById(R.id.BtnSimpanST);
         BtnInputDetailST = findViewById(R.id.BtnInputDetailST);
@@ -245,10 +245,14 @@ public class SawnTimber extends AppCompatActivity {
         Ton = findViewById(R.id.Ton);
         NoST_display = findViewById(R.id.NoST_display);
         NoKB_display = findViewById(R.id.NoKB_display);
+        TabelInputPjgPcs = findViewById(R.id.TabelInputPjgPcs);
+        addRowButton = findViewById(R.id.addRowButton);
 
         NoST_display.setVisibility(View.GONE);
         SpinLokasi.setEnabled(false);
         disableForm();
+
+        addRowButton.setOnClickListener(v -> addNewRow());
 
 
         NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -308,8 +312,6 @@ public class SawnTimber extends AppCompatActivity {
             BtnBatalST.setEnabled(true);
             BtnSimpanST.setEnabled(true);
             BtnTambahStickST.setEnabled(true);
-            BtnHapusStickST.setEnabled(true);
-            BtnHapusSemuaStickST.setEnabled(true);
             BtnInputDetailST.setEnabled(true);
             BtnHapusDetailST.setEnabled(true);
         });
@@ -467,17 +469,6 @@ public class SawnTimber extends AppCompatActivity {
             }
         });
 
-        BtnHapusStickST.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String noST = NoST.getQuery().toString().trim();
-                if(!noST.isEmpty()) {
-                    resetGradeData(); // Tambahkan pemanggilan fungsi reset
-                } else {
-                    Toast.makeText(SawnTimber.this, "NoST tidak boleh kosong", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
         BtnHapusDetailST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -639,8 +630,35 @@ public class SawnTimber extends AppCompatActivity {
 
     //METHOD SAWN TIMBER
 
-    private void disableButton(){
 
+    private void addNewRow() {
+        // Membuat TableRow baru
+        TableRow newRow = new TableRow(this);
+
+        // Membuat EditText untuk "Panjang"
+        EditText panjangEditText = new EditText(this);
+        panjangEditText.setHint("Panjang");
+        panjangEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        // Membuat EditText untuk "Pcs"
+        EditText pcsEditText = new EditText(this);
+        pcsEditText.setHint("Pcs");
+        pcsEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        // Membuat Button "Delete"
+        Button deleteButton = new Button(this);
+        deleteButton.setText("Delete");
+
+        // Set OnClickListener untuk tombol delete
+        deleteButton.setOnClickListener(v -> TabelInputPjgPcs.removeView(newRow));
+
+        // Menambahkan EditText dan Button ke dalam TableRow
+        newRow.addView(panjangEditText);
+        newRow.addView(pcsEditText);
+        newRow.addView(deleteButton);
+
+        // Menambahkan baris baru ke TableLayout
+        TabelInputPjgPcs.addView(newRow);
     }
 
     private void checkKayuBulatExists(String noKayuBulat, KayuBulatExistsCallback callback) {
@@ -696,15 +714,13 @@ public class SawnTimber extends AppCompatActivity {
         DetailTebalST.setEnabled(false);
         DetailLebarST.setEnabled(false);
         BtnTambahStickST.setEnabled(false);
-        BtnHapusStickST.setEnabled(false);
-        BtnHapusSemuaStickST.setEnabled(false);
         DetailPanjangST.setEnabled(false);
         DetailPcsST.setEnabled(false);
         BtnHapusDetailST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
         TglStickBundel.setEnabled(false);
         BtnSimpanST.setEnabled(false);
-        BtnPrintST.setEnabled(false);
+//        BtnPrintST.setEnabled(false);
     }
 
     private void enableForm(){
@@ -1057,25 +1073,11 @@ public class SawnTimber extends AppCompatActivity {
                     TableRow.LayoutParams.WRAP_CONTENT));
 
             // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-            addTextViewToRowWithWeight(newRow, String.valueOf(data.gradeId), 1f);
+//            addTextViewToRowWithWeight(newRow, String.valueOf(data.gradeId), 1f);
             addTextViewToRowWithWeight(newRow, data.gradeName, 1f);
-            addTextViewToRowWithWeight(newRow, data.jumlah, 1f);
+            addTextViewToRowWithWeight(newRow, data.jumlah, 0.5f);
+            addTextViewToRowWithWeight(newRow, "", 0.5f);
 
-            // Tambahkan tombol hapus
-            Button deleteButton = new Button(this);
-            deleteButton.setText("");
-            deleteButton.setTextSize(12);
-
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT);
-            buttonParams.setMargins(5, 5, 5, 5);
-            deleteButton.setLayoutParams(buttonParams);
-            deleteButton.setPadding(10, 5, 10, 5);
-            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            deleteButton.setTextColor(Color.BLACK);
-
-            newRow.addView(deleteButton);
             Tabel2.addView(newRow);
         }
     }
@@ -1340,7 +1342,7 @@ public class SawnTimber extends AppCompatActivity {
 
         int totalPcs = 0;
 
-        for (int i = 1; i < childCount; i++) {
+        for (int i = 0; i < childCount; i++) {
             TableRow row = (TableRow) table.getChildAt(i);
             TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
 
@@ -1737,7 +1739,7 @@ public class SawnTimber extends AppCompatActivity {
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
                 Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-5, 0, 0, 0);
 
-                Paragraph bottomLine = new Paragraph("-----------------------------------------------------------------------------------------------------").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
+                Paragraph bottomLine = new Paragraph("2").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
 
                 // Tambahkan semua elemen ke dokumen
 
@@ -1869,7 +1871,7 @@ public class SawnTimber extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 0);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 1f);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1877,9 +1879,8 @@ public class SawnTimber extends AppCompatActivity {
             deleteButton.setTextSize(12);
 
             // Atur style tombol
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT);
+            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(0,
+                    TableRow.LayoutParams.WRAP_CONTENT, 1f);
             buttonParams.setMargins(5, 5, 5, 5);
             deleteButton.setLayoutParams(buttonParams);
             deleteButton.setPadding(10, 5, 10, 5);
@@ -1932,6 +1933,7 @@ public class SawnTimber extends AppCompatActivity {
         }
         rowCount = Tabel.getChildCount() - 1;
     }
+
     private void resetDetailData() {
         // Reset temporary list detail
         temporaryDataListDetail.clear();
@@ -1993,45 +1995,45 @@ public class SawnTimber extends AppCompatActivity {
                     TableRow.LayoutParams.MATCH_PARENT,
                     TableRow.LayoutParams.WRAP_CONTENT));
 
-            // ID Grade
-            TextView idGradeTextView = new TextView(this);
-            idGradeTextView.setText(String.valueOf(gradeId));
-            idGradeTextView.setLayoutParams(new TableRow.LayoutParams(0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 1f));
-            idGradeTextView.setGravity(Gravity.CENTER);
-            idGradeTextView.setPadding(10, 10, 10, 10);
-            newRow.addView(idGradeTextView);
 
             // Nama Grade
             TextView gradeTextView = new TextView(this);
             gradeTextView.setText(gradeName);
             gradeTextView.setLayoutParams(new TableRow.LayoutParams(0,
                     TableRow.LayoutParams.WRAP_CONTENT, 1f));
-            gradeTextView.setGravity(Gravity.CENTER);
-            gradeTextView.setPadding(10, 10, 10, 10);
+            gradeTextView.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
+            gradeTextView.setPadding(10, 35, 10, 15); // Menambahkan padding yang seimbang
             newRow.addView(gradeTextView);
 
             // Jumlah
             TextView jumlahTextView = new TextView(this);
             jumlahTextView.setText(jumlah);
             jumlahTextView.setLayoutParams(new TableRow.LayoutParams(0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                    TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
             jumlahTextView.setGravity(Gravity.CENTER);
             jumlahTextView.setPadding(10, 10, 10, 10);
             newRow.addView(jumlahTextView);
 
-            // Tombol Hapus
-            Button deleteButton = new Button(this);
-            deleteButton.setText("-");
-            deleteButton.setTextSize(12);
+            // Tombol Hapus (ImageButton)
+            ImageButton deleteButton = new ImageButton(this);
+            deleteButton.setImageResource(R.drawable.ic_delete); // Ganti dengan gambar ikon sesuai kebutuhan
+            deleteButton.setContentDescription("Delete button"); // Deskripsi untuk aksesibilitas
+
+            // Atur latar belakang tombol menjadi merah
+            deleteButton.setBackgroundColor(Color.TRANSPARENT); // Mengubah latar belakang menjadi merah
+
+            // Beri tint warna putih pada ikon
+            deleteButton.setColorFilter(Color.RED, PorterDuff.Mode.SRC_IN); // Menyaring warna ikon menjadi putih
+
+            // Atur layout button
             TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT);
+                    0,
+                    TableRow.LayoutParams.WRAP_CONTENT, 0.5f); // Bobot 0.5f sesuai permintaan
             buttonParams.setMargins(5, 5, 5, 5);
-            deleteButton.setPadding(10, 5, 10, 5);
             deleteButton.setLayoutParams(buttonParams);
-            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            deleteButton.setTextColor(Color.BLACK);
+
+            // Mengatur gambar agar proporsional
+            deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
 
             // Set listener tombol hapus
@@ -2071,7 +2073,6 @@ public class SawnTimber extends AppCompatActivity {
         // Membersihkan list temporary
         temporaryDataListGrade.clear();
 
-        // Membersihkan tampilan tabel
         // Hapus semua baris kecuali header (index 0)
         if (Tabel2.getChildCount() > 1) {
             Tabel2.removeViews(1, Tabel2.getChildCount() - 1);

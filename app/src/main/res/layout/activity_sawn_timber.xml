@@ -1,1130 +1,1478 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/coklat"
+    android:background="@color/primary_dark"
     tools:context=".SawnTimber">
 
-    <CheckBox
-        android:id="@+id/CBKering"
-        android:layout_width="wrap_content"
+    <!-- CardView Kiri -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_left"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Kering"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.088"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.823" />
-
-    <CheckBox
-        android:id="@+id/CBStick"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stick"
-        android:textColor="@color/white"
-        android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.028"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.823" />
+        app:layout_constraintWidth_percent="0.4"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:backgroundTint="@color/white">
 
-    <EditText
-        android:id="@+id/NoSuket"
-        android:layout_width="250dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:enabled="false"
-        android:inputType="number"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.167"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.489" />
-
-    <Spinner
-        android:id="@+id/SpinTelly"
-        android:layout_width="250dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.165"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.638" />
-
-    <Spinner
-        android:id="@+id/SpinKayu"
-        android:layout_width="250dp"
-        android:layout_height="20dp"
-        android:background="@color/hijau"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.165"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.219"
-        tools:visibility="visible" />
-
-    <TextView
-        android:id="@+id/textView111"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No Truk :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.074"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.316" />
-
-    <Spinner
-        android:id="@+id/SpinSPK"
-        android:layout_width="250dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.167"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.359" />
-
-    <EditText
-        android:id="@+id/Supplier"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.144"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.266" />
-
-    <EditText
-        android:id="@+id/NoKB_display"
-        android:layout_width="175dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.158"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.167"  />
-
-    <TextView
-        android:id="@+id/textView100"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jenis Kayu dr KB :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.02"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.591" />
-
-    <TextView
-        android:id="@+id/textView180"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No.Plat Truk :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.05"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.445" />
-
-    <SearchView
-        android:id="@+id/NoST"
-        android:layout_width="225dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        android:inputType="textCapCharacters"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.166"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.115" />
-
-    <EditText
-        android:id="@+id/NoST_display"
-        android:layout_width="225dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.166"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.115"/>
-
-    <TextView
-        android:id="@+id/textView150"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lokasi :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.082"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.402" />
-
-    <TextView
-        android:id="@+id/textView12"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jenis Kayu :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.056"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.22" />
-
-    <TextView
-        android:id="@+id/textView15"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. SPK :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.074"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.36" />
-
-    <TextView
-        android:id="@+id/textView109"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No. Kayu Bulat :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.035"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.168" />
-
-    <SearchView
-        android:id="@+id/NoKayuBulat"
-        android:layout_width="175dp"
-        android:layout_height="24dp"
-        android:background="#E8EBE9"
-        android:inputType="textCapCharacters"
-        app:iconifiedByDefault="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.158"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.167" />
-
-    <EditText
-        android:id="@+id/NoPlatTruk"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:enabled="false"
-        android:inputType="number"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.145"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.446" />
-
-    <Spinner
-        android:id="@+id/SpinStickBy"
-        android:layout_width="256dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.171"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.69" />
-
-    <TextView
-        android:id="@+id/textView19"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No.Sawntimber :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.03"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.118" />
-
-    <TextView
-        android:id="@+id/textView11"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Supplier :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.071"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.264" />
-
-    <Spinner
-        android:id="@+id/SpinLokasi"
-        android:layout_width="250dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:enabled="false"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.165"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.404" />
-
-    <TextView
-        android:id="@+id/textView13"
-        android:layout_width="124dp"
-        android:layout_height="27dp"
-        android:text="Tgl.Stick Bundel :"
-        android:textAlignment="viewStart"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.027"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.542" />
-
-    <EditText
-        android:id="@+id/TglStickBundel"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.145"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.538" />
-
-    <TextView
-        android:id="@+id/textView14"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Orang Telly :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.054"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.637" />
-
-    <TextView
-        android:id="@+id/textView101"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stick By :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.074"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.689" />
-
-    <EditText
-        android:id="@+id/JenisKayuKB"
-        android:layout_width="200dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:enabled="false"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.159"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.589" />
-
-    <EditText
-        android:id="@+id/NoTruk"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.144"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.316" />
-
-    <TextView
-        android:id="@+id/textView18"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No.Suket :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.068"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.494" />
-
-
-    <Button
-        android:id="@+id/BtnPrintST"
-        android:layout_width="86dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Print"
-        android:textSize="13sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.327"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.924" />
-
-    <TextView
-        android:id="@+id/textView28"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="m3 :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.515"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.721" />
-
-
-    <TextView
-        android:id="@+id/JumlahPcsST"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.856"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.721" />
-
-    <TextView
-        android:id="@+id/M3ST"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.56"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.721" />
-
-    <TextView
-        android:id="@+id/textViewTon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ton :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.515"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.689" />
-
-    <TextView
-        android:id="@+id/textView20"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jumlah Batang :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.82"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.721" />
-
-    <TextView
-        android:id="@+id/Ton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.561"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.69" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupBagusKulit"
-        android:layout_width="164dp"
-        android:layout_height="33dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.031"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.754">
-
-        <RadioButton
-            android:id="@+id/radioBagus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Bagus"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioKulit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Kulit"
-            android:textColor="@color/white" />
-    </RadioGroup>
-
-    <TextView
-        android:id="@+id/textView10"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Label SawnTimber"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold|italic"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.046"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.041" />
-
-    <Button
-        android:id="@+id/BtnHapusDetailST"
-        android:layout_width="170dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Hapus Detail"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.799"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.607" />
-
-    <EditText
-        android:id="@+id/DetailTebalST"
-        android:layout_width="120dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.623"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.417" />
-
-    <EditText
-        android:id="@+id/DetailLebarST"
-        android:layout_width="120dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:text=""
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.623"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.457" />
-
-    <TextView
-        android:id="@+id/textView23"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Panjang :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.526"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.492" />
-
-    <TextView
-        android:id="@+id/textView24"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pcs :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.54"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.536" />
-
-    <EditText
-        android:id="@+id/DetailPanjangST"
-        android:layout_width="120dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:inputType="numberDecimal"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.623"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.494" />
-
-    <TextView
-        android:id="@+id/textView22"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lebar :"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.534"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.454" />
-
-    <EditText
-        android:id="@+id/DetailPcsST"
-        android:layout_width="120dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:inputType="number"
-        android:textColor="@color/black"
-        android:textSize="16sp"
-        android:imeOptions="actionDone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.623"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.536" />
-
-    <TextView
-        android:id="@+id/textView21"
-        android:layout_width="64dp"
-        android:layout_height="29dp"
-        android:text="Tebal :"
-        android:textAlignment="viewEnd"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.529"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.418" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupUOMTblLebar"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.824"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.43">
-
-        <RadioButton
-            android:id="@+id/radioMillimeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Milimeter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioInch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Inch"
-            android:textColor="@color/white" />
-    </RadioGroup>
-
-    <RadioGroup
-        android:id="@+id/radioGroupUOMPanjang"
-        android:layout_width="270dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.89"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.516">
-
-        <RadioButton
-            android:id="@+id/radioCentimeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Centimeter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioMeter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Meter"
-            android:textColor="@color/white" />
-
-        <RadioButton
-            android:id="@+id/radioFeet"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="Feet"
-            android:textColor="@color/white" />
-    </RadioGroup>
-
-    <Button
-        android:id="@+id/BtnInputDetailST"
-        android:layout_width="180dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Input Detail"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.607"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.607" />
-
-    <Button
-        android:id="@+id/BtnSimpanST"
-        android:layout_width="95dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Simpan"
-        android:textSize="13sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.146"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.925" />
-
-    <Button
-        android:id="@+id/BtnBatalST"
-        android:layout_width="79dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Batal"
-        android:textSize="13sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.242"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.924" />
-
-    <Button
-        android:id="@+id/BtnDataBaruST"
-        android:layout_width="130dp"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Data Baru"
-        android:textSize="13sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.013"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.925" />
-
-    <ScrollView
-        android:layout_width="436dp"
-        android:layout_height="141dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.801"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.934">
-
-        <TableLayout
-            android:id="@+id/Tabel"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            android:shrinkColumns="*"
-            android:stretchColumns="*"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
-            <!-- Header Row -->
-            <TableRow
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/hijau">
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="No."
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="Tebal"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="Lebar"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="Panjang"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="Pcs"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="48dp"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:padding="10dp"
-                    android:text="Aksi"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-            </TableRow>
-
-        </TableLayout>
-    </ScrollView>
-
-    <ScrollView
-        android:layout_width="419dp"
-        android:layout_height="129dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.784"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.239">
-
-        <TableLayout
-            android:id="@+id/Tabel2"
-            android:layout_width="410dp"
-            android:layout_height="102dp"
-            android:background="@android:color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.25">
-
-            <TableRow android:background="@color/hijau">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="ID"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Grade"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Jumlah"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
+                    android:id="@+id/title_left"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:padding="10sp"
-                    android:text="Aksi"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-            </TableRow>
+                    android:layout_marginBottom="15dp"
+                    android:text="LABEL ST"
+                    android:textColor="@color/black"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
 
-            <!-- Table Rows -->
+                <!-- Search Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
 
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No. ST"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
 
-        </TableLayout>
-    </ScrollView>
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
 
-    <Button
-        android:id="@+id/BtnTambahStickST"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Tambah Stick"
-        android:textSize="15sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+                        <SearchView
+                            android:id="@+id/NoST"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            app:iconifiedByDefault="false"
+                            app:queryHint="Search here..."
+                            style="@style/Widget.AppCompat.SearchView.ActionBar" />
+
+                        <EditText
+                            android:id="@+id/NoST_display"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:padding="6dp"
+                            android:textSize="18sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:visibility="gone"
+                            android:hint="R.XXXXXX" />
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <!-- Search Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No. KB"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <SearchView
+                            android:id="@+id/NoKayuBulat"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            app:iconifiedByDefault="false"
+                            app:queryHint="Search here..."
+                            style="@style/Widget.AppCompat.SearchView.ActionBar" />
+
+                        <EditText
+                            android:id="@+id/NoKB_display"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:padding="6dp"
+                            android:textSize="18sp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:visibility="gone"
+                            android:hint="A.XXXXXX" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Jenis Kayu"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinKayu"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+
+                    <RadioGroup
+                        android:id="@+id/radioGroupBagusKulit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="33dp"
+                        android:orientation="horizontal"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.031"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_bias="0.754">
+
+                        <RadioButton
+                            android:id="@+id/radioBagus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Bagus" />
+
+                        <RadioButton
+                            android:id="@+id/radioKulit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:enabled="false"
+                            android:text="Kulit" />
+                    </RadioGroup>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Tgl Stick"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/TglStickBundel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Tanggal"
+                        android:focusable="false"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Supplier"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/Supplier"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Supplier" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No Suket"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoSuket"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:enabled="false"
+                        android:hint="No Suket" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Jenis KB"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/JenisKayuKB"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Jenis KB" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No Plat"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoPlatTruk"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="No Plat" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No Truk"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoTruk"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="No Plat" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Telly"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinTelly"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Stick By"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinStickBy"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No SPK"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinSPK"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Lokasi"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinLokasi"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No ST Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="-" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Remark"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/remarkLabel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Maks 50 Karakter"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:maxLength="50"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_top_right"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:layout_constraintStart_toEndOf="@id/card_left"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.567"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.138" />
+        app:layout_constraintBottom_toTopOf="@+id/card_bottom_right"
+        app:layout_constraintHeight_percent="0.9"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="@color/background_cream">
 
-    <TextView
-        android:id="@+id/textView110"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Jumlah Stick :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp">
+
+            <!-- CardView Atas Kiri -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_left"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintHorizontal_weight="1">
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/title_top_right"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Detail"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginBottom="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Tebal"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailTebalST"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Tebal"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Lebar"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailLebarST"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Lebar"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Panjang"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <AutoCompleteTextView
+                                android:id="@+id/DetailPanjangST"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Panjang"
+                                android:inputType="numberDecimal"
+                                android:completionThreshold="1" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pcs"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <EditText
+                                android:id="@+id/DetailPcsST"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Pcs"
+                                android:inputType="number"
+                                android:completionThreshold="1"
+                                android:imeOptions="actionDone" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.3"
+                                    android:text="Jlh :"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/black"
+                                    android:gravity="right"
+                                    android:textStyle="bold"/>
+
+                                <TextView
+                                    android:id="@+id/JumlahPcsST"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.7"
+                                    android:text="0"
+                                    android:textSize="18sp"
+                                    android:layout_marginStart="8dp"
+                                    android:textColor="@color/black" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.3"
+                                    android:text="M³ :"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/black"
+                                    android:gravity="right"
+                                    android:textStyle="bold"/>
+
+                                <TextView
+                                    android:id="@+id/M3ST"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.7"
+                                    android:text="0"
+                                    android:layout_marginStart="8dp"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/black" />
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.3"
+                                    android:text="Ton :"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/black"
+                                    android:gravity="right"
+                                    android:textStyle="bold"/>
+
+                                <TextView
+                                    android:id="@+id/Ton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.7"
+                                    android:text="0"
+                                    android:layout_marginStart="8dp"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/black" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+
+                        <Button
+                            android:id="@+id/BtnInputDetailST"
+                            android:layout_width="150dp"
+                            android:layout_height="60dp"
+                            android:text="Data Baru"
+                            android:textSize="22sp"
+                            android:backgroundTint="@color/hijau"
+                            android:layout_marginEnd="8dp"/>
+
+                        <Button
+                            android:id="@+id/BtnHapusDetailST"
+                            android:layout_width="150dp"
+                            android:layout_height="60dp"
+                            android:text="Data Baru"
+                            android:textSize="22sp"
+                            android:backgroundTint="@color/hijau"
+                            android:layout_marginEnd="8dp"/>
+
+                    </LinearLayout>
+
+                </ScrollView>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- CardView Atas Tengah -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_center"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_left"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_right"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintHorizontal_weight="0.7">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:background="#FFFFFF"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Panjang"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMPanjang"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioCentimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Millimeter"
+                                android:textSize="15sp"
+                                android:layout_marginBottom="2dp"
+                                android:checked="true" />
+
+                            <RadioButton
+                                android:id="@+id/radioMeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Meter"
+                                android:textSize="15sp"
+                                android:layout_marginBottom="2dp"
+                                android:enabled="false" />
+
+                            <RadioButton
+                                android:id="@+id/radioFeet"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Feet"
+                                android:enabled="false"
+                                android:textSize="15sp"/>
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Tebal-Lebar"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginTop="12dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMTblLebar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioMillimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Millimeter"
+                                android:textSize="15sp"
+                                android:checked="true"
+                                android:layout_marginBottom="2dp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioInch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Inch"
+                                android:enabled="false"
+                                android:textSize="15sp"/>
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp"
+                        android:gravity="center">
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBStick"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stick"
+                            android:textSize="18sp"
+                            android:layout_marginRight="20dp" />
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBKering"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Kering"
+                            android:textSize="18sp" />
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBUpah"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Upah"
+                            android:textSize="18sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- CardView Bawah Full -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_right"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0">
+
+                <!-- PROSES INPUT DETAIL VERSI ST -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF"
+                        android:stretchColumns="0">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <!-- Kolom No. Produksi -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Panjang"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Shift -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pcs"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Tanggal -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Aksi"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                        </TableRow>
+
+                    </TableLayout>
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1">
+
+                        <TableLayout
+                            android:id="@+id/TabelInputPjgPcs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stretchColumns="0"
+                            android:background="#EFEFEF">
+
+                            <!-- Baris isi tabel akan dimuat secara dinamis -->
+
+                        </TableLayout>
+
+                    </ScrollView>
+
+                    <!-- Add Row Button -->
+                    <Button
+                        android:id="@+id/addRowButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add Row"
+                        android:layout_marginTop="16dp"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_bottom"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHeight_percent="0.5">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="15dp"
+                            >
+
+                            <TextView
+                                android:layout_width="120dp"
+                                android:layout_height="wrap_content"
+                                android:text="Grade Stick"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <Spinner
+                                android:id="@+id/SpinGrade"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="36dp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="15dp"
+                            >
+
+                            <TextView
+                                android:layout_width="120dp"
+                                android:layout_height="wrap_content"
+                                android:text="Pcs"
+                                android:textSize="18sp"
+                                android:textColor="@color/black" />
+
+                            <EditText
+                                android:id="@+id/JumlahStick"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="36dp"
+                                android:padding="6dp"
+                                android:textSize="18sp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp"
+                                android:hint="Pcs" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal">
+
+                            <Button
+                                android:id="@+id/BtnTambahStickST"
+                                android:layout_width="150dp"
+                                android:layout_height="60dp"
+                                android:text="+"
+                                android:textSize="22sp"
+                                android:backgroundTint="@color/hijau"
+                                android:layout_marginEnd="8dp"/>
+
+
+
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+                    <!-- HIDE GRADE SEMENTARA -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:visibility="gone">
+
+                        <TableLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="0">
+
+                            <TableRow
+                                android:background="@color/hijau">
+
+                                <!-- Kolom No. Produksi -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Grade"
+                                    android:padding="8dp"
+                                    android:gravity="center"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white"/>
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Shift -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.5"
+                                    android:text="Pcs"
+                                    android:padding="8dp"
+                                    android:gravity="center"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white"/>
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Tanggal -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.5"
+                                    android:text="Aksi"
+                                    android:padding="8dp"
+                                    android:gravity="center"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white"/>
+
+                            </TableRow>
+
+                        </TableLayout>
+
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+                            <TableLayout
+                                android:id="@+id/Tabel2"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stretchColumns="0"
+                                android:background="#EFEFEF">
+
+                                <ProgressBar
+                                    android:id="@+id/loadingIndicator"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:visibility="gone"/>
+
+                                <!-- Baris isi tabel akan dimuat secara dinamis -->
+                            </TableLayout>
+
+                        </ScrollView>
+
+                    </LinearLayout>
+
+                    <!-- HIDE DETAIL SEMENTARA -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TableLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="0">
+                            <!-- Membuat kolom proporsional -->
+
+                            <TableRow android:background="@color/hijau">
+
+                                <!-- Kolom No. Produksi -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="No"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Shift -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="T"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Tanggal -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="L"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Tanggal -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="P"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Tanggal -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="Pcs"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <!-- Kolom Tanggal -->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center"
+                                    android:padding="8dp"
+                                    android:text="Aksi"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold" />
+
+                            </TableRow>
+
+                        </TableLayout>
+
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TableLayout
+                                android:id="@+id/Tabel"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="#EFEFEF"
+                                android:stretchColumns="0">
+
+                            </TableLayout>
+
+                        </ScrollView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- CardView Kanan Bawah -->
+
+    <LinearLayout
+        android:id="@+id/card_bottom_right"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toEndOf="@id/card_left"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.583"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.079" />
-
-    <TextView
-        android:id="@+id/textView108"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nama Grade Stick :"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.569"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.035" />
+        android:layout_marginStart="16dp"
+        android:backgroundTint="@color/primary_dark">
 
-    <Spinner
-        android:id="@+id/SpinGrade"
-        android:layout_width="256dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:textColor="@color/black"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.798"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.034" />
 
-    <Button
-        android:id="@+id/BtnHapusSemuaStickST"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Hapus Semua Stick"
-        android:textSize="15sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.885"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.138" />
+        <!-- Button Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
 
-    <EditText
-        android:id="@+id/JumlahStick"
-        android:layout_width="108dp"
-        android:layout_height="20dp"
-        android:background="#E8EBE9"
-        android:backgroundTint="#E8EBE9"
-        android:inputType="number"
-        android:text=""
-        android:textColor="#000000"
-        android:textSize="16sp"
-        android:imeOptions="actionDone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.698"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.082" />
+            <Button
+                android:id="@+id/BtnDataBaruST"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Data Baru"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
-    <Button
-        android:id="@+id/BtnHapusStickST"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:backgroundTint="@color/hijau"
-        android:text="Hapus Stick"
-        android:textSize="15sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.704"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.138" />
+            <Button
+                android:id="@+id/BtnSimpanST"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Simpan"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
 
-    <CheckBox
-        android:id="@+id/CBUpah"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Upah"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.155"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.823" />
+            <Button
+                android:id="@+id/BtnBatalST"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Batal"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"/>
 
+            <Button
+                android:id="@+id/BtnPrintST"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Print"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"/>
+
+            <Button
+                android:id="@+id/BtnInputDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Input Detail"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/BtnHapusDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:text="Hapus"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
