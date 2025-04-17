@@ -195,7 +195,6 @@ public class SawnTimber extends AppCompatActivity {
     private EditText NoST_display;
     private EditText NoKB_display;
     private TableLayout TabelInputPjgPcs;
-    private Button addRowButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -246,14 +245,10 @@ public class SawnTimber extends AppCompatActivity {
         NoST_display = findViewById(R.id.NoST_display);
         NoKB_display = findViewById(R.id.NoKB_display);
         TabelInputPjgPcs = findViewById(R.id.TabelInputPjgPcs);
-        addRowButton = findViewById(R.id.addRowButton);
 
         NoST_display.setVisibility(View.GONE);
         SpinLokasi.setEnabled(false);
         disableForm();
-
-        addRowButton.setOnClickListener(v -> addNewRow());
-
 
         NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -317,14 +312,13 @@ public class SawnTimber extends AppCompatActivity {
         });
 
         BtnInputDetailST.setOnClickListener(view -> {
-            String noST = NoST.getQuery().toString();
 
-            if (!noST.isEmpty()) {
-                addDataDetail(noST);
-            } else {
-                Toast.makeText(SawnTimber.this, "NoST tidak boleh kosong", Toast.LENGTH_SHORT).show();
-            }
+            String tebal = DetailTebalST.getText().toString();
+            String lebar = DetailLebarST.getText().toString();
+            String panjang = DetailPanjangST.getText().toString();
+            String pcs = DetailPcsST.getText().toString();
 
+            addDataDetail(tebal, lebar, panjang, pcs);
             jumlahPcsST();
             m3();
             ton();
@@ -645,6 +639,10 @@ public class SawnTimber extends AppCompatActivity {
         pcsEditText.setHint("Pcs");
         pcsEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
 
+        // Membuat Button "Add"
+        Button addButton = new Button(this);
+        addButton.setText("Add");
+
         // Membuat Button "Delete"
         Button deleteButton = new Button(this);
         deleteButton.setText("Delete");
@@ -652,14 +650,42 @@ public class SawnTimber extends AppCompatActivity {
         // Set OnClickListener untuk tombol delete
         deleteButton.setOnClickListener(v -> TabelInputPjgPcs.removeView(newRow));
 
+        // Set OnClickListener untuk tombol add
+        addButton.setOnClickListener(v -> {
+            // Ambil nilai dari EditText "Panjang" dan "Pcs"
+            // Menambahkan validasi atau pengecekan jika diperlukan
+            String tebal = DetailTebalST.getText().toString();
+            String lebar = DetailLebarST.getText().toString();
+            String panjang = panjangEditText.getText().toString().trim();
+            String pcs = pcsEditText.getText().toString().trim();
+
+            // Tampilkan Toast dengan nilai dari "Panjang" dan "Pcs"
+            if (!panjang.isEmpty() && !pcs.isEmpty()) {
+                addDataDetail(tebal, lebar, panjang, pcs);
+
+                Toast.makeText(this, "Panjang: " + panjang + ", Pcs: " + pcs, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Menambahkan EditText dan Button ke dalam TableRow
         newRow.addView(panjangEditText);
         newRow.addView(pcsEditText);
-        newRow.addView(deleteButton);
+        newRow.addView(addButton); // Menambahkan tombol Add
+        newRow.addView(deleteButton); // Menambahkan tombol Delete
 
         // Menambahkan baris baru ke TableLayout
         TabelInputPjgPcs.addView(newRow);
+
+
+
+
+
+        // Panggil method addDataDetail jika diperlukan untuk menyimpan data
+        // addDataDetail(tebal, lebar, panjang, pcs);
     }
+
 
     private void checkKayuBulatExists(String noKayuBulat, KayuBulatExistsCallback callback) {
         new Thread(() -> {
@@ -1829,11 +1855,7 @@ public class SawnTimber extends AppCompatActivity {
     //Fungsi untuk add Data Detail
     private List<DataRow> temporaryDataListDetail = new ArrayList<>();
 
-    private void addDataDetail(String noST) {
-        String tebal = DetailTebalST.getText().toString();
-        String panjang = DetailPanjangST.getText().toString();
-        String lebar = DetailLebarST.getText().toString();
-        String pcs = DetailPcsST.getText().toString();
+    private void addDataDetail(String tebal, String lebar, String panjang, String pcs) {
 
         if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
             Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
@@ -1899,12 +1921,15 @@ public class SawnTimber extends AppCompatActivity {
 
             newRow.addView(deleteButton);
             Tabel.addView(newRow);
+            addNewRow();  // Panggil fungsi untuk menambahkan row baru
 
             // Bersihkan field input
-            DetailTebalST.setText("");
-            DetailPanjangST.setText("");
-            DetailLebarST.setText("");
-            DetailPcsST.setText("");
+//            DetailTebalST.setText("");
+//            DetailPanjangST.setText("");
+//            DetailLebarST.setText("");
+//            DetailPcsST.setText("");
+
+
 
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
