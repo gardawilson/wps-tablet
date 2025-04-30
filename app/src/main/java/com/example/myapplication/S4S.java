@@ -2908,13 +2908,6 @@ public class S4S extends AppCompatActivity {
                 Document document = new Document(pdfDocument);
                 document.setMargins(0, 5, 0, 5);
 
-                // Header
-                Paragraph judul = new Paragraph("LABEL FINGER JOIN")
-                        .setUnderline()
-                        .setBold()
-                        .setFontSize(12)
-                        .setTextAlignment(TextAlignment.CENTER);
-
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
                 float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};

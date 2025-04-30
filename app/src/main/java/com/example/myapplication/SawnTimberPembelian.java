@@ -1,11 +1,18 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.api.LabelApi.insertDataRejectPembelian;
+
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -13,29 +20,30 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.api.LabelApi;
-import com.example.myapplication.model.ProductionData;
+import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.STPembelianData;
 import com.example.myapplication.model.STPembelianDataReject;
 import com.example.myapplication.model.SupplierData;
+import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -58,9 +66,14 @@ public class SawnTimberPembelian extends AppCompatActivity {
     private List<STPembelianData> dataList; // Data asli yang tidak difilter
     private List<String> nonRejectList = new ArrayList<>();
     private ImageButton btnAddLabelSTBeli;
+    private ImageButton btnAddReject;
     private Button btnDataBaru;
-
-
+    private int countReject;
+    private LinearLayout btnSwapToReject;
+    private LinearLayout btnSwapToNonReject;
+    private LinearLayout nonRejectLayoutView;
+    private LinearLayout rejectLayoutView;
+    private List<STPembelianDataReject> rejectDataList;
 
 
     @Override
@@ -72,9 +85,15 @@ public class SawnTimberPembelian extends AppCompatActivity {
         nonRejectTableLayout = findViewById(R.id.nonRejectTableLayout);
         rejectTableLayout = findViewById(R.id.rejectTableLayout);
         btnAddLabelSTBeli = findViewById(R.id.btnAddLabelSTBeli);
+        btnAddReject = findViewById(R.id.btnAddReject);
         btnDataBaru = findViewById(R.id.btnDataBaru);
+        btnSwapToReject = findViewById(R.id.btnSwapToReject);
+        btnSwapToNonReject = findViewById(R.id.btnSwapToNonReject);
+        nonRejectLayoutView = findViewById(R.id.nonRejectLayoutView);
+        rejectLayoutView = findViewById(R.id.rejectLayoutView);
 
         loadDataAndDisplayTable();
+        rejectLayoutView.setVisibility(View.GONE);
 
         // Menambahkan OnClickListener
         btnDataBaru.setOnClickListener(new View.OnClickListener() {
@@ -85,16 +104,380 @@ public class SawnTimberPembelian extends AppCompatActivity {
             }
         });
 
+        btnAddLabelSTBeli.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (noSTPembelian == null || noSTPembelian.isEmpty()) {
+                    Toast.makeText(SawnTimberPembelian.this, "Pilih No. Penerimaan ST!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent intent = new Intent( SawnTimberPembelian.this, SawnTimber.class);
+                    intent.putExtra("noPenST", noSTPembelian); // Mengirim integer
+                    intent.putExtra("labelVersion", 1); // Mengirim string
+                    startActivity(intent);
+                }
+            }
+        });
+
+        btnAddReject.setOnClickListener(v -> {
+
+            if (noSTPembelian == null || noSTPembelian.isEmpty()) {
+                Toast.makeText(SawnTimberPembelian.this, "Pilih No. Penerimaan ST!", Toast.LENGTH_SHORT).show();
+            } else {
+                showAddRejectDialog(noSTPembelian);
+            }
+        });
+
+        btnSwapToReject.setOnClickListener(v -> {
+            rejectLayoutView.setVisibility(View.VISIBLE);
+            nonRejectLayoutView.setVisibility(View.GONE);
+        });
+
+        btnSwapToNonReject.setOnClickListener(v -> {
+            rejectLayoutView.setVisibility(View.GONE);
+            nonRejectLayoutView.setVisibility(View.VISIBLE);
+        });
     }
+
+    // Mengambil data tooltip dan menampilkan tooltip
+    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
+        executorService.execute(() -> {
+            // Ambil data tooltip menggunakan ProductionApi
+            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+
+            runOnUiThread(() -> {
+                if (tooltipData != null) {
+                    // Pengecekan lebih lanjut jika data dalam tooltipData null
+                    if (tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
+
+                        // Tampilkan tooltip dengan data yang diperoleh
+                        showTooltip(
+                                anchorView,
+                                tooltipData.getNoLabel(),
+                                tooltipData.getFormattedDateTime(),
+                                tooltipData.getJenis(),
+                                tooltipData.getSpkDetail(),
+                                tooltipData.getSpkAsalDetail(),
+                                tooltipData.getNamaGrade(),
+                                tooltipData.isLembur(),
+                                tooltipData.getTableData(),
+                                tooltipData.getTotalPcs(),
+                                tooltipData.getTotalM3(),
+                                tooltipData.getTotalTon(),
+                                tooltipData.getNoPlat(),
+                                tooltipData.getNoKBSuket(),
+                                tableH
+                        );
+
+
+
+                    } else {
+                        // Tampilkan pesan error jika data utama tidak ada
+                        Toast.makeText(this, "Data tooltip tidak lengkap", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Tampilkan pesan error jika tooltipData null
+                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        });
+    }
+
+
+    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, double totalTon, String noPlat, String noKBSuket, String tableH) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+        ((TextView) tooltipView.findViewById(R.id.tvNoPlat)).setText(noPlat);
+        ((TextView) tooltipView.findViewById(R.id.tvNoKBSuket)).setText(noKBSuket);
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        //TOOLTIP VIEW PRECONDITION
+        if (tableH.equals("ST_h")) {
+            tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
+
+            // Tambahkan Baris untuk Total Ton
+            TableRow tonRow = new TableRow(this);
+            tonRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+
+            tonRow.setBackgroundColor(Color.WHITE);
+
+            // Cell kosong untuk memisahkan m3 dengan tabel
+            for (int i = 0; i < 2; i++) {
+                TextView emptyCell = new TextView(this);
+                emptyCell.setText(""); // Cell kosong
+                tonRow.addView(emptyCell);
+            }
+
+            TextView tonLabel = new TextView(this);
+            tonLabel.setText("Ton :");
+            tonLabel.setGravity(Gravity.END);
+            tonLabel.setPadding(8, 8, 8, 8);
+            tonLabel.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonLabel);
+
+            // Cell untuk Total Ton
+            TextView tonValue = new TextView(this);
+            tonValue.setText(df.format(totalTon));
+            tonValue.setGravity(Gravity.CENTER);
+            tonValue.setPadding(8, 8, 8, 8);
+            tonValue.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonValue);
+
+            // Tambahkan m3Row ke TableLayout
+            tableLayout.addView(tonRow);
+        } else {
+            tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+        }
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int screenHeight = displayMetrics.heightPixels;
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        Log.d("TooltipDebug", "TrianglePointer Y: " + y);
+        Log.d("TooltipDebug", "TrianglePointer tooltip : " + (screenHeight - tooltipHeight) );
+
+        if (y < 60) {
+            trianglePointer.setY(y - 60);
+        }
+        else if(y > (screenHeight - tooltipHeight)){
+            trianglePointer.setY(y - (screenHeight - tooltipHeight));
+        }
+
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
+
+    private void showAddRejectDialog(String noSTPembelian) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(SawnTimberPembelian.this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_reject_pembelian_st, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        EditText inputTebal = dialogView.findViewById(R.id.inputTebal);
+        EditText inputLebar = dialogView.findViewById(R.id.inputLebar);
+        EditText inputPanjang = dialogView.findViewById(R.id.inputPanjang);
+        EditText inputPcs = dialogView.findViewById(R.id.inputPcs);
+        Button btnSubmit = dialogView.findViewById(R.id.btnInputReject);
+        RadioButton radioMillimeter = dialogView.findViewById(R.id.radioMillimeter);
+
+        btnSubmit.setOnClickListener(view -> {
+            String tebal = inputTebal.getText().toString().trim();
+            String lebar = inputLebar.getText().toString().trim();
+            String panjang = inputPanjang.getText().toString().trim();
+            String pcs = inputPcs.getText().toString().trim();
+            int count = countReject + 1;
+
+            if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty() || pcs.isEmpty()) {
+                Toast.makeText(SawnTimberPembelian.this, "Semua field harus diisi!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int idUOMTblLebar = radioMillimeter.isChecked() ? 1 : 3;
+            int idUOMPanjang = 4;
+
+            double tebalVal = Double.parseDouble(tebal);
+            double lebarVal = Double.parseDouble(lebar);
+            double panjangVal = Double.parseDouble(panjang);
+            int pcsVal = Integer.parseInt(pcs);
+
+            double tonVal = hitungTon(tebalVal, lebarVal, panjangVal, pcsVal, idUOMTblLebar);
+
+            executorService.execute(() -> {
+                insertDataRejectPembelian(noSTPembelian, count, tebalVal, lebarVal, panjangVal, pcsVal, idUOMTblLebar, idUOMPanjang, tonVal);
+                rejectDataList = LabelApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
+
+                runOnUiThread(() -> {
+                    populateRejectList(rejectDataList);
+                    Toast.makeText(SawnTimberPembelian.this, "Reject berhasil ditambahkan!", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                });
+            });
+        });
+
+        dialog.show();
+    }
+
+
+    private double hitungTon(double tebal, double lebar, double panjang, int pcs, int idUOMTblLebar) {
+        double rowTON;
+
+        if (idUOMTblLebar == 1) {
+            rowTON = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000);
+            rowTON = Math.floor(rowTON * 10000) / 10000;
+        } else {
+            rowTON = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000);
+            rowTON = Math.floor(rowTON * 10000) / 10000;
+        }
+
+        return rowTON;
+    }
+
 
     private void loadDataAndDisplayTable() {
         // Menjalankan operasi di background thread
         executorService.execute(() -> {
             dataList = LabelApi.getSTPembelianData();
+            nonRejectList = LabelApi.getNonRejectListByNoPenST(noSTPembelian);
 
             // Menampilkan data di UI thread setelah selesai mengambil data
             runOnUiThread(() -> {
-                populateTable(dataList);  // Memperbarui tampilan tabel dengan data terbaru
+                populateTable(dataList);
+                populateNonRejectList(nonRejectList);
+                // Memperbarui tampilan tabel dengan data terbaru
                 // Sembunyikan loading indicator jika ada
                 // loadingIndicator.setVisibility(View.GONE);
             });
@@ -106,7 +489,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
     private void showNewDataDialog() {
         // Membuat Dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(SawnTimberPembelian.this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_insert_data_penerimaan_st, null);
+        View view = getLayoutInflater().inflate(R.layout.dialog_insert_data_st_pembelian, null);
         builder.setView(view);
 
         // Menyiapkan EditText dan Spinner
@@ -320,10 +703,6 @@ public class SawnTimberPembelian extends AppCompatActivity {
     }
 
 
-
-
-
-
     private void populateTable(List<STPembelianData> dataList) {
 
         mainTable.removeAllViews();
@@ -415,14 +794,15 @@ public class SawnTimberPembelian extends AppCompatActivity {
             mainTable.addView(row);
             rowIndex++; // Tingkatkan indeks
         }
+
     }
 
-    private void populateNonRejectList(List<String> noS4SList) {
+    private void populateNonRejectList(List<String> nonRejectList) {
         nonRejectTableLayout.removeAllViews();
 
         int rowIndex = 0;
 
-        if (noS4SList == null || noS4SList.isEmpty()) {
+        if (nonRejectList == null || nonRejectList.isEmpty()) {
             TextView noDataView = new TextView(this);
             noDataView.setText("Tidak ada Data");
             noDataView.setGravity(Gravity.CENTER);
@@ -432,17 +812,16 @@ public class SawnTimberPembelian extends AppCompatActivity {
         }
 
         // Isi tabel
-        for (String noS4S : noS4SList) {
+        for (String nonRejectST : nonRejectList) {
             TableRow row = new TableRow(this);
 
             row.setTag(rowIndex);
 
             // Tambahkan TextView ke baris tabel
-            TextView textView = createTextView(noS4S, 1.0f);
+            TextView textView = createTextView(nonRejectST, 1.0f);
             row.addView(textView);
 
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-//            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
+            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, nonRejectST, "ST_h", "ST_d", "NoST"));
 
             // Tetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
@@ -461,6 +840,9 @@ public class SawnTimberPembelian extends AppCompatActivity {
         rejectTableLayout.removeAllViews(); // Menghapus tampilan sebelumnya
 
         int rowIndex = 0;
+        countReject = rejectDataList.size();
+
+        DecimalFormat df = new DecimalFormat("0.####"); // Menampilkan max 2 desimal, tanpa trailing .0
 
         if (rejectDataList == null || rejectDataList.isEmpty()) {
             TextView noDataView = new TextView(this);
@@ -476,19 +858,26 @@ public class SawnTimberPembelian extends AppCompatActivity {
             TableRow row = new TableRow(this);
             row.setTag(rowIndex);
 
+            String idUOMTblLebar = (data.getIdUOMTblLebar() == 1) ? "mm" : "\"";
+            String idUOMPanjang = (data.getIdUOMPanjang() == 4) ? "ft" : "N/A";
+
             // Menambahkan setiap kolom data dalam baris
 //            row.addView(createTextView(data.getNoUrut(), 1.0f)); // NoUrut
-            row.addView(createTextView(String.valueOf(data.getTebal()), 1.0f)); // Tebal
+
+
+            row.addView(createTextView(df.format(data.getTebal()) + " " + idUOMTblLebar, 1.0f)); // Tebal
             row.addView(createDivider());
 
-            row.addView(createTextView(String.valueOf(data.getLebar()), 1.0f)); // Lebar
+            row.addView(createTextView(df.format(data.getLebar()) + " " + idUOMTblLebar, 1.0f)); // Lebar
             row.addView(createDivider());
 
-            row.addView(createTextView(String.valueOf(data.getPanjang()), 1.0f)); // Panjang
-//            row.addView(createTextView(String.valueOf(data.getJmlhBatang()), 1.0f)); // JmlhBatang
-//            row.addView(createTextView(String.valueOf(data.getIdUOMTblLebar()), 1.0f)); // IdUOMTblLebar
-//            row.addView(createTextView(String.valueOf(data.getIdUOMPanjang()), 1.0f)); // IdUOMPanjang
-//            row.addView(createTextView(String.valueOf(data.getTon()), 1.0f)); // Ton
+            row.addView(createTextView(df.format(data.getPanjang()) + " " + idUOMPanjang, 1.0f)); // Panjang
+            row.addView(createDivider());
+
+            row.addView(createTextView(String.valueOf(data.getJmlhBatang()), 1.0f)); // JmlhBatang
+            row.addView(createDivider());
+
+            row.addView(createTextView(df.format(data.getTon()), 1.0f)); // Ton
 
             // Menetapkan warna latar belakang berdasarkan indeks baris
             if (rowIndex % 2 == 0) {
@@ -513,7 +902,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
             noSTPembelian = data.getNoSTPembelian();
 
             nonRejectList = LabelApi.getNonRejectListByNoPenST(noSTPembelian);
-            List<STPembelianDataReject> rejectDataList = LabelApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
+            rejectDataList = LabelApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
 
 
             // Perbarui UI di thread utama

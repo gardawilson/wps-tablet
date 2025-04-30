@@ -13,7 +13,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/card_left"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
@@ -37,7 +37,7 @@
                 android:padding="20dp">
 
                 <TextView
-                    android:id="@+id/title_left"
+                    android:id="@+id/judulLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="15dp"
@@ -85,13 +85,53 @@
                             android:background="@drawable/border_input"
                             android:elevation="1dp"
                             android:visibility="gone"
-                            android:hint="R.XXXXXX" />
+                            android:hint="E.XXXXXX" />
                     </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBStick"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stick"
+                            android:textSize="18sp"
+                            android:visibility="gone"/>
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBKering"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Kering"
+                            android:textSize="18sp" />
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/cbSLP"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="SLP"
+                            android:textSize="18sp" />
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/CBUpah"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Upah"
+                            android:textSize="18sp"
+                            android:visibility="gone"/>
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
                 <!-- Search Section -->
                 <LinearLayout
+                    android:id="@+id/fieldKB"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -146,46 +186,25 @@
                     <TextView
                         android:layout_width="120dp"
                         android:layout_height="wrap_content"
-                        android:text="Jenis Kayu"
+                        android:text="No. Pen. ST"
                         android:textSize="18sp"
                         android:textColor="@color/black" />
 
-                    <Spinner
-                        android:id="@+id/SpinKayu"
+                    <EditText
+                        android:id="@+id/noPenerimaanST"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="36dp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp" />
-
-                    <RadioGroup
-                        android:id="@+id/radioGroupBagusKulit"
-                        android:layout_width="wrap_content"
-                        android:layout_height="33dp"
-                        android:orientation="horizontal"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintHorizontal_bias="0.031"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintVertical_bias="0.754">
-
-                        <RadioButton
-                            android:id="@+id/radioBagus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Bagus" />
-
-                        <RadioButton
-                            android:id="@+id/radioKulit"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:enabled="false"
-                            android:text="Kulit" />
-                    </RadioGroup>
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp"
+                        android:enabled="false"
+                        android:hint="No Penerimaan ST" />
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/fieldJenisKB"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -196,23 +215,23 @@
                     <TextView
                         android:layout_width="120dp"
                         android:layout_height="wrap_content"
-                        android:text="Tgl Stick"
+                        android:text="Jenis KB"
                         android:textSize="18sp"
                         android:textColor="@color/black" />
 
                     <EditText
-                        android:id="@+id/TglStickBundel"
+                        android:id="@+id/JenisKayuKB"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
-                        android:background="@drawable/border_input"
+                        android:background="@drawable/border_disabled"
                         android:elevation="1dp"
-                        android:hint="Tanggal"
-                        android:focusable="false"/>
-
+                        android:hint="Jenis Kayu Bulat"
+                        android:enabled="false"/>
                 </LinearLayout>
+
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -236,12 +255,42 @@
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
-                        android:background="@drawable/border_input"
+                        android:background="@drawable/border_disabled"
                         android:elevation="1dp"
-                        android:hint="Supplier" />
+                        android:hint="Supplier"
+                        android:enabled="false"/>
                 </LinearLayout>
 
                 <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Customer"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/Customer"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp"
+                        android:hint="Customer"
+                        android:enabled="false"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/fieldNoSuket"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -263,37 +312,10 @@
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
-                        android:background="@drawable/border_input"
+                        android:background="@drawable/border_disabled"
                         android:elevation="1dp"
                         android:enabled="false"
                         android:hint="No Suket" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="15dp"
-                    >
-
-                    <TextView
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:text="Jenis KB"
-                        android:textSize="18sp"
-                        android:textColor="@color/black" />
-
-                    <EditText
-                        android:id="@+id/JenisKayuKB"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="36dp"
-                        android:padding="6dp"
-                        android:textSize="18sp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        android:hint="Jenis KB" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -318,36 +340,32 @@
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
-                        android:background="@drawable/border_input"
+                        android:background="@drawable/border_disabled"
                         android:elevation="1dp"
-                        android:hint="No Plat" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="15dp"
-                    >
+                        android:hint="No Plat"
+                        android:enabled="false" />
 
                     <TextView
-                        android:layout_width="120dp"
+                        android:layout_width="80dp"
                         android:layout_height="wrap_content"
                         android:text="No Truk"
                         android:textSize="18sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:gravity="end"
+                        android:layout_marginRight="8dp"/>
 
                     <EditText
                         android:id="@+id/NoTruk"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
+                        android:layout_weight="0.4"
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
-                        android:background="@drawable/border_input"
+                        android:background="@drawable/border_disabled"
                         android:elevation="1dp"
-                        android:hint="No Plat" />
+                        android:hint="-"
+                        android:enabled="false" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -369,8 +387,59 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="36dp"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Jenis Kayu"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinKayu"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp" />
+
+                    <RadioGroup
+                        android:id="@+id/radioGroupBagusKulit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.031"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_bias="0.754">
+
+                        <RadioButton
+                            android:id="@+id/radioBagus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Bagus"
+                            android:enabled="false" />
+
+                        <RadioButton
+                            android:id="@+id/radioKulit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:enabled="false"
+                            android:text="Kulit" />
+                    </RadioGroup>
                 </LinearLayout>
 
                 <LinearLayout
@@ -407,6 +476,35 @@
                     <TextView
                         android:layout_width="120dp"
                         android:layout_height="wrap_content"
+                        android:text="Tgl Stick"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/TglStickBundel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Tanggal Stick"
+                        android:focusable="false"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
                         android:text="No SPK"
                         android:textSize="18sp"
                         android:textColor="@color/black" />
@@ -426,6 +524,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="15dp"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -473,6 +572,42 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Tgl Vacuum"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/TglVacuum"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Tanggal Vacuum"
+                        android:focusable="false"
+                        android:enabled="false"/>
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/cbVacuum"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:layout_marginBottom="15dp">
@@ -500,7 +635,7 @@
                         android:maxLines="5"
                         android:maxLength="50"
                         android:focusable="true"
-                        android:focusableInTouchMode="true"/>
+                        android:focusableInTouchMode="true" />
 
                 </LinearLayout>
 
@@ -530,6 +665,160 @@
             android:layout_height="match_parent"
             android:padding="8dp">
 
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_detail"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/inner_card_top_left"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintHorizontal_weight="2">
+
+
+                <!-- HIDE DETAIL SEMENTARA -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Detail"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:padding="8dp"/>
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF"
+                        android:stretchColumns="0">
+                        <!-- Membuat kolom proporsional -->
+
+                        <TableRow android:background="@color/hijau">
+
+                            <!-- Kolom No. Produksi -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:padding="8dp"
+                                android:text="No"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Shift -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:padding="8dp"
+                                android:text="T"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Tanggal -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:padding="8dp"
+                                android:text="L"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Tanggal -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:padding="8dp"
+                                android:text="P"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Tanggal -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:padding="8dp"
+                                android:text="Pcs"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
+
+<!--                            <View-->
+<!--                                android:layout_width="1px"-->
+<!--                                android:layout_height="match_parent"-->
+<!--                                android:background="@color/gray" />-->
+
+<!--                            &lt;!&ndash; Kolom Tanggal &ndash;&gt;-->
+<!--                            <TextView-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="1"-->
+<!--                                android:gravity="center"-->
+<!--                                android:padding="8dp"-->
+<!--                                android:text="Aksi"-->
+<!--                                android:textColor="@color/white"-->
+<!--                                android:textStyle="bold" />-->
+
+                        </TableRow>
+
+                    </TableLayout>
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TableLayout
+                            android:id="@+id/Tabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF"
+                            android:stretchColumns="0">
+
+                        </TableLayout>
+
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
             <!-- CardView Atas Kiri -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/inner_card_top_left"
@@ -539,7 +828,7 @@
                 android:layout_marginBottom="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/inner_card_detail"
                 app:layout_constraintEnd_toStartOf="@id/inner_card_top_center"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
@@ -629,7 +918,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="10dp">
+                            android:layout_marginBottom="10dp" >
 
                             <TextView
                                 android:layout_width="0dp"
@@ -684,116 +973,21 @@
 
                         </LinearLayout>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.3"
-                                    android:text="Jlh :"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="right"
-                                    android:textStyle="bold"/>
-
-                                <TextView
-                                    android:id="@+id/JumlahPcsST"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.7"
-                                    android:text="0"
-                                    android:textSize="18sp"
-                                    android:layout_marginStart="8dp"
-                                    android:textColor="@color/black" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.3"
-                                    android:text="M³ :"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="right"
-                                    android:textStyle="bold"/>
-
-                                <TextView
-                                    android:id="@+id/M3ST"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.7"
-                                    android:text="0"
-                                    android:layout_marginStart="8dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.3"
-                                    android:text="Ton :"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="right"
-                                    android:textStyle="bold"/>
-
-                                <TextView
-                                    android:id="@+id/Ton"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="0.7"
-                                    android:text="0"
-                                    android:layout_marginStart="8dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
-
 
                         <Button
                             android:id="@+id/BtnInputDetailST"
-                            android:layout_width="150dp"
-                            android:layout_height="60dp"
-                            android:text="Data Baru"
-                            android:textSize="22sp"
-                            android:backgroundTint="@color/hijau"
-                            android:layout_marginEnd="8dp"/>
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Tetapkan"
+                            android:background="@drawable/modern_button" />
 
                         <Button
-                            android:id="@+id/BtnHapusDetailST"
-                            android:layout_width="150dp"
-                            android:layout_height="60dp"
-                            android:text="Data Baru"
-                            android:textSize="22sp"
-                            android:backgroundTint="@color/hijau"
-                            android:layout_marginEnd="8dp"/>
+                            android:id="@+id/BtnClearDetailST"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Reset"
+                            android:background="@drawable/modern_button" />
 
                     </LinearLayout>
 
@@ -815,168 +1009,7 @@
                 app:layout_constraintEnd_toStartOf="@id/inner_card_top_right"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
-                app:layout_constraintHorizontal_weight="0.7">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:background="#FFFFFF"
-                    android:padding="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Satuan Panjang"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginBottom="4dp"/>
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#E0E0E0">
-
-                        <RadioGroup
-                            android:id="@+id/radioGroupUOMPanjang"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="8dp">
-
-                            <RadioButton
-                                android:id="@+id/radioCentimeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Millimeter"
-                                android:textSize="15sp"
-                                android:layout_marginBottom="2dp"
-                                android:checked="true" />
-
-                            <RadioButton
-                                android:id="@+id/radioMeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Meter"
-                                android:textSize="15sp"
-                                android:layout_marginBottom="2dp"
-                                android:enabled="false" />
-
-                            <RadioButton
-                                android:id="@+id/radioFeet"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Feet"
-                                android:enabled="false"
-                                android:textSize="15sp"/>
-
-                        </RadioGroup>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Satuan Tebal-Lebar"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginBottom="4dp"
-                        android:layout_marginTop="12dp"/>
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#E0E0E0">
-
-                        <RadioGroup
-                            android:id="@+id/radioGroupUOMTblLebar"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="8dp">
-
-                            <RadioButton
-                                android:id="@+id/radioMillimeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Millimeter"
-                                android:textSize="15sp"
-                                android:checked="true"
-                                android:layout_marginBottom="2dp"/>
-
-                            <RadioButton
-                                android:id="@+id/radioInch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Inch"
-                                android:enabled="false"
-                                android:textSize="15sp"/>
-
-                        </RadioGroup>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="10dp"
-                        android:gravity="center">
-
-                        <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBStick"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Stick"
-                            android:textSize="18sp"
-                            android:layout_marginRight="20dp" />
-
-                        <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBKering"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Kering"
-                            android:textSize="18sp" />
-
-                        <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBUpah"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Upah"
-                            android:textSize="18sp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-
-            <!-- CardView Bawah Full -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/inner_card_top_right"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="4dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="2dp"
-                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_weight="1"
-                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0">
+                app:layout_constraintHorizontal_weight="1">
 
                 <!-- PROSES INPUT DETAIL VERSI ST -->
                 <LinearLayout
@@ -984,6 +1017,14 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/sisaPCS"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Balance : 0"
+                        android:padding="4dp"
+                        android:textStyle="bold" />
 
                     <TableLayout
                         android:layout_width="match_parent"
@@ -994,12 +1035,11 @@
                         <TableRow
                             android:background="@color/hijau">
 
-                            <!-- Kolom No. Produksi -->
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Panjang"
+                                android:text="Pjg"
                                 android:padding="8dp"
                                 android:gravity="center"
                                 android:textStyle="bold"
@@ -1030,8 +1070,8 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Aksi"
+                                android:layout_weight="0.5"
+                                android:text=""
                                 android:padding="8dp"
                                 android:gravity="center"
                                 android:textStyle="bold"
@@ -1059,7 +1099,292 @@
 
                     </ScrollView>
 
+                    <!-- Button untuk menambahkan data -->
+                    <Button
+                        android:id="@+id/addRowButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tambah"
+                        android:background="@drawable/modern_button"
+                        android:layout_margin="4dp"/>
+
                 </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- CardView Atas Kanan -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_top_right"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0">
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:background="#FFFFFF"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Detail"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#E0E0E0">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="10dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.2"
+                                        android:text="Jlh"
+                                        android:textSize="18sp"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.1"
+                                        android:text=":"
+                                        android:textSize="18sp"
+                                        android:gravity="center"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:id="@+id/JumlahPcsST"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.7"
+                                        android:text="0"
+                                        android:textSize="18sp"
+                                        android:layout_marginStart="8dp"
+                                        android:textColor="@color/black" />
+
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.2"
+                                        android:text="M³"
+                                        android:textSize="18sp"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.1"
+                                        android:text=":"
+                                        android:textSize="18sp"
+                                        android:gravity="center"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:id="@+id/M3ST"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.7"
+                                        android:text="0"
+                                        android:layout_marginStart="8dp"
+                                        android:textSize="18sp"
+                                        android:textColor="@color/black" />
+
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.2"
+                                        android:text="Ton"
+                                        android:textSize="18sp"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.1"
+                                        android:text=":"
+                                        android:textSize="18sp"
+                                        android:gravity="center"
+                                        android:textColor="@color/black"
+                                        android:textStyle="bold"/>
+
+                                    <TextView
+                                        android:id="@+id/Ton"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.7"
+                                        android:text="0"
+                                        android:layout_marginStart="8dp"
+                                        android:textSize="18sp"
+                                        android:textColor="@color/black" />
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Satuan Tbl-Lbr"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:layout_marginTop="12dp"/>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#E0E0E0">
+
+                            <RadioGroup
+                                android:id="@+id/radioGroupUOMTblLebar"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <RadioButton
+                                    android:id="@+id/radioMillimeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Millimeter"
+                                    android:textSize="15sp"
+                                    android:checked="true"
+                                    android:layout_marginBottom="2dp"/>
+
+                                <RadioButton
+                                    android:id="@+id/radioInch"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Inch"
+                                    android:textSize="15sp"/>
+
+                            </RadioGroup>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Satuan Panjang"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="4dp"/>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#E0E0E0">
+
+                            <RadioGroup
+                                android:id="@+id/radioGroupUOMPanjang"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <RadioButton
+                                    android:id="@+id/radioFeet"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Feet"
+                                    android:checked="true"
+                                    android:textSize="15sp"/>
+
+                                <RadioButton
+                                    android:id="@+id/radioMeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Meter"
+                                    android:textSize="15sp"
+                                    android:layout_marginBottom="2dp"
+                                    android:enabled="false" />
+
+                                <RadioButton
+                                    android:id="@+id/radioCentimeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Centimeter"
+                                    android:textSize="15sp"
+                                    android:layout_marginBottom="2dp"
+                                    android:enabled="false" />
+
+                            </RadioGroup>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                </ScrollView>
 
             </androidx.cardview.widget.CardView>
 
@@ -1073,20 +1398,28 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintHeight_percent="0.5">
+                app:layout_constraintHeight_percent="0.4">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="horizontal">
 
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_weight="1"
+                        android:layout_weight="0.4"
                         android:orientation="vertical"
                         android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Grade"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginBottom="20dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1097,9 +1430,10 @@
                             >
 
                             <TextView
-                                android:layout_width="120dp"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="Grade Stick"
+                                android:layout_weight="0.6"
+                                android:text="G. Stick"
                                 android:textSize="18sp"
                                 android:textColor="@color/black" />
 
@@ -1121,8 +1455,9 @@
                             >
 
                             <TextView
-                                android:layout_width="120dp"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_weight="0.6"
                                 android:text="Pcs"
                                 android:textSize="18sp"
                                 android:textColor="@color/black" />
@@ -1136,7 +1471,9 @@
                                 android:textSize="18sp"
                                 android:background="@drawable/border_input"
                                 android:elevation="1dp"
-                                android:hint="Pcs" />
+                                android:hint="Pcs"
+                                android:imeOptions="actionDone"
+                                android:inputType="number" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -1147,33 +1484,31 @@
 
                             <Button
                                 android:id="@+id/BtnTambahStickST"
-                                android:layout_width="150dp"
-                                android:layout_height="60dp"
-                                android:text="+"
-                                android:textSize="22sp"
-                                android:backgroundTint="@color/hijau"
-                                android:layout_marginEnd="8dp"/>
-
-
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Tambah"
+                                android:background="@drawable/modern_button" />
 
                         </LinearLayout>
 
 
                     </LinearLayout>
 
-                    <!-- HIDE GRADE SEMENTARA -->
+                    <View
+                        android:layout_width="2px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_weight="1"
+                        android:layout_weight="0.6"
                         android:orientation="vertical"
-                        android:padding="16dp"
-                        android:visibility="gone">
+                        android:padding="4dp">
 
                         <TableLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
                             android:background="#EFEFEF"
                             android:stretchColumns="0">
 
@@ -1251,134 +1586,7 @@
 
                     </LinearLayout>
 
-                    <!-- HIDE DETAIL SEMENTARA -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="2"
-                        android:gravity="center"
-                        android:orientation="vertical">
 
-                        <TableLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="0">
-                            <!-- Membuat kolom proporsional -->
-
-                            <TableRow android:background="@color/hijau">
-
-                                <!-- Kolom No. Produksi -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="No"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                                <View
-                                    android:layout_width="1px"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/gray" />
-
-                                <!-- Kolom Shift -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="T"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                                <View
-                                    android:layout_width="1px"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/gray" />
-
-                                <!-- Kolom Tanggal -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="L"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                                <View
-                                    android:layout_width="1px"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/gray" />
-
-                                <!-- Kolom Tanggal -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="P"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                                <View
-                                    android:layout_width="1px"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/gray" />
-
-                                <!-- Kolom Tanggal -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="Pcs"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                                <View
-                                    android:layout_width="1px"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/gray" />
-
-                                <!-- Kolom Tanggal -->
-                                <TextView
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:padding="8dp"
-                                    android:text="Aksi"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold" />
-
-                            </TableRow>
-
-                        </TableLayout>
-
-                        <ScrollView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent">
-
-                            <TableLayout
-                                android:id="@+id/Tabel"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:background="#EFEFEF"
-                                android:stretchColumns="0">
-
-                            </TableLayout>
-
-                        </ScrollView>
-
-                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -1398,8 +1606,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginStart="16dp"
-        android:backgroundTint="@color/primary_dark">
+        android:layout_marginStart="16dp">
 
 
         <!-- Button Container -->
@@ -1407,12 +1614,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
 
             <Button
                 android:id="@+id/BtnDataBaruST"
-                android:layout_width="150dp"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
+                android:layout_weight="1"
                 android:text="Data Baru"
                 android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
@@ -1420,8 +1630,9 @@
 
             <Button
                 android:id="@+id/BtnSimpanST"
-                android:layout_width="150dp"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
+                android:layout_weight="1"
                 android:text="Simpan"
                 android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
@@ -1430,8 +1641,9 @@
 
             <Button
                 android:id="@+id/BtnBatalST"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
+                android:layout_weight="1"
                 android:text="Batal"
                 android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
@@ -1439,16 +1651,18 @@
 
             <Button
                 android:id="@+id/BtnPrintST"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
                 android:text="Print"
                 android:textSize="22sp"
+                android:layout_weight="1"
                 android:backgroundTint="@color/hijau"/>
 
             <Button
                 android:id="@+id/BtnInputDetail"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
+                android:layout_weight="1"
                 android:text="Input Detail"
                 android:textSize="22sp"
                 android:backgroundTint="@color/hijau"
@@ -1456,8 +1670,9 @@
 
             <Button
                 android:id="@+id/BtnHapusDetail"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
+                android:layout_weight="1"
                 android:text="Hapus"
                 android:textSize="22sp"
                 android:backgroundTint="@color/hijau"

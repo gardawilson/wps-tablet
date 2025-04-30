@@ -56,7 +56,7 @@ public class DateTimeUtils {
         try {
             // Format input dan output
             SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yyyy");
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MMM-yyyy");
 
             // Parsing tanggal dan format ulang
             Date date = inputFormat.parse(originalDate);

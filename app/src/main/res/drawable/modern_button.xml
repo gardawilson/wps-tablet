@@ -1,0 +1,12 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="@color/primary"
+        android:endColor="@color/primary_dark"
+        android:angle="90" /> <!-- Gradien vertikal -->
+    <corners android:radius="12dp" /> <!-- Membulatkan sudut -->
+    <padding
+        android:left="12dp"
+        android:right="12dp"
+        android:top="8dp"
+        android:bottom="8dp" />
+</shape>

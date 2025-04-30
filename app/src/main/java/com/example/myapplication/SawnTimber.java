@@ -16,7 +16,9 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -50,6 +52,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
+
+import com.example.myapplication.utils.DateTimeUtils;
 import com.itextpdf.kernel.geom.AffineTransform;
 import android.print.PrintManager;
 import android.print.PrintAttributes;
@@ -71,6 +75,7 @@ import android.content.SharedPreferences;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -87,6 +92,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
@@ -98,10 +104,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-
-
-
-
+import com.itextpdf.kernel.pdf.canvas.draw.DashedLine;
+import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
@@ -143,16 +147,18 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
+import java.util.concurrent.CountDownLatch;
 
 public class SawnTimber extends AppCompatActivity {
 
     private String username;
+    private String noST;
     private Button BtnSimpanST;
     private Button BtnBatalST;
     private Button BtnDataBaruST;
-    private Button BtnHapusDetailST;
     private Button BtnPrintST;
     private Button BtnTambahStickST;
+    private Button BtnClearDetailST;
     private SearchView NoST;
     private SearchView NoKayuBulat;
     private EditText Supplier;
@@ -160,6 +166,7 @@ public class SawnTimber extends AppCompatActivity {
     private EditText NoPlatTruk;
     private EditText NoSuket;
     private EditText TglStickBundel;
+    private EditText TglVacuum;
     private EditText JenisKayuKB;
     private EditText JumlahStick;
     private Spinner SpinKayu;
@@ -175,6 +182,7 @@ public class SawnTimber extends AppCompatActivity {
     private TextView DetailLebarST;
     private TextView DetailPanjangST;
     private TextView DetailPcsST;
+    private TextView sisaPCS;
     private boolean isDataBaruClickedST = false;
     private int currentTableNo = 1;
     private TableLayout Tabel;
@@ -183,11 +191,13 @@ public class SawnTimber extends AppCompatActivity {
     private CheckBox CBKering;
     private CheckBox CBStick;
     private CheckBox CBUpah;
+    private CheckBox cbSLP;
+    private CheckBox cbVacuum;
     private Button BtnInputDetailST;
     private RadioGroup radioGroupUOMTblLebar;
     private RadioButton radioMillimeter;
     private RadioButton radioInch;
-    private RadioButton radioCentimeter;
+    private RadioButton radioFeet;
     private RadioGroup radioBagusKulit;
     private RadioButton radioBagus;
     private RadioButton radioKulit;
@@ -195,6 +205,22 @@ public class SawnTimber extends AppCompatActivity {
     private EditText NoST_display;
     private EditText NoKB_display;
     private TableLayout TabelInputPjgPcs;
+    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
+    private Button addRowButton;
+    private CardView inner_card_detail;
+    private CardView inner_card_top_left;
+    private CardView inner_card_top_center;
+    private CardView inner_card_top_right;
+    private EditText remarkLabel;
+    private String rawDate;
+    private TextView judulLabel;
+    private EditText noPenerimaanST;
+    private LinearLayout fieldKB;
+    private LinearLayout fieldJenisKB;
+    private LinearLayout fieldNoSuket;
+    private EditText Customer;
+    private int labelVersion;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,7 +234,6 @@ public class SawnTimber extends AppCompatActivity {
         BtnTambahStickST = findViewById(R.id.BtnTambahStickST);
         BtnSimpanST = findViewById(R.id.BtnSimpanST);
         BtnInputDetailST = findViewById(R.id.BtnInputDetailST);
-        BtnHapusDetailST = findViewById(R.id.BtnHapusDetailST);
         NoST = findViewById(R.id.NoST);
         NoSuket = findViewById(R.id.NoSuket);
         NoTruk = findViewById(R.id.NoTruk);
@@ -220,6 +245,7 @@ public class SawnTimber extends AppCompatActivity {
         DetailPcsST = findViewById(R.id.DetailPcsST);
         Supplier = findViewById(R.id.Supplier);
         TglStickBundel = findViewById(R.id.TglStickBundel);
+        TglVacuum = findViewById(R.id.TglVacuum);
         SpinGrade = findViewById(R.id.SpinGrade);
         SpinLokasi = findViewById(R.id.SpinLokasi);
         SpinSPK = findViewById(R.id.SpinSPK);
@@ -236,7 +262,7 @@ public class SawnTimber extends AppCompatActivity {
         CBUpah = findViewById(R.id.CBUpah);
         radioMillimeter = findViewById(R.id.radioMillimeter);
         radioInch = findViewById(R.id.radioInch);
-        radioCentimeter = findViewById(R.id.radioCentimeter);
+        radioFeet = findViewById(R.id.radioFeet);
         radioBagus = findViewById(R.id.radioBagus);
         radioKulit = findViewById(R.id.radioKulit);
         radioBagusKulit = findViewById(R.id.radioGroupBagusKulit);
@@ -245,22 +271,139 @@ public class SawnTimber extends AppCompatActivity {
         NoST_display = findViewById(R.id.NoST_display);
         NoKB_display = findViewById(R.id.NoKB_display);
         TabelInputPjgPcs = findViewById(R.id.TabelInputPjgPcs);
+        addRowButton = findViewById(R.id.addRowButton);
+        remarkLabel = findViewById(R.id.remarkLabel);
+        cbSLP = findViewById(R.id.cbSLP);
+        cbVacuum = findViewById(R.id.cbVacuum);
+        BtnClearDetailST = findViewById(R.id.BtnClearDetailST);
+        sisaPCS = findViewById(R.id.sisaPCS);
+        judulLabel = findViewById(R.id.judulLabel);
+        fieldKB = findViewById(R.id.fieldKB);
+        fieldJenisKB = findViewById(R.id.fieldJenisKB);
+        fieldNoSuket = findViewById(R.id.fieldNoSuket);
+        Customer = findViewById(R.id.Customer);
 
+
+        inner_card_detail = findViewById(R.id.inner_card_detail);
+        inner_card_top_left = findViewById(R.id.inner_card_top_left);
+        inner_card_top_center = findViewById(R.id.inner_card_top_center);
+        inner_card_top_right = findViewById(R.id.inner_card_top_right);
+
+
+        inner_card_detail.setVisibility(View.GONE);
         NoST_display.setVisibility(View.GONE);
         SpinLokasi.setEnabled(false);
         disableForm();
+
+
+        //VERSI ST
+
+        Intent intent = getIntent();
+
+        String noPenST = intent.getStringExtra("noPenST"); // Ambil integer (default -1 jika tidak ada)
+        labelVersion = intent.getIntExtra("labelVersion", -1); // Ambil string
+
+        if (labelVersion == -1) {
+            judulLabel.setText("LABEL ST");
+        }
+        else if (labelVersion == 1) {
+            judulLabel.setText("LABEL ST (Pembelian)");
+            fieldKB.setVisibility(View.GONE);
+            fieldJenisKB.setVisibility(View.GONE);
+            fieldNoSuket.setVisibility(View.GONE);
+            loadPenerimaanSTPembelian(noPenST);
+        }
+        else if (labelVersion == 2) {
+            judulLabel.setText("LABEL ST (Upah)");
+            fieldKB.setVisibility(View.GONE);
+            fieldJenisKB.setVisibility(View.GONE);
+            fieldNoSuket.setVisibility(View.GONE);
+            loadPenerimaanSTUpah(noPenST);
+        }
+
+
+        noPenerimaanST = findViewById(R.id.noPenerimaanST);
+        noPenerimaanST.setText(noPenST);
+
+
+        Toast.makeText(SawnTimber.this, "SawnTimber Versi = " + noPenST, Toast.LENGTH_SHORT).show();
+
+
+
+        // Menangani aksi 'Enter' pada keyboard
+        DetailTebalST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    // Pastikan DetailLebarS4S bisa menerima fokus
+                    DetailLebarST.requestFocus();
+                    return true; // Menunjukkan bahwa aksi sudah ditangani
+                }
+                return false;
+            }
+        });
+
+        DetailLebarST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPanjangST.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPanjangST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    DetailPcsST.requestFocus();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        DetailPcsST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
+                    // Ambil input dari AutoCompleteTextView
+                    String tebal = DetailTebalST.getText().toString().trim();
+                    String lebar = DetailLebarST.getText().toString().trim();
+                    String panjang = DetailPanjangST.getText().toString().trim();
+                    String pcs = DetailPcsST.getText().toString().trim();
+
+
+
+                    // Validasi input kosong
+                    if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
+                        Toast.makeText(SawnTimber.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+
+                    addDataDetail(tebal, lebar, panjang, pcs);
+                    return true;
+                }
+                return false;
+            }
+        });
+
 
         NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 loadKayuBulat(query);
-                closeKeyboard();
+//                closeKeyboard();
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
                 loadKayuBulat(newText);
+                NoKayuBulat.setBackgroundResource(R.drawable.border_input);
                 return true;
             }
         });
@@ -270,7 +413,7 @@ public class SawnTimber extends AppCompatActivity {
             public boolean onQueryTextSubmit(String query) {
                 if (!isCreateMode) {
                     loadSawnTimber(query);
-                    closeKeyboard();
+//                    closeKeyboard();
                 }
                 return true;
             }
@@ -290,13 +433,11 @@ public class SawnTimber extends AppCompatActivity {
             }
         });
 
-
         BtnDataBaruST.setOnClickListener(v -> {
             setCreateMode(true);
             setCurrentDateTime();
             enableForm();
 
-            new SetAndSaveNoSTTask().execute();
             new LoadSPKTask().execute();
             new LoadTellyTask().execute();
             new LoadStickByTask().execute();
@@ -304,15 +445,32 @@ public class SawnTimber extends AppCompatActivity {
             new LoadGradeStickTask().execute();
             new LoadLokasiTask().execute();
 
-            BtnBatalST.setEnabled(true);
             BtnSimpanST.setEnabled(true);
             BtnTambahStickST.setEnabled(true);
             BtnInputDetailST.setEnabled(true);
-            BtnHapusDetailST.setEnabled(true);
+            BtnBatalST.setEnabled(true);
+            BtnPrintST.setEnabled(false);
+            BtnDataBaruST.setVisibility(View.GONE);
+            BtnSimpanST.setVisibility(View.VISIBLE);
+            NoST.setVisibility(View.GONE);
+            NoST_display.setVisibility(View.VISIBLE);
+            NoST_display.setEnabled(false);
+            NoST_display.setText("");
+            NoKayuBulat.setQuery("", false);
+            cbSLP.setChecked(false);
+            cbVacuum.setChecked(false);
+            resetDetailData();
+            resetGradeData();
+            DetailPanjangST.setText("4");
+            remarkLabel.setText("");
+
+            if (labelVersion == -1) {
+                noPenerimaanST.setText("");
+            }
+
         });
 
         BtnInputDetailST.setOnClickListener(view -> {
-
             String tebal = DetailTebalST.getText().toString();
             String lebar = DetailLebarST.getText().toString();
             String panjang = DetailPanjangST.getText().toString();
@@ -325,15 +483,52 @@ public class SawnTimber extends AppCompatActivity {
         });
 
         BtnTambahStickST.setOnClickListener(view -> {
-            String noST = NoST.getQuery().toString();
-            if (!noST.isEmpty()) {
-                addDataGrade(noST);
-            } else {
-                Toast.makeText(SawnTimber.this, "NoST tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            addDataGrade(noST);
+        });
+
+        JumlahStick.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Tangani enter atau tombol "Done" di keyboard
+                if (actionId == EditorInfo.IME_ACTION_DONE ||
+                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+
+                    addDataGrade(noST);
+
+                    closeKeyboard();
+
+                    return true;
+                }
+                return false;
             }
         });
 
-        TglStickBundel.setOnClickListener(v -> showDatePickerDialog());
+        BtnClearDetailST.setOnClickListener(view -> {
+            TabelInputPjgPcs.removeAllViews();
+            Tabel.removeAllViews();
+            temporaryDataListDetail.clear();
+
+            jumlahPcsST();
+            m3();
+            ton();
+
+            BtnInputDetailST.setEnabled(true);
+            DetailTebalST.setEnabled(true);
+            DetailLebarST.setEnabled(true);
+            DetailPcsST.setEnabled(true);
+            DetailPanjangST.setEnabled(true);
+
+            DetailTebalST.setText("");
+            DetailLebarST.setText("");
+            DetailPcsST.setText("");
+
+            sisaPCS.setText("Balance : 0");
+
+        });
+
+        TglStickBundel.setOnClickListener(v -> showDatePickerDialogStick());
+
+        TglVacuum.setOnClickListener(v -> showDatePickerDialogVacuum());
 
         SpinGrade.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -361,72 +556,129 @@ public class SawnTimber extends AppCompatActivity {
         BtnBatalST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setCreateMode(false);
+
+                isCreateMode = false;
+
                 disableForm();
                 clearTableData();
                 resetGradeData();
                 resetDetailData();
+
+                BtnDataBaruST.setEnabled(true);
+                BtnSimpanST.setEnabled(false);
+                BtnPrintST.setEnabled(false);
+                NoST.setVisibility(View.VISIBLE);
+                NoST_display.setVisibility(View.GONE);
+                BtnDataBaruST.setVisibility(View.VISIBLE);
+                BtnSimpanST.setVisibility(View.GONE);
+                TabelInputPjgPcs.removeAllViews();
+                BtnPrintST.setEnabled(true);
             }
         });
 
         BtnSimpanST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noST = NoST.getQuery().toString().trim();
                 String noKayuBulat = NoKayuBulat.getQuery().toString().trim();
+                String noPenST = noPenerimaanST.getText().toString().trim();
                 JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
                 String jenisKayu = selectedJenisKayu.getIdJenisKayu();
-                String noSPK = SpinSPK.getSelectedItem().toString();
+                SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
+                String noSPK = selectedSPK.getNoSPK();
                 String telly = ((Telly) SpinTelly.getSelectedItem()).getIdOrgTelly();
                 String stickBy = ((StickBy) SpinStickBy.getSelectedItem()).getIdStickBy();
-                Lokasi selectedLokasi = (Lokasi) SpinLokasi.getSelectedItem();
-                String idLokasi = selectedLokasi.getIdLokasi();
                 String dateCreate = TglStickBundel.getText().toString().trim();
+                String dateVacuum = TglVacuum.getText().toString().trim();
+                String remark = remarkLabel.getText().toString();
+                String isSLP = cbSLP.isChecked() ? "1" : "0";
+                String isVacuum = cbVacuum.isChecked() ? dateVacuum : null;
+                String isSticked = CBStick.isChecked() ? "1" : "0";
+                String isKering = CBKering.isChecked() ? "1" : "0";
 
-                if (!validateKayuLatSelection()) {
-                    return;
+                // Validasi: Cek apakah ada field yang kosong
+                boolean valid = true;
+
+                if (noKayuBulat.isEmpty() && labelVersion == -1) {
+                    NoKayuBulat.setBackgroundResource(R.drawable.spinner_error);  // Background merah untuk error
+                    valid = false;
                 }
 
-                if (!noST.isEmpty() && !noKayuBulat.isEmpty() && !jenisKayu.isEmpty() && !noSPK.equals("PILIH") && !telly.isEmpty() && !stickBy.isEmpty() && (radioMillimeter.isChecked() || radioInch.isChecked()) && !temporaryDataListDetail.isEmpty() && !temporaryDataListGrade.isEmpty()) {
-                checkKayuBulatExists(noKayuBulat, exists -> {
-                    if(exists) {
-                        int isBagusKulit = 0;
+                if (jenisKayu.isEmpty()) {
+                    // Menambahkan error pada spinner dan memberi pesan kesalahan
+                    SpinKayu.setBackgroundResource(R.drawable.spinner_error);
+                    valid = false;
+                }
 
-                        if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-                            isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+                if (stickBy.isEmpty()) {
+                    // Menambahkan error pada spinner dan memberi pesan kesalahan
+                    SpinStickBy.setBackgroundResource(R.drawable.spinner_error);
+                    valid = false;
+                }
+
+                if (noSPK.isEmpty() || noSPK.equals("PILIH")) {
+                    // Menambahkan error pada spinner dan memberi pesan kesalahan
+                    SpinSPK.setBackgroundResource(R.drawable.spinner_error);
+                    valid = false;
+                }
+
+                if (valid && !temporaryDataListDetail.isEmpty() && !temporaryDataListGrade.isEmpty()) {
+                    checkKayuBulatExists(noKayuBulat, labelVersion, exists -> {
+
+                        CountDownLatch latch = new CountDownLatch(1);
+                        setAndSaveNoST(latch);
+                        try {
+                            latch.await();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
 
-                        int isSticked = CBStick.isChecked() ? 1 : 0;
-                        int startKering = CBKering.isChecked() ? 1 : 0;
+                        if (latch.getCount() == 0) {
+                            if (exists) {
+                                String isBagusKulit = "0";
+                                String labelVer = "0";
 
-                        new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, idLokasi, dateCreate);
-                        new UpdateCheckboxDataTask().execute(noST, isBagusKulit, isSticked, startKering);
+                                if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                                    isBagusKulit = radioBagus.isChecked() ? "1" : (radioKulit.isChecked() ? "2" : "0");
+                                }
 
-                        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                            DataRow dataRow = temporaryDataListDetail.get(i);
-                            saveDataToDatabase(noST, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                                    Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                                new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, dateCreate, isVacuum, remark, isSLP, isSticked, isKering, isBagusKulit);
+
+                                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+                                    DataRow dataRow = temporaryDataListDetail.get(i);
+                                    saveDataToDatabase(noST, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
+                                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
+                                }
+
+                                for (int i = 0; i < temporaryDataListGrade.size(); i++) {
+                                    DataRow2 dataRow2 = temporaryDataListGrade.get(i);
+                                    saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
+                                }
+
+                                if (labelVersion == 1) {
+                                    savePenerimaanSTPembelian(noPenST, noST);
+                                } else if (labelVersion == 2) {
+                                    savePenerimaanSTUpah(noPenST, noST);
+                                }
+
+                                NoKB_display.setText(noKayuBulat);
+                                NoKayuBulat.setVisibility(View.GONE);
+                                NoKB_display.setVisibility(View.VISIBLE);
+                                BtnDataBaruST.setVisibility(View.VISIBLE);
+                                BtnSimpanST.setVisibility(View.GONE);
+                                BtnPrintST.setEnabled(true);
+                                BtnBatalST.setEnabled(false);
+                                NoKB_display.setEnabled(false);
+                                BtnPrintST.setEnabled(true);
+                                disableForm();
+                                Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
+                            }
                         }
-
-                        for (int i = 0; i < temporaryDataListGrade.size(); i++) {
-                            DataRow2 dataRow2 = temporaryDataListGrade.get(i);
-                            saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
-                        }
-
-                        NoKB_display.setText(noKayuBulat);
-                        NoKayuBulat.setVisibility(View.GONE);
-                        NoKB_display.setVisibility(View.VISIBLE);
-                        NoKB_display.setEnabled(false);
-                        disableForm();
-                        BtnPrintST.setEnabled(true);
-                        Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-                    }else{
-                        Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    });
 
                 } else {
-                    Toast.makeText(SawnTimber.this, "Semua field harus diisi.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SawnTimber.this, "Silahkan lengkapi data!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -435,27 +687,27 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if(isCreateMode){
-                JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
-                if (selectedJenisKayu.getIsUpah() == 1) {
-                    CBUpah.setChecked(true);
-                } else {
-                    CBUpah.setChecked(false);
+                    SpinKayu.setBackgroundResource(R.drawable.border_input);
+                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    if (selectedJenisKayu.getIsUpah() == 1) {
+                        CBUpah.setChecked(true);
+                    } else {
+                        CBUpah.setChecked(false);
+                    }
+
+                    if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                        radioBagus.setEnabled(true);
+                        radioKulit.setEnabled(true);
+//                        radioKulit.setChecked(true);
+                        radioBagus.setChecked(true);
+
+                    } else {
+                        radioBagus.setEnabled(false);
+                        radioKulit.setEnabled(false);
+                        radioBagus.setChecked(false);
+                        radioKulit.setChecked(false);
+                    }
                 }
-
-                if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-                    radioBagus.setEnabled(true);
-                    radioKulit.setEnabled(true);
-                    radioKulit.setChecked(true);
-                    radioBagus.setChecked(true);
-
-
-                } else {
-                    radioBagus.setEnabled(false);
-                    radioKulit.setEnabled(false);
-                    radioBagus.setChecked(false);
-                    radioKulit.setChecked(false);
-                }
-            }
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -463,17 +715,27 @@ public class SawnTimber extends AppCompatActivity {
             }
         });
 
-        BtnHapusDetailST.setOnClickListener(new View.OnClickListener() {
+        SpinStickBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View view) {
-                String noST = NoST.getQuery().toString().trim();
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                SpinStickBy.setBackgroundResource(R.drawable.border_input);
 
-                if (!noST.isEmpty()) {
-                    resetDetailData();
-                    jumlahPcsST();
-                } else {
-                    Toast.makeText(SawnTimber.this, "NoST tidak boleh kosong", Toast.LENGTH_SHORT).show();
-                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        SpinSPK.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                SpinSPK.setBackgroundResource(R.drawable.border_input);
+
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
             }
         });
 
@@ -496,7 +758,11 @@ public class SawnTimber extends AppCompatActivity {
                 String noST = NoST.getQuery().toString().trim();
                 checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
                     @Override
-                    public void onResult(boolean hasBeenPrinted) {
+                    public void onResult(int printCount) {
+
+                        if (printCount == -1) {
+                            return;
+                        }
                         try {
                             // Ambil data dari form dengan validasi null
                             String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
@@ -506,108 +772,56 @@ public class SawnTimber extends AppCompatActivity {
                             String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
                             String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
                             String noKayuBulat = NoKayuBulat.getQuery() != null ? NoKayuBulat.getQuery().toString().trim() : "";
+                            String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "";
                             String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
                             String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
                             String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
                             String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
                             String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
+                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
+                            String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "";
                             SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
                             username = prefs.getString("username", "");
+                            int isSLP = cbSLP.isChecked() ? 1 : 0;
+                            // Default values for UOM columns
+                            String idUOMTblLebar;
+                            String idUOMPanjang;
+
+                            // Check which checkbox is checked and set values accordingly
+                            if (radioInch.isChecked()) {
+                                idUOMTblLebar = "\"";
+                            } else if (radioMillimeter.isChecked()) {
+                                idUOMTblLebar = "mm";
+                            } else {
+                                idUOMTblLebar = "";
+                            }
+
+                            if (radioFeet.isChecked()) {
+                                idUOMPanjang = "ft";
+                            } else {
+                                idUOMPanjang = "";
+                            }
 
                             // Buat PDF dengan parameter hasBeenPrinted
                             Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
                                     temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
-                                    hasBeenPrinted, username); // Parameter baru untuk watermark
+                                    printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer); // Parameter baru untuk watermark
 
                             if (pdfUri != null) {
-                                // Siapkan PrintManager
-                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                                String jobName = getString(R.string.app_name) + " Document";
-
-                                // Buat PrintDocumentAdapter
-                                PrintDocumentAdapter pda = new PrintDocumentAdapter() {
-                                    @Override
-                                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
-                                                         CancellationSignal cancellationSignal,
-                                                         LayoutResultCallback callback, Bundle extras) {
-                                        if (cancellationSignal.isCanceled()) {
-                                            callback.onLayoutCancelled();
-                                            return;
-                                        }
-
-                                        PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
-                                                .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                                                .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
-                                                .build();
-
-                                        callback.onLayoutFinished(info, true);
-                                    }
-
-                                    @Override
-                                    public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
-                                                        CancellationSignal cancellationSignal,
-                                                        WriteResultCallback callback) {
-                                        try {
-                                            InputStream input = getContentResolver().openInputStream(pdfUri);
-                                            OutputStream output = new FileOutputStream(destination.getFileDescriptor());
-
-                                            byte[] buf = new byte[1024];
-                                            int bytesRead;
-
-                                            while ((bytesRead = input.read(buf)) > 0) {
-                                                output.write(buf, 0, bytesRead);
-                                            }
-
-                                            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
-
-                                            input.close();
-                                            output.close();
-                                        } catch (Exception e) {
-                                            callback.onWriteFailed(e.getMessage());
-                                        }
-                                    }
-                                };
-
-                                // Mulai proses pencetakan
-                                PrintAttributes attributes = new PrintAttributes.Builder()
-                                        .setMediaSize(new PrintAttributes.MediaSize("CUSTOM", "Custom Roll Paper", 72, 3000)) // 72mm lebar
-                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                        .build();
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setDataAndType(pdfUri, "application/pdf");
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                intent.setPackage("com.dynamixsoftware.printershare"); // ← arahkan langsung ke PrinterShare
 
                                 try {
-                                    // Dapatkan PrintJob
-                                    PrintJob printJob = printManager.print(jobName, pda, attributes);
-
-                                    // Monitor status PrintJob
-                                    new Thread(() -> {
-                                        boolean isPrinting = true;
-                                        while (isPrinting) {
-                                            if (printJob.isCompleted()) {
-                                                // Update database hanya jika printing selesai dan ini adalah cetakan pertama
-                                                if (!hasBeenPrinted) {
-                                                    updatePrintStatus(noST);
-                                                }
-                                                isPrinting = false;
-                                            } else if (printJob.isFailed() || printJob.isCancelled()) {
-                                                isPrinting = false;
-                                            }
-
-                                            try {
-                                                Thread.sleep(1000); // Check setiap 1 detik
-                                            } catch (InterruptedException e) {
-                                                Thread.currentThread().interrupt();
-                                                break;
-                                            }
-                                        }
-                                    }).start();
-
-                                } catch (Exception e) {
+                                    startActivity(intent);
+                                } catch (ActivityNotFoundException e) {
                                     Toast.makeText(SawnTimber.this,
-                                            "Error printing: " + e.getMessage(),
+                                            "PrinterShare not installed.",
                                             Toast.LENGTH_LONG).show();
                                 }
                             }
+
                         } catch (Exception e) {
                             e.printStackTrace();
                             String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
@@ -620,76 +834,212 @@ public class SawnTimber extends AppCompatActivity {
             }
         });
 
+        // Atur listener untuk cbVacuum
+        cbVacuum.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Jika checkbox dicentang, aktifkan EditText TglVacuum
+            if (isChecked) {
+                TglVacuum.setEnabled(true);
+            } else {
+                // Jika checkbox tidak dicentang, nonaktifkan EditText TglVacuum
+                TglVacuum.setEnabled(false);
+            }
+        });
     }
 
     //METHOD SAWN TIMBER
 
-
     private void addNewRow() {
         // Membuat TableRow baru
         TableRow newRow = new TableRow(this);
+        newRow.setBackgroundColor(Color.parseColor("#FFFFFF"));
 
         // Membuat EditText untuk "Panjang"
         EditText panjangEditText = new EditText(this);
-        panjangEditText.setHint("Panjang");
-        panjangEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        panjangEditText.setHint("Pjg");
+        panjangEditText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+
+        // Mengatur layout params untuk EditText dan memberikan weight
+        TableRow.LayoutParams panjangParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 1f berarti 1 bagian dari total weight
+        panjangEditText.setLayoutParams(panjangParams);
 
         // Membuat EditText untuk "Pcs"
         EditText pcsEditText = new EditText(this);
         pcsEditText.setHint("Pcs");
         pcsEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        pcsEditText.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
-        // Membuat Button "Add"
-        Button addButton = new Button(this);
-        addButton.setText("Add");
+        // Mengatur layout params untuk EditText dan memberikan weight
+        TableRow.LayoutParams pcsParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 1f berarti 1 bagian dari total weight
+        pcsEditText.setLayoutParams(pcsParams);
 
-        // Membuat Button "Delete"
-        Button deleteButton = new Button(this);
-        deleteButton.setText("Delete");
-
-        // Set OnClickListener untuk tombol delete
-        deleteButton.setOnClickListener(v -> TabelInputPjgPcs.removeView(newRow));
-
-        // Set OnClickListener untuk tombol add
-        addButton.setOnClickListener(v -> {
-            // Ambil nilai dari EditText "Panjang" dan "Pcs"
-            // Menambahkan validasi atau pengecekan jika diperlukan
-            String tebal = DetailTebalST.getText().toString();
-            String lebar = DetailLebarST.getText().toString();
-            String panjang = panjangEditText.getText().toString().trim();
-            String pcs = pcsEditText.getText().toString().trim();
-
-            // Tampilkan Toast dengan nilai dari "Panjang" dan "Pcs"
-            if (!panjang.isEmpty() && !pcs.isEmpty()) {
-                addDataDetail(tebal, lebar, panjang, pcs);
-
-                Toast.makeText(this, "Panjang: " + panjang + ", Pcs: " + pcs, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
+        panjangEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Cek apakah tombol Enter ditekan
+                if (actionId == EditorInfo.IME_ACTION_NEXT ||
+                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                    pcsEditText.requestFocus(); // Pindahkan fokus ke EditText pcs
+                    return true; // Tindakan sudah ditangani
+                }
+                return false;
             }
         });
+
+        pcsEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                // Tangani enter atau tombol "Done" di keyboard
+                if (actionId == EditorInfo.IME_ACTION_DONE ||
+                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                    String panjang = panjangEditText.getText().toString().trim();
+                    String pcs = pcsEditText.getText().toString().trim();
+
+                    submitDetailInput(panjang, pcs);
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        // Membuat ImageButton "Delete"
+        ImageButton deleteButton = new ImageButton(this);
+        deleteButton.setImageResource(R.drawable.ic_close);
+        deleteButton.setContentDescription("Delete Button"); // Deskripsi konten untuk aksesibilitas (opsional)
+        deleteButton.setBackgroundColor(Color.TRANSPARENT);  // Membuat latar belakang transparan
+
+        // Mengatur layout params untuk ImageButton dan memberikan weight
+        TableRow.LayoutParams deleteButtonParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 0.5f); // 1f berarti 1 bagian dari total weight
+        deleteButton.setLayoutParams(deleteButtonParams);
+
+        // Set OnClickListener untuk tombol delete
+        deleteButton.setOnClickListener(v -> {
+            // Ambil nilai panjang yang akan dihapus dari EditText
+            String panjangToDelete = panjangEditText.getText().toString().trim();
+            String pcs = pcsEditText.getText().toString().trim();
+            float panjangAcuan = Float.parseFloat(DetailPanjangST.getText().toString());
+
+            // Periksa apakah panjang atau pcs tidak terisi
+            if (panjangToDelete.isEmpty() || pcs.isEmpty()) {
+                // Jika salah satu atau keduanya kosong, tampilkan Toast
+                Toast.makeText(this, "Tidak ada nilai!", Toast.LENGTH_SHORT).show();
+            } else {
+                // Tambahkan pcs yang dihapus ke data dengan panjang == panjangAcuan
+                for (DataRow row : temporaryDataListDetail) {
+                    if (Float.parseFloat(row.panjang) == panjangAcuan) {
+                        int updatedPcs = Integer.parseInt(row.pcs) + Integer.parseInt(pcs); // Tambahkan pcs yang dihapus
+                        row.pcs = String.valueOf(updatedPcs); // Update pcs
+                        sisaPCS.setText("Balance : " + row.pcs);
+                    }
+                }
+
+                // Menghapus baris pada TabelInputPjgPcs berdasarkan panjang yang sesuai
+                for (int i = 0; i < Tabel.getChildCount(); i++) {
+                    TableRow row = (TableRow) Tabel.getChildAt(i);
+                    // Ambil nilai pada kolom pertama (panjang)
+                    TextView panjangInRow = (TextView) row.getChildAt(3);  // Kolom panjang berada di indeks 3
+                    if (panjangInRow.getText().toString().equals(panjangToDelete)) {
+                        // Jika panjang pada baris tersebut sesuai dengan panjang yang dihapus, hapus baris tersebut
+                        Tabel.removeViewAt(i);
+                        break;  // Keluar dari loop setelah baris yang sesuai dihapus
+                    }
+                }
+
+                // Hapus baris yang baru ditambahkan pada TabelInputPjgPcs
+                TabelInputPjgPcs.removeView(newRow);
+
+                // Menghapus data terkait dari temporaryDataListDetail berdasarkan panjang
+                for (DataRow row : temporaryDataListDetail) {
+                    if (row.panjang.equals(panjangToDelete)) {
+                        temporaryDataListDetail.remove(row);  // Hapus data dari list berdasarkan panjang
+                        break;
+                    }
+                }
+                // Memperbarui tabel setelah penghapusan data
+                updateTable(Float.parseFloat(panjangToDelete));  // Memperbarui tabel utama
+                jumlahPcsST();
+                m3();
+                ton();
+            }
+        });
+
+
+        // Set OnClickListener untuk tombol add
+        addRowButton.setOnClickListener(v -> {
+            String panjang = panjangEditText.getText().toString().trim();
+            String pcs = pcsEditText.getText().toString().trim();
+            submitDetailInput(panjang, pcs);
+
+
+        });
+
 
         // Menambahkan EditText dan Button ke dalam TableRow
         newRow.addView(panjangEditText);
         newRow.addView(pcsEditText);
-        newRow.addView(addButton); // Menambahkan tombol Add
-        newRow.addView(deleteButton); // Menambahkan tombol Delete
+        newRow.addView(deleteButton);
+        deleteButton.setEnabled(false);
 
         // Menambahkan baris baru ke TableLayout
         TabelInputPjgPcs.addView(newRow);
+        panjangEditText.requestFocus();
 
+    }
 
+    private void submitDetailInput(String panjang, String pcs) {
+        String tebal = DetailTebalST.getText().toString();
+        String lebar = DetailLebarST.getText().toString();
 
+        float panjangAcuan = Float.parseFloat(DetailPanjangST.getText().toString());
 
+        if (!panjang.isEmpty() && !pcs.isEmpty() && !panjang.equals("0") && !pcs.equals("0")) {
 
-        // Panggil method addDataDetail jika diperlukan untuk menyimpan data
-        // addDataDetail(tebal, lebar, panjang, pcs);
+            for (DataRow row : temporaryDataListDetail) {
+                if (Float.parseFloat(row.panjang) == panjangAcuan) {
+                    if (Integer.parseInt(row.pcs) <= Integer.parseInt(pcs)) {
+                        sisaPCS.setText("Balance : " + row.pcs);
+                        Toast.makeText(this, "Pcs melebihi jumlah sisa", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+            }
+
+            addDataDetail(tebal, lebar, panjang, pcs);
+            jumlahPcsST();
+            m3();
+            ton();
+
+            // Menonaktifkan semua EditText yang sudah ada di tabel
+            for (int i = 0; i < TabelInputPjgPcs.getChildCount() - 1; i++) {
+                TableRow row = (TableRow) TabelInputPjgPcs.getChildAt(i);
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof EditText) {
+                        child.setEnabled(false);
+                    } else if (child instanceof ImageButton) {
+                        child.setEnabled(true);
+                    }
+                }
+            }
+        } else {
+            Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
+        }
     }
 
 
-    private void checkKayuBulatExists(String noKayuBulat, KayuBulatExistsCallback callback) {
+
+    private void checkKayuBulatExists(String noKayuBulat, int labelVersion, KayuBulatExistsCallback callback) {
+
+        // Periksa versiLabel terlebih dahulu
+        if (labelVersion != -1) {
+            // Jika versiLabel tidak sama dengan -1, abaikan query dan langsung kembalikan true
+            runOnUiThread(() -> callback.onResult(true));
+            return;
+        }
+
         new Thread(() -> {
             boolean exists = false;
+
             Connection connection = null;
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
@@ -742,11 +1092,22 @@ public class SawnTimber extends AppCompatActivity {
         BtnTambahStickST.setEnabled(false);
         DetailPanjangST.setEnabled(false);
         DetailPcsST.setEnabled(false);
-        BtnHapusDetailST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
         TglStickBundel.setEnabled(false);
+        TglVacuum.setEnabled(false);
         BtnSimpanST.setEnabled(false);
-//        BtnPrintST.setEnabled(false);
+        inner_card_detail.setVisibility(View.VISIBLE);
+        inner_card_top_left.setVisibility(View.GONE);
+        inner_card_top_center.setVisibility(View.GONE);
+        inner_card_top_right.setVisibility(View.VISIBLE);
+        remarkLabel.setEnabled(false);
+        CBKering.setEnabled(false);
+        cbSLP.setEnabled(false);
+        cbVacuum.setEnabled(false);
+
+        for (ImageButton btn : deleteButtons) {
+            btn.setVisibility(View.INVISIBLE);
+        }
     }
 
     private void enableForm(){
@@ -758,15 +1119,24 @@ public class SawnTimber extends AppCompatActivity {
         JumlahStick.setEnabled(true);
         DetailTebalST.setEnabled(true);
         DetailLebarST.setEnabled(true);
+        BtnTambahStickST.setEnabled(true);
         DetailPanjangST.setEnabled(true);
         DetailPcsST.setEnabled(true);
-        BtnHapusDetailST.setEnabled(true);
         BtnInputDetailST.setEnabled(true);
         TglStickBundel.setEnabled(true);
+        BtnSimpanST.setEnabled(true);
+        BtnPrintST.setEnabled(true);
+        inner_card_detail.setVisibility(View.GONE);
+        inner_card_top_left.setVisibility(View.VISIBLE);
+        inner_card_top_center.setVisibility(View.VISIBLE);
+        inner_card_top_right.setVisibility(View.VISIBLE);
         NoKB_display.setVisibility(View.GONE);
         NoKayuBulat.setVisibility(View.VISIBLE);
+        remarkLabel.setEnabled(true);
+        CBKering.setEnabled(true);
+        cbSLP.setEnabled(true);
+        cbVacuum.setEnabled(true);
     }
-
 
 
 
@@ -842,6 +1212,94 @@ public class SawnTimber extends AppCompatActivity {
                                         NoSuket.setEnabled(false);
                                         JenisKayuKB.setEnabled(false);
 
+//                                        Toast.makeText(getApplicationContext(),
+//                                                "Data berhasil dimuat",
+//                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoKayuBulat: " + noST,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void loadPenerimaanSTPembelian(String noPenST) {
+        // Tampilkan progress dialog
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk KayuBulat
+                    String queryKayuBulat = "SELECT " +
+                            "s.NmSupplier, " +
+                            "h.NoTruk, " +
+                            "h.NoPlat " +
+                            "FROM PenerimaanSTPembelian_h h " +
+                            "LEFT JOIN MstSupplier s ON h.IdSupplier = s.IdSupplier " +
+                            "WHERE h.NoPenerimaanST = ?";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryKayuBulat)) {
+                        stmt.setString(1, noPenST);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data KayuBulat
+                                final String namaSupplier = rs.getString("NmSupplier") != null ? rs.getString("NmSupplier") : "-";
+                                final String noTruk = rs.getString("NoTruk") != null ? rs.getString("NoTruk") : "-";
+                                final String noPlat = rs.getString("NoPlat") != null ? rs.getString("NoPlat") : "-";
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        // Update  fields
+                                        Supplier.setText(namaSupplier);
+                                        NoTruk.setText(noTruk);
+                                        NoPlatTruk.setText(noPlat);
+
+                                        Supplier.setEnabled(false);
+                                        NoTruk.setEnabled(false);
+                                        NoPlatTruk.setEnabled(false);
+
                                         Toast.makeText(getApplicationContext(),
                                                 "Data berhasil dimuat",
                                                 Toast.LENGTH_SHORT).show();
@@ -857,7 +1315,95 @@ public class SawnTimber extends AppCompatActivity {
                                 runOnUiThread(() -> {
 
 //                                    Toast.makeText(getApplicationContext(),
-//                                            "Data tidak ditemukan untuk NoKayuBulat: " + noS4S,
+//                                            "Data tidak ditemukan untuk NoKayuBulat: " + noST,
+//                                            Toast.LENGTH_SHORT).show();
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void loadPenerimaanSTUpah(String noPenST) {
+        // Tampilkan progress dialog
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    // Query untuk KayuBulat
+                    String queryKayuBulat = "SELECT " +
+                            "s.NamaCustomer, " +
+                            "h.NoTruk, " +
+                            "h.NoPlat " +
+                            "FROM PenerimaanSTUpah_h h " +
+                            "LEFT JOIN MstCustomerUpah s ON h.IdCustomer = s.IdCustomer " +
+                            "WHERE h.NoPenerimaanST = ?";
+
+                    // Menggunakan try-with-resources untuk header
+                    try (PreparedStatement stmt = connection.prepareStatement(queryKayuBulat)) {
+                        stmt.setString(1, noPenST);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                // Mengambil data KayuBulat
+                                final String namaCustomer = rs.getString("NamaCustomer") != null ? rs.getString("NamaCustomer") : "-";
+                                final String noTruk = rs.getString("NoTruk") != null ? rs.getString("NoTruk") : "-";
+                                final String noPlat = rs.getString("NoPlat") != null ? rs.getString("NoPlat") : "-";
+
+                                // Update UI di thread utama
+                                runOnUiThread(() -> {
+                                    try {
+                                        // Update  fields
+                                        Customer.setText(namaCustomer);
+                                        NoTruk.setText(noTruk);
+                                        NoPlatTruk.setText(noPlat);
+
+                                        Supplier.setEnabled(false);
+                                        NoTruk.setEnabled(false);
+                                        NoPlatTruk.setEnabled(false);
+
+                                        Toast.makeText(getApplicationContext(),
+                                                "Data berhasil dimuat",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+
+                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                        Toast.makeText(getApplicationContext(),
+                                                "Gagal memperbarui tampilan",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(() -> {
+
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoKayuBulat: " + noST,
 //                                            Toast.LENGTH_SHORT).show();
                                 });
                             }
@@ -908,11 +1454,18 @@ public class SawnTimber extends AppCompatActivity {
                             "s.NamaStickBy, " +
                             "h.NoSPK, " +
                             "h.DateCreate, " +
-                            "t.NamaOrgTelly " +
+                            "t.NamaOrgTelly, " +
+                            "h.Remark, " +
+                            "p.NoPenerimaanST AS NoPenerimaanSTPembelian, " +
+                            "u.NoPenerimaanST AS NoPenerimaanSTUpah, " +
+                            "h.IsSLP, " +
+                            "h.VacuumDate " +
                             "FROM ST_h h " +
                             "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
                             "LEFT JOIN MstStickBy s ON h.IdStickBy = s.IdStickBy " +
                             "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                            "LEFT JOIN PenerimaanSTPembelian_d p ON h.NoST = p.NoST " +
+                            "LEFT JOIN PenerimaanSTUpah_d u ON h.NoST = u.NoST " +
                             "WHERE h.NoST = ?";
 
                     // Query untuk detail
@@ -943,6 +1496,11 @@ public class SawnTimber extends AppCompatActivity {
                                 final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
                                 final String tglStickBundel = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
                                 final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
+                                final String remark = rs.getString("Remark") != null ? rs.getString("Remark") : "-";
+                                final String noPenSTPembelian = rs.getString("NoPenerimaanSTPembelian") != null ? rs.getString("NoPenerimaanSTPembelian") : "-";
+                                final String noPenSTUpah = rs.getString("NoPenerimaanSTUpah") != null ? rs.getString("NoPenerimaanSTUpah") : "-";
+                                final int isSLP = rs.getInt("IsSLP");
+                                final String vacuumDate = rs.getString("VacuumDate") != null ? rs.getString("VacuumDate") : "-";
 
                                 // Mengambil data detail
                                 try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
@@ -986,6 +1544,14 @@ public class SawnTimber extends AppCompatActivity {
                                         setSpinnerValue(SpinSPK, noSPK);
                                         setSpinnerValue(SpinTelly, namaOrgTelly);
                                         TglStickBundel.setText(tglStickBundel);
+                                        remarkLabel.setText(remark);
+                                        cbSLP.setChecked(isSLP == 1);
+
+                                        TglVacuum.setText(vacuumDate);
+                                        if (!vacuumDate.equals("-")) {
+                                            cbVacuum.setChecked(true);
+                                        }
+
 
                                         // Update tabel detail
                                         updateTableFromTemporaryDataDetail();
@@ -993,6 +1559,20 @@ public class SawnTimber extends AppCompatActivity {
                                         m3();
                                         ton();
                                         jumlahPcsST();
+
+                                        if (noKayuBulat.equals("-") && noPenSTUpah.equals("-")) {
+                                            loadPenerimaanSTPembelian(noPenSTPembelian);
+                                            noPenerimaanST.setText(noPenSTPembelian);
+
+                                        } else if (noKayuBulat.equals("-") && noPenSTPembelian.equals("-")) {
+                                            loadPenerimaanSTUpah(noPenSTUpah);
+                                            noPenerimaanST.setText(noPenSTUpah);
+
+                                        } else {
+                                            loadKayuBulat(noKayuBulat);
+                                            noPenerimaanST.setText("-");
+                                        }
+
 
                                         Toast.makeText(getApplicationContext(),
                                                 "Data berhasil dimuat",
@@ -1008,9 +1588,9 @@ public class SawnTimber extends AppCompatActivity {
                             } else {
                                 runOnUiThread(() -> {
 
-                                    Toast.makeText(getApplicationContext(),
-                                            "Data tidak ditemukan untuk NoS4S: " + noST,
-                                            Toast.LENGTH_SHORT).show();
+//                                    Toast.makeText(getApplicationContext(),
+//                                            "Data tidak ditemukan untuk NoST: " + noST,
+//                                            Toast.LENGTH_SHORT).show();
                                 });
                             }
                         }
@@ -1044,7 +1624,7 @@ public class SawnTimber extends AppCompatActivity {
         }).start();
     }
 
-//     Method baru untuk memperbarui tabel dari temporaryDataListDetail
+    //     Method baru untuk memperbarui tabel dari temporaryDataListDetail
     private void updateTableFromTemporaryDataDetail() {
         // Perbarui rowCount
         rowCount = 0;
@@ -1060,7 +1640,7 @@ public class SawnTimber extends AppCompatActivity {
 
             // Set background warna untuk baris alternate (opsional)
             if (rowCount % 2 == 0) {
-                newRow.setBackgroundColor(Color.parseColor("#f5f5f5"));
+                newRow.setBackgroundColor(Color.parseColor("#ffffff"));
             }
 
             // Tambahkan kolom-kolom
@@ -1070,20 +1650,21 @@ public class SawnTimber extends AppCompatActivity {
             addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
             addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
 
-            // Tambahkan tombol hapus dengan lebar tetap
-            Button deleteButton = new Button(this);
-            deleteButton.setText("");
-            deleteButton.setTextSize(12);
+//            // Tambahkan tombol hapus dengan lebar tetap
+//            Button deleteButton = new Button(this);
+//            deleteButton.setText("");
+//            deleteButton.setTextSize(12);
 
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(48, 48);
-            buttonParams.setMargins(5, 5, 5, 5);
-            buttonParams.gravity = Gravity.CENTER;
-            deleteButton.setLayoutParams(buttonParams);
-            deleteButton.setPadding(10, 5, 10, 5);
-            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            deleteButton.setTextColor(Color.BLACK);
-
-            newRow.addView(deleteButton);
+//            // Atur style tombol
+//            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(0,
+//                    TableRow.LayoutParams.WRAP_CONTENT, 1f);
+//            buttonParams.setMargins(5, 5, 5, 5);
+//            deleteButton.setLayoutParams(buttonParams);
+//            deleteButton.setPadding(10, 5, 10, 5);
+//            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.transparent));
+//            deleteButton.setTextColor(Color.BLACK);
+//
+//            newRow.addView(deleteButton);
             Tabel.addView(newRow);
         }
     }
@@ -1112,25 +1693,49 @@ public class SawnTimber extends AppCompatActivity {
 
     // Interface untuk callback
     interface HasBeenPrintedCallback {
-        void onResult(boolean hasBeenPrinted);
+        void onResult(int count); // Callback menerima count
     }
 
     // Method untuk mengecek status HasBeenPrinted secara asynchronous
-    private void checkHasBeenPrinted(String noST, HasBeenPrintedCallback callback) {
+    private void checkHasBeenPrinted(String noST, SawnTimber.HasBeenPrintedCallback callback) {
         new Thread(() -> {
-            boolean hasBeenPrinted = false;
+            int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
+            boolean existsInH = false; // Cek keberadaan di s4s_h
+            boolean existsInD = false; // Cek keberadaan di s4s_d
+            String dateUsage = null;
+            boolean hasBeenProcess = false;
             Connection connection = null;
+
             try {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
-                    String query = "SELECT HasBeenPrinted FROM ST_h WHERE NoST = ?";
-                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                        stmt.setString(1, noST);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                Integer printStatus = rs.getInt("HasBeenPrinted");
-                                hasBeenPrinted = (printStatus != null && printStatus == 1);
+                    // Query untuk mengecek keberadaan di s4s_h dan mengambil HasBeenPrinted
+                    String queryCheckH = "SELECT HasBeenPrinted, DateUsage FROM ST_h WHERE NoST = ?";
+                    String queryCheckD = "SELECT 1 FROM ST_d WHERE NoST = ?";
+
+                    // Cek keberadaan di s4s_h
+                    try (PreparedStatement stmtH = connection.prepareStatement(queryCheckH)) {
+                        stmtH.setString(1, noST);
+                        try (ResultSet rsH = stmtH.executeQuery()) {
+                            if (rsH.next()) {
+                                hasBeenPrintedValue = rsH.getInt("HasBeenPrinted");
+                                dateUsage = rsH.getString("DateUsage");
+                                existsInH = true; // Data ditemukan di s4s_h
+
+                                if (dateUsage != null) {
+                                    hasBeenProcess = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // Cek keberadaan di s4s_d
+                    try (PreparedStatement stmtD = connection.prepareStatement(queryCheckD)) {
+                        stmtD.setString(1, noST);
+                        try (ResultSet rsD = stmtD.executeQuery()) {
+                            if (rsD.next()) {
+                                existsInD = true; // Data ditemukan di s4s_d
                             }
                         }
                     }
@@ -1150,10 +1755,32 @@ public class SawnTimber extends AppCompatActivity {
                 }
             }
 
-            final boolean finalHasBeenPrinted = hasBeenPrinted;
-            runOnUiThread(() -> callback.onResult(finalHasBeenPrinted));
+            final int finalHasBeenPrintedValue = (existsInH && existsInD) ? hasBeenPrintedValue : -1; // Set -1 jika tidak ditemukan di kedua tabel
+            final boolean finalIsAvailable = existsInH && existsInD; // Hanya valid jika ada di kedua tabel\
+            final boolean finalHasBeenProcess = hasBeenProcess;
+            final String finalDateUsage =  DateTimeUtils.formatDate(dateUsage);
+
+            runOnUiThread(() -> {
+                if (!finalIsAvailable) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else if (finalHasBeenProcess) {
+                    // Data tidak ditemukan di kedua tabel
+                    Toast.makeText(getApplicationContext(), "Label Telah diproses pada " + finalDateUsage + "!", Toast.LENGTH_SHORT).show();
+                    callback.onResult(-1); // Indikasikan gagal
+                }
+
+                else {
+                    // Data ditemukan, kirimkan hasil HasBeenPrinted
+                    callback.onResult(finalHasBeenPrintedValue);
+                }
+            });
         }).start();
     }
+
 
     // Method untuk mengupdate status HasBeenPrinted
     private void updatePrintStatus(String noST) {
@@ -1246,6 +1873,7 @@ public class SawnTimber extends AppCompatActivity {
 
     private void clearTableData() {
         NoST.setQuery("", false);
+        NoST_display.setText("");
         NoKayuBulat.setQuery("", false);
         Supplier.setText("");
         NoTruk.setText("");
@@ -1259,9 +1887,13 @@ public class SawnTimber extends AppCompatActivity {
         CBUpah.setChecked(false);
         SpinSPK.setSelection(0);
         TglStickBundel.setText("");
+        TglVacuum.setText("");
+        NoKayuBulat.setQuery("", false);
         setSpinnerValue(SpinKayu, "-");
         setSpinnerValue(SpinStickBy, "-");
         setSpinnerValue(SpinTelly, "-");
+        cbVacuum.setChecked(false);
+        cbSLP.setChecked(false);
 
         NoST_display.setVisibility(View.GONE);
 
@@ -1328,7 +1960,7 @@ public class SawnTimber extends AppCompatActivity {
                 double panjang = Double.parseDouble(row.panjang);
                 int pcs = Integer.parseInt(row.pcs);
 
-                // Hitung ton untuk baris ini
+                // Hitung m3 untuk baris ini
                 double rowM3;
 
                 if(isMillimeter){
@@ -1379,11 +2011,13 @@ public class SawnTimber extends AppCompatActivity {
         JumlahPcsST.setText(String.valueOf(totalPcs));
     }
 
-
     private void setCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(new Date());
         TglStickBundel.setText(currentDate);
+        rawDate = saveFormat.format(new Date());
+
     }
 
     // Helper method yang diperbarui untuk menangani wrap text
@@ -1393,7 +2027,7 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
@@ -1403,7 +2037,7 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(8)
+                        .setFontSize(11)
                         .setMargin(0)
                         .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
@@ -1418,17 +2052,18 @@ public class SawnTimber extends AppCompatActivity {
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            if (line.length() + word.length() > 20) { // Batas karakter per baris
+            if (line.length() + word.length() > 30) { // Batas karakter per baris
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
+
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(8)
+                .setFontSize(11)
                 .setMargin(0)
                 .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
@@ -1438,6 +2073,15 @@ public class SawnTimber extends AppCompatActivity {
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
+
+        float pageWidth = PageSize.A6.getWidth() - 20;
+        float tableWidth = table.getWidth().getValue();
+
+        if (tableWidth == pageWidth * 0.4f) { // Kolom kiri
+            valueCell.setWidth(pageWidth * 0.4f - 5);
+        } else if (tableWidth == pageWidth * 0.6f) { // Kolom kanan lebih lebar
+            valueCell.setWidth(pageWidth * 0.6f);
+        }
 
         // Tambahkan semua cell ke tabel
         table.addCell(labelCell);
@@ -1462,16 +2106,16 @@ public class SawnTimber extends AppCompatActivity {
             canvas.saveState();
 
             String watermarkText = "COPY";
-            float fontSize = 125;
+            float fontSize = 95;
             float textWidth = font.getWidth(watermarkText, fontSize);
             float textHeight = 175;
 
             // Posisi watermark di tengah halaman
-            float centerX = width / 2;
-            float centerY = height / 2;
+            float centerX = width / 2 - 25;
+            float centerY = height / 2 + 100;
 
-            // Rotasi 45 derajat
-            double angle = Math.toRadians(45);
+            // Rotasi derajat
+            double angle = Math.toRadians(0);
             float cos = (float) Math.cos(angle);
             float sin = (float) Math.sin(angle);
 
@@ -1506,39 +2150,49 @@ public class SawnTimber extends AppCompatActivity {
                     }
                 }
             }
-
             canvas.restoreState();
         }
     }
 
-
-    private Uri createPdf(String noST, String jenisKayu, String tglStickBundle, String tellyBy, String noSPK,
-                          String stickBy, String platTruk, List<DataRow> temporaryDataListDetail, String noKayuBulat,
-                          String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
-                          boolean hasBeenPrinted, String username) throws IOException {
+    private Uri createPdf(String noST, String jenisKayu, String tglStickBundle, String tellyBy, String noSPK, String stickBy, String platTruk,
+                          List<DataRow> temporaryDataListDetail, String noKayuBulat, String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
+                          int printCount, String username, String remark, int isSLP, String idUOMTblLebar, String idUOMPanjang, String noPenST, int labelVersion, String customer) throws IOException {
         // Validasi parameter wajib
         if (noST == null || noST.trim().isEmpty()) {
-            throw new IOException("Nomor ST tidak boleh kosong");
+            throw new IOException("NoST tidak boleh kosong");
         }
 
         if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
             throw new IOException("Data tidak boleh kosong");
         }
 
+        String formattedDateStick = DateTimeUtils.formatDate(tglStickBundle);
+
         // Validasi dan set default value untuk parameter opsional
-        noKayuBulat = (noKayuBulat != null) ? noKayuBulat.trim() : "-";
-        namaSupplier = (namaSupplier != null) ? namaSupplier.trim() : "-";
-        noTruk = (noTruk != null) ? noTruk.trim() : "-";
         noST = (noST != null) ? noST.trim() : "-";
         jenisKayu = (jenisKayu != null) ? jenisKayu.trim() : "-";
-        tglStickBundle = (tglStickBundle != null) ? tglStickBundle.trim() : "-";
+        formattedDateStick = (formattedDateStick != null) ? formattedDateStick.trim() : "-";
+        stickBy = (stickBy != null) ? stickBy.trim() : "-";
         tellyBy = (tellyBy != null) ? tellyBy.trim() : "-";
         noSPK = (noSPK != null) ? noSPK.trim() : "-";
-        stickBy = (stickBy != null) ? stickBy.trim() : "-";
-        platTruk = (platTruk != null) ? platTruk.trim() : "-";
         jumlahPcs = (jumlahPcs != null) ? jumlahPcs.trim() : "-";
         m3 = (m3 != null) ? m3.trim() : "-";
+        noKayuBulat = (noKayuBulat != null) ? noKayuBulat.trim() : "-";
+        namaSupplier = (namaSupplier != null) ? namaSupplier.trim() : "-";
+        platTruk = (platTruk != null) ? platTruk.trim() : "-";
+        noTruk = (noTruk != null) ? noTruk.trim() : "-";
         ton = (ton != null) ? ton.trim() : "-";
+        remark = (remark != null) ? remark.trim() : "-";
+        idUOMTblLebar = (idUOMTblLebar != null) ? idUOMTblLebar.trim() : "-";
+        idUOMPanjang = (idUOMPanjang != null) ? idUOMPanjang.trim() : "-";
+        noPenST = (noPenST != null) ? noPenST.trim() : "-";
+        customer = (customer != null) ? customer.trim() : "-";
+
+
+
+        String[] nama = tellyBy.split(" ");
+        String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
+
 
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
@@ -1547,7 +2201,6 @@ public class SawnTimber extends AppCompatActivity {
 
         try {
             // Hapus file yang sudah ada jika perlu
-            deleteExistingPdf(fileName, relativePath);
             Thread.sleep(500);
 
             ContentValues contentValues = new ContentValues();
@@ -1567,13 +2220,15 @@ public class SawnTimber extends AppCompatActivity {
 
             try {
                 // Inisialisasi font dan dokumen
-                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+                PdfFont timesNewRoman = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+                PdfFont timesNewRomanBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
                 // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 450; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
-                float rowHeight = 15; // Tinggi rata-rata per baris data
+                float baseHeight = 400; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
+                float rowHeight = 20; // Tinggi rata-rata per baris data
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
                 // Tetapkan ukuran halaman dinamis
@@ -1583,48 +2238,41 @@ public class SawnTimber extends AppCompatActivity {
                 Document document = new Document(pdfDocument);
                 document.setMargins(0, 5, 0, 5);
 
-                // Header
-                Paragraph judul = new Paragraph("LABEL SAWN TIMBER (KG)")
-                        .setUnderline()
-                        .setBold()
-                        .setFontSize(8)
-                        .setTextAlignment(TextAlignment.CENTER);
-
                 // Hitung lebar yang tersedia
                 float pageWidth = PageSize.A6.getWidth() - 20;
-                float[] mainColumnWidths = new float[]{pageWidth/2, pageWidth/2};
+                float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};
 
                 Table mainTable = new Table(mainColumnWidths)
                         .setWidth(pageWidth)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{50, 5, 80};
+                float[] infoColumnWidths = new float[]{15, 5, 80};
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
-                        .setBorder(Border.NO_BORDER);
+                        .setWidth(pageWidth * 0.453f)
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
+                ;
 
                 // Isi kolom kiri
-                addInfoRow(leftColumn, "Stick By", stickBy, timesNewRoman);
-                addInfoRow(leftColumn, "NoST", noST, timesNewRoman);
-                addInfoRow(leftColumn, "Jenis Kayu", jenisKayu, timesNewRoman);
-                addInfoRow(leftColumn, "NoKB Asal", noKayuBulat + " / " + namaSupplier + " - " + noTruk, timesNewRoman);
-                addInfoRow(leftColumn, "No SPK", noSPK, timesNewRoman);
+//                addInfoRow(leftColumn, "No", noST, timesNewRoman);
+                addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
+                addInfoRow(leftColumn, "Plat", platTruk, timesNewRoman);
+                addInfoRow(leftColumn, "SPK", noSPK, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth/2 - 5)
-                        .setMarginLeft(20)
-                        .setBorder(Border.NO_BORDER);
+                        .setWidth(pageWidth * 0.6f)
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.LEFT);
 
                 // Isi kolom kanan
-                addInfoRow(rightColumn, "Telly By", tellyBy, timesNewRoman);
-                addInfoRow(rightColumn, "Print By", username, timesNewRoman);
-                addInfoRow(rightColumn, "Tanggal", tglStickBundle, timesNewRoman);
-                addInfoRow(rightColumn, "Plat Truk", platTruk, timesNewRoman);
+                addInfoRow(rightColumn, "Tgl", formattedDateStick, timesNewRoman);
+                addInfoRow(rightColumn, "Telly", namaTelly, timesNewRoman);
+//                addInfoRow(rightColumn, "NoKB", noKayuBulat + "-" + namaSupplier, timesNewRoman);
+                addInfoRow(rightColumn, "Stick", stickBy, timesNewRoman);
 
                 // Tambahkan kolom kiri dan kanan ke tabel utama
                 Cell leftCell = new Cell()
@@ -1640,80 +2288,15 @@ public class SawnTimber extends AppCompatActivity {
                 mainTable.addCell(leftCell);
                 mainTable.addCell(rightCell);
 
-                // Format bulan
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                Paragraph bulanParagraf;
-                try {
-                    Date date = sdf.parse(tglStickBundle);
-                    if (date != null) {
-                        SimpleDateFormat monthFormat = new SimpleDateFormat("M", Locale.US);
-                        String monthNumber = monthFormat.format(date);
-
-                        float[] containerWidths = {30f, 30f};
-                        Table containerTable = new Table(containerWidths)
-                                .setMarginLeft(25)
-                                .setMarginTop(-35)
-                                .setBorder(Border.NO_BORDER);
-
-                        Cell monthCell = new Cell()
-                                .setBorder(Border.NO_BORDER)
-                                .setPadding(0);
-
-                        Paragraph monthParagraph = new Paragraph(monthNumber)
-                                .setFont(timesNewRoman)
-                                .setFontSize(50)
-                                .setTextAlignment(TextAlignment.RIGHT)
-                                .setMarginRight(5);
-
-                        monthCell.add(monthParagraph);
-
-                        Cell aCell = new Cell()
-                                .setBorder(Border.NO_BORDER)
-                                .setPadding(0);
-
-                        Paragraph aParagraph = new Paragraph("A")
-                                .setFont(timesNewRoman)
-                                .setFontSize(50)
-                                .setTextAlignment(TextAlignment.LEFT)
-                                .setMarginLeft(5)
-                                .setPaddingTop(10);
-
-                        aCell.add(aParagraph);
-
-                        containerTable.addCell(monthCell);
-                        containerTable.addCell(aCell);
-
-                        bulanParagraf = new Paragraph()
-                                .add(containerTable);
-                    } else {
-                        bulanParagraf = new Paragraph(" - A")
-                                .setFont(timesNewRoman)
-                                .setFontSize(40)
-                                .setTextAlignment(TextAlignment.LEFT)
-                                .setMarginLeft(40)
-                                .setMarginTop(15)
-                                .setMarginBottom(15);
-                    }
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                    bulanParagraf = new Paragraph(" - A")
-                            .setFont(timesNewRoman)
-                            .setFontSize(40)
-                            .setTextAlignment(TextAlignment.LEFT)
-                            .setMarginLeft(40)
-                            .setMarginTop(15)
-                            .setMarginBottom(15);
-                }
-
                 // Tabel data
-                float[] width = {60f, 60f, 60f, 60f};
+                float[] width = {70f, 70f, 70f, 70f};
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(10)
-                        .setFontSize(8);
+                        .setMarginTop(5)
+                        .setFontSize(13);
 
                 // Header tabel
-                String[] headers = {"Tebal (mm)", "Lebar (mm)", "Panjang (mm)", "Pcs"};
+                String[] headers = {"Tebal", "Lebar", "Panjang", "Pcs"};
                 for (String header : headers) {
                     table.addCell(new Cell()
                             .add(new Paragraph(header)
@@ -1722,67 +2305,117 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
                 // Isi tabel
-                for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? row.tebal : "-";
-                    String lebar = (row.lebar != null) ? row.lebar : "-";
-                    String panjang = (row.panjang != null) ? row.panjang : "-";
-                    String pcs = (row.pcs != null) ? row.pcs : "-";
+                DecimalFormat df = new DecimalFormat("#,###.##");
 
-                    table.addCell(new Cell().add(new Paragraph(tebal).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(lebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(panjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                for (DataRow row : temporaryDataListDetail) {
+                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
+                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
+                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
+                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
+
+                    table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(panjang + " " + idUOMPanjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                 }
 
                 // Detail Pcs, Ton, M3
-                float[] columnWidths = {50f, 5f, 70f};
+                float[] columnWidths = {30f, 10f, 70f};
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMarginTop(10)
-                        .setFontSize(8)
+                        .setMarginTop(5)
+                        .setFontSize(14)
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jumlah Pcs")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("Ton")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("Ton").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m3")).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(":")).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3))).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
 
-                Paragraph qrCodeID = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(8).setMargins(0, 0, 0, 24).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottom = new Paragraph(noST).setTextAlignment(TextAlignment.RIGHT).setFontSize(8).setMargins(0, 20, 0, 0).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottomLeft = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 35).setFont(timesNewRoman);
+                Paragraph qrCodeIDbottomRight = new Paragraph(noST).setTextAlignment(TextAlignment.CENTER).setFontSize(25).setMargins(-77, 75, 0, 0).setFont(timesNewRoman).setBold();
 
                 BarcodeQRCode qrCode = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeImage = new Image(qrCodeObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-5, 0, 0, 0);
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImage = new Image(qrCodeBottomObject).setWidth(75).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(-5, 0, 0, 0);
+                Image qrCodeBottomImageLeft = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-70, 0, 0, 0);
+                Image qrCodeBottomImageRight = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
 
-                Paragraph bottomLine = new Paragraph("2").setTextAlignment(TextAlignment.CENTER).setFontSize(8).setMargins(0, 0, 0, 15).setFont(timesNewRoman);
+                String formattedDate = DateTimeUtils.formatDateToDdYY(formattedDateStick);
+                Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-60, 0, 0, 15).setFont(timesNewRoman).setBold();
+
+                Paragraph kayuBulat = new Paragraph("No. KB : " + noKayuBulat + " - " + namaSupplier + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph pembelianST = new Paragraph("No. Pbl : " + noPenST + " - " + namaSupplier + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph upahST = new Paragraph("No. Upah : " + noPenST + " - " + customer + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
+                Paragraph textHeader = new Paragraph("LABEL ST").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
+                Paragraph textHeaderPembelian = new Paragraph("LABEL ST (Pbl)").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
+                Paragraph textHeaderUpah = new Paragraph("LABEL ST (Upah)").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
+                Paragraph textHeaderNomor = new Paragraph("NO : " + noST).setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(-21, 0, 0, 145).setFont(timesNewRomanBold);
+
+                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
+                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph remarkText = new Paragraph("Remark : " + remark).setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
+                Paragraph slpText = new Paragraph("SLP").setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(-175, 0, 0, 0).setFont(timesNewRomanBold).setFontSize(25);
+
+                // Buat DashedLine dengan setting panjang garis dan jarak antar garis
+                DashedLine dashedLine = new DashedLine(3f); // 3f = gap antar putus-putus (default 3pt)
+                dashedLine.setLineWidth(1);
+                LineSeparator dashedSeparator = new LineSeparator(dashedLine);
 
                 // Tambahkan semua elemen ke dokumen
+                if (labelVersion == 1 || noPenST.startsWith("BA")) {
+                    document.add(textHeaderPembelian);
+                } else if (labelVersion == 2 || noPenST.startsWith("O")) {
+                    document.add(textHeaderUpah);
+                } else {
+                    document.add(textHeader);
+                }
 
+                document.add(textHeaderNomor);
 
-                document.add(judul);
-                if (hasBeenPrinted) {
+                if (printCount > 0) {
                     addTextDitheringWatermark(pdfDocument, timesNewRoman);
                 }
+
                 document.add(mainTable);
+
+                if (labelVersion == 1 || noPenST.startsWith("BA")){
+                    document.add(pembelianST);
+                } else if (labelVersion == 2 || noPenST.startsWith("O")) {
+                    document.add(upahST);
+                } else {
+                    document.add(kayuBulat);
+                }
+
                 document.add(table);
                 document.add(sumTable);
-                document.add(bulanParagraf);
-                document.add(qrCodeID);
-                document.add(qrCodeImage);
-                document.add(bottomLine);
-                document.add(qrCodeIDbottom);
-                document.add(qrCodeBottomImage);
+                document.add(qrCodeBottomImageLeft);
+                document.add(qrCodeIDbottomLeft);
+                document.add(textBulanTahunBold);
+
+                if (!remark.isEmpty() && !remark.equals("-")) {
+                    document.add(remarkText);
+                }
+                document.add(dashedSeparator);
+
+                document.add(qrCodeBottomImageRight);
+                document.add(qrCodeIDbottomRight);
+
+                if (isSLP == 1) {
+                    document.add(slpText);
+                }
+
+
+
 
                 document.close();
                 pdfUri = uri;
@@ -1802,39 +2435,42 @@ public class SawnTimber extends AppCompatActivity {
         return pdfUri;
     }
 
-    private void deleteExistingPdf(String fileName, String relativePath) {
-        Uri uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-        String[] projection = {MediaStore.MediaColumns._ID};
-        String selection = MediaStore.MediaColumns.DISPLAY_NAME + "=? AND " + MediaStore.MediaColumns.RELATIVE_PATH + "=?";
-        String[] selectionArgs = {fileName, relativePath};
 
-        Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null);
-        if (cursor != null && cursor.moveToFirst()) {
-            long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
-            Uri existingUri = ContentUris.withAppendedId(uri, id);
-            getContentResolver().delete(existingUri, null, null);
-            Log.d("Delete PDF", "Old PDF deleted: " + existingUri.toString());
-        } else {
-            Log.d("Delete PDF", "No existing PDF found");
-        }
+    private void showDatePickerDialogStick() {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        if (cursor != null) {
-            cursor.close();
-        }
+        DatePickerDialog datePickerDialog = new DatePickerDialog(SawnTimber.this, new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
+                // Format input (dari DatePicker)
+                rawDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
 
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
-        if (file.exists()) {
-            if (file.delete()) {
-                Log.d("Delete PDF", "File deleted from file system: " + file.getPath());
-            } else {
-                Log.d("Delete PDF", "Failed to delete file from file system: " + file.getPath());
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDate);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    TglStickBundel.setText(formattedDate);
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    TglStickBundel.setText("Invalid Date");
+                }
             }
-        } else {
-            Log.d("Delete PDF", "File not found in file system: " + file.getPath());
-        }
+
+        }, year, month, day);
+
+        datePickerDialog.show();
     }
 
-    private void showDatePickerDialog() {
+    private void showDatePickerDialogVacuum() {
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -1844,7 +2480,7 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
                 String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                TglStickBundel.setText(selectedDate);
+                TglVacuum.setText(selectedDate);
             }
         }, year, month, day);
 
@@ -1853,12 +2489,10 @@ public class SawnTimber extends AppCompatActivity {
 
 
     //Fungsi untuk add Data Detail
-    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
-
     private void addDataDetail(String tebal, String lebar, String panjang, String pcs) {
 
         if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
-            Toast.makeText(this, "Isi semua form detail", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Isi semua form detail!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1872,14 +2506,64 @@ public class SawnTimber extends AppCompatActivity {
         }
 
         if (isDuplicate) {
-            Toast.makeText(this, "Data dengan ukuran yang sama sudah ada dalam tabel", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Ukuran panjang sudah ada!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
+            float panjangAcuan = Float.parseFloat(DetailPanjangST.getText().toString());
+
+            sisaPCS.setText("Balance : " + pcs);
+
+
+            // Pengecekan: jika temporaryDataListDetail kosong, jangan lanjutkan pengurangan
+            if (!temporaryDataListDetail.isEmpty()) {
+                // Lakukan pengecekan dan pengurangan pcs untuk panjang == panjangAcuan
+                for (DataRow dataRow : temporaryDataListDetail) {
+                    if (Float.parseFloat(dataRow.panjang) == panjangAcuan) {
+                        int updatedPcs = Integer.parseInt(dataRow.pcs) - Integer.parseInt(pcs); // Kurangi pcs
+                        dataRow.pcs = String.valueOf(updatedPcs); // Update nilai pcs
+                        sisaPCS.setText("Balance : " + dataRow.pcs);
+                    }
+                }
+            }
+
             // Buat objek DataRow baru
             DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
             temporaryDataListDetail.add(newDataRow);
+
+            // Urutkan data berdasarkan panjang
+            Collections.sort(temporaryDataListDetail, new Comparator<DataRow>() {
+                @Override
+                public int compare(DataRow o1, DataRow o2) {
+                    return Float.compare(Float.parseFloat(o1.panjang), Float.parseFloat(o2.panjang));
+                }
+            });
+
+            updateTable(panjangAcuan);
+
+            addNewRow();  // Panggil fungsi untuk menambahkan row baru
+
+            BtnInputDetailST.setEnabled(false);
+            DetailTebalST.setEnabled(false);
+            DetailLebarST.setEnabled(false);
+            DetailPcsST.setEnabled(false);
+            DetailPanjangST.setEnabled(false);
+
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Method untuk memperbarui tampilan tabel setelah perubahan data
+    private void updateTable(float panjangAcuan) {
+        // Hapus semua baris yang ada di tabel
+        Tabel.removeAllViews();
+
+        // Tambahkan semua baris yang ada di temporaryDataListDetail
+        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
+            DataRow dataRow = temporaryDataListDetail.get(i);
 
             // Buat baris tabel baru
             TableRow newRow = new TableRow(this);
@@ -1889,11 +2573,11 @@ public class SawnTimber extends AppCompatActivity {
             DecimalFormat df = new DecimalFormat("#,###.##");
 
             // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(i + 1), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.tebal)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.lebar)), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.panjang)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(dataRow.pcs)), 1f);
 
             // Buat dan tambahkan tombol hapus
             Button deleteButton = new Button(this);
@@ -1911,30 +2595,34 @@ public class SawnTimber extends AppCompatActivity {
 
             // Set listener tombol hapus
             deleteButton.setOnClickListener(v -> {
+                // Ambil nilai pcs yang akan dihapus
+                int pcsDeleted = Integer.parseInt(dataRow.pcs);
+
+                // Hapus baris dari tabel
                 Tabel.removeView(newRow);
-                temporaryDataListDetail.remove(newDataRow);
+                temporaryDataListDetail.remove(dataRow);
+
+                // Tambahkan pcs yang dihapus ke data dengan panjang == panjangAcuan
+                for (DataRow row : temporaryDataListDetail) {
+                    if (Float.parseFloat(row.panjang) == panjangAcuan) {
+                        int updatedPcs = Integer.parseInt(row.pcs) + pcsDeleted; // Tambahkan pcs yang dihapus
+                        row.pcs = String.valueOf(updatedPcs); // Update pcs
+                    }
+                }
+
+                // Update tabel setelah penghapusan dan pengembalian pcs
                 updateRowNumbers();
                 jumlahPcsST();
                 m3();
                 ton();
+                updateTable(panjangAcuan);
             });
 
-            newRow.addView(deleteButton);
+//            newRow.addView(deleteButton);
             Tabel.addView(newRow);
-            addNewRow();  // Panggil fungsi untuk menambahkan row baru
-
-            // Bersihkan field input
-//            DetailTebalST.setText("");
-//            DetailPanjangST.setText("");
-//            DetailLebarST.setText("");
-//            DetailPcsST.setText("");
-
-
-
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     // Metode helper yang baru untuk menambahkan TextView dengan weight
     private void addTextViewToRowWithWeight(TableRow row, String text, float weight) {
@@ -1962,6 +2650,8 @@ public class SawnTimber extends AppCompatActivity {
     private void resetDetailData() {
         // Reset temporary list detail
         temporaryDataListDetail.clear();
+        Tabel.removeAllViews();
+        TabelInputPjgPcs.removeAllViews();
 
         // Reset row counter
         rowCount = 0;
@@ -1994,6 +2684,8 @@ public class SawnTimber extends AppCompatActivity {
 
     //Fungsi untuk add data Grade
     private List<DataRow2> temporaryDataListGrade = new ArrayList<>();
+    private List<ImageButton> deleteButtons = new ArrayList<>();
+
 
     private void addDataGrade(String noST) {
         GradeStick selectedGrade = (GradeStick) SpinGrade.getSelectedItem();
@@ -2002,7 +2694,7 @@ public class SawnTimber extends AppCompatActivity {
         String jumlah = JumlahStick.getText().toString();
 
         if (gradeName.isEmpty() || jumlah.isEmpty()) {
-            Toast.makeText(this, "Masukkan Jumlah Stick", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Masukkan jumlah Stick!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -2041,7 +2733,7 @@ public class SawnTimber extends AppCompatActivity {
 
             // Tombol Hapus (ImageButton)
             ImageButton deleteButton = new ImageButton(this);
-            deleteButton.setImageResource(R.drawable.ic_delete); // Ganti dengan gambar ikon sesuai kebutuhan
+            deleteButton.setImageResource(R.drawable.ic_close); // Ganti dengan gambar ikon sesuai kebutuhan
             deleteButton.setContentDescription("Delete button"); // Deskripsi untuk aksesibilitas
 
             // Atur latar belakang tombol menjadi merah
@@ -2068,6 +2760,8 @@ public class SawnTimber extends AppCompatActivity {
             });
 
             newRow.addView(deleteButton);
+            deleteButtons.add(deleteButton);
+
 
             // Tambahkan baris ke tabel
             Tabel2.addView(newRow);
@@ -2097,11 +2791,7 @@ public class SawnTimber extends AppCompatActivity {
     private void resetGradeData() {
         // Membersihkan list temporary
         temporaryDataListGrade.clear();
-
-        // Hapus semua baris kecuali header (index 0)
-        if (Tabel2.getChildCount() > 1) {
-            Tabel2.removeViews(1, Tabel2.getChildCount() - 1);
-        }
+        Tabel2.removeAllViews();
 
         // Reset spinner dan input field
         if (SpinGrade != null && SpinGrade.getAdapter() != null) {
@@ -2177,7 +2867,7 @@ public class SawnTimber extends AppCompatActivity {
 
             try {
                 // Cek nilai parameter
-                Log.d("SaveDataGrade", "noST: " + noST + ", gradeId: " + gradeId + ", jumlah: " + jumlah);
+//                Log.d("SaveDataGrade", "noST: " + noST + ", gradeId: " + gradeId + ", jumlah: " + jumlah);
 
                 Connection connection = ConnectionClass();
                 if (connection != null) {
@@ -2216,69 +2906,75 @@ public class SawnTimber extends AppCompatActivity {
     }
 
 
+    private void setAndSaveNoST(final CountDownLatch latch) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Connection con = ConnectionClass();
+                noST = null;
+                boolean success = false;
 
+                if (con != null) {
+                    try {
+                        // Query untuk mendapatkan NoST terakhir
+                        String query = "SELECT MAX(NoST) FROM dbo.ST_h";
+                        PreparedStatement ps = con.prepareStatement(query);
+                        ResultSet rs = ps.executeQuery();
 
-    private class SetAndSaveNoSTTask extends AsyncTask<Void, Void, String> {
-        @Override
-        protected String doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            String newNoST = null;
+                        if (rs.next()) {
+                            String lastNoST = rs.getString(1);
 
-            if (con != null) {
-                try {
-                    String query = "SELECT MAX(NoST) FROM dbo.ST_h";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
+                            if (lastNoST != null && lastNoST.startsWith("E.")) {
+                                String numericPart = lastNoST.substring(2);
+                                int numericValue = Integer.parseInt(numericPart);
+                                int newNumericValue = numericValue + 1;
 
-                    if (rs.next()) {
-                        String lastNoST = rs.getString(1);
-
-                        if (lastNoST != null && lastNoST.startsWith("E.")) {
-                            String numericPart = lastNoST.substring(2);
-                            int numericValue = Integer.parseInt(numericPart);
-                            int newNumericValue = numericValue + 1;
-
-                            newNoST = "E." + String.format("%06d", newNumericValue);
+                                // Membuat NoST baru
+                                noST = "E." + String.format("%06d", newNumericValue);
+                            }
                         }
+
+                        rs.close();
+                        ps.close();
+                        con.close();
+                        success = true;
+                    } catch (Exception e) {
+                        Log.e("Database Error", e.getMessage());
+                        success = false;
                     }
-
-                    rs.close();
-                    ps.close();
-
-                    if (newNoST != null) {
-                        String insertQuery = "INSERT INTO dbo.ST_h (NoST) VALUES (?)";
-                        PreparedStatement insertPs = con.prepareStatement(insertQuery);
-                        insertPs.setString(1, newNoST);
-                        insertPs.executeUpdate();
-                        insertPs.close();
-                    }
-
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
+                } else {
+                    Log.e("Connection Error", "Failed to connect to the database.");
+                    success = false;
                 }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
+
+                // Setelah operasi selesai, lakukan update UI di thread utama
+                if (success) {
+                    String finalNewNoST = noST;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            NoST.setQuery(finalNewNoST, true);
+                            NoST.setVisibility(View.GONE);
+                            NoST_display.setVisibility(View.VISIBLE);
+                            NoST_display.setText(finalNewNoST);
+                            NoST_display.setEnabled(false);
+//                            Toast.makeText(S4S.this, "NoST berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e("Error", "Failed to set or save NoST.");
+                            Toast.makeText(SawnTimber.this, "Gagal mengatur atau menyimpan NoST.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                // Memberitahukan bahwa thread selesai
+                latch.countDown();
             }
-
-            return newNoST;
-        }
-
-        @Override
-        protected void onPostExecute(String newNoST) {
-            if (newNoST != null) {
-                NoST.setQuery(newNoST, true);
-                NoST_display.setText(newNoST);
-                NoST_display.setVisibility(View.VISIBLE);
-                NoST_display.setEnabled(false);
-
-
-
-                Toast.makeText(SawnTimber.this, "NoST berhasil dibuat: " + newNoST, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SawnTimber.this, "Gagal membuat NoST baru.", Toast.LENGTH_SHORT).show();
-            }
-        }
+        }).start();
     }
 
     public class LoadJenisKayuTask extends AsyncTask<Void, Void, List<JenisKayu>> {
@@ -2319,7 +3015,7 @@ public class SawnTimber extends AppCompatActivity {
             jenisKayuList.add(0, dummyKayu1);
 
             ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, jenisKayuList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
             SpinKayu.setAdapter(adapter);
             SpinKayu.setSelection(0);
         }
@@ -2332,14 +3028,19 @@ public class SawnTimber extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT NoSPK FROM dbo.MstSPK_h WHERE enable = 1";
+                    String query = "SELECT s.NoSPK, b.Buyer " +
+                            "FROM MstSPK_h s " +
+                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
+                            "WHERE s.enable = 1 ";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
                         String noSPK = rs.getString("NoSPK");
+                        String buyer = rs.getString("Buyer");
 
-                        SPK spk = new SPK(noSPK);
+                        // Buat objek SPK dengan kedua nilai
+                        SPK spk = new SPK(noSPK, buyer);
                         spkList.add(spk);
                     }
 
@@ -2357,12 +3058,13 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<SPK> spkList) {
-
+            // Tambahkan item PILIH di awal list
             SPK dummySPK = new SPK("PILIH");
             spkList.add(0, dummySPK);
 
-            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, spkList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(SawnTimber.this,
+                    android.R.layout.simple_spinner_item, spkList);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             SpinSPK.setAdapter(adapter);
             SpinSPK.setSelection(0);
@@ -2461,11 +3163,25 @@ public class SawnTimber extends AppCompatActivity {
         @Override
         protected List<Telly> doInBackground(Void... voids) {
             List<Telly> tellyList = new ArrayList<>();
+
+            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+            username = prefs.getString("username", "");
+
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdOrgTelly, NamaOrgTelly FROM dbo.MstOrgTelly WHERE enable = 1";
+                    String query =  "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
+                            "FROM MstOrgTelly A " +
+                            "INNER JOIN ( " +
+                            "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
+                            "    FROM MstUsername " +
+                            "    WHERE Username = ? " +
+                            ") B ON B.NamaTelly = A.NamaOrgTelly " +
+                            "WHERE A.Enable = 1";
                     PreparedStatement ps = con.prepareStatement(query);
+
+                    ps.setString(1, username);
+
                     ResultSet rs = ps.executeQuery();
 
                     while (rs.next()) {
@@ -2491,22 +3207,21 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<Telly> tellyList) {
-            // Tambahkan elemen dummy di awal
-            Telly dummyTelly = new Telly("", "PILIH");
-            tellyList.add(0, dummyTelly);
+
 
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<Telly> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, tellyList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             // Set adapter ke spinner
             SpinTelly.setAdapter(adapter);
 
-            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
-            SpinTelly.setSelection(0);
+            // Nonaktifkan spinner agar tidak bisa dipilih
+            SpinTelly.setEnabled(false); // Spinner tidak bisa diklik
+            SpinTelly.setClickable(false); // Spinner tidak bisa diinteraksi
+
         }
     }
-
 
     private class LoadStickByTask extends AsyncTask<Void, Void, List<StickBy>> {
         @Override
@@ -2549,7 +3264,7 @@ public class SawnTimber extends AppCompatActivity {
 
             // Buat adapter dengan data yang dimodifikasi
             ArrayAdapter<StickBy> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, stickByList);
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 
             // Set adapter ke spinner
             SpinStickBy.setAdapter(adapter);
@@ -2568,10 +3283,16 @@ public class SawnTimber extends AppCompatActivity {
             String noSPK = params[3];
             String telly = params[4];
             String stickBy = params[5];
-            String idLokasi = params[6];
-            String dateCreate = params[7];
+            String dateCreate = params[6];
+            String isVacuum = params[7];
+            String remark = params[8];
+            int isSLP = Integer.parseInt(params[9]);
+            int isSticked = Integer.parseInt(params[10]);
+            int isKering = Integer.parseInt(params[11]);
+            int isBagusKulit = Integer.parseInt(params[12]);
 
-            int isUpah = CBUpah.isChecked() ? 1 : 0;
+            int isUpah = (labelVersion == 2) ? 1 : 0;
+
 
             // Default values for UOM columns
             int idUOMTblLebar = 0;
@@ -2579,14 +3300,16 @@ public class SawnTimber extends AppCompatActivity {
 
             // Check which checkbox is checked and set values accordingly
             if (radioInch.isChecked()) {
-                idUOMTblLebar = 1;  // Value for "Inch" = 1
+                idUOMTblLebar = 3;
             } else if (radioMillimeter.isChecked()) {
-                idUOMTblLebar = 3;  // Value for "Millimeter 2" = 3
+                idUOMTblLebar = 1;
             }
 
-            if (radioCentimeter.isChecked()) {
-                idUOMPanjang = 4;   // Value for "Millimeter" = 4
+            if (radioFeet.isChecked()) {
+                idUOMPanjang = 4;
             }
+
+            noKayuBulat = (noKayuBulat == null || noKayuBulat.trim().isEmpty()) ? null : noKayuBulat;
 
             Connection con = null;
             String message = "";
@@ -2594,26 +3317,32 @@ public class SawnTimber extends AppCompatActivity {
             try {
                 con = ConnectionClass();
                 if (con != null) {
-                    String query = "UPDATE dbo.ST_h SET NoKayuBulat = ?, IdJenisKayu = ?, NoSPK = ?, IdOrgTelly = ?, IdStickBy = ?, IsUpah = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, IdLokasi = ?, DateCreate = ? WHERE NoST = ?";
+
+                    String query = "INSERT INTO ST_h (NoST, NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, IdStickBy, IsUpah, IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, Remark, IsSLP, IsSticked, StartKering, IsBagusKulit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     PreparedStatement ps = con.prepareStatement(query);
 
-                    ps.setString(1, noKayuBulat);
-                    ps.setString(2, jenisKayu);
-                    ps.setString(3, noSPK);
-                    ps.setString(4, telly);
-                    ps.setString(5, stickBy);
-                    ps.setInt(6, isUpah);
-                    ps.setInt(7, idUOMTblLebar);
-                    ps.setInt(8, idUOMPanjang);
-                    ps.setString(9, idLokasi);
+                    ps.setString(1, noST);
+                    ps.setString(2, noKayuBulat);
+                    ps.setString(3, jenisKayu);
+                    ps.setString(4, noSPK);
+                    ps.setString(5, telly);
+                    ps.setString(6, stickBy);
+                    ps.setInt(7, isUpah);
+                    ps.setInt(8, idUOMTblLebar);
+                    ps.setInt(9, idUOMPanjang);
                     ps.setString(10, dateCreate);
-                    ps.setString(11, noST);
+                    ps.setString(11, isVacuum);
+                    ps.setString(12, remark);
+                    ps.setInt(13, isSLP);
+                    ps.setInt(14, isSticked);
+                    ps.setInt(15, isKering);
+                    ps.setInt(16, isBagusKulit);
 
                     int rowsAffected = ps.executeUpdate();
                     if (rowsAffected > 0) {
                         message = "Data berhasil diperbarui.";
                     } else {
-                        message = "Gagal memperbarui data.";
+                        message = "Gagal memperbarui data";
                     }
 
                     ps.close();
@@ -2646,91 +3375,158 @@ public class SawnTimber extends AppCompatActivity {
         }
     }
 
-    private class UpdateCheckboxDataTask extends AsyncTask<Object, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(Object... params) {
-            String noST = (String) params[0];
-            int isBagusKulit = (int) params[1];
-            int isSticked = (int) params[2];
-            int startKering = (int) params[3];
+    private void savePenerimaanSTPembelian(String noPenerimaanST, String noST) {
+        // Tampilkan progress dialog
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass(); // Buat koneksi ke database
+                if (connection != null) {
+                    // Query untuk menyimpan data ke tabel
+                    String queryInsert = "INSERT INTO PenerimaanSTPembelian_d (NoPenerimaanST, NoST) VALUES (?, ?)";
 
-            Connection con = ConnectionClass();
-            boolean success = false;
+                    // Menggunakan try-with-resources untuk PreparedStatement
+                    try (PreparedStatement stmt = connection.prepareStatement(queryInsert)) {
+                        // Set parameter untuk query
+                        stmt.setString(1, noPenerimaanST);
+                        stmt.setString(2, noST);
 
-            if (con != null) {
-                try {
-                    String query = "UPDATE dbo.ST_h SET IsBagusKulit = ?, IsSticked = ?, StartKering = ? WHERE NoST = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
+                        // Eksekusi query
+                        int rowsInserted = stmt.executeUpdate();
 
-                    ps.setInt(1, isBagusKulit);
-                    ps.setInt(2, isSticked);
-                    ps.setInt(3, startKering);
-                    ps.setString(4, noST);
-
-                    int rowsAffected = ps.executeUpdate();
-                    success = rowsAffected > 0;
-
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Error: " + e.getMessage());
-                } catch (Exception e) {
-                    Log.e("Database Error", "General Error: " + e.getMessage());
+                        // Cek apakah data berhasil disimpan
+                        if (rowsInserted > 0) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(getApplicationContext(),
+                                        "Data berhasil disimpan",
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                Toast.makeText(getApplicationContext(),
+                                        "Gagal menyimpan data",
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
                 }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close(); // Tutup koneksi
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
             }
+        }).start();
+    }
 
-            return success;
-        }
+    private void savePenerimaanSTUpah(String noPenerimaanST, String noST) {
+        // Tampilkan progress dialog
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass(); // Buat koneksi ke database
+                if (connection != null) {
+                    // Query untuk menyimpan data ke tabel
+                    String queryInsert = "INSERT INTO PenerimaanSTUpah_d (NoPenerimaanST, NoST) VALUES (?, ?)";
 
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Toast.makeText(SawnTimber.this, "Data berhasil diperbarui.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SawnTimber.this, "Gagal memperbarui data.", Toast.LENGTH_SHORT).show();
+                    // Menggunakan try-with-resources untuk PreparedStatement
+                    try (PreparedStatement stmt = connection.prepareStatement(queryInsert)) {
+                        // Set parameter untuk query
+                        stmt.setString(1, noPenerimaanST);
+                        stmt.setString(2, noST);
+
+                        // Eksekusi query
+                        int rowsInserted = stmt.executeUpdate();
+
+                        // Cek apakah data berhasil disimpan
+                        if (rowsInserted > 0) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(getApplicationContext(),
+                                        "Data berhasil disimpan",
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                Toast.makeText(getApplicationContext(),
+                                        "Gagal menyimpan data",
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(getApplicationContext(),
+                                "Koneksi database gagal",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (SQLException e) {
+                final String errorMessage = e.getMessage();
+                runOnUiThread(() -> {
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                    Log.e("Database Error", "Error executing query: " + errorMessage);
+                });
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close(); // Tutup koneksi
+                    } catch (SQLException e) {
+                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+                    }
+                }
             }
-        }
+        }).start();
     }
 
-    public class KayuBulat {
-    private String noPlat;
-    private String noTruk;
-    private String noSuket;
-
-    public KayuBulat(String noPlat, String noTruk, String noSuket) {
-        this.noPlat = noPlat;
-        this.noTruk = noTruk;
-        this.noSuket = noSuket;
-    }
-
-    public String getNoPlat() {
-        return noPlat;
-    }
-
-    public String getNoTruk() {
-        return noTruk;
-    }
-
-    public String getNoSuket() {
-        return noSuket;
-    }
-}
     public class SPK {
         private String noSPK;
+        private String buyer;
 
+        public SPK(String noSPK, String buyer) {
+            this.noSPK = noSPK;
+            this.buyer = buyer;
+        }
+
+        // Constructor untuk dummy/placeholder
         public SPK(String noSPK) {
             this.noSPK = noSPK;
+            this.buyer = "";
         }
 
         public String getNoSPK() {
             return noSPK;
         }
 
+        public String getBuyer() {
+            return buyer;
+        }
+
+        // Override toString untuk tampilan di spinner
         @Override
         public String toString() {
-            return noSPK;
+            if (buyer.isEmpty()) {
+                return noSPK;
+            }
+            return noSPK + " - " + buyer;
         }
     }
 

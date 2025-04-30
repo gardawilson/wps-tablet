@@ -43,5 +43,13 @@ public class SawnTimberCategory extends AppCompatActivity {
             }
         });
 
+        STUpah.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( SawnTimberCategory.this, SawnTimberUpah.class);
+                startActivity(intent);
+            }
+        });
+
     }
 }
