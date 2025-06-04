@@ -33,13 +33,13 @@ public class MenuUtama extends AppCompatActivity {
     private CardView InputLabel;
     private CardView ProsesProduksi;
     private CardView StockOpname;
+    private CardView Sawmill;
     private TextView usernameView;
     private Button BtnLogout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_menu_utama);
 
         InputLabel = findViewById(R.id.InputLabel);
@@ -47,6 +47,7 @@ public class MenuUtama extends AppCompatActivity {
         BtnLogout = findViewById(R.id.BtnLogout);
         ProsesProduksi = findViewById(R.id.ProsesProduksi);
         StockOpname = findViewById(R.id.StockOpname);
+        Sawmill = findViewById(R.id.Sawmill);
 
         SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
         String username = prefs.getString("username", "");
@@ -96,6 +97,13 @@ public class MenuUtama extends AppCompatActivity {
             }
         });
 
+        Sawmill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, Sawmill.class);
+                startActivity(intent);
+            }
+        });
     }
 
 

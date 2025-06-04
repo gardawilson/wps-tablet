@@ -523,6 +523,9 @@ public class Laminating extends AppCompatActivity {
                         NoLaminating_display.setVisibility(View.VISIBLE);
                         NoLaminating_display.setEnabled(false);
 
+                        new LoadMesinTask().execute(rawDate);
+                        new LoadSusunTask().execute(rawDate);
+
                         clearData();
                         resetDetailData();
                         enableForm();
@@ -4057,7 +4060,8 @@ public class Laminating extends AppCompatActivity {
                             "a.NoProduksi " +
                             "FROM dbo.LaminatingProduksi_h a " +
                             "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
-                            "WHERE Tanggal = ?";
+                            "WHERE Tanggal = ?" +
+                            "ORDER BY a.NoProduksi";
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, selectedDate);
                     ResultSet rs = ps.executeQuery();

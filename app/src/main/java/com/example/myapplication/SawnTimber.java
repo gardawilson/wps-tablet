@@ -30,6 +30,7 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -213,6 +214,7 @@ public class SawnTimber extends AppCompatActivity {
     private CardView inner_card_top_right;
     private EditText remarkLabel;
     private String rawDate;
+    private String rawDateVacuum;
     private TextView judulLabel;
     private EditText noPenerimaanST;
     private LinearLayout fieldKB;
@@ -220,6 +222,11 @@ public class SawnTimber extends AppCompatActivity {
     private LinearLayout fieldNoSuket;
     private EditText Customer;
     private int labelVersion;
+    private ImageButton btnScrollBottom;
+    private ScrollView scrollHeader;
+    private Spinner SpinBongkarSusun;
+    private CheckBox cbBongkarSusun;
+
 
 
     @Override
@@ -282,6 +289,10 @@ public class SawnTimber extends AppCompatActivity {
         fieldJenisKB = findViewById(R.id.fieldJenisKB);
         fieldNoSuket = findViewById(R.id.fieldNoSuket);
         Customer = findViewById(R.id.Customer);
+        btnScrollBottom = findViewById(R.id.btnScrollBottom);
+        scrollHeader = findViewById(R.id.scrollHeader);
+        SpinBongkarSusun = findViewById(R.id.SpinBongkarSusun);
+        cbBongkarSusun = findViewById(R.id.cbBongkarSusun);
 
 
         inner_card_detail = findViewById(R.id.inner_card_detail);
@@ -321,12 +332,31 @@ public class SawnTimber extends AppCompatActivity {
             loadPenerimaanSTUpah(noPenST);
         }
 
-
         noPenerimaanST = findViewById(R.id.noPenerimaanST);
         noPenerimaanST.setText(noPenST);
 
+        btnScrollBottom.setOnClickListener(v -> {
+            scrollHeader.post(() -> scrollHeader.smoothScrollTo(0, scrollHeader.getBottom()));
+        });
 
-        Toast.makeText(SawnTimber.this, "SawnTimber Versi = " + noPenST, Toast.LENGTH_SHORT).show();
+        scrollHeader.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            boolean isAtBottom = scrollHeader.getScrollY() == (scrollHeader.getChildAt(0).getHeight() - scrollHeader.getHeight());
+
+            if (isAtBottom && btnScrollBottom.getVisibility() == View.VISIBLE) {
+                btnScrollBottom.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction(() -> btnScrollBottom.setVisibility(View.GONE))
+                        .start();
+            } else if (!isAtBottom && btnScrollBottom.getVisibility() != View.VISIBLE) {
+                btnScrollBottom.setAlpha(0f); // Set transparan dulu
+                btnScrollBottom.setVisibility(View.VISIBLE); // Munculkan
+                btnScrollBottom.animate()
+                        .alpha(0.5f)
+                        .setDuration(300)
+                        .start();
+            }
+        });
 
 
 
@@ -376,8 +406,6 @@ public class SawnTimber extends AppCompatActivity {
                     String panjang = DetailPanjangST.getText().toString().trim();
                     String pcs = DetailPcsST.getText().toString().trim();
 
-
-
                     // Validasi input kosong
                     if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
                         Toast.makeText(SawnTimber.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
@@ -385,6 +413,10 @@ public class SawnTimber extends AppCompatActivity {
                     }
 
                     addDataDetail(tebal, lebar, panjang, pcs);
+                    jumlahPcsST();
+                    m3();
+                    ton();
+
                     return true;
                 }
                 return false;
@@ -444,6 +476,9 @@ public class SawnTimber extends AppCompatActivity {
             new LoadJenisKayuTask().execute();
             new LoadGradeStickTask().execute();
             new LoadLokasiTask().execute();
+            new LoadSusunTask().execute(rawDate);
+
+            setCurrentDateTimeVacuum();
 
             BtnSimpanST.setEnabled(true);
             BtnTambahStickST.setEnabled(true);
@@ -459,6 +494,9 @@ public class SawnTimber extends AppCompatActivity {
             NoKayuBulat.setQuery("", false);
             cbSLP.setChecked(false);
             cbVacuum.setChecked(false);
+            cbBongkarSusun.setChecked(false);
+            radioBagus.setChecked(false);
+            radioKulit.setChecked(false);
             resetDetailData();
             resetGradeData();
             DetailPanjangST.setText("4");
@@ -583,12 +621,15 @@ public class SawnTimber extends AppCompatActivity {
                 String noPenST = noPenerimaanST.getText().toString().trim();
                 JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
                 String jenisKayu = selectedJenisKayu.getIdJenisKayu();
+                String namaJenisKayu = selectedJenisKayu.getNamaJenisKayu();
                 SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
                 String noSPK = selectedSPK.getNoSPK();
+                Susun selectedSusun = (Susun) SpinBongkarSusun.getSelectedItem();
+                String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
                 String telly = ((Telly) SpinTelly.getSelectedItem()).getIdOrgTelly();
                 String stickBy = ((StickBy) SpinStickBy.getSelectedItem()).getIdStickBy();
-                String dateCreate = TglStickBundel.getText().toString().trim();
-                String dateVacuum = TglVacuum.getText().toString().trim();
+                String dateCreate = rawDate;
+                String dateVacuum = rawDateVacuum;
                 String remark = remarkLabel.getText().toString();
                 String isSLP = cbSLP.isChecked() ? "1" : "0";
                 String isVacuum = cbVacuum.isChecked() ? dateVacuum : null;
@@ -597,8 +638,10 @@ public class SawnTimber extends AppCompatActivity {
 
                 // Validasi: Cek apakah ada field yang kosong
                 boolean valid = true;
+                NoKayuBulat.setBackgroundResource(R.drawable.border_input);
 
-                if (noKayuBulat.isEmpty() && labelVersion == -1) {
+
+                if (noKayuBulat.isEmpty() && labelVersion == -1 && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
                     NoKayuBulat.setBackgroundResource(R.drawable.spinner_error);  // Background merah untuk error
                     valid = false;
                 }
@@ -621,8 +664,12 @@ public class SawnTimber extends AppCompatActivity {
                     valid = false;
                 }
 
-                if (valid && !temporaryDataListDetail.isEmpty() && !temporaryDataListGrade.isEmpty()) {
-                    checkKayuBulatExists(noKayuBulat, labelVersion, exists -> {
+                if (temporaryDataListGrade.isEmpty() && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
+                    valid = false;
+                }
+
+                if (valid && !temporaryDataListDetail.isEmpty()) {
+                    checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
 
                         CountDownLatch latch = new CountDownLatch(1);
                         setAndSaveNoST(latch);
@@ -635,9 +682,8 @@ public class SawnTimber extends AppCompatActivity {
                         if (latch.getCount() == 0) {
                             if (exists) {
                                 String isBagusKulit = "0";
-                                String labelVer = "0";
 
-                                if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                                if (selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
                                     isBagusKulit = radioBagus.isChecked() ? "1" : (radioKulit.isChecked() ? "2" : "0");
                                 }
 
@@ -649,15 +695,23 @@ public class SawnTimber extends AppCompatActivity {
                                             Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
                                 }
 
-                                for (int i = 0; i < temporaryDataListGrade.size(); i++) {
-                                    DataRow2 dataRow2 = temporaryDataListGrade.get(i);
-                                    saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
+                                if (!selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                                    for (int i = 0; i < temporaryDataListGrade.size(); i++) {
+                                        DataRow2 dataRow2 = temporaryDataListGrade.get(i);
+                                        saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
+                                    }
                                 }
 
                                 if (labelVersion == 1) {
                                     savePenerimaanSTPembelian(noPenST, noST);
                                 } else if (labelVersion == 2) {
                                     savePenerimaanSTUpah(noPenST, noST);
+                                }
+
+                                //check apakah masuk Bongkar Susun
+                                if (cbBongkarSusun.isChecked()) {
+                                    new SaveBongkarSusunTask(noBongkarSusun, noST).execute();
+
                                 }
 
                                 NoKB_display.setText(noKayuBulat);
@@ -670,7 +724,7 @@ public class SawnTimber extends AppCompatActivity {
                                 NoKB_display.setEnabled(false);
                                 BtnPrintST.setEnabled(true);
                                 disableForm();
-                                Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
                             }
@@ -695,11 +749,11 @@ public class SawnTimber extends AppCompatActivity {
                         CBUpah.setChecked(false);
                     }
 
-                    if (selectedJenisKayu != null && selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                    if (selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
                         radioBagus.setEnabled(true);
                         radioKulit.setEnabled(true);
-//                        radioKulit.setChecked(true);
                         radioBagus.setChecked(true);
+
 
                     } else {
                         radioBagus.setEnabled(false);
@@ -842,6 +896,18 @@ public class SawnTimber extends AppCompatActivity {
             } else {
                 // Jika checkbox tidak dicentang, nonaktifkan EditText TglVacuum
                 TglVacuum.setEnabled(false);
+            }
+        });
+
+
+        // Atur listener untuk cb Bongkar Susun
+        cbBongkarSusun.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Jika checkbox dicentang, aktifkan Bongkar Susun Spinner
+            if (isChecked) {
+                SpinBongkarSusun.setEnabled(true);
+            } else {
+                // Jika checkbox tidak dicentang, nonaktifkan Bongkar Susun Spinner
+                SpinBongkarSusun.setEnabled(false);
             }
         });
     }
@@ -1028,10 +1094,10 @@ public class SawnTimber extends AppCompatActivity {
 
 
 
-    private void checkKayuBulatExists(String noKayuBulat, int labelVersion, KayuBulatExistsCallback callback) {
+    private void checkKayuBulatExists(String noKayuBulat, String namaJenisKayu, KayuBulatExistsCallback callback) {
 
         // Periksa versiLabel terlebih dahulu
-        if (labelVersion != -1) {
+        if (labelVersion != -1 || namaJenisKayu.toLowerCase().contains("kayu lat")) {
             // Jika versiLabel tidak sama dengan -1, abaikan query dan langsung kembalikan true
             runOnUiThread(() -> callback.onResult(true));
             return;
@@ -1095,6 +1161,7 @@ public class SawnTimber extends AppCompatActivity {
         BtnInputDetailST.setEnabled(false);
         TglStickBundel.setEnabled(false);
         TglVacuum.setEnabled(false);
+        SpinBongkarSusun.setEnabled(false);
         BtnSimpanST.setEnabled(false);
         inner_card_detail.setVisibility(View.VISIBLE);
         inner_card_top_left.setVisibility(View.GONE);
@@ -1104,6 +1171,9 @@ public class SawnTimber extends AppCompatActivity {
         CBKering.setEnabled(false);
         cbSLP.setEnabled(false);
         cbVacuum.setEnabled(false);
+        cbBongkarSusun.setEnabled(false);
+        radioBagus.setEnabled(false);
+        radioKulit.setEnabled(false);
 
         for (ImageButton btn : deleteButtons) {
             btn.setVisibility(View.INVISIBLE);
@@ -1136,6 +1206,9 @@ public class SawnTimber extends AppCompatActivity {
         CBKering.setEnabled(true);
         cbSLP.setEnabled(true);
         cbVacuum.setEnabled(true);
+        cbBongkarSusun.setEnabled(true);
+        radioBagus.setEnabled(true);
+        radioKulit.setEnabled(true);
     }
 
 
@@ -1881,7 +1954,7 @@ public class SawnTimber extends AppCompatActivity {
         NoSuket.setText("");
         JenisKayuKB.setText("");
         JumlahStick.setText("");
-        radioBagusKulit.clearCheck();
+//        radioBagusKulit.clearCheck();
         CBStick.setChecked(false);
         CBKering.setChecked(false);
         CBUpah.setChecked(false);
@@ -1893,6 +1966,7 @@ public class SawnTimber extends AppCompatActivity {
         setSpinnerValue(SpinStickBy, "-");
         setSpinnerValue(SpinTelly, "-");
         cbVacuum.setChecked(false);
+        cbBongkarSusun.setChecked(false);
         cbSLP.setChecked(false);
 
         NoST_display.setVisibility(View.GONE);
@@ -2017,6 +2091,15 @@ public class SawnTimber extends AppCompatActivity {
         String currentDate = dateFormat.format(new Date());
         TglStickBundel.setText(currentDate);
         rawDate = saveFormat.format(new Date());
+
+    }
+
+    private void setCurrentDateTimeVacuum() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+        SimpleDateFormat saveFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String currentDate = dateFormat.format(new Date());
+        TglVacuum.setText(currentDate);
+        rawDateVacuum = saveFormat.format(new Date());
 
     }
 
@@ -2457,7 +2540,7 @@ public class SawnTimber extends AppCompatActivity {
                     String formattedDate = outputDateFormat.format(date);
 
                     TglStickBundel.setText(formattedDate);
-
+                    new LoadSusunTask().execute(rawDate);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -2479,9 +2562,26 @@ public class SawnTimber extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(SawnTimber.this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-                String selectedDate = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                TglVacuum.setText(selectedDate);
+                // Format input (dari DatePicker)
+                rawDateVacuum = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
+
+                try {
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                    Date date = inputDateFormat.parse(rawDateVacuum);
+
+                    String formattedDate = outputDateFormat.format(date);
+
+                    TglVacuum.setText(formattedDate);
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    TglVacuum.setText("Invalid Date");
+                }
             }
+
         }, year, month, day);
 
         datePickerDialog.show();
@@ -2879,7 +2979,7 @@ public class SawnTimber extends AppCompatActivity {
 
                     int rowsAffected = preparedStatement.executeUpdate();
                     if (rowsAffected > 0) {
-                        Log.d("DB_INSERT", "Data Grade berhasil disimpan");
+//                        Log.d("DB_INSERT", "Data Grade berhasil disimpan");
                         return true;
                     } else {
                         Log.e("DB_INSERT", "Data Grade gagal disimpan");
@@ -2898,10 +2998,51 @@ public class SawnTimber extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean success) {
             if (success) {
-                Toast.makeText(SawnTimber.this, "Data Grade berhasil disimpan", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(SawnTimber.this, "Data Grade berhasil disimpan", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(SawnTimber.this, "Gagal menyimpan data Grade", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+
+    @SuppressWarnings("deprecation")
+    private class SaveBongkarSusunTask extends AsyncTask<Void, Void, Boolean> {
+        private String noBongkarSusun;
+        private String noST;
+
+        public SaveBongkarSusunTask(String noBongkarSusun, String noST) {
+            this.noBongkarSusun = noBongkarSusun;
+            this.noST = noST;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Connection con = ConnectionClass();
+
+            if (con != null) {
+                try {
+                    String query = "INSERT INTO dbo.BongkarSusunOutputST (NoST, NoBongkarSusun) VALUES (?, ?)";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, noST);
+                    ps.setString(2, noBongkarSusun);
+                    ps.executeUpdate();
+                    ps.close();
+                    con.close();
+                    return true;
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                    return false;
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+//            loadOutputByMesinSusun(noBongkarSusun, false);
         }
     }
 
@@ -3071,6 +3212,62 @@ public class SawnTimber extends AppCompatActivity {
         }
     }
 
+
+    private class LoadSusunTask extends AsyncTask<String, Void, List<Susun>> {
+        @Override
+        protected List<Susun> doInBackground(String... params) {
+            List<Susun> susunList = new ArrayList<>();
+            Connection con = ConnectionClass();
+
+            if (con != null) {
+                try {
+                    // Ambil tanggal saat ini jika tidak ada parameter
+                    String selectedDate;
+                    if (params != null && params.length > 0) {
+                        selectedDate = params[0];
+                    } else {
+                        selectedDate = TglStickBundel.getText().toString();
+                    }
+
+                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusun_h WHERE Tanggal = ?";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, selectedDate);
+                    ResultSet rs = ps.executeQuery();
+
+                    while (rs.next()) {
+                        String nomorBongkarSusun = rs.getString("NoBongkarSusun");
+
+                        Susun susun = new Susun(nomorBongkarSusun);
+                        susunList.add(susun);
+                    }
+
+                    rs.close();
+                    ps.close();
+                    con.close();
+                } catch (Exception e) {
+                    Log.e("Database Error", e.getMessage());
+                }
+            } else {
+                Log.e("Connection Error", "Failed to connect to the database.");
+            }
+            return susunList;
+        }
+
+        @Override
+        protected void onPostExecute(List<Susun> susunList) {
+            if (!susunList.isEmpty()) {
+                ArrayAdapter<Susun> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, susunList);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinBongkarSusun.setAdapter(adapter);
+            } else {
+                Log.e("Error", "Failed to load susun data");
+                SpinBongkarSusun.setAdapter(null);
+//                TabelOutput.removeAllViews();
+            }
+        }
+    }
+
+
     private class LoadGradeStickTask extends AsyncTask<Void, Void, List<GradeStick>> {
         @Override
         protected List<GradeStick> doInBackground(Void... voids) {
@@ -3230,7 +3427,7 @@ public class SawnTimber extends AppCompatActivity {
             Connection con = ConnectionClass();
             if (con != null) {
                 try {
-                    String query = "SELECT IdStickBy, NamaStickBy FROM dbo.MstStickBy WHERE Enable = 1 AND IdStickBy != 0";
+                    String query = "SELECT IdStickBy, NamaStickBy FROM dbo.MstStickBy WHERE Enable = 1";
                     PreparedStatement ps = con.prepareStatement(query);
                     ResultSet rs = ps.executeQuery();
 
@@ -3293,6 +3490,9 @@ public class SawnTimber extends AppCompatActivity {
 
             int isUpah = (labelVersion == 2) ? 1 : 0;
 
+            Log.d("UpdateDataTask", "Tanggal dateCreate: " + dateCreate);
+
+
 
             // Default values for UOM columns
             int idUOMTblLebar = 0;
@@ -3340,7 +3540,7 @@ public class SawnTimber extends AppCompatActivity {
 
                     int rowsAffected = ps.executeUpdate();
                     if (rowsAffected > 0) {
-                        message = "Data berhasil diperbarui.";
+                        message = "Data berhasil disimpan!";
                     } else {
                         message = "Gagal memperbarui data";
                     }
@@ -3496,6 +3696,29 @@ public class SawnTimber extends AppCompatActivity {
             }
         }).start();
     }
+
+
+    public class Susun {
+        private String nomorBongkarSusun;
+
+        public Susun(String nomorBongkarSusun) {
+            this.nomorBongkarSusun = nomorBongkarSusun;
+        }
+
+        public String getNoBongkarSusun() {
+            return nomorBongkarSusun;
+        }
+
+        public void setNoBongkarSusun(String nomorBongkarSusun) {
+            this.nomorBongkarSusun = nomorBongkarSusun;
+        }
+
+        @Override
+        public String toString() {
+            return nomorBongkarSusun;
+        }
+    }
+
 
     public class SPK {
         private String noSPK;

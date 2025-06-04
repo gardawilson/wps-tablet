@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 public class UpdateManager {
     private static final String TAG = "UpdateManager";
     private static final String SERVER_IP = "192.168.10.100";
-    private static final String SHARE_NAME = "RU New";
-    private static final String UPDATE_PATH = "UpdateAndroid";
+    private static final String SHARE_NAME = "RU";
+    private static final String UPDATE_PATH = "wps_tablet_mobile/update_tablet";
     private static final String USERNAME = "rduser5";
     private static final String PASSWORD = "Utama1234";
     private static final String DOMAIN = "";

@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/title_left"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.9"
+            android:text="Create Sawmill Header"
+            android:textColor="@color/black"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseDialogInputNoPST"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/ic_close"
+            android:layout_weight="0.1"
+            android:contentDescription="Close"
+            android:scaleType="fitEnd"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2px"
+        android:background="@color/gray" />
+
+    <ScrollView
+        android:id="@+id/scrollHeader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. Telly"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:id="@+id/tvNoPenerimaanST"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="D.XXXXXX"
+                    android:textSize="18sp"
+                    android:layout_weight="1"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. KB"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <AutoCompleteTextView
+                    android:id="@+id/editNoKB"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:text="A."
+                    android:inputType="number"
+                    android:maxLength="8" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Jenis Kayu"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editJenisKayu"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_disabled"
+                    android:elevation="1dp"
+                    android:hint="Jenis Kayu"
+                    android:enabled="false"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Supplier"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editSupplier"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_disabled"
+                    android:elevation="1dp"
+                    android:hint="Supplier"
+                    android:enabled="false"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No Truk "
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editNoTruk"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_disabled"
+                    android:elevation="1dp"
+                    android:hint="Nomor Truk"
+                    android:inputType="number"
+                    android:enabled="false"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="No. Plat : "
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:gravity="end"/>
+
+                <EditText
+                    android:id="@+id/editNoPlat"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_disabled"
+                    android:elevation="1dp"
+                    android:hint="Nomor Plat"
+                    android:inputType="textCapCharacters"
+                    android:enabled="false"/>
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. Suket"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editSuket"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_disabled"
+                    android:elevation="1dp"
+                    android:hint="Nomor Suket"
+                    android:enabled="false"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Tanggal"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editTgl"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Tanggal"
+                    android:focusable="false"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Jlh Balok"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editJlhBalokTerpakai"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Jumlah Balok"
+                    android:inputType="number"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Berat Balok"
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:gravity="end"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:paddingLeft="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editBeratBalokTim"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Berat Balok"
+                    android:inputType="number"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="No. Meja "
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editNoMeja"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Nomor Truk"
+                    android:inputType="number"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Shift : "
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:gravity="end"/>
+
+                <Spinner
+                    android:id="@+id/spinShift"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp" >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="S. Condition"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/spinSpecialCondition"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Operator 1"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/spinOperator1"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Operator 2"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/spinOperator2"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Jam Kerja"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editJamMulai"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="0.7"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Jam Mulai"
+                    android:inputType="number"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.2"
+                    android:text="-"
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:gravity="center"/>
+
+                <EditText
+                    android:id="@+id/editJamBerhenti"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="0.7"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Jam Berakhir"
+                    android:inputType="textCapCharacters"/>
+
+                <TextView
+                    android:id="@+id/tvTotalJamKerja"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.4"
+                    android:layout_height="36dp"
+                    android:text="-"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:elevation="1dp"
+                    android:textAlignment="textEnd"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:text="Jam"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:elevation="1dp"
+                    android:layout_gravity="start"/>
+
+            </LinearLayout>
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:layout_marginBottom="15dp"-->
+<!--                >-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="120dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Jam"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:visibility="invisible"/>-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text=":"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:paddingRight="8dp"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:visibility="invisible"/>-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/tvTotalJamKerja"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_weight="0.1"-->
+<!--                    android:layout_height="36dp"-->
+<!--                    android:text="-"-->
+<!--                    android:padding="6dp"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:elevation="1dp"-->
+<!--                    android:focusable="false"/>-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:layout_height="36dp"-->
+<!--                    android:text="Jam"-->
+<!--                    android:padding="6dp"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:elevation="1dp"-->
+<!--                    android:layout_gravity="start"/>-->
+
+<!--            </LinearLayout>-->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Hour Meter"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editHourMeter"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Hour Meter"
+                    android:inputType="number"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Jlh Batang"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editJlhBatang"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Jlh Batang"
+                    android:inputType="number"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Remark"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editRemark"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Maks 50 Karakter"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:maxLines="5"
+                    android:maxLength="50"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"/>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnSimpan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18dp"
+                android:text="Simpan" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

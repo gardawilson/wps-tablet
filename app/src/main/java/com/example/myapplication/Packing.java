@@ -525,6 +525,9 @@ public class Packing extends AppCompatActivity {
                         NoBarangJadi_display.setVisibility(View.VISIBLE);
                         NoBarangJadi_display.setEnabled(false);
 
+                        new LoadMesinTask().execute(rawDate);
+                        new LoadSusunTask().execute(rawDate);
+
                         clearData();
                         resetDetailData();
                         enableForm();
@@ -3890,8 +3893,12 @@ public class Packing extends AppCompatActivity {
                 try {
                     String selectedDate = params[0];
 
-                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi FROM dbo.PackingProduksi_h a " +
-                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin WHERE Tanggal = ?";
+                    String query = "SELECT a.IdMesin, " +
+                            "CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, " +
+                            "a.NoProduksi " +
+                            "FROM dbo.PackingProduksi_h a " +
+                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
+                            "WHERE Tanggal = ?";
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, selectedDate);
                     ResultSet rs = ps.executeQuery();

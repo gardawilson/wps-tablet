@@ -97,4 +97,21 @@ public class DateTimeUtils {
             return "ERROR"; // Atau nilai default lain yang sesuai
         }
     }
+
+
+    // Format dari "dd-MMM-yyyy" ke "yyyy-MM-dd"
+    public static String formatToDatabaseDate(String dateString) {
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+
+            Date date = inputFormat.parse(dateString);
+            return outputFormat.format(date);
+
+        } catch (ParseException e) {
+            Log.e("DateFormatError", "Gagal memformat tanggal (dd-MMM-yyyy ke yyyy-MM-dd): " + e.getMessage());
+            return "ERROR";
+        }
+    }
+
 }

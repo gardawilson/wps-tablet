@@ -477,6 +477,7 @@ public class S4S extends AppCompatActivity {
                         if (!isTimeout[0] && loadingDialog.isShowing()) {
                             loadingDialog.dismiss();
                         }
+
                         // Perbarui tombol dan UI
                         BtnSimpan.setEnabled(true);
                         BtnBatal.setEnabled(true);
@@ -489,6 +490,9 @@ public class S4S extends AppCompatActivity {
                         NoS4S.setVisibility(View.GONE);
                         NoS4S_display.setVisibility(View.VISIBLE);
                         NoS4S_display.setEnabled(false);
+
+                        new LoadMesinTask().execute(rawDate);
+                        new LoadSusunTask().execute(rawDate);
 
                         clearData();
                         resetDetailData();
@@ -2258,87 +2262,6 @@ public class S4S extends AppCompatActivity {
             }
         }).start();
     }
-
-    private class CheckNoS4SDataTask extends AsyncTask<String, Void, Boolean> {
-        private String errorMessage;
-        private String source = ""; // Untuk menyimpan sumber data (Mesin atau Bongkar Susun)
-        private boolean isNoSTAsalValid = false; // Untuk menyimpan status validasi NoSTAsal
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noS4S = params[0];
-            String noSTAsal = NoSTAsal.getText().toString();
-            Connection con = ConnectionClass();
-            boolean hasData = false;
-
-            if (con != null) {
-                try {
-                    // Cek validitas NoSTAsal di tabel st_h
-                    String querySTAsal = "SELECT COUNT(*) FROM dbo.ST_h WHERE NoS4S = ?";
-                    PreparedStatement psSTAsal = con.prepareStatement(querySTAsal);
-                    psSTAsal.setString(1, noSTAsal);
-                    ResultSet rsSTAsal = psSTAsal.executeQuery();
-
-                    if (rsSTAsal.next() && rsSTAsal.getInt(1) > 0) {
-                        isNoSTAsalValid = true;
-                    }
-
-                    rsSTAsal.close();
-                    psSTAsal.close();
-
-                    // Cek di tabel S4SProduksiOutput
-                    String queryMesin = "SELECT NoProduksi FROM dbo.S4SProduksiOutput WHERE NoS4S = ?";
-                    PreparedStatement psMesin = con.prepareStatement(queryMesin);
-                    psMesin.setString(1, noS4S);
-                    ResultSet rsMesin = psMesin.executeQuery();
-
-                    if (rsMesin.next()) {
-                        hasData = true;
-                        source = "Mesin";
-                    } else {
-                        // Jika tidak ada di tabel S4SProduksiOutput, cek di tabel BongkarSusun
-                        String querySusun = "SELECT NoBongkarSusun FROM dbo.BongkarSusun_h WHERE NoS4S = ?";
-                        PreparedStatement psSusun = con.prepareStatement(querySusun);
-                        psSusun.setString(1, noS4S);
-                        ResultSet rsSusun = psSusun.executeQuery();
-
-                        if (rsSusun.next()) {
-                            hasData = true;
-                            source = "Bongkar Susun";
-                        }
-
-                        rsSusun.close();
-                        psSusun.close();
-                    }
-
-                    rsMesin.close();
-                    psMesin.close();
-                    con.close();
-                } catch (Exception e) {
-                    errorMessage = "Error: " + e.getMessage();
-                    Log.e("CheckNoS4SDataTask", errorMessage);
-                }
-            }
-            return hasData;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean hasData) {
-            if (!isNoSTAsalValid) {
-                BtnSimpan.setEnabled(false);
-            } else if (hasData) {
-                Toast.makeText(S4S.this,
-                        "Data S4S ini sudah pernah disimpan di " + source + "!",
-                        Toast.LENGTH_SHORT).show();
-                // Disable tombol simpan
-                BtnSimpan.setEnabled(false);
-            } else {
-                // Data belum pernah disimpan, enable tombol simpan
-                BtnSimpan.setEnabled(true);
-            }
-        }
-    }
-
 
     //Fungsi untuk add Data Detail
 
@@ -4151,12 +4074,12 @@ public class S4S extends AppCompatActivity {
                         selectedDate = Date.getText().toString();
                     }
 
-                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi " +
+                    String query = "SELECT a.IdMesin, CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, a.NoProduksi " +
                             "FROM dbo.S4SProduksi_h a " +
                             "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
                             "WHERE CONVERT(date, a.Tanggal) = CONVERT(date, ?) " +
                             "UNION ALL " +
-                            "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi " +
+                            "SELECT a.IdMesin, CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, a.NoProduksi " +
                             "FROM dbo.CCAkhirProduksi_h a " +
                             "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
                             "WHERE a.Tanggal = ?";

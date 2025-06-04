@@ -32,6 +32,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".Sawmill"
+            android:exported="false" />
+        <activity
             android:name=".SawnTimberUpah"
             android:exported="false" />
         <activity

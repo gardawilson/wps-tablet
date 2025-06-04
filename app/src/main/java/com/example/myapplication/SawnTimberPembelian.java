@@ -588,7 +588,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
                     // Periksa apakah NoPenerimaanST berhasil diambil
                     if (newNoPenerimaanST != null && !newNoPenerimaanST.isEmpty()) {
                         try {
-                            LabelApi.insertDataToDatabase(newNoPenerimaanST, tglLaporanVal, tglMasukVal, idSupplierVal, noTrukVal, noPlatVal, suketVal, tonSJVal, noteVal);
+                            LabelApi.insertDataToPembelian(newNoPenerimaanST, tglLaporanVal, tglMasukVal, idSupplierVal, noTrukVal, noPlatVal, suketVal, tonSJVal, noteVal);
 
                             // Setelah operasi selesai, update UI di main thread
                             runOnUiThread(() -> {

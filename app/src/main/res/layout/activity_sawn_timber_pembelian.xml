@@ -764,78 +764,77 @@
 
     <!-- Baris Pertama (3 CardView) -->
 
-        <LinearLayout
-            android:id="@+id/nonRejectLayoutView"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical">
+    <LinearLayout
+        android:id="@+id/nonRejectLayoutView"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/btnSwapToReject"
+        <LinearLayout
+            android:id="@+id/btnSwapToReject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:background="?android:attr/selectableItemBackground"
+                android:src="@drawable/swap_horiz"
+                android:tint="@android:color/white"
+                android:layout_gravity="end|center_vertical"
+                android:contentDescription="Tambah Data" />
 
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:src="@drawable/swap_horiz"
-                    android:tint="@android:color/white"
-                    android:layout_gravity="end|center_vertical"
-                    android:contentDescription="Tambah Data" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:text="Non Reject"
+                android:gravity="center"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:text="Non Reject"
-                    android:gravity="center"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
+        </LinearLayout>
 
-            </LinearLayout>
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:background="#FFFFFF">
 
-            <androidx.cardview.widget.CardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="4dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                android:background="#FFFFFF">
+                android:orientation="vertical">
 
-                <LinearLayout
+                <!-- Header Tabel -->
+                <TableLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF">
 
-                    <!-- Header Tabel -->
-                    <TableLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#EFEFEF">
+                    <TableRow
+                        android:background="@color/hijau">
 
-                        <TableRow
-                            android:background="@color/hijau">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Label"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Label"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                    </TableRow>
+                </TableLayout>
 
-                        </TableRow>
-                    </TableLayout>
-
-                    <!-- Isi Tabel -->
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                <!-- Isi Tabel -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
                     <ScrollView
                         android:layout_width="match_parent"
@@ -864,156 +863,155 @@
                         </RelativeLayout>
                     </ScrollView>
 
-                        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:id="@+id/btnAddLabelSTBeli"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="bottom|end"
-                            android:layout_margin="16dp"
-                            android:src="@drawable/ic_add"
-                            android:contentDescription="Tambah Data"
-                            app:backgroundTint="@color/primary"
-                            app:tint="@android:color/white"/>
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/btnAddLabelSTBeli"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="16dp"
+                        android:src="@drawable/ic_add"
+                        android:contentDescription="Tambah Data"
+                        app:backgroundTint="@color/primary"
+                        app:tint="@android:color/white"/>
 
 
-                    </FrameLayout>
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/rejectLayoutView"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:id="@+id/btnSwapToNonReject"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:src="@drawable/swap_horiz"
-                    android:tint="@android:color/white"
-                    android:layout_gravity="end|center_vertical"
-                    android:contentDescription="Tambah Data" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:text="Reject"
-                    android:gravity="center"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
+                </FrameLayout>
 
             </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
-            <androidx.cardview.widget.CardView
+    <LinearLayout
+        android:id="@+id/rejectLayoutView"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="2"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/btnSwapToNonReject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:src="@drawable/swap_horiz"
+                android:tint="@android:color/white"
+                android:layout_gravity="end|center_vertical"
+                android:contentDescription="Tambah Data" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:text="Reject"
+                android:gravity="center"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:background="#FFFFFF">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                android:background="#FFFFFF">
+                android:orientation="vertical">
 
-                <LinearLayout
+                <!-- Header Tabel -->
+                <TableLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF">
 
-                    <!-- Header Tabel -->
-                    <TableLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#EFEFEF">
+                    <TableRow
+                        android:background="@color/hijau">
 
-                        <TableRow
-                            android:background="@color/hijau">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Tbl"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Tbl"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
 
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Lbr"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Lbr"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
 
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Pjg"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Pjg"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
 
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Pcs"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Pcs"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
 
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:text="Ton"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:textColor="@color/white" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="8dp"
-                                android:text="Ton"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                    </TableRow>
+                </TableLayout>
 
-                        </TableRow>
-                    </TableLayout>
-
-                    <!-- Isi Tabel -->
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                <!-- Isi Tabel -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
                     <ScrollView
                         android:layout_width="match_parent"
@@ -1042,23 +1040,23 @@
                         </RelativeLayout>
                     </ScrollView>
 
-                        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:id="@+id/btnAddReject"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="bottom|end"
-                            android:layout_margin="16dp"
-                            android:src="@drawable/ic_add"
-                            android:contentDescription="Tambah Data"
-                            app:backgroundTint="@color/primary"
-                            app:tint="@android:color/white"/>
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/btnAddReject"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="16dp"
+                        android:src="@drawable/ic_add"
+                        android:contentDescription="Tambah Data"
+                        app:backgroundTint="@color/primary"
+                        app:tint="@android:color/white"/>
 
-                    </FrameLayout>
+                </FrameLayout>
 
-                </LinearLayout>
+            </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+        </androidx.cardview.widget.CardView>
 
-        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

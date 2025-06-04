@@ -503,6 +503,8 @@ public class Sanding extends AppCompatActivity {
                         new LoadProfileTask().execute();
                         new LoadFisikTask().execute();
                         new LoadGradeTask().execute();
+                        new LoadMesinTask().execute(rawDate);
+                        new LoadSusunTask().execute(rawDate);
 
                         BtnSimpanS.setEnabled(true);
                         BtnBatalS.setEnabled(true);
@@ -4057,8 +4059,13 @@ public class Sanding extends AppCompatActivity {
                 try {
                     String selectedDate = params[0];
 
-                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi FROM dbo.SandingProduksi_h a " +
-                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin WHERE Tanggal = ?";
+                    String query = "SELECT a.IdMesin, " +
+                            "CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, " +
+                            "a.NoProduksi " +
+                            "FROM dbo.SandingProduksi_h a " +
+                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
+                            "WHERE Tanggal = ?";
+
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, selectedDate);
                     ResultSet rs = ps.executeQuery();

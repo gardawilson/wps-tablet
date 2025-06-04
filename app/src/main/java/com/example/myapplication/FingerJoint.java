@@ -490,6 +490,9 @@ public class FingerJoint extends AppCompatActivity {
                         NoFJ_display.setVisibility(View.VISIBLE);
                         NoFJ_display.setEnabled(false);
 
+                        new LoadMesinTaskFJ().execute(rawDate);
+                        new LoadSusunTaskFJ().execute(rawDate);
+
                         clearData();
                         resetDetailData();
                         enableForm();
@@ -3598,8 +3601,12 @@ public class FingerJoint extends AppCompatActivity {
                         selectedDate = DateFJ.getText().toString();
                     }
 
-                    String query = "SELECT a.IdMesin, b.NamaMesin, a.NoProduksi FROM dbo.FJProduksi_h a " +
-                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin WHERE CONVERT(date, a.Tanggal) = CONVERT(date, ?)";
+                    String query = "SELECT a.IdMesin, " +
+                            "CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, " +
+                            "a.NoProduksi " +
+                            "FROM dbo.FJProduksi_h a " +
+                            "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
+                            "WHERE Tanggal = ?";
 
                     Log.d("LoadMesinTask", "Query: " + query + " dengan tanggal: " + selectedDate);
 

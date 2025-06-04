@@ -313,7 +313,7 @@ public class LabelApi {
         }
     }
 
-    public static void insertDataToDatabase(final String noPenerimaanST, final String tglLaporan, final String tglMasuk, final int idSupplier,
+    public static void insertDataToPembelian(final String noPenerimaanST, final String tglLaporan, final String tglMasuk, final int idSupplier,
                                             final String noTruk, final String noPlat, final String suket, final String tonSJ, final String note) {
         String query = "INSERT INTO PenerimaanSTPembelian_h " +
                 "(NoPenerimaanST, TglLaporan, TglMasuk, IdSupplier, NoTruk, NoPlat, Suket, TonSJ, Note) " +

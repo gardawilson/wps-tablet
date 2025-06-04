@@ -255,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
     private void showUpdateDialog(UpdateManager.UpdateInfo updateInfo) {
         new AlertDialog.Builder(this)
                 .setTitle("Pembaruan Tersedia!")
-                .setMessage("WPS Mobile Versi " + updateInfo.version + "\n\n" + "Rincian :\n" + updateInfo.changelog)
+                .setMessage("WPS Tablet Versi " + updateInfo.version + "\n\n" + "Rincian :\n" + updateInfo.changelog)
                 .setPositiveButton("Update", (dialog, which) -> {
                     dialog.dismiss();
                     startDownload(updateInfo.fileName);

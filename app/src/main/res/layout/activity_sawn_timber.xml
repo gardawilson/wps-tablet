@@ -25,7 +25,9 @@
         android:layout_marginBottom="8dp"
         android:backgroundTint="@color/white">
 
+
         <ScrollView
+            android:id="@+id/scrollHeader"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fillViewport="true">
@@ -575,7 +577,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="15dp"
+                    android:layout_marginBottom="8dp"
                     >
 
                     <TextView
@@ -608,7 +610,39 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="B. Susun"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinBongkarSusun"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:enabled="false" />
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/cbBongkarSusun"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginBottom="15dp">
 
@@ -642,6 +676,18 @@
             </LinearLayout>
 
         </ScrollView>
+
+        <!-- Tombol Scroll ke Bawah -->
+        <ImageButton
+            android:id="@+id/btnScrollBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:layout_gravity="bottom|start"
+            android:contentDescription="Scroll ke bawah"
+            android:src="@drawable/ic_arrow_circle_down"
+            android:background="@android:color/transparent"
+            android:alpha="0.5" />
 
     </androidx.cardview.widget.CardView>
 
