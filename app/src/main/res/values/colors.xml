@@ -14,6 +14,7 @@
     <color name="text_brown">#4A371F</color>
     <color name="green_success">#00FF00 </color>
     <color name="green_failed">#FF0000 </color>
+    <color name="warning_yellow">#FFFF00</color>
 
     <!-- Default Android colors (diperlukan) -->
     <color name="purple_200">#FFBB86FC</color>

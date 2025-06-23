@@ -114,4 +114,20 @@ public class DateTimeUtils {
         }
     }
 
+    public static String formatTimeToHHmmss(String timeString) {
+        try {
+            // Format input seperti 14:30:00.0000
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSS", Locale.ENGLISH);
+            LocalTime localTime = LocalTime.parse(timeString, inputFormatter);
+
+            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH);
+            return localTime.format(outputFormatter);
+
+        } catch (DateTimeParseException e) {
+            Log.e("TimeFormatError", "Gagal memformat waktu (HH:mm:ss.SSSS ke HH:mm): " + e.getMessage());
+            return "ERROR";
+        }
+    }
+
+
 }

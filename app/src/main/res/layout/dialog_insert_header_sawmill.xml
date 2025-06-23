@@ -72,7 +72,7 @@
                     android:textColor="@color/black" />
 
                 <TextView
-                    android:id="@+id/tvNoPenerimaanST"
+                    android:id="@+id/tvNoSTSawmill"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="D.XXXXXX"

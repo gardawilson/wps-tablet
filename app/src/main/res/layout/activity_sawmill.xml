@@ -14,7 +14,6 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="4"
-        android:layout_marginEnd="8dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
         android:background="#FFFFFF">
@@ -30,8 +29,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Lembar Telly Hasil Sawmill"
-                android:textSize="30sp"
                 android:textColor="#000000"
+                android:textSize="30sp"
                 android:textStyle="bold" />
 
             <LinearLayout
@@ -51,13 +50,12 @@
                     android:drawableTint="@color/white" />
 
                 <Button
-                    android:id="@+id/btnInputManual"
+                    android:id="@+id/btnEditData"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_marginRight="8dp"
                     android:layout_weight="1"
-                    android:text="Ubah"
-                    android:enabled="false"/>
+                    android:text="Ubah" />
 
                 <Button
                     android:id="@+id/btnSimpan"
@@ -70,142 +68,178 @@
 
             </LinearLayout>
 
-            <TableLayout
-                android:id="@+id/headerTableProduksi"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:background="#EFEFEF"
-                android:stretchColumns="0">
-                <!-- Membuat kolom proporsional -->
+                android:orientation="vertical">
 
-                <TableRow
-                    android:background="@color/hijau">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="No. Telly"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Tanggal"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="No. Kayu Bulat"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Meja"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Operator"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Balok Terpakai"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-
-                    <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:background="@color/gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Jam Kerja"
-                        android:padding="8dp"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:textColor="@color/white"/>
-                </TableRow>
-
-            </TableLayout>
-
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
                 <TableLayout
-                    android:id="@+id/mainTable"
+                    android:id="@+id/headerTableProduksi"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="0"
-                    android:background="#EFEFEF">
+                    android:layout_marginTop="5dp"
+                    android:background="#EFEFEF"
+                    android:stretchColumns="0">
+                    <!-- Membuat kolom proporsional -->
 
+                    <TableRow
+                        android:background="@color/hijau">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="No. Telly"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Tanggal"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="No. Kayu Bulat"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:padding="8dp"
+                            android:text="Jenis Kayu"
+                            android:textColor="@color/white"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="0.5"
+                            android:text="Meja"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="0.5"
+                            android:text="Jam Kerja"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Operator"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.5"
+                            android:text="Balok Terpakai"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                    </TableRow>
+
+                </TableLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- SwipeRefreshLayout membungkus ScrollView -->
+                    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                        android:id="@+id/swipeRefreshLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <!-- ScrollView dan Table -->
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TableLayout
+                                android:id="@+id/mainTable"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stretchColumns="0"
+                                android:background="#EFEFEF">
+                                <!-- Baris tabel diisi dinamis -->
+                            </TableLayout>
+                        </ScrollView>
+                    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+                    <!-- ProgressBar tetap di atas -->
                     <ProgressBar
                         android:id="@+id/mainLoadingIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:visibility="gone"/>
+                </FrameLayout>
 
-                    <!-- Baris isi tabel akan dimuat secara dinamis -->
-                </TableLayout>
-
-            </ScrollView>
+            </LinearLayout>
 
         </LinearLayout>
 

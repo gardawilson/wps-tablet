@@ -1,7 +1,5 @@
 package com.example.myapplication;
 
-import static com.example.myapplication.api.StockOpnameApi.getLokasiAndBlok;
-
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -20,8 +18,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -200,7 +196,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         if (isLeft) {
             tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_left, null);
         } else {
-            tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+            tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         }
 

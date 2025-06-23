@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -34,10 +35,8 @@ import com.example.myapplication.api.LabelApi;
 import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.STUpahData;
-import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -150,7 +149,7 @@ public class SawnTimberUpah extends AppCompatActivity {
 
     private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, double totalTon, String noPlat, String noKBSuket, String tableH) {
         // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         // Set data pada TextView
         ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
@@ -474,17 +473,34 @@ public class SawnTimberUpah extends AppCompatActivity {
                             // Setelah operasi selesai, update UI di main thread
                             runOnUiThread(() -> {
                                 // Menampilkan dialog sukses
-                                new MaterialAlertDialogBuilder(this)
-                                        .setTitle("Berhasil!")
-                                        .setMessage("Data " + newNoPenerimaanST + " berhasil disimpan")
-                                        .setPositiveButton("OK", (dialogSuccess, which) -> {
-                                            // Ketika OK di-click, refresh tabel dan UI lainnya
-                                            loadDataAndDisplayTable();
-                                            dialog.dismiss();  // Menutup dialog setelah OK diklik
+                                AlertDialog.Builder builderAlert = new AlertDialog.Builder(this);
+                                View dialogView = getLayoutInflater().inflate(R.layout.alert_success, null);
 
-                                        })
-                                        .setIcon(R.drawable.ic_done)
-                                        .show();
+                                TextView tvMessage = dialogView.findViewById(R.id.tvMessage);
+                                Button btnOk = dialogView.findViewById(R.id.btnOk);
+
+                                tvMessage.setText("Berhasil disimpan dengan No. Upah " + newNoPenerimaanST);
+
+                                builderAlert.setView(dialogView);
+                                AlertDialog dialogSuccess = builderAlert.create();
+                                dialogSuccess.setCancelable(false);
+
+                                dialogSuccess.show(); // Tampilkan dulu agar window tersedia
+
+                                // Buat sudut dialog kelihatan
+                                dialogSuccess.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+                                // Atur ukuran dialog
+                                dialogSuccess.getWindow().setLayout(
+                                        1000,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT
+                                );
+
+                                btnOk.setOnClickListener(a -> {
+                                    loadDataAndDisplayTable();
+                                    dialogSuccess.dismiss();
+                                    dialog.dismiss();  // tutup dialog lama kalau ada
+                                });
                             });
 
                         } catch (Exception e) {

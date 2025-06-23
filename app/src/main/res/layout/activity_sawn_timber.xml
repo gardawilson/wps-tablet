@@ -1019,21 +1019,20 @@
 
                         </LinearLayout>
 
-
                         <Button
                             android:id="@+id/BtnInputDetailST"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Tetapkan"
-                            android:background="@drawable/modern_button" />
+                            android:layout_weight="1.4"
+                            android:text="Tetapkan" />
 
                         <Button
                             android:id="@+id/BtnClearDetailST"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
                             android:text="Reset"
-                            android:background="@drawable/modern_button" />
+                            android:textColor="@color/primary_dark"
+                            android:background="@android:color/transparent" />
 
                     </LinearLayout>
 
@@ -1146,13 +1145,14 @@
                     </ScrollView>
 
                     <!-- Button untuk menambahkan data -->
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/addRowButton"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Tambah"
-                        android:background="@drawable/modern_button"
-                        android:layout_margin="4dp"/>
+                        app:icon="@android:drawable/ic_input_add"
+                        app:iconPadding="8dp"
+                        android:layout_margin="4dp" />
 
                 </LinearLayout>
 
@@ -1532,8 +1532,7 @@
                                 android:id="@+id/BtnTambahStickST"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Tambah"
-                                android:background="@drawable/modern_button" />
+                                android:text="Tambah" />
 
                         </LinearLayout>
 

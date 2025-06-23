@@ -66,22 +66,14 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-import android.animation.ObjectAnimator;
 import android.util.DisplayMetrics;
 
 public class ProsesProduksiLaminating extends AppCompatActivity {
@@ -1293,7 +1285,7 @@ public class ProsesProduksiLaminating extends AppCompatActivity {
 
     private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, String tableH) {
         // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         // Set data pada TextView
         ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);

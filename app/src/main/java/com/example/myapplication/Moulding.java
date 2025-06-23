@@ -5,11 +5,9 @@ import android.app.DatePickerDialog;
 import androidx.appcompat.app.AlertDialog;
 
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Typeface;
@@ -31,7 +29,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -53,7 +50,6 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintDocumentInfo;
 import android.print.PageRange;
-import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import java.io.FileOutputStream;
@@ -62,36 +58,17 @@ import java.io.OutputStream;
 import android.print.PrintJob;
 
 import com.example.myapplication.utils.DateTimeUtils;
-import com.itextpdf.kernel.geom.AffineTransform;
-import android.print.PrintManager;
-import android.print.PrintAttributes;
-import android.print.PrintDocumentAdapter;
-import android.print.PrintDocumentInfo;
-import android.os.CancellationSignal;
-import android.os.ParcelFileDescriptor;
-import android.os.Bundle;
+
 import android.app.TimePickerDialog;
 import android.widget.TimePicker;
 import android.widget.AutoCompleteTextView;
 import android.view.inputmethod.InputMethodManager;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
 
-
-
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import org.bouncycastle.cms.PasswordRecipientId;
-import org.bouncycastle.jcajce.provider.symmetric.Serpent;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -109,11 +86,8 @@ import java.util.Locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 
 
-import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -125,35 +99,21 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.kernel.geom.Rectangle;
 
 
-
-
-import com.itextpdf.layout.properties.VerticalAlignment;
-
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
-import android.text.TextUtils;
-import com.itextpdf.layout.element.Paragraph;
-import java.math.RoundingMode;
+
 import java.util.concurrent.CountDownLatch;
 
 import io.reactivex.rxjava3.core.Completable;
@@ -1280,7 +1240,7 @@ public class Moulding extends AppCompatActivity {
 
     private void showTooltip(View anchorView, String noMoulding, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
         // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         // Set data pada TextView
         ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noMoulding);

@@ -6,34 +6,35 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/textHeaderDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Input Detail"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/black" />
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.4"
         android:orientation="horizontal"
-        android:layout_marginRight="16dp">
+        android:background="@drawable/border_disabled">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:layout_marginRight="16dp">
-
-            <TextView
-                android:id="@+id/title_top_right"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sawmill Detail"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="20dp" />
+            android:padding="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:layout_marginTop="10dp"
                 android:layout_marginBottom="10dp">
 
                 <TextView
@@ -87,34 +88,113 @@
                     android:completionThreshold="1" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/BtnInputDetail"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Tetapkan"
-                android:background="@drawable/modern_button" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
 
-            <Button
-                android:id="@+id/BtnClearDetail"
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Panjang"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <AutoCompleteTextView
+                    android:id="@+id/inputPanjang"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Panjang"
+                    android:inputType="numberDecimal"
+                    android:completionThreshold="1" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Reset"
-                android:background="@drawable/modern_button" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Pcs"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <AutoCompleteTextView
+                    android:id="@+id/inputPcs"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Pcs"
+                    android:inputType="numberDecimal"
+                    android:completionThreshold="1" />
+            </LinearLayout>
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <Button
+                    android:id="@+id/BtnClearDetail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Clear"
+                    android:textColor="@color/primary_dark"
+                    android:textAlignment="textEnd"
+                    android:background="@android:color/transparent" />
+
+                <Button
+                    android:id="@+id/BtnInputDetail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tetapkan" />
+            </LinearLayout>
 
         </LinearLayout>
+
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:background="@drawable/border_divider">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textSisaPCS"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sisa : 0"
+                    android:textStyle="bold" />
 
                 <TableLayout
                     android:layout_width="match_parent"
@@ -189,16 +269,17 @@
                 </ScrollView>
 
                 <!-- Button untuk menambahkan data -->
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/addRowButton"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Tambah"
-                    android:background="@drawable/modern_button"
-                    android:layout_margin="4dp"/>
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconPadding="8dp"
+                    android:layout_margin="4dp" />
+
 
             </LinearLayout>
-
 
         </LinearLayout>
 
@@ -208,126 +289,203 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
+            <!-- ScrollView dengan weight untuk mengisi ruang yang tersisa -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Grade"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <Spinner
+                            android:id="@+id/spinGradeDetail"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp" />
+
+                    </LinearLayout>
+
+                    <RadioGroup
+                        android:id="@+id/radioGroupBagusKulit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/radioBagus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginRight="16dp"
+                            android:text="Bagus"
+                            android:enabled="false" />
+
+                        <RadioButton
+                            android:id="@+id/radioKulit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:enabled="false"
+                            android:text="Kulit" />
+                    </RadioGroup>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Tbl-Lbr"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="4dp" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMTblLebar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioMillimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Millimeter"
+                                android:textSize="15sp"
+                                android:checked="true"
+                                android:layout_marginBottom="2dp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioInch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Inch"
+                                android:textSize="15sp"/>
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Satuan Panjang"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E0E0E0">
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupUOMPanjang"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <RadioButton
+                                android:id="@+id/radioFeet"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Feet"
+                                android:checked="true"
+                                android:textSize="15sp"/>
+
+                            <RadioButton
+                                android:id="@+id/radioMeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Meter"
+                                android:textSize="15sp"
+                                android:layout_marginBottom="2dp"
+                                android:enabled="false" />
+
+                            <RadioButton
+                                android:id="@+id/radioCentimeter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="Centimeter"
+                                android:textSize="15sp"
+                                android:layout_marginBottom="2dp"
+                                android:enabled="false" />
+
+                        </RadioGroup>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+            </ScrollView>
+
+            <!-- Button area yang tetap di bawah -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:padding="8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <Button
+                    android:id="@+id/btnSaveDetail"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Satuan Tbl-Lbr"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:layout_marginTop="12dp"/>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="1dp"
-                    app:strokeColor="#E0E0E0">
-
-                    <RadioGroup
-                        android:id="@+id/radioGroupUOMTblLebar"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="8dp">
-
-                        <RadioButton
-                            android:id="@+id/radioMillimeter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="28dp"
-                            android:text="Millimeter"
-                            android:textSize="15sp"
-                            android:checked="true"
-                            android:layout_marginBottom="2dp"/>
-
-                        <RadioButton
-                            android:id="@+id/radioInch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="28dp"
-                            android:text="Inch"
-                            android:textSize="15sp"/>
-
-                    </RadioGroup>
-
-                </com.google.android.material.card.MaterialCardView>
-
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Satuan Panjang"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="4dp"/>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="1dp"
-                    app:strokeColor="#E0E0E0">
-
-                    <RadioGroup
-                        android:id="@+id/radioGroupUOMPanjang"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="8dp">
-
-                        <RadioButton
-                            android:id="@+id/radioFeet"
-                            android:layout_width="wrap_content"
-                            android:layout_height="28dp"
-                            android:text="Feet"
-                            android:checked="true"
-                            android:textSize="15sp"/>
-
-                        <RadioButton
-                            android:id="@+id/radioMeter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="28dp"
-                            android:text="Meter"
-                            android:textSize="15sp"
-                            android:layout_marginBottom="2dp"
-                            android:enabled="false" />
-
-                        <RadioButton
-                            android:id="@+id/radioCentimeter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="28dp"
-                            android:text="Centimeter"
-                            android:textSize="15sp"
-                            android:layout_marginBottom="2dp"
-                            android:enabled="false" />
-
-                    </RadioGroup>
-
-                </com.google.android.material.card.MaterialCardView>
-
+                    android:layout_weight="1"
+                    android:text="Simpan" />
             </LinearLayout>
 
         </LinearLayout>
 
     </LinearLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="List Detail"
+        android:textSize="18sp"
+        android:paddingTop="16dp"
+        android:textStyle="bold"
+        android:textColor="@color/black" />
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
+        android:layout_height="0dp"
+        android:layout_weight="0.4"
         android:orientation="vertical">
 
         <!-- Header Tabel -->

@@ -1475,7 +1475,7 @@ public class BongkarSusun extends AppCompatActivity {
 
     private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, String tableH) {
         // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         // Set data pada TextView
         ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);

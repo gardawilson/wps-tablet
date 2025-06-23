@@ -22,6 +22,8 @@ rxandroid = "3.0.2"
 paging = "3.1.0"  # Versi terbaru Paging 3
 recyclerview = "1.2.1"  # Versi terbaru RecyclerView
 java_websocket = "1.5.2"
+swiperefresh = "1.1.0"
+
 
 
 
@@ -54,6 +56,8 @@ rxandroid = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = 
 paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java_websocket" }
+swiperefresh = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefresh" }
+
 
 
 

@@ -33,7 +33,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 
-import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -72,12 +71,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 
-
-
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
@@ -1245,7 +1239,7 @@ public class FingerJoint extends AppCompatActivity {
 
     private void showTooltip(View anchorView, String noFJ, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3) {
         // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout, null);
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
 
         // Set data pada TextView
         ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noFJ);
