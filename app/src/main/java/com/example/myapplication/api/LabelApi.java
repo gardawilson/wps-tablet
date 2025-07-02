@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.example.myapplication.DatabaseConfig;
 import com.example.myapplication.model.CustomerData;
+import com.example.myapplication.model.OutputDataST;
 import com.example.myapplication.model.STPembelianData;
 import com.example.myapplication.model.STPembelianDataReject;
 import com.example.myapplication.model.STUpahData;
@@ -408,6 +409,35 @@ public class LabelApi {
             Log.e("DB_INSERT", "General Exception: " + ex.getMessage());
             ex.printStackTrace();
         }
+    }
+
+
+    public static List<OutputDataST> getNoSTByDateCreate(String dateCreate) {
+        List<OutputDataST> noSTList = new ArrayList<>();
+
+        String query = "SELECT NoST, HasBeenPrinted FROM ST_h " +
+                "WHERE CONVERT(date, DateCreate) = CONVERT(date, ?) " +
+                "ORDER BY NoST DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, dateCreate);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String noST = rs.getString("NoST");
+                    boolean hasBeenPrinted = rs.getBoolean("HasBeenPrinted");
+
+                    noSTList.add(new OutputDataST(noST, hasBeenPrinted));
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoST + status: " + e.getMessage());
+        }
+
+        return noSTList;
     }
 
 

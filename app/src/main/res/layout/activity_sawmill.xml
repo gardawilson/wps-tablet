@@ -58,13 +58,11 @@
                     android:text="Ubah" />
 
                 <Button
-                    android:id="@+id/btnSimpan"
+                    android:id="@+id/btnHapusData"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
-                    android:layout_marginRight="8dp"
                     android:layout_weight="1"
-                    android:text="Hapus"
-                    android:enabled="false"/>
+                    android:text="Hapus" />
 
             </LinearLayout>
 
@@ -148,8 +146,8 @@
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
-                            android:layout_weight="0.5"
-                            android:text="Meja"
+                            android:layout_weight="1"
+                            android:text="Operator"
                             android:padding="8dp"
                             android:gravity="center"
                             android:textStyle="bold"
@@ -178,8 +176,8 @@
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:text="Operator"
+                            android:layout_weight="0.5"
+                            android:text="Meja"
                             android:padding="8dp"
                             android:gravity="center"
                             android:textStyle="bold"

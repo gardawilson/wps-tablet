@@ -718,7 +718,7 @@
                 android:layout_marginEnd="4dp"
                 android:layout_marginBottom="4dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp"
+                app:cardElevation="4dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/inner_card_top_left"
                 app:layout_constraintTop_toTopOf="parent"
@@ -826,21 +826,21 @@
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
 
-<!--                            <View-->
-<!--                                android:layout_width="1px"-->
-<!--                                android:layout_height="match_parent"-->
-<!--                                android:background="@color/gray" />-->
+                            <!--                            <View-->
+                            <!--                                android:layout_width="1px"-->
+                            <!--                                android:layout_height="match_parent"-->
+                            <!--                                android:background="@color/gray" />-->
 
-<!--                            &lt;!&ndash; Kolom Tanggal &ndash;&gt;-->
-<!--                            <TextView-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="1"-->
-<!--                                android:gravity="center"-->
-<!--                                android:padding="8dp"-->
-<!--                                android:text="Aksi"-->
-<!--                                android:textColor="@color/white"-->
-<!--                                android:textStyle="bold" />-->
+                            <!--                            &lt;!&ndash; Kolom Tanggal &ndash;&gt;-->
+                            <!--                            <TextView-->
+                            <!--                                android:layout_width="0dp"-->
+                            <!--                                android:layout_height="wrap_content"-->
+                            <!--                                android:layout_weight="1"-->
+                            <!--                                android:gravity="center"-->
+                            <!--                                android:padding="8dp"-->
+                            <!--                                android:text="Aksi"-->
+                            <!--                                android:textColor="@color/white"-->
+                            <!--                                android:textStyle="bold" />-->
 
                         </TableRow>
 
@@ -870,6 +870,7 @@
                 android:id="@+id/inner_card_top_left"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
+                android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 android:layout_marginBottom="4dp"
                 app:cardCornerRadius="8dp"
@@ -1023,7 +1024,6 @@
                             android:id="@+id/BtnInputDetailST"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1.4"
                             android:text="Tetapkan" />
 
                         <Button
@@ -1067,7 +1067,7 @@
                         android:id="@+id/sisaPCS"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Balance : 0"
+                        android:text="Sisa : 0"
                         android:padding="4dp"
                         android:textStyle="bold" />
 
@@ -1164,25 +1164,50 @@
                 android:id="@+id/inner_card_top_right"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_weight="1"
-                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0">
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_center"
+                app:layout_constraintEnd_toEndOf="@id/inner_card_label_list"
+                app:layout_constraintHorizontal_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <ImageButton
+                        android:id="@+id/btnSwapToLabelList"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="4dp"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:src="@drawable/swap_horiz" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:textSize="16sp"
+                        android:text="Detail"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <ScrollView
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:fillViewport="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:background="#FFFFFF"
                         android:padding="8dp">
@@ -1431,6 +1456,138 @@
                     </LinearLayout>
 
                 </ScrollView>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- CardView Atas Kanan -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/inner_card_label_list"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:layout_constraintBottom_toTopOf="@id/inner_card_bottom"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintStart_toEndOf="@id/inner_card_top_right"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Konten Utama -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <ImageButton
+                                android:id="@+id/btnSwapToUOM"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:padding="4dp"
+                                android:background="?android:attr/selectableItemBackground"
+                                android:src="@drawable/swap_horiz"
+                                android:layout_gravity="start"
+                                android:contentDescription="Tambah Data" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:textSize="16sp"
+                                android:text="Ouput"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Header Tabel -->
+                        <TableLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#EFEFEF">
+
+                            <TableRow
+                                android:background="@color/hijau">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:padding="8dp"
+                                    android:textSize="18sp"
+                                    android:text="Label"
+                                    android:gravity="center"
+                                    android:layout_weight="0.7"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white" />
+
+                                <View
+                                    android:layout_width="1px"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/gray" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:padding="8dp"
+                                    android:text="P"
+                                    android:textSize="18sp"
+                                    android:gravity="center"
+                                    android:layout_weight="0.3"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white" />
+                            </TableRow>
+                        </TableLayout>
+
+                        <!-- Isi Tabel -->
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1">
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <ProgressBar
+                                    android:id="@+id/loadingIndicatorLabelOutput"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_centerInParent="true"
+                                    android:visibility="gone" />
+
+                                <TableLayout
+                                    android:id="@+id/TableOutput"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:background="#EFEFEF"
+                                    android:stretchColumns="0" />
+                            </RelativeLayout>
+                        </ScrollView>
+                    </LinearLayout>
+
+                    <!-- TextView Mengambang di Bawah -->
+                    <TextView
+                        android:id="@+id/labelCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:padding="4dp"
+                        android:background="#E6FFFFFF"
+                        android:text="Total : 0"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
             </androidx.cardview.widget.CardView>
 

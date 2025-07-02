@@ -128,14 +128,32 @@ public class SawnTimberPembelian extends AppCompatActivity {
         });
 
         btnSwapToReject.setOnClickListener(v -> {
-            rejectLayoutView.setVisibility(View.VISIBLE);
-            nonRejectLayoutView.setVisibility(View.GONE);
+            flipCard(nonRejectLayoutView, rejectLayoutView);
         });
 
         btnSwapToNonReject.setOnClickListener(v -> {
-            rejectLayoutView.setVisibility(View.GONE);
-            nonRejectLayoutView.setVisibility(View.VISIBLE);
+            flipCard(rejectLayoutView, nonRejectLayoutView);
         });
+    }
+
+    private void flipCard(View toHide, View toShow) {
+        // Animasi keluar (rotasi keluar)
+        toHide.animate()
+                .rotationY(90f)
+                .setDuration(150)
+                .withEndAction(() -> {
+                    toHide.setVisibility(View.GONE);
+                    toHide.setRotationY(0f); // reset rotasi
+
+                    // Munculkan view baru dengan rotasi Y -90°
+                    toShow.setRotationY(-90f);
+                    toShow.setVisibility(View.VISIBLE);
+                    toShow.animate()
+                            .rotationY(0f)
+                            .setDuration(150)
+                            .start();
+                })
+                .start();
     }
 
     // Mengambil data tooltip dan menampilkan tooltip

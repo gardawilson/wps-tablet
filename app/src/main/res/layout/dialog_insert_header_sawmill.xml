@@ -15,19 +15,18 @@
             android:id="@+id/title_left"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.9"
-            android:text="Create Sawmill Header"
+            android:layout_weight="1"
+            android:text="Sawmill Header"
             android:textColor="@color/black"
             android:textSize="25sp"
             android:textStyle="bold" />
 
         <ImageButton
-            android:id="@+id/btnCloseDialogInputNoPST"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:id="@+id/btnCloseDialogInputHeader"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="?android:attr/selectableItemBackground"
             android:src="@drawable/ic_close"
-            android:layout_weight="0.1"
             android:contentDescription="Close"
             android:scaleType="fitEnd"/>
     </LinearLayout>
@@ -330,7 +329,7 @@
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
-                    android:text="Jlh Balok"
+                    android:text="Balok Terpakai"
                     android:textSize="18sp"
                     android:textColor="@color/black" />
 
@@ -346,7 +345,7 @@
                     android:id="@+id/editJlhBalokTerpakai"
                     android:layout_width="0dp"
                     android:layout_height="36dp"
-                    android:layout_weight="1"
+                    android:layout_weight="0.5"
                     android:padding="6dp"
                     android:textSize="18sp"
                     android:background="@drawable/border_input"
@@ -358,25 +357,18 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.5"
-                    android:text="Berat Balok"
+                    android:text="Berat Balok : "
                     android:textSize="18sp"
                     android:textColor="@color/black"
                     android:gravity="end"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=":"
-                    android:textSize="18sp"
-                    android:paddingRight="8dp"
-                    android:paddingLeft="8dp"
-                    android:textColor="@color/black" />
+
 
                 <EditText
                     android:id="@+id/editBeratBalokTim"
                     android:layout_width="0dp"
                     android:layout_height="36dp"
-                    android:layout_weight="1"
+                    android:layout_weight="0.5"
                     android:padding="6dp"
                     android:textSize="18sp"
                     android:background="@drawable/border_input"
@@ -408,16 +400,16 @@
                     android:paddingRight="8dp"
                     android:textColor="@color/black" />
 
-                <EditText
+                <AutoCompleteTextView
                     android:id="@+id/editNoMeja"
                     android:layout_width="0dp"
                     android:layout_height="36dp"
-                    android:layout_weight="1"
+                    android:layout_weight="0.5"
                     android:padding="6dp"
                     android:textSize="18sp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp"
-                    android:hint="Nomor Truk"
+                    android:hint="Nomor Meja"
                     android:inputType="number"/>
 
                 <TextView
@@ -432,7 +424,7 @@
                 <Spinner
                     android:id="@+id/spinShift"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_weight="0.5"
                     android:layout_height="36dp"
                     android:background="@drawable/border_input"
                     android:elevation="1dp" />
@@ -597,7 +589,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="0.4"
                     android:layout_height="36dp"
-                    android:text="-"
+                    android:text="0"
                     android:padding="6dp"
                     android:textSize="18sp"
                     android:elevation="1dp"
@@ -615,53 +607,53 @@
 
             </LinearLayout>
 
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="horizontal"-->
-<!--                android:gravity="center_vertical"-->
-<!--                android:layout_marginBottom="15dp"-->
-<!--                >-->
+            <!--            <LinearLayout-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:orientation="horizontal"-->
+            <!--                android:gravity="center_vertical"-->
+            <!--                android:layout_marginBottom="15dp"-->
+            <!--                >-->
 
-<!--                <TextView-->
-<!--                    android:layout_width="120dp"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="Jam"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:textColor="@color/black"-->
-<!--                    android:visibility="invisible"/>-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="120dp"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:text="Jam"-->
+            <!--                    android:textSize="14sp"-->
+            <!--                    android:textColor="@color/black"-->
+            <!--                    android:visibility="invisible"/>-->
 
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text=":"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:paddingRight="8dp"-->
-<!--                    android:textColor="@color/black"-->
-<!--                    android:visibility="invisible"/>-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:text=":"-->
+            <!--                    android:textSize="14sp"-->
+            <!--                    android:paddingRight="8dp"-->
+            <!--                    android:textColor="@color/black"-->
+            <!--                    android:visibility="invisible"/>-->
 
-<!--                <TextView-->
-<!--                    android:id="@+id/tvTotalJamKerja"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_weight="0.1"-->
-<!--                    android:layout_height="36dp"-->
-<!--                    android:text="-"-->
-<!--                    android:padding="6dp"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:elevation="1dp"-->
-<!--                    android:focusable="false"/>-->
+            <!--                <TextView-->
+            <!--                    android:id="@+id/tvTotalJamKerja"-->
+            <!--                    android:layout_width="0dp"-->
+            <!--                    android:layout_weight="0.1"-->
+            <!--                    android:layout_height="36dp"-->
+            <!--                    android:text="-"-->
+            <!--                    android:padding="6dp"-->
+            <!--                    android:textSize="14sp"-->
+            <!--                    android:elevation="1dp"-->
+            <!--                    android:focusable="false"/>-->
 
-<!--                <TextView-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:layout_height="36dp"-->
-<!--                    android:text="Jam"-->
-<!--                    android:padding="6dp"-->
-<!--                    android:textSize="14sp"-->
-<!--                    android:elevation="1dp"-->
-<!--                    android:layout_gravity="start"/>-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="0dp"-->
+            <!--                    android:layout_weight="1"-->
+            <!--                    android:layout_height="36dp"-->
+            <!--                    android:text="Jam"-->
+            <!--                    android:padding="6dp"-->
+            <!--                    android:textSize="14sp"-->
+            <!--                    android:elevation="1dp"-->
+            <!--                    android:layout_gravity="start"/>-->
 
-<!--            </LinearLayout>-->
+            <!--            </LinearLayout>-->
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -711,7 +703,7 @@
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
-                    android:text="Jlh Batang"
+                    android:text="Jlh Rajang"
                     android:textSize="18sp"
                     android:textColor="@color/black" />
 

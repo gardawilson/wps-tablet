@@ -49,10 +49,6 @@ public class SawmillDetailData {
         }
     }
 
-    public void setPcs(int pcs) {
-        this.pcs = pcs;
-    }
-
     public String getIsBagusKulitLabel() {
         switch (isBagusKulit) {
             case 0: return "-";
@@ -60,5 +56,46 @@ public class SawmillDetailData {
             case 2: return "KULIT";
             default: return "Tidak diketahui";
         }
+    }
+
+    // Setter (pastikan tidak duplikat)
+    public void setTebal(float tebal) {
+        this.tebal = tebal;
+    }
+
+    public void setLebar(float lebar) {
+        this.lebar = lebar;
+    }
+
+    public void setPanjang(float panjang) {
+        this.panjang = panjang;
+    }
+
+    public void setPcs(int pcs) {
+        this.pcs = pcs;
+    }
+
+    public void setLocal(boolean local) {
+        isLocal = local;
+    }
+
+    public void setIdUOMTblLebar(int idUOMTblLebar) {
+        this.idUOMTblLebar = idUOMTblLebar;
+    }
+
+    public void setIdUOMPanjang(int idUOMPanjang) {
+        this.idUOMPanjang = idUOMPanjang;
+    }
+
+    public void setIsBagusKulit(int isBagusKulit) {
+        this.isBagusKulit = isBagusKulit;
+    }
+
+    public void setIdGradeKB(int idGradeKB) {
+        this.idGradeKB = idGradeKB;
+    }
+
+    public void setNamaGrade(String namaGrade) {
+        this.namaGrade = namaGrade;
     }
 }

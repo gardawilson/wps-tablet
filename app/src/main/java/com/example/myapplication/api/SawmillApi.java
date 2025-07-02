@@ -36,7 +36,7 @@ import java.util.Map;
 public class SawmillApi {
 
     public static String getTanggalTutupTransaksi() {
-        String query = "SELECT TOP 1 [PeriodHarian] FROM [WPS_Test].[dbo].[MstTutupTransaksiHarian] ORDER BY PeriodHarian DESC";
+        String query = "SELECT TOP 1 PeriodHarian FROM MstTutupTransaksiHarian ORDER BY PeriodHarian DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query);
@@ -65,7 +65,7 @@ public class SawmillApi {
         Map<String, Integer> stokMapUmum = getTotalStokTersediaPerKayuBulat();
         Map<String, Integer> stokMapRambung = getTotalStokTersediaPerKayuBulatRambung();
 
-        String query = "SELECT TOP 20 " +
+        String query = "SELECT TOP 50 " +
                 "h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, " +
                 "CASE " +
                 "WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator " +
@@ -259,10 +259,76 @@ public class SawmillApi {
     }
 
 
+    public static List<String> getAllNoMeja() {
+        List<String> list = new ArrayList<>();
+        String query = "SELECT NoMeja FROM MstMesinSawmill ORDER BY NoMeja ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(rs.getString("NoMeja"));
+            }
+        } catch (SQLException e) {
+            Log.e("SawmillApi", "Gagal mengambil semua NoMeja: " + e.getMessage());
+        }
+
+        return list;
+    }
+
+
+    public static SawmillData getOperatorByNoMeja(String noMeja) {
+        String query = "SELECT NoMeja, IdOperator1, IdOperator2 FROM MstMesinSawmill WHERE NoMeja = ?";
+
+        Log.d("SawmillApi", "getOperatorByNoMeja() dipanggil dengan NoMeja: " + noMeja);
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noMeja);
+            Log.d("SawmillApi", "Query disiapkan: " + query);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int idOp1 = rs.getInt("IdOperator1");
+                    int idOp2 = rs.getInt("IdOperator2");
+                    Log.d("SawmillApi", "Data ditemukan - IdOperator1: " + idOp1 + ", IdOperator2: " + idOp2);
+
+                    return new SawmillData(
+                            null, null, null,      // noSTSawmill, shift, tglSawmill
+                            null,                  // noKayuBulat
+                            rs.getString("NoMeja"),// noMeja
+                            null,                  // operator
+                            0, null, null, 0, null, null,
+                            null, 0, 0.0,
+                            null, null,
+                            idOp1,
+                            idOp2
+                    );
+                } else {
+                    Log.w("SawmillApi", "Tidak ditemukan data operator untuk NoMeja: " + noMeja);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("SawmillApi", "Error fetching operator by NoMeja: " + e.getMessage(), e);
+        }
+
+        return null;
+    }
+
+
+
     public static List<String> getNoKayuBulatSuggestions(String keyword) {
         List<String> suggestions = new ArrayList<>();
 
-        String query = "SELECT TOP 10 NoKayuBulat FROM KayuBulat_h WHERE NoKayuBulat LIKE ? AND DateUsage IS NULL ORDER BY NoKayuBulat ASC";
+        String query = "SELECT TOP 10 NoKayuBulat " +
+                "FROM KayuBulat_h " +
+                "WHERE NoKayuBulat LIKE ? " +
+                "AND DateUsage IS NULL " +
+                "AND NoKayuBulat NOT IN (SELECT NoKayuBulat FROM PenerimaanSTSawmill_h) " +
+                "ORDER BY NoKayuBulat ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
@@ -288,7 +354,9 @@ public class SawmillApi {
                 "FROM KayuBulat_h kb " +
                 "LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
                 "LEFT JOIN MstSupplier sp ON kb.IdSupplier = sp.IdSupplier " +
-                "WHERE kb.NoKayuBulat = ? AND kb.DateUsage IS NULL";
+                "WHERE kb.NoKayuBulat = ? " +
+                "AND kb.DateUsage IS NULL " +
+                "AND kb.NoKayuBulat NOT IN (SELECT NoKayuBulat FROM PenerimaanSTSawmill_h)";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
@@ -411,6 +479,9 @@ public class SawmillApi {
                 "(NoSTSawmill, Shift, TglSawmill, NoKayuBulat, NoMeja, IdSawmillSpecialCondition, BalokTerpakai, JlhBatangRajang, HourMeter, IdOperator1, IdOperator2, Remark, HourStart, HourEnd, JamKerja) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
+
+
         try (PreparedStatement stmt = con.prepareStatement(query)) {
             String formattedTgl = formatToDatabaseDate(tglSawmill);
 
@@ -434,7 +505,11 @@ public class SawmillApi {
             stmt.setString(12, remark);
 
             stmt.setString(13, jamMulai);
-            stmt.setString(14, jamBerhenti);
+            if (jamBerhenti == null || jamBerhenti.isEmpty()) {
+                stmt.setNull(14, java.sql.Types.TIME);
+            } else {
+                stmt.setString(14, jamBerhenti); // atau setTime dengan Time.valueOf(...)
+            }
             stmt.setString(15, totalJamKerja);
 
             stmt.executeUpdate();
@@ -669,6 +744,9 @@ public class SawmillApi {
                                              int idOperator1, int idOperator2, String remark,
                                              String jamMulai, String jamBerhenti, String totalJamKerja) throws SQLException {
 
+        Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
+
+
         String query = "UPDATE STSawmill_h SET " +
                 "Shift = ?, TglSawmill = ?, NoKayuBulat = ?, NoMeja = ?, " +
                 "IdSawmillSpecialCondition = ?, BalokTerpakai = ?, JlhBatangRajang = ?, " +
@@ -736,6 +814,115 @@ public class SawmillApi {
     }
 
 
+    // DELETE SAWMILL DATA - BUNGKUS SEMUA DELETE KE DALAM 1 METHOD DENGAN TRANSACTION
+    public static void deleteSawmillData(String noSTSawmill, String jenisKayu) throws SQLException {
+        Connection con = null;
+
+        try {
+            Log.d("deleteSawmillData", "Mulai menghapus data: " + noSTSawmill + ", jenis kayu: " + jenisKayu);
+
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false); // mulai transaksi
+
+            if (jenisKayu != null && jenisKayu.toLowerCase().contains("rambung")) {
+                Log.d("deleteSawmillData", "Menghapus dari STSawmill_dBalokGantungKG");
+                deleteGantungKG(con, noSTSawmill);
+            } else {
+                Log.d("deleteSawmillData", "Menghapus dari STSawmill_dBalokGantung");
+                deleteGantung(con, noSTSawmill);
+            }
+
+            Log.d("deleteSawmillData", "Menghapus dari STSawmill_dBalokTim");
+            deleteBalokTim(con, noSTSawmill);
+
+            // 🆕 Tambahkan ini untuk hapus detail dan grade
+            Log.d("deleteSawmillData", "Menghapus dari STSawmill_d dan STSawmillKG_d");
+            deleteAllDetail(con, noSTSawmill, jenisKayu != null && jenisKayu.toLowerCase().contains("rambung"));
+
+            Log.d("deleteSawmillData", "Menghapus dari STSawmill_h");
+            deleteHeader(con, noSTSawmill);
+
+            con.commit();
+            Log.d("deleteSawmillData", "Transaksi berhasil di-commit");
+
+        } catch (SQLException e) {
+            if (con != null) {
+                try {
+                    con.rollback();
+                    Log.e("deleteSawmillData", "Rollback transaksi karena error: " + e.getMessage(), e);
+                } catch (SQLException rollbackEx) {
+                    Log.e("deleteSawmillData", "Gagal rollback: " + rollbackEx.getMessage(), rollbackEx);
+                }
+            }
+            throw e;
+        } finally {
+            if (con != null) {
+                try {
+                    con.close();
+                    Log.d("deleteSawmillData", "Koneksi ditutup");
+                } catch (SQLException e) {
+                    Log.e("deleteSawmillData", "Gagal menutup koneksi: " + e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+
+
+    private static void deleteGantung(Connection con, String noSTSawmill) throws SQLException {
+        String query = "DELETE FROM STSawmill_dBalokGantung WHERE NoSTSawmill = ?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, noSTSawmill);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void deleteGantungKG(Connection con, String noSTSawmill) throws SQLException {
+        String query = "DELETE FROM STSawmill_dBalokGantungKG WHERE NoSTSawmill = ?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, noSTSawmill);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void deleteBalokTim(Connection con, String noSTSawmill) throws SQLException {
+        String query = "DELETE FROM STSawmill_dBalokTim WHERE NoSTSawmill = ?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, noSTSawmill);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void deleteHeader(Connection con, String noSTSawmill) throws SQLException {
+        String query = "DELETE FROM STSawmill_h WHERE NoSTSawmill = ?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, noSTSawmill);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static void deleteAllDetail(Connection con, String noSTSawmill, boolean isRambung) throws SQLException {
+        if (isRambung) {
+            String deleteGradeQuery = "DELETE FROM STSawmillKG_d WHERE NoSTSawmill = ?";
+            try (PreparedStatement stmt = con.prepareStatement(deleteGradeQuery)) {
+                stmt.setString(1, noSTSawmill);
+                int rows = stmt.executeUpdate();
+                Log.d("deleteSawmillData", "Deleted " + rows + " rows from STSawmillKG_d");
+            }
+        }
+
+        String deleteDetailQuery = "DELETE FROM STSawmill_d WHERE NoSTSawmill = ?";
+        try (PreparedStatement stmt = con.prepareStatement(deleteDetailQuery)) {
+            stmt.setString(1, noSTSawmill);
+            int rows = stmt.executeUpdate();
+            Log.d("deleteSawmillData", "Deleted " + rows + " rows from STSawmill_d");
+        }
+    }
+
+
+
+
+
     public static boolean isHourRangeOverlapping(String tglSawmill, String noMeja, String newHourStart, String newHourEnd) {
         final String TAG = "CheckOverlap";
         String formattedTgl = formatToDatabaseDate(tglSawmill);
@@ -782,7 +969,7 @@ public class SawmillApi {
                     Log.d(TAG, "Membandingkan dengan record: Start=" + dbStart + ", End=" + dbEnd);
 
                     // Cek overlap
-                    if (!(newEnd.isBefore(dbStart) || newStart.isAfter(dbEnd))) {
+                    if (dbStart.isBefore(newEnd) && newStart.isBefore(dbEnd)) {
                         Log.d(TAG, "Overlap ditemukan!");
                         isOverlap = true;
                         break;
@@ -874,25 +1061,36 @@ public class SawmillApi {
         Collections.sort(detailDataList, new Comparator<SawmillDetailData>() {
             @Override
             public int compare(SawmillDetailData a, SawmillDetailData b) {
-                // Priority 0: Sort by isBagusKulit with custom order
+                // Priority 0: Sort by isBagusKulit
                 int kulitOrderA = getIsBagusKulitPriority(a.getIsBagusKulit());
                 int kulitOrderB = getIsBagusKulitPriority(b.getIsBagusKulit());
-
                 if (kulitOrderA != kulitOrderB) {
                     return Integer.compare(kulitOrderA, kulitOrderB);
                 }
 
-                // Priority 1: Sort by grade name
+                // Priority 1: Sort by grade
                 int gradeOrderA = getGradePriority(a.getNamaGrade(), a.getIsBagusKulit());
                 int gradeOrderB = getGradePriority(b.getNamaGrade(), b.getIsBagusKulit());
-
                 if (gradeOrderA != gradeOrderB) {
                     return Integer.compare(gradeOrderA, gradeOrderB);
                 }
 
-                // Priority 2: Sort by thickness (descending)
-                return Float.compare(b.getTebal(), a.getTebal());
+                // Priority 2: Sort by tebal (descending)
+                int compareTebal = Float.compare(b.getTebal(), a.getTebal());
+                if (compareTebal != 0) {
+                    return compareTebal;
+                }
+
+                // Priority 3: Sort by lebar (ascending)
+                int compareLebar = Float.compare(a.getLebar(), b.getLebar());
+                if (compareLebar != 0) {
+                    return compareLebar;
+                }
+
+                // Priority 4: Sort by panjang (ascending)
+                return Float.compare(a.getPanjang(), b.getPanjang());
             }
+
 
             private int getIsBagusKulitPriority(int isBagusKulit) {
                 // 0 = Kulit → 0 (paling atas)
@@ -1143,13 +1341,6 @@ public class SawmillApi {
             // Update ulang NoUrut agar berurutan mulai dari 1
             int newUrut = 1;
             for (int oldUrut : rowIds) {
-                try (PreparedStatement updateStmt = con.prepareStatement(
-                        "UPDATE STSawmill_d SET NoUrut = ? WHERE NoSTSawmill = ? AND NoUrut = ?")) {
-                    updateStmt.setInt(1, newUrut);
-                    updateStmt.setString(2, noSTSawmill);
-                    updateStmt.setInt(3, oldUrut);
-                    updateStmt.executeUpdate();
-                }
 
                 if (isRambung) {
                     try (PreparedStatement updateGradeStmt = con.prepareStatement(
@@ -1159,6 +1350,14 @@ public class SawmillApi {
                         updateGradeStmt.setInt(3, oldUrut);
                         updateGradeStmt.executeUpdate();
                     }
+                }
+
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE STSawmill_d SET NoUrut = ? WHERE NoSTSawmill = ? AND NoUrut = ?")) {
+                    updateStmt.setInt(1, newUrut);
+                    updateStmt.setString(2, noSTSawmill);
+                    updateStmt.setInt(3, oldUrut);
+                    updateStmt.executeUpdate();
                 }
 
                 newUrut++;
@@ -1173,6 +1372,98 @@ public class SawmillApi {
     }
 
 
+    public static String getHourEndByTanggalShiftMeja(String tgl, String noMeja) {
+        String hourEnd = "-"; // default jika HourStart null/kosong
+        String query = "SELECT TOP 1 HourStart, HourEnd FROM STSawmill_h " +
+                "WHERE TglSawmill = ? AND NoMeja = ? " +
+                "ORDER BY NoSTSawmill DESC"; // ambil data terbaru jika ada duplikat
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, tgl);
+            stmt.setString(2, noMeja);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                String hourStart = rs.getString("HourStart");
+                String hourEndRaw = rs.getString("HourEnd");
+
+                // Cek apakah HourStart tidak null dan tidak kosong
+                if (hourStart != null && !hourStart.trim().isEmpty()) {
+                    hourEnd = hourEndRaw; // gunakan HourEnd dari database
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("SawmillApi", "Gagal mengambil HourEnd: " + e.getMessage());
+        }
+        Log.d("SawmillApi", "Returned HourEnd = " + hourEnd);
+
+        return hourEnd;
+    }
+
+
+    public static boolean updateSawmillDetailItem(String noSTSawmill, int noUrut, SawmillDetailData data, boolean isRambung) {
+        final String TAG = "SawmillDB-UpdateDetail";
+
+        // Log semua parameter yang masuk
+        Log.d(TAG, "PARAMETER MASUK:");
+        Log.d(TAG, "noSTSawmill: " + noSTSawmill);
+        Log.d(TAG, "noUrut: " + noUrut);
+        Log.d(TAG, "isRambung: " + isRambung);
+
+        if (data != null) {
+            Log.d(TAG, "data.tebal: " + data.getTebal());
+            Log.d(TAG, "data.lebar: " + data.getLebar());
+            Log.d(TAG, "data.panjang: " + data.getPanjang());
+            Log.d(TAG, "data.pcs: " + data.getPcs());
+            Log.d(TAG, "data.isLocal: " + data.isLocal());
+            Log.d(TAG, "data.idUOMTblLebar: " + data.getIdUOMTblLebar());
+            Log.d(TAG, "data.idUOMPanjang: " + data.getIdUOMPanjang());
+            Log.d(TAG, "data.isBagusKulit: " + data.getIsBagusKulit());
+            Log.d(TAG, "data.idGradeKB: " + data.getIdGradeKB());
+        } else {
+            Log.e(TAG, "data object is NULL");
+        }
+
+        String updateDetailQuery = "UPDATE STSawmill_d SET Tebal = ?, Lebar = ?, Panjang = ?, JmlhBatang = ?, IsLocal = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, IsBagusKulit = ? WHERE NoSTSawmill = ? AND NoUrut = ?";
+        String updateGradeQuery = "UPDATE STSawmillKG_d SET IdGradeKB = ? WHERE NoSTSawmill = ? AND NoUrut = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            con.setAutoCommit(false);
+
+            if (isRambung) {
+                try (PreparedStatement stmt = con.prepareStatement(updateGradeQuery)) {
+                    stmt.setInt(1, data.getIdGradeKB());
+                    stmt.setString(2, noSTSawmill);
+                    stmt.setInt(3, noUrut);
+                    stmt.executeUpdate();
+                }
+            }
+
+            try (PreparedStatement stmt = con.prepareStatement(updateDetailQuery)) {
+                stmt.setFloat(1, data.getTebal());
+                stmt.setFloat(2, data.getLebar());
+                stmt.setFloat(3, data.getPanjang());
+                stmt.setInt(4, data.getPcs());
+                stmt.setBoolean(5, data.isLocal());
+                stmt.setInt(6, data.getIdUOMTblLebar());
+                stmt.setInt(7, data.getIdUOMPanjang());
+                stmt.setInt(8, data.getIsBagusKulit());
+                stmt.setString(9, noSTSawmill);
+                stmt.setInt(10, noUrut);
+                stmt.executeUpdate();
+            }
+
+            con.commit();
+            Log.i(TAG, "Berhasil update detail NoUrut=" + noUrut + " untuk NoSTSawmill: " + noSTSawmill);
+            return true;
+
+        } catch (SQLException e) {
+            Log.e(TAG, "SQL Error saat update detail:", e);
+            return false;
+        }
+    }
 
 
 

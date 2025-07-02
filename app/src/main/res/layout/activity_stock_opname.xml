@@ -402,7 +402,7 @@
                 android:textSize="18sp"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:text="total_data_stock: 0"
+                android:text="Total Label: 0"
                 android:layout_marginEnd="8dp"/>
 
             <TextView
@@ -413,7 +413,7 @@
                 android:textSize="18sp"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:text="total_data_before: 0"
+                android:text="Sisa Label : 0"
                 android:layout_marginEnd="8dp"/>
 
             <TextView
@@ -424,7 +424,7 @@
                 android:textSize="18sp"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:text="total_data_after: 0" />
+                android:text="Total Scan : 0" />
 
         </LinearLayout>
 

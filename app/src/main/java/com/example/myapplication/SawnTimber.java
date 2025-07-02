@@ -9,15 +9,20 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -27,6 +32,7 @@ import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.PopupWindow;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.LinearLayout;
@@ -54,6 +60,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
 
+import com.example.myapplication.api.LabelApi;
+import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.model.OutputDataST;
+import com.example.myapplication.model.SawmillData;
+import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.itextpdf.kernel.geom.AffineTransform;
 import android.print.PrintManager;
@@ -77,6 +88,7 @@ import android.content.SharedPreferences;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -149,6 +161,8 @@ import android.text.TextUtils;
 import com.itextpdf.layout.element.Paragraph;
 import java.math.RoundingMode;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SawnTimber extends AppCompatActivity {
 
@@ -226,6 +240,11 @@ public class SawnTimber extends AppCompatActivity {
     private ScrollView scrollHeader;
     private Spinner SpinBongkarSusun;
     private CheckBox cbBongkarSusun;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private TableLayout TableOutput;
+    private CardView inner_card_label_list;
+    private ImageButton btnSwapToUOM;
+    private ImageButton btnSwapToLabelList ;
 
 
 
@@ -293,17 +312,19 @@ public class SawnTimber extends AppCompatActivity {
         scrollHeader = findViewById(R.id.scrollHeader);
         SpinBongkarSusun = findViewById(R.id.SpinBongkarSusun);
         cbBongkarSusun = findViewById(R.id.cbBongkarSusun);
-
-
+        TableOutput = findViewById(R.id.TableOutput);
         inner_card_detail = findViewById(R.id.inner_card_detail);
         inner_card_top_left = findViewById(R.id.inner_card_top_left);
-        inner_card_top_center = findViewById(R.id.inner_card_top_center);
         inner_card_top_right = findViewById(R.id.inner_card_top_right);
 
-
+        inner_card_top_center = findViewById(R.id.inner_card_top_center);
+        inner_card_label_list = findViewById(R.id.inner_card_label_list);
+        btnSwapToUOM = findViewById(R.id.btnSwapToUOM);
+        btnSwapToLabelList = findViewById(R.id.btnSwapToLabelList);
         inner_card_detail.setVisibility(View.GONE);
         NoST_display.setVisibility(View.GONE);
         SpinLokasi.setEnabled(false);
+        inner_card_top_right.setVisibility(View.GONE);
         disableForm();
 
 
@@ -332,6 +353,9 @@ public class SawnTimber extends AppCompatActivity {
             loadPenerimaanSTUpah(noPenST);
         }
 
+        setCurrentDateTime();
+        onClickDateOutput(rawDate);
+
         noPenerimaanST = findViewById(R.id.noPenerimaanST);
         noPenerimaanST.setText(noPenST);
 
@@ -357,8 +381,6 @@ public class SawnTimber extends AppCompatActivity {
                         .start();
             }
         });
-
-
 
         // Menangani aksi 'Enter' pada keyboard
         DetailTebalST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -480,6 +502,7 @@ public class SawnTimber extends AppCompatActivity {
 
             setCurrentDateTimeVacuum();
 
+            addRowButton.setVisibility(View.GONE);
             BtnSimpanST.setEnabled(true);
             BtnTambahStickST.setEnabled(true);
             BtnInputDetailST.setEnabled(true);
@@ -501,6 +524,8 @@ public class SawnTimber extends AppCompatActivity {
             resetGradeData();
             DetailPanjangST.setText("4");
             remarkLabel.setText("");
+            addRowButton.setVisibility(View.GONE);
+
 
             if (labelVersion == -1) {
                 noPenerimaanST.setText("");
@@ -560,7 +585,8 @@ public class SawnTimber extends AppCompatActivity {
             DetailLebarST.setText("");
             DetailPcsST.setText("");
 
-            sisaPCS.setText("Balance : 0");
+            addRowButton.setVisibility(View.GONE);
+            sisaPCS.setText("Sisa : 0");
 
         });
 
@@ -910,9 +936,96 @@ public class SawnTimber extends AppCompatActivity {
                 SpinBongkarSusun.setEnabled(false);
             }
         });
+
+        btnSwapToUOM.setOnClickListener(v -> {
+            flipCard(inner_card_label_list, inner_card_top_right);
+        });
+
+        btnSwapToLabelList.setOnClickListener(v -> {
+            flipCard(inner_card_top_right, inner_card_label_list);
+        });
+
     }
 
     //METHOD SAWN TIMBER
+
+    private void flipTwoToOne(View toHide1, View toHide2, View toShow) {
+        // Animasi hide kedua view secara paralel
+        toHide1.animate()
+                .rotationY(90f)
+                .setDuration(100)
+                .start();
+
+        toHide2.animate()
+                .rotationY(90f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    toHide1.setVisibility(View.GONE);
+                    toHide2.setVisibility(View.GONE);
+                    toHide1.setRotationY(0f);
+                    toHide2.setRotationY(0f);
+
+                    // Munculkan view baru
+                    toShow.setRotationY(-90f);
+                    toShow.setVisibility(View.VISIBLE);
+                    toShow.animate()
+                            .rotationY(0f)
+                            .setDuration(100)
+                            .start();
+                })
+                .start();
+    }
+
+    private void flipOneToTwo(View toHide, View toShow1, View toShow2) {
+        // Animasi hide view pertama
+        toHide.animate()
+                .rotationY(90f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    toHide.setVisibility(View.GONE);
+                    toHide.setRotationY(0f);
+
+                    // Setel rotasi awal untuk kedua view yang akan muncul
+                    toShow1.setRotationY(-90f);
+                    toShow2.setRotationY(-90f);
+                    toShow1.setVisibility(View.VISIBLE);
+                    toShow2.setVisibility(View.VISIBLE);
+
+                    // Animasi muncul bersamaan
+                    toShow1.animate()
+                            .rotationY(0f)
+                            .setDuration(100)
+                            .start();
+
+                    toShow2.animate()
+                            .rotationY(0f)
+                            .setDuration(100)
+                            .start();
+                })
+                .start();
+    }
+
+
+    private void flipCard(View toHide, View toShow) {
+        // Animasi keluar (rotasi keluar)
+        toHide.animate()
+                .rotationY(90f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    toHide.setVisibility(View.GONE);
+                    toHide.setRotationY(0f); // reset rotasi
+
+                    // Munculkan view baru dengan rotasi Y -90°
+                    toShow.setRotationY(-90f);
+                    toShow.setVisibility(View.VISIBLE);
+                    toShow.animate()
+                            .rotationY(0f)
+                            .setDuration(100)
+                            .start();
+                })
+                .start();
+    }
+
 
     private void addNewRow() {
         // Membuat TableRow baru
@@ -995,7 +1108,7 @@ public class SawnTimber extends AppCompatActivity {
                     if (Float.parseFloat(row.panjang) == panjangAcuan) {
                         int updatedPcs = Integer.parseInt(row.pcs) + Integer.parseInt(pcs); // Tambahkan pcs yang dihapus
                         row.pcs = String.valueOf(updatedPcs); // Update pcs
-                        sisaPCS.setText("Balance : " + row.pcs);
+                        sisaPCS.setText("Sisa : " + row.pcs);
                     }
                 }
 
@@ -1063,7 +1176,7 @@ public class SawnTimber extends AppCompatActivity {
             for (DataRow row : temporaryDataListDetail) {
                 if (Float.parseFloat(row.panjang) == panjangAcuan) {
                     if (Integer.parseInt(row.pcs) <= Integer.parseInt(pcs)) {
-                        sisaPCS.setText("Balance : " + row.pcs);
+                        sisaPCS.setText("Sisa : " + row.pcs);
                         Toast.makeText(this, "Pcs melebihi jumlah sisa", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -1159,14 +1272,12 @@ public class SawnTimber extends AppCompatActivity {
         DetailPanjangST.setEnabled(false);
         DetailPcsST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
-        TglStickBundel.setEnabled(false);
         TglVacuum.setEnabled(false);
         SpinBongkarSusun.setEnabled(false);
         BtnSimpanST.setEnabled(false);
         inner_card_detail.setVisibility(View.VISIBLE);
         inner_card_top_left.setVisibility(View.GONE);
         inner_card_top_center.setVisibility(View.GONE);
-        inner_card_top_right.setVisibility(View.VISIBLE);
         remarkLabel.setEnabled(false);
         CBKering.setEnabled(false);
         cbSLP.setEnabled(false);
@@ -1174,6 +1285,8 @@ public class SawnTimber extends AppCompatActivity {
         cbBongkarSusun.setEnabled(false);
         radioBagus.setEnabled(false);
         radioKulit.setEnabled(false);
+
+        flipTwoToOne(inner_card_top_left, inner_card_top_center, inner_card_detail);
 
         for (ImageButton btn : deleteButtons) {
             btn.setVisibility(View.INVISIBLE);
@@ -1193,13 +1306,8 @@ public class SawnTimber extends AppCompatActivity {
         DetailPanjangST.setEnabled(true);
         DetailPcsST.setEnabled(true);
         BtnInputDetailST.setEnabled(true);
-        TglStickBundel.setEnabled(true);
         BtnSimpanST.setEnabled(true);
         BtnPrintST.setEnabled(true);
-        inner_card_detail.setVisibility(View.GONE);
-        inner_card_top_left.setVisibility(View.VISIBLE);
-        inner_card_top_center.setVisibility(View.VISIBLE);
-        inner_card_top_right.setVisibility(View.VISIBLE);
         NoKB_display.setVisibility(View.GONE);
         NoKayuBulat.setVisibility(View.VISIBLE);
         remarkLabel.setEnabled(true);
@@ -1209,6 +1317,8 @@ public class SawnTimber extends AppCompatActivity {
         cbBongkarSusun.setEnabled(true);
         radioBagus.setEnabled(true);
         radioKulit.setEnabled(true);
+
+        flipOneToTwo(inner_card_detail, inner_card_top_left, inner_card_top_center);
     }
 
 
@@ -1959,7 +2069,6 @@ public class SawnTimber extends AppCompatActivity {
         CBKering.setChecked(false);
         CBUpah.setChecked(false);
         SpinSPK.setSelection(0);
-        TglStickBundel.setText("");
         TglVacuum.setText("");
         NoKayuBulat.setQuery("", false);
         setSpinnerValue(SpinKayu, "-");
@@ -2091,8 +2200,378 @@ public class SawnTimber extends AppCompatActivity {
         String currentDate = dateFormat.format(new Date());
         TglStickBundel.setText(currentDate);
         rawDate = saveFormat.format(new Date());
-
     }
+
+    private void onClickDateOutput(String rawDate) {
+        executorService.execute(() -> {
+            List<OutputDataST> noSTList = LabelApi.getNoSTByDateCreate(rawDate);
+
+            runOnUiThread(() -> {
+                populateTableOutput(noSTList);
+            });
+        });
+    }
+
+    private void populateTableOutput(List<OutputDataST> noSTList) {
+        TextView labelCountView = findViewById(R.id.labelCount);
+
+        if (TableOutput == null) {
+            Log.e("populateTableOutput", "TableOutput tidak ditemukan di layout!");
+            return;
+        }
+
+        TableOutput.removeAllViews();
+
+        if (noSTList == null || noSTList.isEmpty()) {
+            TextView noData = new TextView(this);
+            noData.setText("Tidak ada label");
+            noData.setPadding(16, 16, 16, 16);
+            noData.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            TableOutput.addView(noData);
+
+            if (labelCountView != null) {
+                labelCountView.setText("Total : " + noSTList.size());
+            }
+            return;
+        }
+
+        for (int i = 0; i < noSTList.size(); i++) {
+            OutputDataST data = noSTList.get(i);
+            TableRow row = new TableRow(this);
+            row.setLayoutParams(new TableLayout.LayoutParams(
+                    TableLayout.LayoutParams.MATCH_PARENT,
+                    TableLayout.LayoutParams.WRAP_CONTENT  // ⬅️ ini penting
+            ));
+
+            // === Warna selang-seling ===
+            int bgColor = (i % 2 == 0)
+                    ? ContextCompat.getColor(this, R.color.background_cream) // genap
+                    : ContextCompat.getColor(this, R.color.white);            // ganjil
+            row.setBackgroundColor(bgColor);
+
+            // === Kolom 1: NoST ===
+            TextView noSTView = new TextView(this);
+            noSTView.setText(data.getNoST());
+            noSTView.setPadding(16, 16, 16, 16);
+            noSTView.setTextSize(16);
+            noSTView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            noSTView.setGravity(Gravity.CENTER);
+
+            TableRow.LayoutParams noSTParams = new TableRow.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.7f  // ⬅️ WRAP_CONTENT
+            );
+            noSTParams.gravity = Gravity.CENTER;
+            noSTView.setLayoutParams(noSTParams);
+
+
+            // === Divider ===
+            View divider = new View(this);
+            divider.setLayoutParams(new TableRow.LayoutParams(
+                    1, ViewGroup.LayoutParams.MATCH_PARENT));
+            divider.setBackgroundColor(ContextCompat.getColor(this, R.color.gray));
+
+            // === Kolom 2: Ikon Printed ===
+            ImageView iconView = new ImageView(this);
+            int iconRes = data.isHasBeenPrinted()
+                    ? R.drawable.ic_done     // printed
+                    : R.drawable.ic_undone;  // not printed
+            iconView.setImageResource(iconRes);
+            iconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            iconView.setPadding(8, 8, 8, 8);
+
+            TableRow.LayoutParams iconParams = new TableRow.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.3f  // ⬅️ WRAP_CONTENT
+            );
+            iconParams.gravity = Gravity.CENTER;
+            iconView.setLayoutParams(iconParams);
+
+            // Tambahkan ke row
+            row.addView(noSTView);
+            row.addView(divider);
+            row.addView(iconView);
+
+            // Tambahkan ke tabel
+            TableOutput.addView(row);
+
+            // Tambahkan OnClickListener untuk menampilkan tooltip
+            row.setOnClickListener(view -> {
+                String currentNoST = data.getNoST(); // Ambil nilai noST dari objek data saat ini
+                fetchDataAndShowTooltip(
+                        view,
+                        currentNoST,  // Gunakan noST dari data iterasi saat ini
+                        "ST_h",
+                        "ST_d",
+                        "NoST"
+                );
+            });
+            if (labelCountView != null) {
+                labelCountView.setText("Total : " + noSTList.size());
+            }
+        }
+    }
+
+
+    // Mengambil data tooltip dan menampilkan tooltip
+    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
+        executorService.execute(() -> {
+            // Ambil data tooltip menggunakan ProductionApi
+            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+
+            runOnUiThread(() -> {
+                if (tooltipData != null) {
+                    // Pengecekan lebih lanjut jika data dalam tooltipData null
+                    if (tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
+
+                        // Tampilkan tooltip dengan data yang diperoleh
+                        showTooltip(
+                                anchorView,
+                                tooltipData.getNoLabel(),
+                                tooltipData.getFormattedDateTime(),
+                                tooltipData.getJenis(),
+                                tooltipData.getSpkDetail(),
+                                tooltipData.getSpkAsalDetail(),
+                                tooltipData.getNamaGrade(),
+                                tooltipData.isLembur(),
+                                tooltipData.getTableData(),
+                                tooltipData.getTotalPcs(),
+                                tooltipData.getTotalM3(),
+                                tooltipData.getTotalTon(),
+                                tooltipData.getNoPlat(),
+                                tooltipData.getNoKBSuket(),
+                                tableH
+                        );
+
+
+
+                    } else {
+                        // Tampilkan pesan error jika data utama tidak ada
+                        Toast.makeText(this, "Data tooltip tidak lengkap", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Tampilkan pesan error jika tooltipData null
+                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        });
+    }
+
+    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, double totalTon, String noPlat, String noKBSuket, String tableH) {
+        // Inflate layout tooltip
+        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
+
+        // Set data pada TextView
+        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
+        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
+        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
+        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
+        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
+        ((TextView) tooltipView.findViewById(R.id.tvNoPlat)).setText(noPlat);
+        ((TextView) tooltipView.findViewById(R.id.tvNoKBSuket)).setText(noKBSuket);
+
+        // Referensi TableLayout
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+
+        // Membuat Header Tabel Secara Dinamis
+        TableRow headerRow = new TableRow(this);
+        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
+
+        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
+        for (String headerText : headerTexts) {
+            TextView headerTextView = new TextView(this);
+            headerTextView.setText(headerText);
+            headerTextView.setGravity(Gravity.CENTER);
+            headerTextView.setPadding(8, 8, 8, 8);
+            headerTextView.setTextColor(Color.WHITE);
+            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
+            headerRow.addView(headerTextView);
+        }
+
+        // Tambahkan Header ke TableLayout
+        tableLayout.addView(headerRow);
+
+        // Tambahkan Data ke TableLayout
+        for (String[] row : tableData) {
+            TableRow tableRow = new TableRow(this);
+            tableRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
+
+            for (String cell : row) {
+                TextView textView = new TextView(this);
+                textView.setText(cell);
+                textView.setGravity(Gravity.CENTER);
+                textView.setPadding(8, 8, 8, 8);
+                textView.setTextColor(Color.BLACK);
+                tableRow.addView(textView);
+            }
+            tableLayout.addView(tableRow);
+        }
+
+        // Tambahkan Baris untuk Total Pcs
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        totalRow.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan total dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            totalRow.addView(emptyCell);
+        }
+
+        TextView totalLabel = new TextView(this);
+        totalLabel.setText("Total :");
+        totalLabel.setGravity(Gravity.END);
+        totalLabel.setPadding(8, 8, 8, 8);
+        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalLabel);
+
+        // Cell untuk Total Pcs
+        TextView totalValue = new TextView(this);
+        totalValue.setText(String.valueOf(totalPcs));
+        totalValue.setGravity(Gravity.CENTER);
+        totalValue.setPadding(8, 8, 8, 8);
+        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(totalValue);
+
+        // Tambahkan totalRow ke TableLayout
+        tableLayout.addView(totalRow);
+
+        // Tambahkan Baris untuk Total M3
+        TableRow m3Row = new TableRow(this);
+        m3Row.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        ));
+
+        m3Row.setBackgroundColor(Color.WHITE);
+
+        // Cell kosong untuk memisahkan m3 dengan tabel
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setText(""); // Cell kosong
+            m3Row.addView(emptyCell);
+        }
+
+        TextView m3Label = new TextView(this);
+        m3Label.setText("M3 :");
+        m3Label.setGravity(Gravity.END);
+        m3Label.setPadding(8, 8, 8, 8);
+        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Label);
+
+        // Cell untuk Total M3
+        DecimalFormat df = new DecimalFormat("0.0000");
+        TextView m3Value = new TextView(this);
+        m3Value.setText(df.format(totalM3));
+        m3Value.setGravity(Gravity.CENTER);
+        m3Value.setPadding(8, 8, 8, 8);
+        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
+        m3Row.addView(m3Value);
+
+        // Tambahkan m3Row ke TableLayout
+        tableLayout.addView(m3Row);
+
+        //TOOLTIP VIEW PRECONDITION
+        if (tableH.equals("ST_h")) {
+            tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
+
+            // Tambahkan Baris untuk Total Ton
+            TableRow tonRow = new TableRow(this);
+            tonRow.setLayoutParams(new TableRow.LayoutParams(
+                    TableRow.LayoutParams.MATCH_PARENT,
+                    TableRow.LayoutParams.WRAP_CONTENT
+            ));
+
+            tonRow.setBackgroundColor(Color.WHITE);
+
+            // Cell kosong untuk memisahkan m3 dengan tabel
+            for (int i = 0; i < 2; i++) {
+                TextView emptyCell = new TextView(this);
+                emptyCell.setText(""); // Cell kosong
+                tonRow.addView(emptyCell);
+            }
+
+            TextView tonLabel = new TextView(this);
+            tonLabel.setText("Ton :");
+            tonLabel.setGravity(Gravity.END);
+            tonLabel.setPadding(8, 8, 8, 8);
+            tonLabel.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonLabel);
+
+            // Cell untuk Total Ton
+            TextView tonValue = new TextView(this);
+            tonValue.setText(df.format(totalTon));
+            tonValue.setGravity(Gravity.CENTER);
+            tonValue.setPadding(8, 8, 8, 8);
+            tonValue.setTypeface(Typeface.DEFAULT_BOLD);
+            tonRow.addView(tonValue);
+
+            // Tambahkan m3Row ke TableLayout
+            tableLayout.addView(tonRow);
+        } else {
+            tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
+            tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+        }
+
+        // Buat PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                tooltipView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setFocusable(true);
+
+        // Ukur ukuran tooltip sebelum menampilkannya
+        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int tooltipWidth = tooltipView.getMeasuredWidth();
+        int tooltipHeight = tooltipView.getMeasuredHeight();
+
+        // Dapatkan posisi anchorView
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+
+        // Hitung posisi tooltip
+        int x = location[0] - tooltipWidth;
+        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int screenHeight = displayMetrics.heightPixels;
+        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
+
+        // Menaikkan pointer ketika popup melebihi batas layout
+        Log.d("TooltipDebug", "TrianglePointer Y: " + y);
+        Log.d("TooltipDebug", "TrianglePointer tooltip : " + (screenHeight - tooltipHeight) );
+
+        if (y < 60) {
+            trianglePointer.setY(y - 60);
+        }
+        else if(y > (screenHeight - tooltipHeight)){
+            trianglePointer.setY(y - (screenHeight - tooltipHeight));
+        }
+
+
+
+        // Tampilkan tooltip
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
+
+
 
     private void setCurrentDateTimeVacuum() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
@@ -2541,6 +3020,7 @@ public class SawnTimber extends AppCompatActivity {
 
                     TglStickBundel.setText(formattedDate);
                     new LoadSusunTask().execute(rawDate);
+                    onClickDateOutput(rawDate);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -2613,7 +3093,7 @@ public class SawnTimber extends AppCompatActivity {
         try {
             float panjangAcuan = Float.parseFloat(DetailPanjangST.getText().toString());
 
-            sisaPCS.setText("Balance : " + pcs);
+            sisaPCS.setText("Sisa : " + pcs);
 
 
             // Pengecekan: jika temporaryDataListDetail kosong, jangan lanjutkan pengurangan
@@ -2623,7 +3103,7 @@ public class SawnTimber extends AppCompatActivity {
                     if (Float.parseFloat(dataRow.panjang) == panjangAcuan) {
                         int updatedPcs = Integer.parseInt(dataRow.pcs) - Integer.parseInt(pcs); // Kurangi pcs
                         dataRow.pcs = String.valueOf(updatedPcs); // Update nilai pcs
-                        sisaPCS.setText("Balance : " + dataRow.pcs);
+                        sisaPCS.setText("Sisa : " + dataRow.pcs);
                     }
                 }
             }
@@ -2644,6 +3124,7 @@ public class SawnTimber extends AppCompatActivity {
 
             addNewRow();  // Panggil fungsi untuk menambahkan row baru
 
+            addRowButton.setVisibility(View.VISIBLE);
             BtnInputDetailST.setEnabled(false);
             DetailTebalST.setEnabled(false);
             DetailLebarST.setEnabled(false);
@@ -3888,5 +4369,5 @@ public class SawnTimber extends AppCompatActivity {
         }
         return con;
     }
-}
 
+}

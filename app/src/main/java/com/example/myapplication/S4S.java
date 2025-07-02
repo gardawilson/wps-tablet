@@ -1040,13 +1040,10 @@ public class S4S extends AppCompatActivity {
                                         iIcon.setScaleType(ImageView.ScaleType.CENTER);
                                         iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
 
-
                                         ImageView oIcon = new ImageView(this);
                                         oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
                                         oIcon.setScaleType(ImageView.ScaleType.CENTER);
                                         oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
-
-
 
                                         if (hasBeenPrinted == 0) {
                                             iIcon.setImageResource(R.drawable.ic_undone); // Ganti dengan ikon untuk "-"
