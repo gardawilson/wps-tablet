@@ -5,8 +5,11 @@ import static com.example.myapplication.utils.DateTimeUtils.formatToDatabaseDate
 import android.util.Log;
 
 import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.model.JenisKayuData;
 import com.example.myapplication.model.KayuBulatData;
 import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.QcSawmillData;
+import com.example.myapplication.model.QcSawmillDetailData;
 import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.SawmillDetailData;
 import com.example.myapplication.model.SpecialConditionData;
@@ -867,8 +870,6 @@ public class SawmillApi {
         }
     }
 
-
-
     private static void deleteGantung(Connection con, String noSTSawmill) throws SQLException {
         String query = "DELETE FROM STSawmill_dBalokGantung WHERE NoSTSawmill = ?";
         try (PreparedStatement stmt = con.prepareStatement(query)) {
@@ -918,9 +919,6 @@ public class SawmillApi {
             Log.d("deleteSawmillData", "Deleted " + rows + " rows from STSawmill_d");
         }
     }
-
-
-
 
 
     public static boolean isHourRangeOverlapping(String tglSawmill, String noMeja, String newHourStart, String newHourEnd) {
@@ -996,7 +994,8 @@ public class SawmillApi {
                         "FROM STSawmill_d d " +
                         "LEFT JOIN STSawmillKG_d kg ON d.NoSTSawmill = kg.NoSTSawmill AND d.NoUrut = kg.NoUrut " +
                         "LEFT JOIN MstGradeKB g ON kg.IdGradeKB = g.IdGradeKB " +
-                        "WHERE d.NoSTSawmill = ?";
+                        "WHERE d.NoSTSawmill = ?" +
+                        "ORDER BY d.NoUrut ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
@@ -1465,6 +1464,266 @@ public class SawmillApi {
         }
     }
 
+
+
+    // GETTER DATA QC SAWMILL
+    public static List<QcSawmillData> getQcSawmillData() {
+        List<QcSawmillData> qcSawmillDataList = new ArrayList<>();
+
+        String query = "SELECT TOP 50 h.NoQc, h.Tgl, h.IdJenisKayu, k.Jenis, h.Meja " +
+                "FROM QcSawmill_h h " +
+                "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                "ORDER BY h.NoQc DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String noQc = rs.getString("NoQc");
+                String tgl = rs.getString("Tgl");
+                int idJenisKayu = rs.getInt("IdJenisKayu");
+                String namaJenisKayu = rs.getString("Jenis");
+                String meja = rs.getString("Meja");
+
+                qcSawmillDataList.add(new QcSawmillData(noQc, tgl, idJenisKayu, namaJenisKayu, meja));
+            }
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching QC Sawmill data: " + e.getMessage());
+        }
+
+        return qcSawmillDataList;
+    }
+
+
+
+    public static List<QcSawmillDetailData> fetchQcSawmillDetailByNoQc(String noQc) {
+        List<QcSawmillDetailData> detailList = new ArrayList<>();
+
+        String query = "SELECT NoQc, NoUrut, NoST, CuttingTebal, CuttingLebar, ActualTebal, ActualLebar, SusutTebal, SusutLebar " +
+                "FROM QcSawmill_d WHERE NoQc = ? ORDER BY NoUrut";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noQc);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    QcSawmillDetailData detail = new QcSawmillDetailData(
+                            rs.getString("NoQc"),
+                            rs.getInt("NoUrut"),
+                            rs.getString("NoST"),
+                            rs.getFloat("CuttingTebal"),
+                            rs.getFloat("CuttingLebar"),
+                            rs.getFloat("ActualTebal"),
+                            rs.getFloat("ActualLebar"),
+                            rs.getFloat("SusutTebal"),
+                            rs.getFloat("SusutLebar")
+                    );
+                    detailList.add(detail);
+                }
+            }
+        } catch (SQLException e) {
+            Log.e("DB Fetch Error", "Error fetching QC Sawmill detail: " + e.getMessage());
+        }
+
+        return detailList;
+    }
+
+    public static void insertQcSawmillHeader(String noQc, String tgl, int idJenisKayu, String meja) throws SQLException {
+        String query = "INSERT INTO QcSawmill_h (NoQc, Tgl, IdJenisKayu, Meja) VALUES (?, ?, ?, ?)";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noQc);
+            stmt.setString(2, tgl);  // Pastikan format tgl sesuai database, misalnya yyyy-MM-dd
+            stmt.setInt(3, idJenisKayu);
+            stmt.setString(4, meja);
+
+            stmt.executeUpdate();
+        }
+    }
+
+
+    public static String getNextNoQc() {
+        String query = "SELECT TOP 1 NoQc FROM QcSawmill_h WHERE NoQc LIKE 'M.%' ORDER BY NoQc DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            if (rs.next()) {
+                String lastNo = rs.getString("NoQc");  // Misal: M.123456
+                String numericPart = lastNo.substring(2);  // Ambil setelah "M." → "123456"
+                int nextNumber = Integer.parseInt(numericPart) + 1;
+                return String.format("M.%06d", nextNumber);  // Format: M.000001
+            } else {
+                return "M.000001";  // No pertama jika belum ada data
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    public static List<JenisKayuData> getJenisKayuList() {
+        List<JenisKayuData> jenisKayuList = new ArrayList<>();
+
+        String query = "SELECT IdJenisKayu, Jenis FROM MstJenisKayu WHERE Enable = 1 ORDER BY Jenis";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                int idJenisKayu = rs.getInt("IdJenisKayu");
+                String jenis = rs.getString("Jenis");
+
+                JenisKayuData jenisKayuData = new JenisKayuData(idJenisKayu, jenis);
+                jenisKayuList.add(jenisKayuData);
+            }
+
+        } catch (SQLException e) {
+            Log.e("DB Fetch Error", "Error fetching Jenis Kayu: " + e.getMessage());
+        }
+
+        return jenisKayuList;
+    }
+
+
+    public static void insertQcSawmillDetailAutoNoUrut(
+            String noQc,
+            float cuttingTebal, float cuttingLebar,
+            float actualTebal, float actualLebar,
+            float susutTebal, float susutLebar
+    ) throws SQLException {
+
+        String selectQuery = "SELECT ISNULL(MAX(CAST(NoUrut AS INT)), 0) AS MaxNoUrut FROM QcSawmill_d WHERE NoQc = ?";
+        String insertQuery = "INSERT INTO QcSawmill_d (NoQc, NoUrut, NoST, CuttingTebal, CuttingLebar, ActualTebal, ActualLebar, SusutTebal, SusutLebar) " +
+                "VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement selectStmt = con.prepareStatement(selectQuery)) {
+
+            selectStmt.setString(1, noQc);
+            ResultSet rs = selectStmt.executeQuery();
+
+            int nextNoUrut = 1;
+            if (rs.next()) {
+                nextNoUrut = rs.getInt("MaxNoUrut") + 1;
+            }
+
+            try (PreparedStatement insertStmt = con.prepareStatement(insertQuery)) {
+                insertStmt.setString(1, noQc);
+                insertStmt.setInt(2, nextNoUrut);
+                insertStmt.setFloat(3, cuttingTebal);
+                insertStmt.setFloat(4, cuttingLebar);
+                insertStmt.setFloat(5, actualTebal);
+                insertStmt.setFloat(6, actualLebar);
+                insertStmt.setFloat(7, susutTebal);
+                insertStmt.setFloat(8, susutLebar);
+                insertStmt.executeUpdate();
+            }
+        }
+    }
+
+
+    public static void deleteQcSawmillDetail(String noQc, int noUrut) throws SQLException {
+        String deleteQuery = "DELETE FROM QcSawmill_d WHERE NoQc = ? AND NoUrut = ?";
+        String reorderQuery = "WITH Ordered AS (" +
+                "  SELECT NoQc, NoUrut, ROW_NUMBER() OVER (ORDER BY NoUrut ASC) AS NewNoUrut " +
+                "  FROM QcSawmill_d WHERE NoQc = ?" +
+                ") " +
+                "UPDATE QcSawmill_d " +
+                "SET NoUrut = Ordered.NewNoUrut " +
+                "FROM QcSawmill_d INNER JOIN Ordered ON QcSawmill_d.NoQc = Ordered.NoQc AND QcSawmill_d.NoUrut = Ordered.NoUrut";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement deleteStmt = con.prepareStatement(deleteQuery);
+             PreparedStatement reorderStmt = con.prepareStatement(reorderQuery)) {
+
+            // Eksekusi DELETE
+            deleteStmt.setString(1, noQc);
+            deleteStmt.setInt(2, noUrut);
+            deleteStmt.executeUpdate();
+
+            // Eksekusi REORDER NoUrut
+            reorderStmt.setString(1, noQc);
+            reorderStmt.executeUpdate();
+        }
+    }
+
+    public static void updateQcSawmillDetail(String noQc, int noUrut, float cuttingTebal, float cuttingLebar,
+                                             float actualTebal, float actualLebar, float susutTebal, float susutLebar) throws SQLException {
+        String query = "UPDATE QcSawmill_d SET " +
+                "CuttingTebal = ?, CuttingLebar = ?, " +
+                "ActualTebal = ?, ActualLebar = ?, " +
+                "SusutTebal = ?, SusutLebar = ? " +
+                "WHERE NoQc = ? AND NoUrut = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query)) {
+
+            ps.setFloat(1, cuttingTebal);
+            ps.setFloat(2, cuttingLebar);
+            ps.setFloat(3, actualTebal);
+            ps.setFloat(4, actualLebar);
+            ps.setFloat(5, susutTebal);
+            ps.setFloat(6, susutLebar);
+            ps.setString(7, noQc);
+            ps.setInt(8, noUrut);
+
+            ps.executeUpdate();
+        }
+    }
+
+    public static void updateQcSawmillHeader(String noQc, String tgl, int idJenisKayu, String meja) throws SQLException {
+        String query = "UPDATE QcSawmill_h SET Tgl = ?, IdJenisKayu = ?, Meja = ? WHERE NoQc = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, tgl);  // Pastikan format tgl sesuai dengan database
+            stmt.setInt(2, idJenisKayu);
+            stmt.setString(3, meja);
+            stmt.setString(4, noQc); // Gunakan NoQc sebagai key untuk update
+
+            stmt.executeUpdate();
+        }
+    }
+
+
+    public static boolean deleteQcSawmillHeader(String noQc) throws SQLException {
+        String deleteDetailQuery = "DELETE FROM QcSawmill_d WHERE NoQc = ?";
+        String deleteHeaderQuery = "DELETE FROM QcSawmill_h WHERE NoQc = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            con.setAutoCommit(false); // Mulai transaksi
+
+            try (
+                    PreparedStatement stmtDetail = con.prepareStatement(deleteDetailQuery);
+                    PreparedStatement stmtHeader = con.prepareStatement(deleteHeaderQuery)
+            ) {
+                // Hapus detail dulu
+                stmtDetail.setString(1, noQc);
+                stmtDetail.executeUpdate();
+
+                // Baru hapus header
+                stmtHeader.setString(1, noQc);
+                int rowsAffected = stmtHeader.executeUpdate();
+
+                con.commit();
+                return rowsAffected > 0;
+            } catch (SQLException ex) {
+                con.rollback(); // Rollback kalau gagal
+                throw ex;
+            }
+        }
+    }
 
 
 

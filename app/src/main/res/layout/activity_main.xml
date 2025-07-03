@@ -131,12 +131,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginTop="24dp"
-                android:elevation="2dp"
+                android:elevation="10dp"
                 android:text="Login"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FF4CAF50"
+                app:backgroundTint="#19A41E"
                 app:cornerRadius="8dp" />
 
             <!-- Registration Text -->

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/title_left"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="QC Sawmill Detail"
+            android:textColor="@color/black"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseDialogInputDetail"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close"
+            android:scaleType="fitEnd"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2px"
+        android:background="@color/gray" />
+
+    <ScrollView
+        android:id="@+id/scrollHeader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cutting Tebal"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editCuttingTebal"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Tebal"
+                    android:inputType="numberDecimal"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cutting Lebar"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editCuttingLebar"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Lebar"
+                    android:inputType="numberDecimal"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Actual Tebal"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editActualTebal"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Tebal"
+                    android:inputType="numberDecimal"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Actual Lebar"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editActualLebar"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Lebar"
+                    android:inputType="numberDecimal"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp"
+                >
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Susut Tebal"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editSusutTebal"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Tebal"
+                    android:inputType="numberDecimal"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Susut Lebar"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="18sp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/editSusutLebar"
+                    android:layout_width="0dp"
+                    android:layout_weight="0.5"
+                    android:layout_height="36dp"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Lebar"
+                    android:inputType="numberDecimal"/>
+            </LinearLayout>
+
+
+            <Button
+                android:id="@+id/btnSimpan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18dp"
+                android:text="Simpan" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

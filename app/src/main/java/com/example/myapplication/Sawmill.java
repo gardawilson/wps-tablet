@@ -1167,8 +1167,8 @@ public class Sawmill extends AppCompatActivity {
 
 
     private void setupNoKBTextWatcherEdit(AutoCompleteTextView noKB, ArrayAdapter<String> kbAdapter, View view,
-                                      EditText jenisKayu, EditText supplier, EditText noPlat,
-                                      EditText noTruk, EditText noSuket, String jenisKayuRaw) {
+                                          EditText jenisKayu, EditText supplier, EditText noPlat,
+                                          EditText noTruk, EditText noSuket, String jenisKayuRaw) {
 
         noKB.addTextChangedListener(new TextWatcher() {
             boolean isEditing;
@@ -1897,7 +1897,7 @@ public class Sawmill extends AppCompatActivity {
         popupWindow.setOnDismissListener(() -> {
             if (selectedRowDetail != null) {
                 SawmillDetailData previousData = (SawmillDetailData) selectedRowDetail.getTag();
-                int previousIndex = dataList.indexOf(previousData);
+                int previousIndex = detailDataList.indexOf(previousData);
 
                 int color = (previousIndex % 2 == 0) ? R.color.background_cream : R.color.white;
                 selectedRowDetail.setBackgroundColor(ContextCompat.getColor(this, color));
@@ -2012,45 +2012,53 @@ public class Sawmill extends AppCompatActivity {
 
 
     private void deleteDetail(String noSTSawmill, String jenisKayu, SawmillDetailData data) {
-        boolean isRambung = jenisKayu != null && jenisKayu.toLowerCase().contains("rambung");
+        new AlertDialog.Builder(this)
+                .setTitle("Konfirmasi Hapus")
+                .setMessage("Yakin ingin menghapus detail ini?")
+                .setPositiveButton("Ya", (dialog, which) -> {
+                    boolean isRambung = jenisKayu != null && jenisKayu.toLowerCase().contains("rambung");
 
-        executorService.execute(() -> {
-            boolean success = SawmillApi.deleteSawmillDetailItem(
-                    noSTSawmill, data.getNoUrut(), isRambung
-            );
+                    executorService.execute(() -> {
+                        boolean success = SawmillApi.deleteSawmillDetailItem(
+                                noSTSawmill, data.getNoUrut(), isRambung
+                        );
 
-            if (success) {
-                detailDataList.remove(data); // jika pakai ArrayList
-                // Reorder NoUrut setelah delete berhasil
-                SawmillApi.replaceAllSawmillDetailData(noSTSawmill, detailDataList, jenisKayu);
-            }
+                        if (success) {
+                            detailDataList.remove(data); // jika pakai ArrayList
+                            // Reorder NoUrut setelah delete berhasil
+                            SawmillApi.replaceAllSawmillDetailData(noSTSawmill, detailDataList, jenisKayu);
+                        }
 
-            // Fetch ulang data setelah reorder
-            detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
+                        // Fetch ulang data setelah reorder
+                        detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
 
-            runOnUiThread(() -> {
-                if (success) {
-                    Toast.makeText(this, "Berhasil menghapus detail!", Toast.LENGTH_SHORT).show();
-                    populateDetailTable(detailSawmillTableLayout, detailDataList, noSTSawmill, jenisKayu);
+                        runOnUiThread(() -> {
+                            if (success) {
+                                Toast.makeText(this, "Berhasil menghapus detail!", Toast.LENGTH_SHORT).show();
+                                populateDetailTable(detailSawmillTableLayout, detailDataList, noSTSawmill, jenisKayu);
 
-                    int totalPcs = 0;
-                    float totalTon = calculateTotalTon(detailDataList);
+                                int totalPcs = 0;
+                                float totalTon = calculateTotalTon(detailDataList);
 
-                    for (SawmillDetailData dataDetail : detailDataList) {
-                        totalPcs += dataDetail.getPcs();
-                    }
+                                for (SawmillDetailData dataDetail : detailDataList) {
+                                    totalPcs += dataDetail.getPcs();
+                                }
 
-                    textJumlah.setText("Jumlah Batang : " + totalPcs);
-                    textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
+                                textJumlah.setText("Jumlah Batang : " + totalPcs);
+                                textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
 
-                    textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
-                    textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
-                } else {
-                    Toast.makeText(this, "Gagal menghapus detail!", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
+                                textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+                                textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+                            } else {
+                                Toast.makeText(this, "Gagal menghapus detail!", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    });
+                })
+                .setNegativeButton("Batal", null)
+                .show();
     }
+
 
 
 

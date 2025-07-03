@@ -56,14 +56,6 @@ public class LabelApi {
                 String keteranganPembelian = rs.getString("Note");
                 String tonSJ = rs.getString("TonSJ");
 
-
-//                // Debugging untuk memverifikasi data
-//                Log.d("Database Data", "NoProduksi: " + noProduksi +
-//                        ", Shift: " + shift +
-//                        ", Tanggal: " + tanggal +
-//                        ", Mesin: " + mesin +
-//                        ", Operator: " + operator);
-
                 // Tambahkan ke list ProductionData
                 pembelianSTDataList.add(new STPembelianData(noSTPembelian, tglLaporan, tglMasuk, supplier, noTruk, noPlat, keteranganPembelian, tonSJ));
             }

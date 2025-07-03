@@ -32,6 +32,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".ReportCategory"
+            android:exported="false" />
+        <activity
+            android:name=".ProsesSawmill"
+            android:exported="false" />
+        <activity
+            android:name=".QcSawmill"
+            android:exported="false" />
+        <activity
             android:name=".Sawmill"
             android:exported="false" />
         <activity

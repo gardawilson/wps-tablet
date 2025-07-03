@@ -27,6 +27,17 @@ public class DateTimeUtils {
         return now.format(formatter);
     }
 
+    public static String getCurrentDate() {
+        // Ambil tanggal saat ini
+        LocalDate today = LocalDate.now();
+
+        // Format tanggal sesuai kebutuhan (contoh: "yyyy-MM-dd")
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+        // Kembalikan hasil format
+        return today.format(formatter);
+    }
+
     // 2. Memformat ulang dateTime dari satu format ke format lain
     public static String formatDateTime(String dateTime) {
         if (dateTime == null || dateTime.isEmpty()) {
