@@ -1,9 +1,8 @@
 package com.example.myapplication.api;
 
 import android.util.Log;
-import android.widget.Toast;
 
-import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LokasiBlok;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
@@ -16,9 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class StockOpnameApi {

@@ -216,8 +216,8 @@ public class Sawmill extends AppCompatActivity {
         final String jenisKayuRaw;
 
         // Setup time picker untuk jam mulai dan jam berhenti
-        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja);
-        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja);
+        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, existingData.getNoSTSawmill());
+        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, existingData.getNoSTSawmill());
 
         // Siapkan adapter suggestion Kayu Bulat (untuk edit, biasanya disable autocomplete)
         ArrayAdapter<String> kbAdapter = new ArrayAdapter<>(Sawmill.this, android.R.layout.simple_spinner_dropdown_item, new ArrayList<>());
@@ -269,7 +269,7 @@ public class Sawmill extends AppCompatActivity {
                         }
                         noKB.setCompoundDrawablesWithIntrinsicBounds(null, null, checkIcon, null);
                         noKB.setBackgroundResource(R.drawable.border_accepted);
-
+                        isValidNoKB = true;
                     });
                 }
             });
@@ -788,7 +788,7 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
-    private void setupTimePicker(EditText targetEditText, EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja, EditText tanggal, EditText noMeja) {
+    private void setupTimePicker(EditText targetEditText, EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja, EditText tanggal, EditText noMeja, String noSTSawmill ) {
         targetEditText.setInputType(InputType.TYPE_NULL);
         targetEditText.setFocusable(false);
         targetEditText.setClickable(true);
@@ -811,7 +811,7 @@ public class Sawmill extends AppCompatActivity {
 
                         if (!tgl.isEmpty() && !start.isEmpty() && !end.isEmpty()) {
                             executorService.execute(() -> {
-                                boolean isOverlap = SawmillApi.isHourRangeOverlapping(tgl, meja, start, end);
+                                boolean isOverlap = SawmillApi.isHourRangeOverlapping(tgl, meja, start, end, noSTSawmill);
 
                                 runOnUiThread(() -> {
                                     if (isOverlap) {
@@ -864,8 +864,8 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinOperator1 = view.findViewById(R.id.spinOperator1);
         final Spinner spinOperator2 = view.findViewById(R.id.spinOperator2);
 
-        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja);
-        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja);
+        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, "");
+        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, "");
 
         // Set default jam 08:00 ke jamMulai
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");

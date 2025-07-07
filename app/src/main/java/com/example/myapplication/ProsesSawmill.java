@@ -17,7 +17,6 @@ public class ProsesSawmill extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_proses_sawmill);
 
         card_lembar_telly = findViewById(R.id.card_lembar_telly);

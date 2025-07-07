@@ -2,7 +2,7 @@ package com.example.myapplication.api;
 
 import android.util.Log;
 
-import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;

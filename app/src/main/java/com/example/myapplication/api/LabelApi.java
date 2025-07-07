@@ -2,7 +2,7 @@ package com.example.myapplication.api;
 
 import android.util.Log;
 
-import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.OutputDataST;
 import com.example.myapplication.model.STPembelianData;

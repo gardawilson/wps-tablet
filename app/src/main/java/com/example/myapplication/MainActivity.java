@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,11 +21,10 @@ import androidx.core.content.FileProvider;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
-import android.content.Context;
+import com.example.myapplication.config.DatabaseConfig;
 
 import java.io.File;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;

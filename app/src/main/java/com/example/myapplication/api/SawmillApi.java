@@ -4,7 +4,7 @@ import static com.example.myapplication.utils.DateTimeUtils.formatToDatabaseDate
 
 import android.util.Log;
 
-import com.example.myapplication.DatabaseConfig;
+import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.JenisKayuData;
 import com.example.myapplication.model.KayuBulatData;
 import com.example.myapplication.model.OperatorData;
@@ -13,7 +13,6 @@ import com.example.myapplication.model.QcSawmillDetailData;
 import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.SawmillDetailData;
 import com.example.myapplication.model.SpecialConditionData;
-import com.example.myapplication.model.SupplierData;
 import com.example.myapplication.model.GradeKBData;
 
 
@@ -921,14 +920,18 @@ public class SawmillApi {
     }
 
 
-    public static boolean isHourRangeOverlapping(String tglSawmill, String noMeja, String newHourStart, String newHourEnd) {
+    public static boolean isHourRangeOverlapping(String tglSawmill, String noMeja,
+                                                 String newHourStart, String newHourEnd,
+                                                 String noSTSawmill) {
         final String TAG = "CheckOverlap";
         String formattedTgl = formatToDatabaseDate(tglSawmill);
 
-        String query = "SELECT HourStart, HourEnd FROM STSawmill_h WHERE TglSawmill = ? AND NoMeja = ?";
+        // Modifikasi query untuk mengecualikan record dengan ID tertentu
+        String query = "SELECT NoSTSawmill, HourStart, HourEnd FROM STSawmill_h WHERE TglSawmill = ? AND NoMeja = ?";
         boolean isOverlap = false;
 
-        Log.d(TAG, "Mulai cek overlap untuk tanggal: " + formattedTgl + ", meja: " + noMeja + ", mulai: " + newHourStart + ", selesai: " + newHourEnd);
+        Log.d(TAG, "Mulai cek overlap untuk tanggal: " + formattedTgl + ", meja: " + noMeja +
+                ", mulai: " + newHourStart + ", selesai: " + newHourEnd + ", kecuali ID: " + noSTSawmill);
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
@@ -948,6 +951,14 @@ public class SawmillApi {
                         : LocalDateTime.of(tgl, endTime);
 
                 while (rs.next()) {
+                    String recordId = rs.getString("NoSTSawmill");
+
+                    // Lewati record yang sedang diedit
+                    if (recordId != null && recordId.equals(noSTSawmill)) {
+                        Log.d(TAG, "Melewati record dengan ID: " + recordId);
+                        continue;
+                    }
+
                     String dbStartStr = rs.getString("HourStart");
                     String dbEndStr = rs.getString("HourEnd");
 
@@ -964,7 +975,7 @@ public class SawmillApi {
                             ? LocalDateTime.of(tgl.plusDays(1), dbEndTime)
                             : LocalDateTime.of(tgl, dbEndTime);
 
-                    Log.d(TAG, "Membandingkan dengan record: Start=" + dbStart + ", End=" + dbEnd);
+                    Log.d(TAG, "Membandingkan dengan record: ID=" + recordId + ", Start=" + dbStart + ", End=" + dbEnd);
 
                     // Cek overlap
                     if (dbStart.isBefore(newEnd) && newStart.isBefore(dbEnd)) {
@@ -974,7 +985,6 @@ public class SawmillApi {
                     }
                 }
             }
-
         } catch (SQLException e) {
             Log.e(TAG, "Error saat cek overlap", e);
         }
