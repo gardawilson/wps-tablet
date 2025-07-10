@@ -271,12 +271,8 @@
             android:layout_columnWeight="1"
             android:layout_rowWeight="1"
             android:layout_margin="8dp"
-            android:alpha="0.6"
-            android:clickable="false"
-            android:focusable="false"
             app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#F8F9FA">
+            app:cardElevation="4dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -297,64 +293,22 @@
                     android:padding="12dp"
                     android:background="@drawable/circle_background"
                     android:src="@drawable/ic_report"
-                    app:tint="#9E9E9E"
+                    app:tint="@color/primary"
                     app:layout_constraintStart_toEndOf="@id/guideline_start_laporan"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent" />
 
-                <LinearLayout
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="Laporan"
                     android:layout_marginStart="8dp"
-                    android:orientation="vertical"
+                    android:textSize="24sp"
+                    android:textColor="@color/primary"
+                    android:textStyle="bold"
                     app:layout_constraintStart_toEndOf="@+id/imageLaporan"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Laporan"
-                        android:textSize="24sp"
-                        android:textColor="#757575"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Under Construction"
-                        android:textSize="12sp"
-                        android:textColor="#FF9800"
-                        android:textStyle="italic"
-                        android:layout_marginTop="2dp"
-                        android:background="#FFF3E0"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp" />
-
-                </LinearLayout>
-
-                <!-- Progress indicator overlay -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="2dp"
-                    android:background="#E3F2FD"
-                    android:layout_marginTop="-12dp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-
-                <!-- Lock icon overlay -->
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_construction"
-                    android:background="#616161"
-                    android:padding="2dp"
-                    app:tint="#FFFFFF"
-                    app:layout_constraintTop_toTopOf="@id/imageLaporan"
-                    app:layout_constraintEnd_toEndOf="@id/imageLaporan"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="4dp" />
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
@@ -374,7 +328,5 @@
         app:icon="@drawable/ic_logout"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

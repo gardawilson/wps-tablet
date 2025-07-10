@@ -32,10 +32,37 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".KbReport"
+            android:name=".LaporanBJ"
             android:exported="false" />
         <activity
-            android:name=".ReportCategory"
+            android:name=".LaporanSND"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanCCA"
+            android:exported="false" />
+        <activity
+            android:name=".LmtReport"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanMLD"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanFJ"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanS4S"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanST"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanKbRambung"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanKB"
+            android:exported="false" />
+        <activity
+            android:name=".LaporanKategori"
             android:exported="false" />
         <activity
             android:name=".ProsesSawmill"

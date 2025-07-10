@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -5,6 +8,13 @@ plugins {
 android {
     namespace = "com.example.myapplication"
     compileSdk = 34
+
+    val localProperties = Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) {
+            load(file.inputStream())
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.myapplication"
@@ -15,10 +25,18 @@ android {
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DB_IP", "\"${localProperties["DB_IP"]}\"")
+        buildConfigField("String", "DB_PORT", "\"${localProperties["DB_PORT"]}\"")
+        buildConfigField("String", "DB_USER", "\"${localProperties["DB_USER"]}\"")
+        buildConfigField("String", "DB_PASS", "\"${localProperties["DB_PASS"]}\"")
+        buildConfigField("String", "DB_NAME", "\"${localProperties["DB_NAME"]}\"")
+
     }
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     buildTypes {

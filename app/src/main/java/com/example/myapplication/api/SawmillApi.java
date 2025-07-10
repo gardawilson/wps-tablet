@@ -7,6 +7,7 @@ import android.util.Log;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.JenisKayuData;
 import com.example.myapplication.model.KayuBulatData;
+import com.example.myapplication.model.MejaData;
 import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.QcSawmillData;
 import com.example.myapplication.model.QcSawmillDetailData;
@@ -68,7 +69,7 @@ public class SawmillApi {
         Map<String, Integer> stokMapRambung = getTotalStokTersediaPerKayuBulatRambung();
 
         String query = "SELECT TOP 50 " +
-                "h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, " +
+                "h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, ms.NamaMeja, " +
                 "CASE " +
                 "WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator " +
                 "ELSE op1.NamaOperator + '/' + op2.NamaOperator " +
@@ -82,6 +83,7 @@ public class SawmillApi {
                 "LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
                 "LEFT JOIN KayuBulat_h kb ON h.NoKayuBulat = kb.NoKayuBulat " +
                 "LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
+                "LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja " +
                 "ORDER BY h.NoSTSawmill DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -107,6 +109,8 @@ public class SawmillApi {
                 int idOperator1 = rs.getInt("IdOperator1");
                 int idOperator2 = rs.getInt("IdOperator2");
                 double beratBalokTim = rs.getDouble("BeratBalokTim");
+                String namaMeja = rs.getString("NamaMeja");
+
 
                 int stokTersedia;
                 if (namaJenisKayu != null && namaJenisKayu.toLowerCase().contains("rambung")) {
@@ -119,7 +123,7 @@ public class SawmillApi {
                         noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja, operator,
                         idSpecial, balokTerpakai, jamKerja, jlhBatangRajang,
                         hourMeter, remark, namaJenisKayu, stokTersedia,
-                        beratBalokTim, hourStart, hourEnd, idOperator1, idOperator2
+                        beratBalokTim, hourStart, hourEnd, idOperator1, idOperator2, namaMeja
                 );
 
                 sawmillDataList.add(data);
@@ -261,23 +265,27 @@ public class SawmillApi {
     }
 
 
-    public static List<String> getAllNoMeja() {
-        List<String> list = new ArrayList<>();
-        String query = "SELECT NoMeja FROM MstMesinSawmill ORDER BY NoMeja ASC";
+    public static List<MejaData> getAllMeja() {
+        List<MejaData> list = new ArrayList<>();
+        String query = "SELECT NoMeja, NamaMeja FROM MstMesinSawmill ORDER BY NoMeja ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                list.add(rs.getString("NoMeja"));
+                list.add(new MejaData(
+                        rs.getString("NoMeja"),
+                        rs.getString("NamaMeja")
+                ));
             }
         } catch (SQLException e) {
-            Log.e("SawmillApi", "Gagal mengambil semua NoMeja: " + e.getMessage());
+            Log.e("SawmillApi", "Gagal mengambil data Meja: " + e.getMessage());
         }
 
         return list;
     }
+
 
 
     public static SawmillData getOperatorByNoMeja(String noMeja) {
@@ -306,7 +314,8 @@ public class SawmillApi {
                             null, 0, 0.0,
                             null, null,
                             idOp1,
-                            idOp2
+                            idOp2,
+                            null
                     );
                 } else {
                     Log.w("SawmillApi", "Tidak ditemukan data operator untuk NoMeja: " + noMeja);

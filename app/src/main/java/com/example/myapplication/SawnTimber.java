@@ -634,11 +634,11 @@ public class SawnTimber extends AppCompatActivity {
                     valid = false;
                 }
 
-                if (temporaryDataListGrade.isEmpty() && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
-                    valid = false;
-                }
+//                if (temporaryDataListGrade.isEmpty() && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
+//                    valid = false;
+//                }
 
-                if (valid && !temporaryDataListDetail.isEmpty()) {
+                if (valid) {
                     checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
 
                         CountDownLatch latch = new CountDownLatch(1);
@@ -888,7 +888,6 @@ public class SawnTimber extends AppCompatActivity {
         btnSwapToLabelList.setOnClickListener(v -> {
             flipCard(inner_card_top_right, inner_card_label_list);
         });
-
     }
 
     //METHOD SAWN TIMBER
@@ -3996,6 +3995,7 @@ public class SawnTimber extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String message) {
+            onClickDateOutput(rawDate);
             Toast.makeText(SawnTimber.this, message, Toast.LENGTH_SHORT).show();
         }
     }

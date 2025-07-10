@@ -1616,7 +1616,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private void showExitConfirmationDialog() {
         // Inflate layout custom_dialog_layout
         LayoutInflater inflater = LayoutInflater.from(this);
-        View dialogView = inflater.inflate(R.layout.custom_dialog_confirmation_layout, null);
+        View dialogView = inflater.inflate(R.layout.dialog_confirmation_layout, null);
 
         // Buat AlertDialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

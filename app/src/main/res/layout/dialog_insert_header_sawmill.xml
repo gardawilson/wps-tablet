@@ -388,7 +388,7 @@
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
-                    android:text="No. Meja "
+                    android:text="Meja "
                     android:textSize="18sp"
                     android:textColor="@color/black" />
 
@@ -400,17 +400,13 @@
                     android:paddingRight="8dp"
                     android:textColor="@color/black" />
 
-                <AutoCompleteTextView
-                    android:id="@+id/editNoMeja"
+                <Spinner
+                    android:id="@+id/spinMeja"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
                     android:layout_weight="0.5"
-                    android:padding="6dp"
-                    android:textSize="18sp"
+                    android:layout_height="36dp"
                     android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Nomor Meja"
-                    android:inputType="number"/>
+                    android:elevation="1dp" />
 
                 <TextView
                     android:layout_width="0dp"

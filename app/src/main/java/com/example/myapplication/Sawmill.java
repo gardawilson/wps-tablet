@@ -43,6 +43,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.myapplication.api.SawmillApi;
 import com.example.myapplication.model.GradeKBData;
+import com.example.myapplication.model.MejaData;
 import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.SawmillDetailData;
@@ -70,6 +71,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.util.Calendar;
+import java.util.function.Supplier;
 
 import android.text.TextWatcher;
 import android.text.Editable;
@@ -196,7 +198,7 @@ public class Sawmill extends AppCompatActivity {
         final AutoCompleteTextView noKB = view.findViewById(R.id.editNoKB);
         final EditText tanggal = view.findViewById(R.id.editTgl);
         final EditText jenisKayu = view.findViewById(R.id.editJenisKayu);
-        final AutoCompleteTextView noMeja = view.findViewById(R.id.editNoMeja);
+        final Spinner spinMeja = view.findViewById(R.id.spinMeja);
         final Spinner spinShift = view.findViewById(R.id.spinShift);
         final EditText jamMulai = view.findViewById(R.id.editJamMulai);
         final EditText jamBerhenti = view.findViewById(R.id.editJamBerhenti);
@@ -213,18 +215,27 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinSpecialCondition = view.findViewById(R.id.spinSpecialCondition);
         final Spinner spinOperator1 = view.findViewById(R.id.spinOperator1);
         final Spinner spinOperator2 = view.findViewById(R.id.spinOperator2);
-        final String jenisKayuRaw;
 
         // Setup time picker untuk jam mulai dan jam berhenti
-        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, existingData.getNoSTSawmill());
-        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, existingData.getNoSTSawmill());
+        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
+                () -> {
+                    MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                    return selected != null ? selected.getNoMeja() : "";
+                }, existingData.getNoSTSawmill());
+
+        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal,
+                () -> {
+                    MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                    return selected != null ? selected.getNoMeja() : "";
+                }, existingData.getNoSTSawmill());
+
 
         // Siapkan adapter suggestion Kayu Bulat (untuk edit, biasanya disable autocomplete)
         ArrayAdapter<String> kbAdapter = new ArrayAdapter<>(Sawmill.this, android.R.layout.simple_spinner_dropdown_item, new ArrayList<>());
         noKB.setAdapter(kbAdapter);
 
         // ===== SETUP NoMeja AutoComplete =====
-        setupNoMejaAutoComplete(noMeja, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja);
+        loadMejaToSpinner(spinMeja, existingData.getNoMeja(), spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, true);
 
         // Load data ke spinner terlebih dahulu dengan nilai yang sudah ada
         loadSpecialConditionToSpinner(spinSpecialCondition, existingData.getIdSawmillSpecialCondition());
@@ -236,7 +247,6 @@ public class Sawmill extends AppCompatActivity {
         noSTSawmill.setText(existingData.getNoSTSawmill());
         noKB.setText(existingData.getNoKayuBulat());
         tanggal.setText(formatDate(existingData.getTglSawmill()));
-        noMeja.setText(existingData.getNoMeja());
         jamMulai.setText(formatTimeToHHmmss(existingData.getHourStart()));
         if (existingData.getHourEnd() == null || existingData.getHourEnd().trim().isEmpty()) {
             jamBerhenti.setText("");
@@ -321,7 +331,8 @@ public class Sawmill extends AppCompatActivity {
             String remarkVal = remark.getText().toString();
             String inputJlhBalokTerpakai = jlhBalokTerpakai.getText().toString().trim();
             int jlhBalokTerpakaiVal = inputJlhBalokTerpakai.isEmpty() ? 0 : Integer.parseInt(inputJlhBalokTerpakai);
-            String noMejaVal = noMeja.getText().toString();
+            MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+            String noMejaVal = selectedMeja != null ? selectedMeja.getNoMeja() : "";
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
             String beratBalokTimVal = beratBalokTim.getText().toString();
@@ -354,23 +365,16 @@ public class Sawmill extends AppCompatActivity {
                 valid = false;
             }
 
-            if (noMejaVal.isEmpty()) {
-                noMeja.setError("No Meja harus diisi");
-                valid = false;
-            }
-
             if (beratBalokTimVal.isEmpty()) {
                 beratBalokTim.setError("Berat Balok Tim harus diisi");
                 valid = false;
             }
 
-            if (noMejaVal.isEmpty()) {
-                noMeja.setError("No Meja harus diisi");
-                valid = false;
-            } else if (allNoMeja == null || !allNoMeja.contains(noMejaVal)) {
-                noMeja.setError("No Meja tidak valid");
+            if (selectedMeja == null || selectedMeja.getNoMeja() == null || selectedMeja.getNoMeja().isEmpty()) {
+                spinMeja.setBackgroundResource(R.drawable.spinner_error);
                 valid = false;
             }
+
 
             if (!isValidNoKB) {
                 valid = false;
@@ -788,7 +792,14 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
-    private void setupTimePicker(EditText targetEditText, EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja, EditText tanggal, EditText noMeja, String noSTSawmill ) {
+    private void setupTimePicker(EditText targetEditText,
+                                 EditText jamMulai,
+                                 EditText jamBerhenti,
+                                 TextView totalJamKerja,
+                                 EditText tanggal,
+                                 Supplier<String> noMejaSupplier,
+                                 String noSTSawmill) {
+
         targetEditText.setInputType(InputType.TYPE_NULL);
         targetEditText.setFocusable(false);
         targetEditText.setClickable(true);
@@ -805,7 +816,7 @@ public class Sawmill extends AppCompatActivity {
                         targetEditText.setText(timeFormatted);
 
                         String tgl = tanggal.getText().toString().trim();
-                        String meja = noMeja.getText().toString().trim();
+                        String meja = noMejaSupplier.get(); // 🟢 Ambil dari supplier
                         String start = jamMulai.getText().toString().trim();
                         String end = jamBerhenti.getText().toString().trim();
 
@@ -835,6 +846,7 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
+
     // DIALOG NEW DATA HEADER
     private void showNewDataDialog() {
         // Membuat Dialog
@@ -846,7 +858,7 @@ public class Sawmill extends AppCompatActivity {
         final AutoCompleteTextView noKB = view.findViewById(R.id.editNoKB);
         final EditText tanggal = view.findViewById(R.id.editTgl);
         final EditText jenisKayu = view.findViewById(R.id.editJenisKayu);
-        final AutoCompleteTextView noMeja = view.findViewById(R.id.editNoMeja);
+        final Spinner spinMeja = view.findViewById(R.id.spinMeja);
         final Spinner spinShift = view.findViewById(R.id.spinShift);
         final EditText jamMulai = view.findViewById(R.id.editJamMulai);
         final EditText jamBerhenti = view.findViewById(R.id.editJamBerhenti);
@@ -864,8 +876,20 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinOperator1 = view.findViewById(R.id.spinOperator1);
         final Spinner spinOperator2 = view.findViewById(R.id.spinOperator2);
 
-        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, "");
-        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal, noMeja, "");
+        setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
+                () -> {
+                    MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+                    return (selectedMeja != null) ? selectedMeja.getNoMeja() : "";
+                },
+                "");
+
+        setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal,
+                () -> {
+                    MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+                    return (selectedMeja != null) ? selectedMeja.getNoMeja() : "";
+                },
+                "");
+
 
         // Set default jam 08:00 ke jamMulai
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -876,8 +900,8 @@ public class Sawmill extends AppCompatActivity {
         ArrayAdapter<String> kbAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new ArrayList<>());
         noKB.setAdapter(kbAdapter);
 
-        // ===== SETUP NoMeja AutoComplete =====
-        setupNoMejaAutoComplete(noMeja, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja);
+        // ===== SETUP NoMeja Spinner =====
+        loadMejaToSpinner(spinMeja, null, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, false);
 
         // Set default prefix "A."
         noKB.setText("A.");
@@ -909,7 +933,7 @@ public class Sawmill extends AppCompatActivity {
         });
 
         // Setup tombol simpan
-        setupSaveButton(view, dialog, noKB, tanggal, jenisKayu, noMeja, spinShift, jamMulai, jamBerhenti,
+        setupSaveButton(view, dialog, noKB, tanggal, jenisKayu, spinMeja, spinShift, jamMulai, jamBerhenti,
                 totalJamKerja, hourMeter, jlhBalokTerpakai, beratBalokTim, remark, jlhBatang,
                 spinSpecialCondition, spinOperator1, spinOperator2);
 
@@ -923,89 +947,48 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
-    // Method terpisah untuk setup NoMeja AutoComplete
-    private void setupNoMejaAutoComplete(AutoCompleteTextView noMeja, Spinner spinOperator1, Spinner spinOperator2, EditText tanggal, EditText jamBerhenti, EditText jamMulai, TextView totalJamKerja) {
-        Log.d("DEBUG", "Setting up NoMeja AutoComplete");
+    private void loadMejaToSpinner(final Spinner spinMeja, @Nullable String selectedNoMeja,
+                                   Spinner spinOperator1, Spinner spinOperator2,
+                                   EditText tanggal, EditText jamBerhenti, EditText jamMulai,
+                                   TextView totalJamKerja, boolean isEdit) {
 
-        // Buat adapter kosong dulu
-        ArrayAdapter<String> mejaAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, new ArrayList<>());
+        final List<MejaData> mejaList = new ArrayList<>();
+        mejaList.add(new MejaData(null, "PILIH"));
 
-        // Konfigurasi AutoCompleteTextView
-        noMeja.setAdapter(mejaAdapter);
-        noMeja.setThreshold(0);
-//        noMeja.setDropDownHeight(400);
-
-        // Load data NoMeja secara async
         executorService.execute(() -> {
-            List<String> result = SawmillApi.getAllNoMeja();
+            List<MejaData> result = SawmillApi.getAllMeja();
+            mejaList.addAll(result);
+
             runOnUiThread(() -> {
-                // Update allNoMeja
-                if (allNoMeja == null) {
-                    allNoMeja = new ArrayList<>();
+                ArrayAdapter<MejaData> adapter = new ArrayAdapter<>(Sawmill.this,
+                        android.R.layout.simple_spinner_item, mejaList);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                spinMeja.setAdapter(adapter);
+
+                // Pilih default jika sudah ada yang dipilih sebelumnya
+                if (selectedNoMeja != null) {
+                    for (int i = 0; i < adapter.getCount(); i++) {
+                        MejaData item = adapter.getItem(i);
+                        if (item != null && selectedNoMeja.equals(item.getNoMeja())) {
+                            spinMeja.setSelection(i);
+                            break;
+                        }
+                    }
                 }
-                allNoMeja.clear();
-                allNoMeja.addAll(result);
-
-                // Update adapter dengan data baru
-                mejaAdapter.clear();
-                mejaAdapter.addAll(allNoMeja);
-                mejaAdapter.notifyDataSetChanged();
-
-                Log.d("DEBUG", "NoMeja data loaded: " + allNoMeja.size() + " items");
-
-                // Setup listeners setelah data ter-load
-                setupNoMejaListeners(noMeja, mejaAdapter, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja);
             });
         });
-    }
 
-    // Method terpisah untuk setup listeners NoMeja
-    private void setupNoMejaListeners(AutoCompleteTextView noMeja,
-                                      ArrayAdapter<String> mejaAdapter,
-                                      Spinner spinOperator1, Spinner spinOperator2,
-                                      EditText tanggal, EditText jamBerhenti, EditText jamMulai, TextView totalJamKerja) {
-
-        // Flag untuk mendeteksi apakah input berasal dari pilihan dropdown
-        final boolean[] isFromSelection = {false};
-
-        noMeja.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedNoMeja = (String) parent.getItemAtPosition(position);
-            isFromSelection[0] = true; // tandai bahwa user memilih dari dropdown
-            noMeja.setText(selectedNoMeja); // akan trigger afterTextChanged
-            noMeja.setSelection(selectedNoMeja.length());
-            noMeja.dismissDropDown(); // tutup dropdown setelah dipilih
-        });
-
-        noMeja.addTextChangedListener(new TextWatcher() {
+        spinMeja.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void afterTextChanged(Editable s) {
-                String input = s.toString().trim();
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                if (selected != null && selected.getNoMeja() != null) {
+                    final String noMeja = selected.getNoMeja();
 
-                if (allNoMeja == null || allNoMeja.isEmpty()) return;
-
-                // Update adapter dan filter
-                mejaAdapter.clear();
-                mejaAdapter.addAll(allNoMeja);
-                mejaAdapter.notifyDataSetChanged();
-
-                // Tampilkan dropdown hanya kalau bukan hasil pilihan manual
-                if (!isFromSelection[0]) {
-                    mejaAdapter.getFilter().filter(input, count -> {
-                        if (count > 0) {
-                            noMeja.showDropDown();
-                        }
-                    });
-                }
-
-                // Reset flag
-                isFromSelection[0] = false;
-
-                // Jika input valid, langsung proses operator dan jam mulai
-                if (allNoMeja.contains(input)) {
+                    // Ambil operator dan jam terakhir berdasarkan NoMeja
                     executorService.execute(() -> {
-                        SawmillData data = SawmillApi.getOperatorByNoMeja(input);
-                        if (data != null) {
+                        SawmillData data = SawmillApi.getOperatorByNoMeja(noMeja);
+                        if (data != null && !isEdit) {
                             runOnUiThread(() -> {
                                 loadOperatorToSpinner(spinOperator1, data.getIdOperator1());
                                 loadOperatorToSpinner(spinOperator2, data.getIdOperator2());
@@ -1015,47 +998,53 @@ public class Sawmill extends AppCompatActivity {
 
                     String tgl = tanggal.getText().toString().trim();
                     executorService.execute(() -> {
-                        String hourEnd = SawmillApi.getHourEndByTanggalShiftMeja(tgl, input);
+                        String hourEnd = SawmillApi.getHourEndByTanggalShiftMeja(tgl, noMeja);
 
                         runOnUiThread(() -> {
-                            if (hourEnd != null && !hourEnd.equals("-") && !hourEnd.isEmpty()) {
-                                // Case 1: hourEnd valid → jadiin jamMulai
+                            boolean validHourEnd = hourEnd != null && !hourEnd.isEmpty() && !hourEnd.equals("-");
+
+                            if (isEdit) {
+                                // Dalam mode edit, selalu aktifkan input
+                                jamMulai.setEnabled(true);
+                                jamBerhenti.setEnabled(true);
+                                jamMulai.setBackgroundResource(R.drawable.border_input);
+                                jamBerhenti.setBackgroundResource(R.drawable.border_input);
+                            } else if (validHourEnd) {
+                                // Mode input baru dan hourEnd valid
                                 jamMulai.setText(formatTimeToHHmmss(hourEnd));
-                                jamMulai.setEnabled(true); // aktifkan input
-                                jamBerhenti.setEnabled(true); // aktifkan input
+                                jamMulai.setEnabled(true);
+                                jamBerhenti.setEnabled(true);
                                 jamMulai.setBackgroundResource(R.drawable.border_input);
                                 jamBerhenti.setBackgroundResource(R.drawable.border_input);
-
                             } else if ("-".equals(hourEnd)) {
-                                // Case 2: hourEnd = '-' → Data HourStart dan HourEnd tidak ada
-                                jamMulai.setText("08:00"); // atau kamu bisa disable field-nya
-                                jamMulai.setEnabled(true); // aktifkan input
-                                jamBerhenti.setEnabled(true); // aktifkan input
+                                // hourEnd = "-" menandakan kondisi khusus
+                                jamMulai.setText("08:00");
+                                jamMulai.setEnabled(true);
+                                jamBerhenti.setEnabled(true);
                                 jamMulai.setBackgroundResource(R.drawable.border_input);
                                 jamBerhenti.setBackgroundResource(R.drawable.border_input);
-
                             } else {
-                                // Case 3: Jika HourStartnya ada namun HourEndnya null
+                                // hourEnd null atau tidak valid → disable input
                                 jamMulai.setText("");
                                 jamMulai.setHint("Proses..");
                                 jamBerhenti.setText("");
                                 totalJamKerja.setText("0");
-                                jamMulai.setEnabled(false); // nonaktifkan input
-                                jamBerhenti.setEnabled(false); // nonaktifkan input
+                                jamMulai.setEnabled(false);
+                                jamBerhenti.setEnabled(false);
                                 jamMulai.setBackgroundResource(R.drawable.border_rejected);
                                 jamBerhenti.setBackgroundResource(R.drawable.border_rejected);
-
                             }
                         });
-                    });
 
+                    });
                 }
             }
 
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+
 
 
 
@@ -1306,7 +1295,7 @@ public class Sawmill extends AppCompatActivity {
 
     // Method terpisah untuk setup tombol simpan
     private void setupSaveButton(View view, AlertDialog dialog, AutoCompleteTextView noKB, EditText tanggal,
-                                 EditText jenisKayu, AutoCompleteTextView noMeja, Spinner spinShift,
+                                 EditText jenisKayu, Spinner spinMeja, Spinner spinShift,
                                  EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja,
                                  EditText hourMeter, EditText jlhBalokTerpakai, EditText beratBalokTim,
                                  EditText remark, EditText jlhBatang, Spinner spinSpecialCondition,
@@ -1330,7 +1319,8 @@ public class Sawmill extends AppCompatActivity {
             String remarkVal = remark.getText().toString();
             String inputJlhBalokTerpakai = jlhBalokTerpakai.getText().toString().trim();
             int jlhBalokTerpakaiVal = inputJlhBalokTerpakai.isEmpty() ? 0 : Integer.parseInt(inputJlhBalokTerpakai);
-            String noMejaVal = noMeja.getText().toString();
+            MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+            String noMejaVal = selectedMeja != null ? selectedMeja.getNoMeja() : "";
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
             String beratBalokTimVal = beratBalokTim.getText().toString();
@@ -1341,7 +1331,7 @@ public class Sawmill extends AppCompatActivity {
 
             // Validasi
             if (validateInputs(spinSpecialCondition, spinOperator1, spinShift, jlhBalokTerpakai,
-                    noMeja, beratBalokTim, idSpecialConditionVal, idOperator1Val,
+                    spinMeja, beratBalokTim, idSpecialConditionVal, idOperator1Val,
                     shiftVal, noMejaVal, beratBalokTimVal, noKB, jamMulai, jamMulaiVal)) {
 
                 // Simpan data
@@ -1356,7 +1346,7 @@ public class Sawmill extends AppCompatActivity {
 
     // Method untuk validasi input
     private boolean validateInputs(Spinner spinSpecialCondition, Spinner spinOperator1, Spinner spinShift,
-                                   EditText jlhBalokTerpakai, AutoCompleteTextView noMeja, EditText beratBalokTim,
+                                   EditText jlhBalokTerpakai, Spinner spinMeja, EditText beratBalokTim,
                                    int idSpecialConditionVal, int idOperator1Val, int shiftVal,
                                    String noMejaVal, String beratBalokTimVal, AutoCompleteTextView noKB, EditText jamMulai, String jamMulaiVal) {
         boolean valid = true;
@@ -1386,12 +1376,10 @@ public class Sawmill extends AppCompatActivity {
             valid = false;
         }
 
-
-        if (noMejaVal.isEmpty()) {
-            noMeja.setError("No Meja harus diisi");
-            valid = false;
-        } else if (allNoMeja == null || !allNoMeja.contains(noMejaVal)) {
-            noMeja.setError("No Meja tidak valid");
+        // ✅ Validasi Spinner Meja
+        MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+        if (selectedMeja == null || selectedMeja.getNoMeja() == null || selectedMeja.getNoMeja().isEmpty()) {
+            spinMeja.setBackgroundResource(R.drawable.spinner_error);
             valid = false;
         }
 
@@ -1402,6 +1390,7 @@ public class Sawmill extends AppCompatActivity {
 
         return valid;
     }
+
 
     // Method untuk menyimpan data
     private void saveData(AlertDialog dialog, int shiftVal, String tanggalVal, String noKBVal,
@@ -1511,7 +1500,7 @@ public class Sawmill extends AppCompatActivity {
             }
             TextView col6 = createTextView(jamKerja, 0.5f);
 
-            TextView col7 = createTextView(data.getNoMeja(), 0.5f);
+            TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
             TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
 
             setDateToView(data.getTglSawmill(), col2);

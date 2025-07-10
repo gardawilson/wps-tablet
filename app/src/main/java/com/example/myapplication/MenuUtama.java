@@ -107,7 +107,7 @@ public class MenuUtama extends AppCompatActivity {
         Laporan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MenuUtama.this, ReportCategory.class);
+                Intent intent = new Intent(MenuUtama.this, LaporanKategori.class);
                 startActivity(intent);
             }
         });

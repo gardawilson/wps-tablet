@@ -20,12 +20,13 @@ public class SawmillData {
     private String hourEnd;
     private Integer idOperator1;
     private Integer idOperator2;
+    private String namaMeja;
 
 
     public SawmillData(String noSTSawmill, String shift, String tglSawmill, String noKayuBulat, String noMeja, String operator,
                        int idSawmillSpecialCondition, String balokTerpakai, String jamKerja, int jlhBatangRajang,
                        String hourMeter, String remark, String namaJenisKayu, int stokTersedia, double beratBalokTim,
-                       String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2) {
+                       String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2, String namaMeja) {
         this.noSTSawmill = noSTSawmill;
         this.shift = shift;
         this.tglSawmill = tglSawmill;
@@ -45,6 +46,7 @@ public class SawmillData {
         this.hourEnd = hourEnd;
         this.idOperator1 = idOperator1;
         this.idOperator2 = idOperator2;
+        this.namaMeja = namaMeja;
     }
 
     // Getter dan Setter lengkap
@@ -108,5 +110,8 @@ public class SawmillData {
 
     public Integer getIdOperator2() { return idOperator2; }
     public void setIdOperator2(Integer idOperator2) { this.idOperator2 = idOperator2; }
+
+    public String getNamaMeja() { return namaMeja; }
+    public void setNamaMeja(String namaMeja) { this.namaMeja = namaMeja; }
 
 }

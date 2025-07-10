@@ -39,7 +39,7 @@ import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.model.UserIDSO;
-import com.example.myapplication.utils.WebSocketConnection;
+import com.example.myapplication.config.WebSocketConnection;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;

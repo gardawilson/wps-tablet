@@ -22,9 +22,17 @@ public class DateRangeDialogHelper {
         void onDateRangeSelected(String tglAwal, String tglAkhir);
     }
 
-    public static void show(Activity activity, OnDateRangeSelectedListener listener) {
+    public enum DefaultTanggalMode {
+        BULAN_LALU,
+        MINGGU_LALU,
+        HARI_INI,
+        BULAN_INI
+    }
+
+
+    public static void show(Activity activity, DefaultTanggalMode mode, OnDateRangeSelectedListener listener) {
         LayoutInflater inflater = LayoutInflater.from(activity);
-        View dialogView = inflater.inflate(R.layout.dialog_report_input_tgl_awal_akhir, null);
+        View dialogView = inflater.inflate(R.layout.dialog_input_date_range, null);
 
         EditText edtTglAwal = dialogView.findViewById(R.id.edtTglAwal);
         EditText edtTglAkhir = dialogView.findViewById(R.id.edtTglAkhir);
@@ -33,16 +41,49 @@ public class DateRangeDialogHelper {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
 
         Calendar calAwal = Calendar.getInstance();
-        calAwal.set(Calendar.DAY_OF_MONTH, 1); // Set ke tanggal 1 bulan ini
-        String tglAwalStr = sdf.format(calAwal.getTime());
+        Calendar calAkhir = Calendar.getInstance();
 
-        Calendar calAkhir = Calendar.getInstance(); // Hari ini
-        String tglAkhirStr = sdf.format(calAkhir.getTime());
+        switch (mode) {
+            case BULAN_LALU:
+                calAwal.add(Calendar.MONTH, -1);
+                calAwal.set(Calendar.DAY_OF_MONTH, 1);
 
-        edtTglAwal.setText(tglAwalStr);
-        edtTglAkhir.setText(tglAkhirStr);
+                calAkhir.add(Calendar.MONTH, -1);
+                calAkhir.set(Calendar.DAY_OF_MONTH, calAkhir.getActualMaximum(Calendar.DAY_OF_MONTH));
+                break;
+
+            case MINGGU_LALU:
+                Calendar today = Calendar.getInstance();
+
+                // Pindah ke minggu lalu (Senin)
+                today.add(Calendar.WEEK_OF_YEAR, -1);
+                today.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                calAwal = (Calendar) today.clone();
+
+                // Tanggal akhir = tambah 6 hari dari Senin
+                Calendar akhirMinggu = (Calendar) today.clone();
+                akhirMinggu.add(Calendar.DAY_OF_MONTH, 6);
+                calAkhir = akhirMinggu;
+                break;
+
+            case HARI_INI:
+                calAkhir = Calendar.getInstance(); // Hari ini
+                calAwal = (Calendar) calAkhir.clone();
+                calAwal.set(Calendar.DAY_OF_MONTH, 1); // Tanggal 1 bulan ini
+                break;
 
 
+            case BULAN_INI:
+            default:
+                calAwal.set(Calendar.DAY_OF_MONTH, 1);
+                // calAkhir sudah hari ini
+                break;
+        }
+
+        edtTglAwal.setText(sdf.format(calAwal.getTime()));
+        edtTglAkhir.setText(sdf.format(calAkhir.getTime()));
+
+        // Picker logic tetap sama...
         View.OnClickListener dateClickListener = v -> {
             final EditText target = (EditText) v;
             Calendar calendar = Calendar.getInstance();
@@ -62,7 +103,7 @@ public class DateRangeDialogHelper {
         edtTglAkhir.setOnClickListener(dateClickListener);
 
         AlertDialog alertDialog = new AlertDialog.Builder(activity)
-                .setTitle("Pilih Tanggal")
+                .setTitle("Filter Laporan")
                 .setView(dialogView)
                 .create();
 
@@ -75,4 +116,5 @@ public class DateRangeDialogHelper {
 
         alertDialog.show();
     }
+
 }
