@@ -1,16 +1,11 @@
 package com.example.myapplication;
 
-import static com.example.myapplication.api.LabelApi.insertDataRejectPembelian;
-
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,14 +14,10 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
-import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -36,17 +27,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.myapplication.api.LabelApi;
-import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.api.SawmillApi;
 import com.example.myapplication.model.JenisKayuData;
 import com.example.myapplication.model.QcSawmillData;
 import com.example.myapplication.model.QcSawmillDetailData;
-import com.example.myapplication.model.STPembelianData;
-import com.example.myapplication.model.STPembelianDataReject;
-import com.example.myapplication.model.SawmillDetailData;
-import com.example.myapplication.model.SupplierData;
-import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import java.sql.SQLException;

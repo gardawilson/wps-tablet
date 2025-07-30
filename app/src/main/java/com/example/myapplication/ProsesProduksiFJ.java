@@ -1,4 +1,5 @@
 package com.example.myapplication;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
@@ -10,7 +11,7 @@ import com.example.myapplication.utils.TableConfigUtils;
 
 
 
-import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
+import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPeriodClosed;
 
 
 import android.content.Context;
@@ -57,7 +58,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
@@ -374,7 +374,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
         // Memuat data dari API dan menampilkan ke tabel
         executorService.execute(() -> {
-            dataList = ProductionApi.getProductionData("FJProduksi_h");
+            dataList = ProsesProduksiApi.getProductionData("FJProduksi_h");
 
             runOnUiThread(() -> {
                 populateTable(dataList);
@@ -837,8 +837,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                         return;
                     }
 
-                    if (ProductionApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
-                        if (ProductionApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
+                    if (ProsesProduksiApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
+                        if (ProsesProduksiApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
                             handleValidData(result, config);
                         } else {
                             handleDuplicateOrInvalidUsage(result, config);
@@ -856,7 +856,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (ProductionApi.isDateValid(noProduksi, "FJProduksi_h", result, config.tableNameH, config.columnName)) {
+        if (ProsesProduksiApi.isDateValid(noProduksi, "FJProduksi_h", result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -945,10 +945,10 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel S4S
             if (!noS4SList.isEmpty()) {
-                List<String> existingNoS4S = ProductionApi.getNoS4SByNoProduksi(noProduksi, "FJProduksiInputS4S");
+                List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "FJProduksiInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "FJProduksiInputS4S");
+                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "FJProduksiInputS4S");
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -956,16 +956,16 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel CC
             if (!noCCList.isEmpty()) {
-                List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi, "FJProduksiInputCCAkhir");
+                List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "FJProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "FJProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "FJProduksiInputCCAkhir");
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
-            ProductionApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi FJ (Mobile)");
+            ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi FJ (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();
@@ -1002,7 +1002,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                             "SELECT 'CrossCut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM FJProduksiInputCCAkhir WHERE NoProduksi = ?";
 
             // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 2);
+            List<HistoryItem> historyGroups = ProsesProduksiApi.getHistoryItems(noProduksi, filterQuery, 2);
 
             // 2. Siapkan dan proses data (di latar belakang)
             HistorySummary summary = prepareHistorySummary(historyGroups);
@@ -1136,8 +1136,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
             runOnUiThread(() -> {
@@ -1484,8 +1484,8 @@ public class ProsesProduksiFJ extends AppCompatActivity {
             mesinProduksi = data.getMesin();
 
             // Ambil data untuk setiap tabel
-            noS4SList = ProductionApi.getNoS4SByNoProduksi(noProduksi, "FJProduksiInputS4S");
-            noCCList = ProductionApi.getNoCCByNoProduksi(noProduksi, "FJProduksiInputCCAkhir");
+            noS4SList = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "FJProduksiInputS4S");
+            noCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "FJProduksiInputCCAkhir");
 
             // Perbarui UI di thread utama
             runOnUiThread(() -> {

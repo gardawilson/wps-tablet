@@ -126,8 +126,13 @@ public class DateTimeUtils {
     }
 
     public static String formatTimeToHHmmss(String timeString) {
+        if (timeString == null || timeString.trim().isEmpty()) {
+            Log.e("TimeFormatError", "Input waktu null atau kosong.");
+            return "ERROR";
+        }
+
         try {
-            // Format input seperti 14:30:00.0000
+            // Format input seperti 14:30:00.0000000
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSS", Locale.ENGLISH);
             LocalTime localTime = LocalTime.parse(timeString, inputFormatter);
 
@@ -135,10 +140,11 @@ public class DateTimeUtils {
             return localTime.format(outputFormatter);
 
         } catch (DateTimeParseException e) {
-            Log.e("TimeFormatError", "Gagal memformat waktu (HH:mm:ss.SSSS ke HH:mm): " + e.getMessage());
+            Log.e("TimeFormatError", "Gagal memformat waktu (HH:mm:ss.SSSSSSS ke HH:mm): " + e.getMessage());
             return "ERROR";
         }
     }
+
 
 
 }

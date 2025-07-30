@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 import static com.example.myapplication.utils.DateTimeUtils.formatDate;
 import static com.example.myapplication.utils.DateTimeUtils.formatTimeToHHmmss;
 
@@ -12,6 +13,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.text.method.DigitsKeyListener;
 import android.util.DisplayMetrics;
@@ -32,12 +34,14 @@ import android.widget.ImageButton;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
+import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -51,6 +55,9 @@ import com.example.myapplication.model.SawmillDetailInputData;
 import com.example.myapplication.model.SpecialConditionData;
 import com.example.myapplication.model.KayuBulatData;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -84,11 +91,12 @@ public class Sawmill extends AppCompatActivity {
     private TableLayout mainTable;
     private TableRow selectedRowMain;
     private TableRow selectedRowDetail;
-    private List<SawmillData> dataList; // Data asli yang tidak difilter
+    private List<SawmillData> dataList = new ArrayList<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Button btnDataBaru;
     private Button btnEditData;
     private Button btnHapusData;
+    private Button btnCetak;
     private int totalPcsAcuan = 0;
     private int sisaPcs = 0;
     private final List<SawmillDetailInputData> inputList = new ArrayList<>();
@@ -103,7 +111,19 @@ public class Sawmill extends AppCompatActivity {
     private String tglTutupTransaksi;
     private List<String> allNoMeja = new ArrayList<>();
     private Boolean isValidNoKB = false;
-
+    private SearchView searchNoKB;
+    private ScrollView scrollView;
+    private int currentPage = 1;
+    private boolean isLoading = false;
+    private final int PAGE_SIZE = 50;
+    private TableRow loadingRow = null;
+    private String currentSearchKeyword = ""; // simpan keyword global
+    private boolean hasMoreData = true;
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
+    private static final int SEARCH_DELAY = 1000;
+    private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
+    private String username;
 
 
     @Override
@@ -117,8 +137,54 @@ public class Sawmill extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         btnEditData = findViewById(R.id.btnEditData);
         btnHapusData = findViewById(R.id.btnHapusData);
+        searchNoKB = findViewById(R.id.searchNoKB);
+        scrollView = findViewById(R.id.scrollView);
+        btnCetak = findViewById(R.id.btnCetak);
+        username = SharedPrefUtils.getUsername(this);
+
 
         loadDataAndDisplayTable();
+
+        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
+            int diff = view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY());
+
+            if (diff <= 100 && !isLoading && hasMoreData) {
+                loadMoreData(false);
+            }
+        });
+
+        searchNoKB.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // Hentikan debounce jika user submit langsung
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+                currentSearchKeyword = query.trim();
+                loadMoreData(true);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // Cancel debounce sebelumnya
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+
+                // Buat debounce baru yang akan dijalankan jika user berhenti mengetik 3 detik
+                searchRunnable = () -> {
+                    currentSearchKeyword = newText.trim();
+                    loadMoreData(true);
+                };
+
+                // Jadwalkan debounce setelah 3 detik
+                searchHandler.postDelayed(searchRunnable, SEARCH_DELAY);
+                return true;
+            }
+        });
+
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
             // Menampilkan indikator swipe
@@ -164,7 +230,69 @@ public class Sawmill extends AppCompatActivity {
                 Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
             }
         });
+
+        btnCetak.setOnClickListener(v -> {
+            if (selectedRowMain != null) {
+                SawmillData selectedData = (SawmillData) selectedRowMain.getTag();
+
+                String noProduksi = selectedData.getNoSTSawmill(); // atau getNoProduksi(), tergantung field-nya
+                String reportName = "CrLembarTally";
+
+                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                        + "?NoProduksi=" + noProduksi
+                        + "&Username=" + username
+                        + "&reportName=" + reportName;
+
+                loadingDialogHelper.show(this);
+                PdfUtils.downloadAndOpenPDF(
+                        this,
+                        url,
+                        "STSawmill_" + noProduksi + ".pdf",
+                        executorService,
+                        loadingDialogHelper
+                );
+            } else {
+                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
+    private void showLoadingRow() {
+        loadingRow = new TableRow(this);
+
+        ProgressBar spinner = new ProgressBar(this);
+        spinner.setIndeterminate(true);
+
+        TableRow.LayoutParams params = new TableRow.LayoutParams();
+        params.span = 9; // total kolom kamu, sesuaikan jumlahnya
+        spinner.setLayoutParams(params);
+
+        loadingRow.addView(spinner);
+        mainTable.addView(loadingRow);
+    }
+
+    private void hideLoadingRow() {
+        if (loadingRow != null) {
+            mainTable.removeView(loadingRow);
+            loadingRow = null;
+        }
+    }
+
+
+    private void filterDataByNoKayuBulat(String keyword) {
+        if (dataList == null) return;
+
+        List<SawmillData> filteredList = new ArrayList<>();
+
+        for (SawmillData data : dataList) {
+            if (data.getNoKayuBulat() != null && data.getNoKayuBulat().toLowerCase().contains(keyword.toLowerCase())) {
+                filteredList.add(data);
+            }
+        }
+
+        populateTable(filteredList);  // tampilkan hasil filter
+    }
+
 
     private void deleteFullSawmillData(String noSTSawmill, String jenisKayu) {
         executorService.execute(() -> {
@@ -1453,21 +1581,198 @@ public class Sawmill extends AppCompatActivity {
     }
 
     private void loadDataAndDisplayTable() {
-        // Menjalankan operasi di background thread
         mainLoadingIndicator.setVisibility(View.VISIBLE);
+        isLoading = true;
 
         executorService.execute(() -> {
-            dataList = SawmillApi.getSawmillData();
+            // Ambil data halaman pertama
+            List<SawmillData> newData = SawmillApi.getSawmillData(currentPage, PAGE_SIZE, currentSearchKeyword);
             tglTutupTransaksi = SawmillApi.getTanggalTutupTransaksi();
 
-            // Menampilkan data di UI thread setelah selesai mengambil data
             runOnUiThread(() -> {
-                populateTable(dataList);  // Memperbarui tampilan tabel dengan data terbaru
-                // Sembunyikan loading indicator jika ada
+                dataList.clear(); // clear hanya saat page pertama
+                dataList.addAll(newData);
+
+                mainTable.removeAllViews(); // hapus tampilan lama
+                for (SawmillData data : newData) {
+                    addTableRow(data); // pakai method baru ini, pengganti populateTable
+                }
+
                 mainLoadingIndicator.setVisibility(View.GONE);
+                isLoading = false;
             });
         });
     }
+
+    private void addTableRow(SawmillData data) {
+        TableRow row = new TableRow(this);
+        row.setTag(data);
+
+        int rowIndex = mainTable.getChildCount(); // untuk warna selang-seling
+
+        TextView col1 = createTextView(data.getNoSTSawmill(), 1.0f);
+        TextView col2 = createTextView(data.getTglSawmill(), 1.0f);
+        TextView col3 = createTextView(data.getNoKayuBulat(), 1.0f);
+        TextView col4 = createTextView(data.getNamaJenisKayu(), 1.0f);
+        TextView col5 = createTextView(String.valueOf(data.getOperator()), 1.0f);
+
+        String jamKerja = data.getJamKerja();
+        if (jamKerja == null || jamKerja.trim().equals("0.0") || jamKerja.trim().isEmpty()) {
+            jamKerja = "?";
+        }
+        TextView col6 = createTextView(jamKerja, 0.5f);
+
+        TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
+        TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
+
+        setDateToView(data.getTglSawmill(), col2);
+
+        row.addView(col1);
+        row.addView(createDivider());
+        row.addView(col2);
+        row.addView(createDivider());
+        row.addView(col3);
+        row.addView(createDivider());
+        row.addView(col4);
+        row.addView(createDivider());
+        row.addView(col5);
+        row.addView(createDivider());
+        row.addView(col6);
+        row.addView(createDivider());
+        row.addView(col7);
+        row.addView(createDivider());
+        row.addView(col8);
+
+        // Background warna selang-seling
+        row.setBackgroundColor(ContextCompat.getColor(this,
+                rowIndex % 2 == 0 ? R.color.background_cream : R.color.white));
+
+        if (data.getJamKerja() == null || data.getJamKerja().trim().equals("0.0") || data.getJamKerja().trim().isEmpty()) {
+            col6.setBackgroundColor(Color.parseColor("#FFF176"));
+        }
+
+        // Klik biasa
+        row.setOnClickListener(v -> {
+            if (selectedRowMain != null && selectedRowMain != row) {
+                int previousIndex = mainTable.indexOfChild(selectedRowMain);
+                SawmillData previousData = (SawmillData) selectedRowMain.getTag(); // tag sudah di-set sebelumnya
+                resetRowColor(selectedRowMain, previousIndex, previousData);
+            }
+
+            row.setBackgroundResource(R.drawable.row_selector);
+            setTextColor(row, R.color.white);
+
+            // col6 ikut diubah saat dipilih
+            TextView selectedCol6 = (TextView) row.getChildAt(10); // posisi col6
+            selectedCol6.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent)); // hilangkan kuning, ikuti selector
+
+            selectedRowMain = row;
+        });
+
+
+        // Long click dengan touch listener untuk mendapatkan koordinat
+        row.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                // Simpan koordinat klik
+                touchX = event.getRawX();
+                touchY = event.getRawY();
+            }
+            return false; // Biarkan event dilanjutkan ke listener lain
+        });
+
+        // Long click
+        row.setOnLongClickListener(v -> {
+            if (selectedRowMain != null && selectedRowMain != row) {
+                int previousIndex = mainTable.indexOfChild(selectedRowMain);
+                SawmillData previousData = (SawmillData) selectedRowMain.getTag();
+
+                // Reset background row sebelumnya
+                int bgColor = (previousIndex % 2 == 0)
+                        ? ContextCompat.getColor(this, R.color.background_cream)
+                        : ContextCompat.getColor(this, R.color.white);
+                selectedRowMain.setBackgroundColor(bgColor);
+
+                // Reset col6 sebelumnya
+                TextView previousCol6 = (TextView) selectedRowMain.getChildAt(10); // pastikan index col6 benar
+                if (previousData.getJamKerja() == null || previousData.getJamKerja().trim().equals("0.0") || previousData.getJamKerja().trim().isEmpty()) {
+                    previousCol6.setBackgroundColor(Color.parseColor("#FFF176")); // kembali kuning
+                } else {
+                    previousCol6.setBackgroundColor(bgColor);
+                }
+
+                resetTextColor(selectedRowMain);
+            }
+
+            // Highlight baris sekarang
+            row.setBackgroundResource(R.drawable.row_selector);
+            setTextColor(row, R.color.white);
+
+            // Highlight col6 juga
+            TextView selectedCol6 = (TextView) row.getChildAt(10); // pastikan index benar
+            selectedCol6.setBackgroundColor(Color.TRANSPARENT); // biar ikut selector row
+
+            selectedRowMain = row;
+
+            showRowPopup(v, data, touchX, touchY);
+            return true;
+        });
+
+        mainTable.addView(row);
+    }
+
+    private void loadMoreData(boolean reset) {
+        if (isLoading) return;
+        if (!hasMoreData && !reset) return;
+
+        if (reset) {
+            currentPage = 0;
+            hasMoreData = true;
+            dataList.clear();
+
+            // 🔥 Bersihkan UI di thread utama langsung sebelum loading
+            runOnUiThread(() -> {
+                mainTable.removeAllViews();
+                showLoadingRow(); // tampilkan loading di area yang sudah dibersihkan
+            });
+        } else {
+            showLoadingRow(); // tampilkan loading jika bukan reset
+        }
+
+        isLoading = true;
+
+        int pageToLoad = reset ? 1 : currentPage + 1;
+
+        executorService.execute(() -> {
+            Log.d("loadMoreData", "Page: " + pageToLoad + ", Keyword: '" + currentSearchKeyword + "'");
+
+            List<SawmillData> moreData = SawmillApi.getSawmillData(pageToLoad, PAGE_SIZE, currentSearchKeyword);
+
+            runOnUiThread(() -> {
+                hideLoadingRow();
+
+                if (!moreData.isEmpty()) {
+                    currentPage = pageToLoad;
+                    dataList.addAll(moreData);
+
+                    for (SawmillData data : moreData) {
+                        addTableRow(data);
+                    }
+
+                    if (moreData.size() < PAGE_SIZE) {
+                        hasMoreData = false; // data sudah habis
+                    }
+                } else {
+                    hasMoreData = false; // tidak ada data sama sekali
+                }
+
+                isLoading = false;
+            });
+        });
+    }
+
+
+
+
 
 
     private void populateTable(List<SawmillData> dataList) {
@@ -2347,6 +2652,7 @@ public class Sawmill extends AppCompatActivity {
         addRowButton.setVisibility(View.GONE);
 
         // btnSubmit untuk set acuan dan munculkan row pertama
+        // Kode btnSubmit.setOnClickListener yang sudah direfactor
         btnSubmit.setOnClickListener(v -> {
             String acuanTebal = inputTebal.getText().toString().trim();
             String acuanLebar = inputLebar.getText().toString().trim();
@@ -2363,45 +2669,40 @@ public class Sawmill extends AppCompatActivity {
                 return;
             }
 
-            try {
-                totalPcsAcuan = Integer.parseInt(acuanPcsStr);
-            } catch (NumberFormatException e) {
-                Toast.makeText(this, "PCS harus berupa angka", Toast.LENGTH_SHORT).show();
+            if (idGradeKB == -1) {
+                Toast.makeText(this, "Harap pilih grade terlebih dahulu!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Simpan data acuan untuk digunakan nanti
-            acuanData[0] = acuanTebal;
-            acuanData[1] = acuanLebar;
-            acuanData[2] = acuanPanjang;
-            acuanData[3] = acuanPcsStr;
+            float tebal = Float.parseFloat(acuanTebal);
+            float lebar = Float.parseFloat(acuanLebar);
+            float panjang = Float.parseFloat(acuanPanjang);
 
-            // Set acuan berhasil, tampilkan sisa PCS
-            updateSisaPcs(textSisaPCS);
-            textSisaPCS.setVisibility(View.VISIBLE);
+            if (isDuplicateDetail(tebal, lebar, panjang, idGradeKB)) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Duplikat Data")
+                        .setMessage("Detail ini sudah ditambahkan sebelumnya, yakin ingin menambahkan lagi?")
+                        .setPositiveButton("Ya", (dialogDuplicate, which) -> {
+                            Toast.makeText(this, "Detail berhasil ditambahkan.", Toast.LENGTH_SHORT).show();
 
-            // Munculkan row pertama
-            TableRow firstRow = createNewRow(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
-            tablePjgPcs.addView(firstRow);
+                            // Panggil method terpisah untuk setup acuan
+                            setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
+                                    textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
+                                    inputTebal, inputLebar, inputPanjang, inputPcs);
 
-            // Fokus dan keyboard ke input panjang di row pertama
-            EditText firstPanjangEditText = (EditText) firstRow.getChildAt(0);
-            firstPanjangEditText.requestFocus();
+                            Log.d("SetAcuan", "IdGradeKB saat submit: " + idGradeKB);
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return; // Tunggu respon dialog
+            }
 
-            // Tampilkan button add row dan sembunyikan button submit
-            addRowButton.setVisibility(View.VISIBLE);
-            btnSubmit.setEnabled(false);
+            // Panggil method terpisah untuk setup acuan (untuk kasus non-duplikat)
+            setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
+                    textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
+                    inputTebal, inputLebar, inputPanjang, inputPcs);
 
-            // Disable editing field acuan
-            inputTebal.setEnabled(false);
-            inputLebar.setEnabled(false);
-            inputPanjang.setEnabled(false);
-            inputPcs.setEnabled(false);
-
-            Log.d("SetAcuan", "Acuan ditetapkan: Tebal=" + acuanTebal + ", Lebar=" + acuanLebar +
-                    ", Panjang=" + acuanPanjang + ",  PCS=" + totalPcsAcuan);
             Log.d("SetAcuan", "IdGradeKB saat submit: " + idGradeKB);
-
         });
 
         //BUTTON CLEAR (RESET DETAIL)
@@ -2468,64 +2769,55 @@ public class Sawmill extends AppCompatActivity {
                                 return;
                             }
 
-                            // Cek duplikat data (termasuk dengan data acuan)
-                            if (isDuplicateData(acuanTebal, acuanLebar, panjangValue, acuanPanjang, acuanTebal, acuanLebar)) {
-                                Toast.makeText(this, "Data dengan Tebal, Lebar, dan Panjang yang sama sudah ada (termasuk data acuan)!", Toast.LENGTH_SHORT).show();
-                                hasDuplicate = true;
-                                break;
-                            }
+                            // Parse nilai untuk validasi panjang
+                            try {
+                                float panjangAcuan = Float.parseFloat(acuanPanjang);
+                                float panjangInput = Float.parseFloat(panjangValue);
 
-                            if (hasValidData) {
-                                // Ambil nilai dari UI saat dibutuhkan (sama seperti radioBagus/radioKulit)
-                                boolean currentIsLocal = radioBagus.isChecked() || radioKulit.isChecked();
-                                int currentIsBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
-
-                                // Ambil idGradeKB langsung dari spinner
-                                GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
-                                int currentIdGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null) ? selectedGrade.getIdGradeKB() : -1;
-                                String currentNameGradeKB = (selectedGrade != null && selectedGrade.getNamaGrade() != null) ? selectedGrade.getNamaGrade() : "-";
-
-                                // Ambil UOM dari RadioButton
-                                int currentIdUOMTblLebar = radioMillimeter.isChecked() ? 1 : 4;
-                                int currentIdUOMPanjang;
-                                if (radioFeet.isChecked()) {
-                                    currentIdUOMPanjang = 4;
-                                } else if (radioMeter.isChecked()) {
-                                    currentIdUOMPanjang = 3;
-                                } else {
-                                    currentIdUOMPanjang = 1;
+                                // Cek duplikat data terlebih dahulu (prioritas utama)
+                                if (isDuplicateData(acuanTebal, acuanLebar, panjangValue, acuanPanjang, acuanTebal, acuanLebar)) {
+                                    Toast.makeText(this, "Data dengan Tebal, Lebar, dan Panjang yang sama sudah ada!", Toast.LENGTH_SHORT).show();
+                                    hasDuplicate = true;
+                                    break;
                                 }
 
-                                // Buat objek SawmillDetailData
-                                int noUrut = detailDataList.size() + 1;
-                                float tebal = Float.parseFloat(acuanTebal);
-                                float lebar = Float.parseFloat(acuanLebar);
-                                float panjang = Float.parseFloat(acuanPanjang);
-                                int pcs = Integer.parseInt(pcsValue);
+                                // Pengecekan apakah panjang input melebihi panjang acuan
+                                if (panjangInput > panjangAcuan) {
+                                    new AlertDialog.Builder(this)
+                                            .setTitle("Panjang Melebihi Default")
+                                            .setMessage("Panjang melebihi panjang Default (" + panjangAcuan + "), yakin ingin menambahkan?")
+                                            .setPositiveButton("Ya", (dialogInputPjg, which) -> {
+                                                // Lanjutkan proses meskipun panjang melebihi acuan
+                                                Toast.makeText(this, "Data berhasil ditambahkan meskipun melebihi panjang acuan.", Toast.LENGTH_SHORT).show();
 
-                                SawmillDetailData detailData = new SawmillDetailData(
-                                        noUrut, tebal, lebar, panjang, pcs,
-                                        currentIsLocal, currentIdUOMTblLebar, currentIdUOMPanjang,
-                                        currentIsBagusKulit, currentIdGradeKB, currentNameGradeKB
-                                );
+                                                // Proses data langsung tanpa pengecekan duplikat lagi
+                                                processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,
+                                                        panjangValue, radioBagus, radioKulit, radioMillimeter, radioFeet,
+                                                        radioMeter, spinGradeDetail);
 
-                                // Tambahkan ke list
-                                detailDataList.add(detailData);
+                                                // Lanjutkan proses add row
+                                                continueAddRowProcess(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
+                                            })
+                                            .setNegativeButton("Batal", (dialogValidatePjg, which) -> {
+                                                // Fokus kembali ke input panjang untuk koreksi
+                                                panjangET.requestFocus();
+                                                panjangET.selectAll();
+                                            })
+                                            .show();
+                                    return; // Tunggu response dialog
+                                }
 
-                                Log.d("AddRow", "Data ditambahkan dengan IdGradeKB: " + currentIdGradeKB);
+                                // Jika panjang tidak melebihi acuan dan tidak duplikat, proses data normal
+                                processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,
+                                        panjangValue, radioBagus, radioKulit, radioMillimeter, radioFeet,
+                                        radioMeter, spinGradeDetail);
+
+                            } catch (NumberFormatException e) {
+                                Toast.makeText(this, "Format panjang tidak valid", Toast.LENGTH_SHORT).show();
+                                return;
                             }
 
-                            // Update data
-                            inputData.setPanjang(panjangValue);
-                            inputData.setPcs(pcsValue);
-
-                            // Tambahkan ke inputList hanya saat user klik AddRowButton
-                            inputList.add(inputData);
-
                             hasValidData = true;
-
-                            // Disable hanya EditText, bukan tombol delete
-                            disableRowEditTexts(row);
                         }
                     }
                 }
@@ -2564,9 +2856,7 @@ public class Sawmill extends AppCompatActivity {
 
                 Log.d("AddRow", "Row baru ditambahkan. Sisa PCS: " + sisaPcs);
             }
-
         });
-
 
         // PRECONDITION TUTUP TRANSAKSI
         if (isTutupTransaksi(tgl, tglTutupTransaksi)) {
@@ -2772,6 +3062,152 @@ public class Sawmill extends AppCompatActivity {
                     (int) (getResources().getDisplayMetrics().heightPixels * 0.95)
             );
         }
+    }
+
+
+    // Method terpisah untuk melanjutkan proses add row setelah data diproses
+    private void continueAddRowProcess(String acuanTebal, String acuanLebar, TableLayout tablePjgPcs,
+                                       TextView textSisaPCS, Button addRowButton) {
+
+        // Update sisa PCS
+        updateSisaPcs(textSisaPCS);
+
+        // Enable kembali semua tombol delete karena data sudah di-submit
+        enableAllDeleteButtons(tablePjgPcs);
+
+        // Jika masih ada sisa PCS dan sisa > 0, buat row baru
+        if (sisaPcs > 0) {
+            TableRow newRow = createNewRow(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
+            tablePjgPcs.addView(newRow);
+
+            // Fokus ke EditText panjang setelah UI benar-benar siap
+            EditText firstPanjangEditText = (EditText) newRow.getChildAt(0);
+            firstPanjangEditText.post(() -> {
+                firstPanjangEditText.requestFocus();
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(firstPanjangEditText, InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+
+            Log.d("AddRow", "Row baru ditambahkan. Sisa PCS: " + sisaPcs);
+        }
+    }
+
+    // Method terpisah untuk memproses data row (sama seperti sebelumnya)
+    private void processRowData(TableRow row, SawmillDetailInputData inputData, String panjangValue,
+                                String pcsValue, String acuanTebal, String acuanLebar, String panjangInput,
+                                RadioButton radioBagus, RadioButton radioKulit, RadioButton radioMillimeter,
+                                RadioButton radioFeet, RadioButton radioMeter, Spinner spinGradeDetail) {
+
+        // Ambil nilai dari UI saat dibutuhkan
+        boolean currentIsLocal = radioBagus.isChecked() || radioKulit.isChecked();
+        int currentIsBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+
+        // Ambil idGradeKB langsung dari spinner
+        GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
+        int currentIdGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null) ? selectedGrade.getIdGradeKB() : -1;
+        String currentNameGradeKB = (selectedGrade != null && selectedGrade.getNamaGrade() != null) ? selectedGrade.getNamaGrade() : "-";
+
+        // Ambil UOM dari RadioButton
+        int currentIdUOMTblLebar = radioMillimeter.isChecked() ? 1 : 4;
+        int currentIdUOMPanjang;
+        if (radioFeet.isChecked()) {
+            currentIdUOMPanjang = 4;
+        } else if (radioMeter.isChecked()) {
+            currentIdUOMPanjang = 3;
+        } else {
+            currentIdUOMPanjang = 1;
+        }
+
+        // Buat objek SawmillDetailData
+        int noUrut = detailDataList.size() + 1;
+        float tebal = Float.parseFloat(acuanTebal);
+        float lebar = Float.parseFloat(acuanLebar);
+        float panjang = Float.parseFloat(panjangInput);
+        int pcs = Integer.parseInt(pcsValue);
+
+        SawmillDetailData detailData = new SawmillDetailData(
+                noUrut, tebal, lebar, panjang, pcs,
+                currentIsLocal, currentIdUOMTblLebar, currentIdUOMPanjang,
+                currentIsBagusKulit, currentIdGradeKB, currentNameGradeKB
+        );
+
+        // Tambahkan ke list
+        detailDataList.add(detailData);
+
+        // Update data
+        inputData.setPanjang(panjangValue);
+        inputData.setPcs(pcsValue);
+
+        // Tambahkan ke inputList
+        inputList.add(inputData);
+
+        // Disable EditText pada row ini
+        disableRowEditTexts(row);
+
+        Log.d("AddRow", "Data ditambahkan dengan IdGradeKB: " + currentIdGradeKB);
+    }
+
+
+    // Method terpisah untuk menangani setup acuan
+    private void setupAcuan(String acuanTebal, String acuanLebar, String acuanPanjang, String acuanPcsStr,
+                            String[] acuanData, TextView textSisaPCS, TableLayout tablePjgPcs,
+                            Button addRowButton, Button btnSubmit, EditText inputTebal,
+                            EditText inputLebar, EditText inputPanjang, EditText inputPcs) {
+
+        // Parsing PCS jika belum dilakukan
+        try {
+            totalPcsAcuan = Integer.parseInt(acuanPcsStr);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "PCS harus berupa angka", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Simpan data acuan untuk digunakan nanti
+        acuanData[0] = acuanTebal;
+        acuanData[1] = acuanLebar;
+        acuanData[2] = acuanPanjang;
+        acuanData[3] = acuanPcsStr;
+
+        // Set acuan berhasil, tampilkan sisa PCS
+        updateSisaPcs(textSisaPCS);
+        textSisaPCS.setVisibility(View.VISIBLE);
+
+        // Munculkan row pertama
+        TableRow firstRow = createNewRow(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
+        tablePjgPcs.addView(firstRow);
+
+        // Fokus dan keyboard ke input panjang di row pertama
+        EditText firstPanjangEditText = (EditText) firstRow.getChildAt(0);
+        firstPanjangEditText.requestFocus();
+
+        // Tampilkan button add row dan sembunyikan button submit
+        addRowButton.setVisibility(View.VISIBLE);
+        btnSubmit.setEnabled(false);
+
+        // Disable editing field acuan
+        inputTebal.setEnabled(false);
+        inputLebar.setEnabled(false);
+        inputPanjang.setEnabled(false);
+        inputPcs.setEnabled(false);
+
+        Log.d("SetAcuan", "Acuan ditetapkan: Tebal=" + acuanTebal + ", Lebar=" + acuanLebar +
+                ", Panjang=" + acuanPanjang + ",  PCS=" + totalPcsAcuan);
+    }
+
+
+    private boolean isDuplicateDetail(float tebal, float lebar, float panjang, int idGradeKB) {
+        for (SawmillDetailData data : detailDataList) {
+            if (Float.compare(data.getTebal(), tebal) == 0 &&
+                    Float.compare(data.getLebar(), lebar) == 0 &&
+                    Float.compare(data.getPanjang(), panjang) == 0 &&
+                    data.getIdGradeKB() == idGradeKB) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

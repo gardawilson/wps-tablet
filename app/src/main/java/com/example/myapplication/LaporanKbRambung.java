@@ -24,6 +24,7 @@ public class LaporanKbRambung extends AppCompatActivity {
 
     private CardView laporan_rekap_penerimaan_st_dari_sawmill;
     private CardView laporan_mutasi_kb_gantung_rambung;
+    private CardView laporan_umur_kayu_bulat_rambung;
     private String username;
 
 
@@ -34,11 +35,13 @@ public class LaporanKbRambung extends AppCompatActivity {
 
         laporan_rekap_penerimaan_st_dari_sawmill = findViewById(R.id.laporan_rekap_penerimaan_st_dari_sawmill);
         laporan_mutasi_kb_gantung_rambung = findViewById(R.id.laporan_mutasi_kb_gantung_rambung);
+        laporan_umur_kayu_bulat_rambung = findViewById(R.id.laporan_umur_kayu_bulat_rambung);
 
         username = SharedPrefUtils.getUsername(this);
 
         laporan_rekap_penerimaan_st_dari_sawmill.setOnClickListener(view -> showLaporanRekapPenerimaanStDariSawmill());
         laporan_mutasi_kb_gantung_rambung.setOnClickListener(view -> showLaporanMutasiKbGantungRambung());
+        laporan_umur_kayu_bulat_rambung.setOnClickListener(view -> showLaporanUmurKayuBulatRambung());
     }
 
     private void showLaporanRekapPenerimaanStDariSawmill() {
@@ -93,6 +96,31 @@ public class LaporanKbRambung extends AppCompatActivity {
         });
     }
 
+    private void showLaporanUmurKayuBulatRambung() {
+        DateRangeDialogHelper.show(this, DateRangeDialogHelper.DefaultTanggalMode.BULAN_LALU, (tglAwal, tglAkhir) -> {
+            String reportName = "CrUmurKayuBulatRambung";
+            String type = "Rambung";
+
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?reportName=" + reportName
+                    + "&TglAwal=" + tglAwal
+                    + "&TglAkhir=" + tglAkhir
+                    + "&StartDate=" + tglAwal
+                    + "&EndDate=" + tglAkhir
+                    + "&Username=" + username
+                    + "&Type=" + Uri.encode(type); // penting: encode judul untuk URL
+
+            loadingDialogHelper.show(this);
+
+            PdfUtils.downloadAndOpenPDF(
+                    this,
+                    url,
+                    "Umur Kayu Bulat Rambung.pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        });
+    }
 
 
 }

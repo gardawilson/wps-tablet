@@ -31,8 +31,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.myapplication.api.LabelApi;
-import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.api.ProsesProduksiApi;
+import com.example.myapplication.api.SawnTimberApi;
 import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.STUpahData;
 import com.example.myapplication.model.TooltipData;
@@ -104,8 +104,8 @@ public class SawnTimberUpah extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             runOnUiThread(() -> {
                 if (tooltipData != null) {
@@ -365,7 +365,7 @@ public class SawnTimberUpah extends AppCompatActivity {
     private void loadDataAndDisplayTable() {
         // Menjalankan operasi di background thread
         executorService.execute(() -> {
-            dataList = LabelApi.getSTUpahData();
+            dataList = SawnTimberApi.getSTUpahData();
 
             // Menampilkan data di UI thread setelah selesai mengambil data
             runOnUiThread(() -> {
@@ -463,12 +463,12 @@ public class SawnTimberUpah extends AppCompatActivity {
                 // Menjalankan ExecutorService untuk mengambil nomor penerimaan baru dan menyimpan data
                 executorService.execute(() -> {
                     // Ambil NoPenerimaanST baru dari database ketika tombol simpan diklik
-                    String newNoPenerimaanST = LabelApi.getNextNoPenerimaanSTUpah();
+                    String newNoPenerimaanST = SawnTimberApi.getNextNoPenerimaanSTUpah();
 
                     // Periksa apakah NoPenerimaanST berhasil diambil
                     if (newNoPenerimaanST != null && !newNoPenerimaanST.isEmpty()) {
                         try {
-                            LabelApi.insertDataToUpah(newNoPenerimaanST, tglLaporanVal, idCustomerVal, noPlatVal, noTrukVal, noSJVal, noteVal);
+                            SawnTimberApi.insertDataToUpah(newNoPenerimaanST, tglLaporanVal, idCustomerVal, noPlatVal, noTrukVal, noSJVal, noteVal);
 
                             // Setelah operasi selesai, update UI di main thread
                             runOnUiThread(() -> {
@@ -559,8 +559,8 @@ public class SawnTimberUpah extends AppCompatActivity {
 
         // Mengambil data supplier dari database menggunakan ExecutorService
         executorService.execute(() -> {
-            // Ambil data supplier dari LabelApi
-            List<CustomerData> customers = LabelApi.getCustomerList();
+            // Ambil data supplier dari SawnTimberApi
+            List<CustomerData> customers = SawnTimberApi.getCustomerList();
             customerList.addAll(customers);  // Menambahkan supplier yang diambil dari database
 
             // Perbarui Spinner di UI thread
@@ -738,7 +738,7 @@ public class SawnTimberUpah extends AppCompatActivity {
             // Ambil data latar belakang
             noSTUpah = data.getNoSTUpah();
 
-            noSTList = LabelApi.getSTListBySTUpah(noSTUpah);
+            noSTList = SawnTimberApi.getSTListBySTUpah(noSTUpah);
 
             // Perbarui UI di thread utama
             runOnUiThread(() -> {

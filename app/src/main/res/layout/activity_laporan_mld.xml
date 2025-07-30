@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="LAPORAN MOULDING)"
+        android:text="LAPORAN MOULDING"
         android:textAlignment="center"
         android:textColor="@color/primary"
         android:textSize="24sp"

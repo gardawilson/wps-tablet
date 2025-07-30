@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -26,6 +27,7 @@ public class LaporanKB extends AppCompatActivity {
     private CardView laporan_kayu_bulat_hidup;
     private CardView laporan_mutasi_racip;
     private CardView laporan_mutasi_kayu_bulat_gantung;
+    private CardView laporan_umur_kayu_bulat_non_rambung;
     private String username;
 
 
@@ -38,6 +40,7 @@ public class LaporanKB extends AppCompatActivity {
         laporan_kayu_bulat_hidup = findViewById(R.id.laporan_kayu_bulat_hidup);
         laporan_mutasi_racip = findViewById(R.id.laporan_mutasi_racip);
         laporan_mutasi_kayu_bulat_gantung = findViewById(R.id.laporan_mutasi_kayu_bulat_gantung);
+        laporan_umur_kayu_bulat_non_rambung = findViewById(R.id.laporan_umur_kayu_bulat_non_rambung);
 
         username = SharedPrefUtils.getUsername(this);
 
@@ -45,6 +48,7 @@ public class LaporanKB extends AppCompatActivity {
         laporan_kayu_bulat_hidup.setOnClickListener(view -> showLaporanKayuBulatHidup());
         laporan_mutasi_racip.setOnClickListener(view -> showLaporanMutasiRacip());
         laporan_mutasi_kayu_bulat_gantung.setOnClickListener(view -> showLaporanMutasiKayuBulatGantung());
+        laporan_umur_kayu_bulat_non_rambung.setOnClickListener(view -> showLaporanUmurKayuBulatNonRambung());
 
     }
 
@@ -159,61 +163,32 @@ public class LaporanKB extends AppCompatActivity {
     }
 
 
+    private void showLaporanUmurKayuBulatNonRambung() {
+        DateRangeDialogHelper.show(this, DateRangeDialogHelper.DefaultTanggalMode.BULAN_LALU, (tglAwal, tglAkhir) -> {
+            String reportName = "CrUmurKayuBulatNonRambung";
+            String type = "Non Rambung";
 
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?reportName=" + reportName
+                    + "&TglAwal=" + tglAwal
+                    + "&TglAkhir=" + tglAkhir
+                    + "&StartDate=" + tglAwal
+                    + "&EndDate=" + tglAkhir
+                    + "&Username=" + username
+                    + "&Type=" + Uri.encode(type); // penting: encode judul untuk URL
 
-//    private void downloadAndOpenPDF(String urlString, String fileName) {
-//        executorService.execute(() -> {
-//            try {
-//                URL url = new URL(urlString);
-//                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-//                connection.connect();
-//
-//                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-//                    Log.e(TAG, "Server returned HTTP " + connection.getResponseCode()
-//                            + " " + connection.getResponseMessage());
-//                    loadingDialogHelper.hide();
-//                    return;
-//                }
-//
-//                InputStream input = connection.getInputStream();
-//                File pdfFile = new File(getCacheDir(), fileName);
-//                FileOutputStream output = new FileOutputStream(pdfFile);
-//
-//                byte[] buffer = new byte[4096];
-//                int bytesRead;
-//                while ((bytesRead = input.read(buffer)) != -1) {
-//                    output.write(buffer, 0, bytesRead);
-//                }
-//
-//                output.close();
-//                input.close();
-//
-//                runOnUiThread(() -> {
-//                    try {
-//                        Uri pdfUri = FileProvider.getUriForFile(
-//                                LaporanKB.this,
-//                                getPackageName() + ".provider",
-//                                pdfFile
-//                        );
-//
-//                        Intent intent = new Intent(Intent.ACTION_VIEW);
-//                        intent.setDataAndType(pdfUri, "application/pdf");
-//                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NO_HISTORY);
-//
-//                        startActivity(intent);
-//                    } catch (Exception e) {
-//                        Log.e(TAG, "Gagal membuka PDF", e);
-//                    } finally {
-//                        loadingDialogHelper.hide();
-//                    }
-//                });
-//
-//            } catch (Exception e) {
-//                Log.e(TAG, "Download error", e);
-//                loadingDialogHelper.hide();
-//            }
-//        });
-//    }
+            Log.d(TAG, "Mulai download laporan kayu bulat hidup dari URL: " + url);
 
+            loadingDialogHelper.show(LaporanKB.this);
+
+            PdfUtils.downloadAndOpenPDF(
+                    LaporanKB.this,
+                    url,
+                    "Mutasi Kayu Bulat Gantung.pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        });
+    }
 
 }

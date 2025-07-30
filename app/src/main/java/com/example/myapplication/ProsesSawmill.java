@@ -12,6 +12,7 @@ public class ProsesSawmill extends AppCompatActivity {
 
     private CardView card_lembar_telly;
     private CardView card_quality_control_sawmill;
+    private CardView card_penerimaan_st_dari_sawmill;
 
 
     @Override
@@ -21,6 +22,7 @@ public class ProsesSawmill extends AppCompatActivity {
 
         card_lembar_telly = findViewById(R.id.card_lembar_telly);
         card_quality_control_sawmill = findViewById(R.id.card_quality_control_sawmill);
+        card_penerimaan_st_dari_sawmill = findViewById(R.id.card_penerimaan_st_dari_sawmill);
 
 
         card_lembar_telly.setOnClickListener(new View.OnClickListener() {
@@ -35,6 +37,14 @@ public class ProsesSawmill extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( ProsesSawmill.this, QcSawmill.class);
+                startActivity(intent);
+            }
+        });
+
+        card_penerimaan_st_dari_sawmill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( ProsesSawmill.this, PenerimaanStDariSawmill.class);
                 startActivity(intent);
             }
         });

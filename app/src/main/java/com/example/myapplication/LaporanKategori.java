@@ -87,7 +87,7 @@ public class LaporanKategori extends AppCompatActivity {
         lmtReport.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent( LaporanKategori.this, LmtReport.class);
+                Intent intent = new Intent( LaporanKategori.this, LaporanLMT.class);
                 startActivity(intent);
             }
         });

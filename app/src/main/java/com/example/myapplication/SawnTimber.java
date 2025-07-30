@@ -47,8 +47,8 @@ import android.widget.ImageView;
 
 import java.io.OutputStream;
 
-import com.example.myapplication.api.LabelApi;
-import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.api.ProsesProduksiApi;
+import com.example.myapplication.api.SawnTimberApi;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.OutputDataST;
 import com.example.myapplication.model.TooltipData;
@@ -2147,7 +2147,7 @@ public class SawnTimber extends AppCompatActivity {
 
     private void onClickDateOutput(String rawDate) {
         executorService.execute(() -> {
-            List<OutputDataST> noSTList = LabelApi.getNoSTByDateCreate(rawDate);
+            List<OutputDataST> noSTList = SawnTimberApi.getNoSTByDateCreate(rawDate);
 
             runOnUiThread(() -> {
                 populateTableOutput(noSTList);
@@ -2257,8 +2257,8 @@ public class SawnTimber extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             runOnUiThread(() -> {
                 if (tooltipData != null) {

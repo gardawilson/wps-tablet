@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
-import static com.example.myapplication.api.LabelApi.insertDataRejectPembelian;
+import static com.example.myapplication.api.SawnTimberApi.insertDataRejectPembelian;
+import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -34,13 +35,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.example.myapplication.api.LabelApi;
-import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.api.SawnTimberApi;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.STPembelianData;
 import com.example.myapplication.model.STPembelianDataReject;
 import com.example.myapplication.model.SupplierData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -67,13 +71,15 @@ public class SawnTimberPembelian extends AppCompatActivity {
     private ImageButton btnAddLabelSTBeli;
     private ImageButton btnAddReject;
     private Button btnDataBaru;
+    private Button btnCetak;
     private int countReject;
     private LinearLayout btnSwapToReject;
     private LinearLayout btnSwapToNonReject;
     private LinearLayout nonRejectLayoutView;
     private LinearLayout rejectLayoutView;
     private List<STPembelianDataReject> rejectDataList;
-
+    private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
+    private String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +96,8 @@ public class SawnTimberPembelian extends AppCompatActivity {
         btnSwapToNonReject = findViewById(R.id.btnSwapToNonReject);
         nonRejectLayoutView = findViewById(R.id.nonRejectLayoutView);
         rejectLayoutView = findViewById(R.id.rejectLayoutView);
+        btnCetak = findViewById(R.id.btnCetak);
+        username = SharedPrefUtils.getUsername(this);
 
         loadDataAndDisplayTable();
         rejectLayoutView.setVisibility(View.GONE);
@@ -117,6 +125,33 @@ public class SawnTimberPembelian extends AppCompatActivity {
                 }
             }
         });
+
+        btnCetak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (noSTPembelian == null || noSTPembelian.isEmpty()) {
+                    Toast.makeText(SawnTimberPembelian.this, "Pilih No. Penerimaan ST!", Toast.LENGTH_SHORT).show();
+                } else {
+                    String reportName = "CrPenSTSawmillPembelian";
+                    String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                            + "?NoProduksi=" + noSTPembelian
+                            + "&Username=" + username
+                            + "&reportName=" + reportName;
+
+                    loadingDialogHelper.show(SawnTimberPembelian.this);
+
+                    PdfUtils.downloadAndOpenPDF(
+                            SawnTimberPembelian.this,
+                            url,
+                            "ST Pembelian_" + noSTPembelian + ".pdf",
+                            executorService,
+                            loadingDialogHelper
+                    );
+                }
+            }
+        });
+
 
         btnAddReject.setOnClickListener(v -> {
 
@@ -159,8 +194,8 @@ public class SawnTimberPembelian extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             runOnUiThread(() -> {
                 if (tooltipData != null) {
@@ -455,7 +490,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
 
             executorService.execute(() -> {
                 insertDataRejectPembelian(noSTPembelian, count, tebalVal, lebarVal, panjangVal, pcsVal, idUOMTblLebar, idUOMPanjang, tonVal);
-                rejectDataList = LabelApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
+                rejectDataList = SawnTimberApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
 
                 runOnUiThread(() -> {
                     populateRejectList(rejectDataList);
@@ -487,8 +522,8 @@ public class SawnTimberPembelian extends AppCompatActivity {
     private void loadDataAndDisplayTable() {
         // Menjalankan operasi di background thread
         executorService.execute(() -> {
-            dataList = LabelApi.getSTPembelianData();
-            nonRejectList = LabelApi.getNonRejectListByNoPenST(noSTPembelian);
+            dataList = SawnTimberApi.getSTPembelianData();
+            nonRejectList = SawnTimberApi.getNonRejectListByNoPenST(noSTPembelian);
 
             // Menampilkan data di UI thread setelah selesai mengambil data
             runOnUiThread(() -> {
@@ -600,12 +635,12 @@ public class SawnTimberPembelian extends AppCompatActivity {
                 // Menjalankan ExecutorService untuk mengambil nomor penerimaan baru dan menyimpan data
                 executorService.execute(() -> {
                     // Ambil NoPenerimaanST baru dari database ketika tombol simpan diklik
-                    String newNoPenerimaanST = LabelApi.getNextNoPenerimaanST();
+                    String newNoPenerimaanST = SawnTimberApi.getNextNoPenerimaanST();
 
                     // Periksa apakah NoPenerimaanST berhasil diambil
                     if (newNoPenerimaanST != null && !newNoPenerimaanST.isEmpty()) {
                         try {
-                            LabelApi.insertDataToPembelian(newNoPenerimaanST, tglLaporanVal, tglMasukVal, idSupplierVal, noTrukVal, noPlatVal, suketVal, tonSJVal, noteVal);
+                            SawnTimberApi.insertDataToPembelian(newNoPenerimaanST, tglLaporanVal, tglMasukVal, idSupplierVal, noTrukVal, noPlatVal, suketVal, tonSJVal, noteVal);
 
                             // Setelah operasi selesai, update UI di main thread
                             runOnUiThread(() -> {
@@ -696,8 +731,8 @@ public class SawnTimberPembelian extends AppCompatActivity {
 
         // Mengambil data supplier dari database menggunakan ExecutorService
         executorService.execute(() -> {
-            // Ambil data supplier dari LabelApi
-            List<SupplierData> suppliers = LabelApi.getSupplierList();
+            // Ambil data supplier dari SawnTimberApi
+            List<SupplierData> suppliers = SawnTimberApi.getSupplierList();
             supplierList.addAll(suppliers);  // Menambahkan supplier yang diambil dari database
 
             // Perbarui Spinner di UI thread
@@ -933,8 +968,8 @@ public class SawnTimberPembelian extends AppCompatActivity {
             // Ambil data latar belakang
             noSTPembelian = data.getNoSTPembelian();
 
-            nonRejectList = LabelApi.getNonRejectListByNoPenST(noSTPembelian);
-            rejectDataList = LabelApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
+            nonRejectList = SawnTimberApi.getNonRejectListByNoPenST(noSTPembelian);
+            rejectDataList = SawnTimberApi.fetchRejectDataByNoPenerimaanST(noSTPembelian);
 
 
             // Perbarui UI di thread utama

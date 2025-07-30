@@ -23,6 +23,7 @@ public class LaporanST extends AppCompatActivity {
     private CardView laporan_rekap_hasil_sawmill_meja;
     private CardView laporan_mutasi_st;
     private CardView laporan_rekap_penerimaan_st_dari_sawmill;
+    private CardView laporan_sawmill_perhari_perlebar_pertebal;
     private String username;
 
     @Override
@@ -33,12 +34,14 @@ public class LaporanST extends AppCompatActivity {
         laporan_rekap_hasil_sawmill_meja = findViewById(R.id.laporan_rekap_hasil_sawmill_meja);
         laporan_mutasi_st = findViewById(R.id.laporan_mutasi_st);
         laporan_rekap_penerimaan_st_dari_sawmill = findViewById(R.id.laporan_rekap_penerimaan_st_dari_sawmill);
+        laporan_sawmill_perhari_perlebar_pertebal = findViewById(R.id.laporan_sawmill_perhari_perlebar_pertebal);
 
         username = SharedPrefUtils.getUsername(this);
 
         laporan_rekap_hasil_sawmill_meja.setOnClickListener(view -> showLaporanRekapHasilSawmillMeja());
         laporan_rekap_penerimaan_st_dari_sawmill.setOnClickListener(view -> showLaporanRekapPenerimaanStDariSawmill());
         laporan_mutasi_st.setOnClickListener(view -> showLaporanMutasiST());
+        laporan_sawmill_perhari_perlebar_pertebal.setOnClickListener(view -> showLaporanSawmillPerhariPerlebarPertebal());
     }
 
     private void showLaporanRekapHasilSawmillMeja() {
@@ -115,6 +118,30 @@ public class LaporanST extends AppCompatActivity {
             );
         });
     }
+
+    private void showLaporanSawmillPerhariPerlebarPertebal() {
+        DateRangeDialogHelper.show(this, DateRangeDialogHelper.DefaultTanggalMode.BULAN_LALU, (tglAwal, tglAkhir) -> {
+            String reportName = "CrSTSawmillPerHariPerTebalPerLebar";
+
+            // Format URL endpoint baru
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?StartDate=" + tglAwal
+                    + "&EndDate=" + tglAkhir
+                    + "&Username=" + username
+                    + "&reportName=" + reportName;
+
+            loadingDialogHelper.show(this);
+
+            PdfUtils.downloadAndOpenPDF(
+                    this,
+                    url,
+                    "Laporan ST Per Hari Per Tebal Per Lebar.pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        });
+    }
+
 
 
 }

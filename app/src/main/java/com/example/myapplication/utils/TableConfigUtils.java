@@ -1,7 +1,7 @@
 package com.example.myapplication.utils;
 
 import com.example.myapplication.R;
-import com.example.myapplication.api.ProductionApi;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.TableConfig;
 
 import java.util.HashMap;
@@ -25,47 +25,47 @@ public class TableConfigUtils {
 
         tableConfigMap.put("R", new TableConfig(
                 "S4S_h", "S4S_d", "NoS4S", R.id.noS4STableLayout, noS4SList,
-                ProductionApi::findS4SResultTable, R.id.sumS4SLabel
+                ProsesProduksiApi::findS4SResultTable, R.id.sumS4SLabel
         ));
 
         tableConfigMap.put("E", new TableConfig(
                 "ST_h", "ST_d", "NoST", R.id.noSTTableLayout, noSTList,
-                ProductionApi::findSTResultTable, R.id.sumSTLabel
+                ProsesProduksiApi::findSTResultTable, R.id.sumSTLabel
         ));
 
         tableConfigMap.put("T", new TableConfig(
                 "Moulding_h", "Moulding_d", "NoMoulding", R.id.noMouldingTableLayout, noMouldingList,
-                ProductionApi::findMouldingResultTable, R.id.sumMouldingLabel
+                ProsesProduksiApi::findMouldingResultTable, R.id.sumMouldingLabel
         ));
 
         tableConfigMap.put("S", new TableConfig(
                 "FJ_h", "FJ_d", "NoFJ", R.id.noFJTableLayout, noFJList,
-                ProductionApi::findFJResultTable, R.id.sumFJLabel
+                ProsesProduksiApi::findFJResultTable, R.id.sumFJLabel
         ));
 
         tableConfigMap.put("V", new TableConfig(
                 "CCAkhir_h", "CCAkhir_d", "NoCCAkhir", R.id.noCCTableLayout, noCCList,
-                ProductionApi::findCCAkhirResultTable, R.id.sumCCLabel
+                ProsesProduksiApi::findCCAkhirResultTable, R.id.sumCCLabel
         ));
 
         tableConfigMap.put("Y", new TableConfig(
                 "Reproses_h", "Reproses_d", "NoReproses", R.id.noReprosesTableLayout, noReprosesList,
-                ProductionApi::findReprosesResultTable, R.id.sumReprosesLabel
+                ProsesProduksiApi::findReprosesResultTable, R.id.sumReprosesLabel
         ));
 
         tableConfigMap.put("U", new TableConfig(
                 "Laminating_h", "Laminating_d", "NoLaminating", R.id.noLaminatingTableLayout, noLaminatingList,
-                ProductionApi::findLaminatingResultTable, R.id.sumLaminatingLabel
+                ProsesProduksiApi::findLaminatingResultTable, R.id.sumLaminatingLabel
         ));
 
         tableConfigMap.put("W", new TableConfig(
                 "Sanding_h", "Sanding_d", "NoSanding", R.id.noSandingTableLayout, noSandingList,
-                ProductionApi::findSandingResultTable, R.id.sumSandingLabel
+                ProsesProduksiApi::findSandingResultTable, R.id.sumSandingLabel
         ));
 
         tableConfigMap.put("I", new TableConfig(
                 "BarangJadi_h", "BarangJadi_d", "NoBJ", R.id.noPackingTableLayout, noPackingList,
-                ProductionApi::findPackingResultTable, R.id.sumPackingLabel
+                ProsesProduksiApi::findPackingResultTable, R.id.sumPackingLabel
         ));
 
         return tableConfigMap;

@@ -4,11 +4,14 @@ import static com.example.myapplication.utils.DateTimeUtils.formatToDatabaseDate
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.JenisKayuData;
 import com.example.myapplication.model.KayuBulatData;
 import com.example.myapplication.model.MejaData;
 import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.PenerimaanSTSawmillData;
 import com.example.myapplication.model.QcSawmillData;
 import com.example.myapplication.model.QcSawmillDetailData;
 import com.example.myapplication.model.SawmillData;
@@ -61,36 +64,56 @@ public class SawmillApi {
 
 
     // GETTER DAN SETTER DATA SAWMILL
-    public static List<SawmillData> getSawmillData() {
+    public static List<SawmillData> getSawmillData(int page, int pageSize, @Nullable String keyword) {
         List<SawmillData> sawmillDataList = new ArrayList<>();
+        int offset = (page - 1) * pageSize;
 
         // Ambil data stok berdasarkan jenis kayu
         Map<String, Integer> stokMapUmum = getTotalStokTersediaPerKayuBulat();
         Map<String, Integer> stokMapRambung = getTotalStokTersediaPerKayuBulatRambung();
 
-        String query = "SELECT TOP 50 " +
-                "h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, ms.NamaMeja, " +
-                "CASE " +
-                "WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator " +
-                "ELSE op1.NamaOperator + '/' + op2.NamaOperator " +
-                "END AS Operator, " +
-                "h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, h.JlhBatangRajang, " +
-                "h.HourMeter, h.Remark, jk.Jenis AS NamaJenisKayu, " +
-                "h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
-                "ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim " +
-                "FROM STSawmill_h h " +
-                "LEFT JOIN MstOperator op1 ON h.IdOperator1 = op1.IdOperator " +
-                "LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
-                "LEFT JOIN KayuBulat_h kb ON h.NoKayuBulat = kb.NoKayuBulat " +
-                "LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
-                "LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja " +
-                "ORDER BY h.NoSTSawmill DESC";
+        // Query yang diperbaiki - pastikan WHERE clause di tempat yang benar
+        String query =
+                "WITH Filtered AS (" +
+                        "  SELECT h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, ms.NamaMeja, " +
+                        "         CASE WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator ELSE op1.NamaOperator + '/' + op2.NamaOperator END AS Operator, " +
+                        "         h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, h.JlhBatangRajang, " +
+                        "         h.HourMeter, h.Remark, jk.Jenis AS NamaJenisKayu, " +
+                        "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
+                        "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim " +
+                        "  FROM STSawmill_h h " +
+                        "  LEFT JOIN MstOperator op1 ON h.IdOperator1 = op1.IdOperator " +
+                        "  LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
+                        "  LEFT JOIN KayuBulat_h kb ON h.NoKayuBulat = kb.NoKayuBulat " +
+                        "  LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
+                        "  LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja " +
+                        // PERBAIKAN: Pastikan WHERE clause benar
+                        (keyword != null && !keyword.isEmpty() ? "  WHERE LOWER(h.NoKayuBulat) LIKE LOWER(?) " : "") +
+                        "), " +
+                        "Ordered AS ( " +
+                        "  SELECT ROW_NUMBER() OVER (ORDER BY NoSTSawmill DESC) AS RowNum, * FROM Filtered " +
+                        ") " +
+                        "SELECT * FROM Ordered WHERE RowNum > ? AND RowNum <= ?";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            int paramIndex = 1;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                // PERBAIKAN: Gunakan % di kedua sisi untuk contains, atau hanya prefix
+                stmt.setString(paramIndex++, "%" + keyword.toLowerCase() + "%"); // Contains search
+                // ATAU untuk prefix search:
+                // stmt.setString(paramIndex++, keyword.toLowerCase() + "%");
+            }
+
+            stmt.setInt(paramIndex++, offset);
+            stmt.setInt(paramIndex, offset + pageSize);
+
+            ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
+                // ... rest of your code remains the same
                 String noSTSawmill = rs.getString("NoSTSawmill");
                 String shift = rs.getString("Shift");
                 String tglSawmill = rs.getString("TglSawmill");
@@ -111,7 +134,6 @@ public class SawmillApi {
                 double beratBalokTim = rs.getDouble("BeratBalokTim");
                 String namaMeja = rs.getString("NamaMeja");
 
-
                 int stokTersedia;
                 if (namaJenisKayu != null && namaJenisKayu.toLowerCase().contains("rambung")) {
                     stokTersedia = stokMapRambung.getOrDefault(noKayuBulat, -1);
@@ -131,11 +153,12 @@ public class SawmillApi {
 
         } catch (SQLException e) {
             Log.e("Database Fetch Error", "Error fetching sawmill data: " + e.getMessage());
+            // TAMBAHAN: Print stack trace untuk debugging
+            e.printStackTrace();
         }
 
         return sawmillDataList;
     }
-
 
 
     public static Map<String, Integer> getTotalStokTersediaPerKayuBulat() {
@@ -215,7 +238,6 @@ public class SawmillApi {
 
         return stokMap;
     }
-
 
 
     public static List<SpecialConditionData> getSpecialConditionList() {
@@ -1227,19 +1249,20 @@ public class SawmillApi {
         String insertHeader = "INSERT INTO PenerimaanSTSawmill_h (NoPenerimaanST, TglLaporan, NoKayuBulat) VALUES (?, ?, ?)";
         String selectDetails = "SELECT NoSTSawmill FROM STSawmill_h WHERE NoKayuBulat = ?";
         String insertDetail = "INSERT INTO PenerimaanSTSawmill_d (NoPenerimaanST, NoSTSawmill) VALUES (?, ?)";
+        String updateDateUsage = "UPDATE KayuBulat_h SET DateUsage = ? WHERE NoKayuBulat = ?";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
 
-            // Cek apakah sudah ada sebelumnya
+            // Cek apakah data sudah ada
             try (PreparedStatement checkStmt = con.prepareStatement(checkExisting)) {
                 checkStmt.setString(1, noKayuBulat);
                 ResultSet rs = checkStmt.executeQuery();
                 if (rs.next()) {
-                    return rs.getString("TglLaporan"); // Sudah ada → return tanggal
+                    return rs.getString("TglLaporan"); // Sudah ada, kembalikan TglLaporan
                 }
             }
 
-            con.setAutoCommit(false);
+            con.setAutoCommit(false); // Mulai transaksi
 
             // Insert ke header
             try (PreparedStatement stmtHeader = con.prepareStatement(insertHeader)) {
@@ -1249,7 +1272,7 @@ public class SawmillApi {
                 stmtHeader.executeUpdate();
             }
 
-            // Ambil NoSTSawmill untuk detail
+            // Ambil data detail STSawmill
             List<String> stsawmillList = new ArrayList<>();
             try (PreparedStatement stmtSelect = con.prepareStatement(selectDetails)) {
                 stmtSelect.setString(1, noKayuBulat);
@@ -1269,14 +1292,28 @@ public class SawmillApi {
                 stmtDetail.executeBatch();
             }
 
-            con.commit();
-            return null; // null artinya insert baru berhasil
+            // Update DateUsage di KayuBulat_h
+            try (PreparedStatement stmtUpdateUsage = con.prepareStatement(updateDateUsage)) {
+                stmtUpdateUsage.setString(1, tglLaporan); // atau gunakan Timestamp sekarang
+                stmtUpdateUsage.setString(2, noKayuBulat);
+                stmtUpdateUsage.executeUpdate();
+            }
+
+            con.commit(); // Sukses, simpan transaksi
+            return null;  // null artinya berhasil insert baru
 
         } catch (SQLException e) {
             Log.e("Insert Error", "Gagal simpan: " + e.getMessage());
+            // Pastikan rollback jika gagal
+            try (Connection conRollback = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+                conRollback.rollback();
+            } catch (SQLException ex) {
+                Log.e("Rollback Error", "Gagal rollback: " + ex.getMessage());
+            }
             return null;
         }
     }
+
 
 
 
@@ -1743,6 +1780,60 @@ public class SawmillApi {
             }
         }
     }
+
+
+    public static List<PenerimaanSTSawmillData> getPenerimaanSTSawmillData() {
+        List<PenerimaanSTSawmillData> dataList = new ArrayList<>();
+
+        String query = "SELECT TOP 100 NoPenerimaanST, TglLaporan, NoKayuBulat FROM PenerimaanSTSawmill_h ORDER BY NoPenerimaanST DESC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String noPenerimaanST = rs.getString("NoPenerimaanST");
+                String tglLaporan = rs.getString("TglLaporan");
+                String noKayuBulat = rs.getString("NoKayuBulat");
+
+                dataList.add(new PenerimaanSTSawmillData(noPenerimaanST, tglLaporan, noKayuBulat));
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error fetching ST Sawmill data: " + e.getMessage());
+        }
+
+        return dataList;
+    }
+
+    public static List<String> getSTSawmillListByNoPenerimaanST(String noPenerimaanST) {
+        List<String> noSTSawmillList = new ArrayList<>();
+
+        String query = "SELECT NoSTSawmill FROM PenerimaanSTSawmill_d WHERE NoPenerimaanST = ?";
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setString(1, noPenerimaanST); // Set parameter
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String noSTSawmill = rs.getString("NoSTSawmill");
+                    noSTSawmillList.add(noSTSawmill);
+
+                    Log.d("Database Data", "NoSTSawmill: " + noSTSawmill);
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching NoSTSawmill: " + e.getMessage());
+        }
+
+        return noSTSawmillList;
+    }
+
+
+
+
 
 
 

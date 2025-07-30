@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
@@ -8,7 +9,7 @@ import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
 
-import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
+import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPeriodClosed;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -55,7 +56,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
@@ -388,7 +388,7 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
         // Memuat data dari API dan menampilkan ke tabel
         executorService.execute(() -> {
-            dataList = ProductionApi.getProductionData("SandingProduksi_h");
+            dataList = ProsesProduksiApi.getProductionData("SandingProduksi_h");
 
             runOnUiThread(() -> {
                 populateTable(dataList);
@@ -945,8 +945,8 @@ public class ProsesProduksiSanding extends AppCompatActivity {
                         return;
                     }
 
-                    if (ProductionApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
-                        if (ProductionApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
+                    if (ProsesProduksiApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
+                        if (ProsesProduksiApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
                             handleValidData(result, config);
                         } else {
                             handleDuplicateOrInvalidUsage(result, config);
@@ -964,7 +964,7 @@ public class ProsesProduksiSanding extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (ProductionApi.isDateValid(noProduksi, "SandingProduksi_h", result, config.tableNameH, config.columnName)) {
+        if (ProsesProduksiApi.isDateValid(noProduksi, "SandingProduksi_h", result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -1054,10 +1054,10 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel Moulding
             if (!noMouldingList.isEmpty()) {
-                List<String> existingNoMoulding = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "SandingProduksiInputMoulding");
+                List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "SandingProduksiInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "SandingProduksiInputMoulding");
+                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "SandingProduksiInputMoulding");
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1065,10 +1065,10 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel FJ
             if (!noFJList.isEmpty()) {
-                List<String> existingNoFJ = ProductionApi.getNoFJByNoProduksi(noProduksi, "SandingProduksiInputFJ");
+                List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "SandingProduksiInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "SandingProduksiInputFJ");
+                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "SandingProduksiInputFJ");
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1076,10 +1076,10 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel CC
             if (!noCCList.isEmpty()) {
-                List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi, "SandingProduksiInputCCAkhir");
+                List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "SandingProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "SandingProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "SandingProduksiInputCCAkhir");
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1087,10 +1087,10 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel Sanding
             if (!noSandingList.isEmpty()) {
-                List<String> existingNoSanding = ProductionApi.getNoSandingByNoProduksi(noProduksi, "SandingProduksiInputSanding");
+                List<String> existingNoSanding = ProsesProduksiApi.getNoSandingByNoProduksi(noProduksi, "SandingProduksiInputSanding");
                 List<String> newNoSanding = new ArrayList<>(noSandingList);
                 newNoSanding.removeAll(existingNoSanding);
-                ProductionApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "SandingProduksiInputSanding");
+                ProsesProduksiApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "SandingProduksiInputSanding");
                 savedItems += newNoSanding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1098,16 +1098,16 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel Packing
             if (!noPackingList.isEmpty()) {
-                List<String> existingNoPacking = ProductionApi.getNoPackingByNoProduksi(noProduksi, "SandingProduksiInputBarangJadi");
+                List<String> existingNoPacking = ProsesProduksiApi.getNoPackingByNoProduksi(noProduksi, "SandingProduksiInputBarangJadi");
                 List<String> newNoPacking = new ArrayList<>(noPackingList);
                 newNoPacking.removeAll(existingNoPacking);
-                ProductionApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "SandingProduksiInputBarangJadi");
+                ProsesProduksiApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "SandingProduksiInputBarangJadi");
                 savedItems += newNoPacking.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
-            ProductionApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi Sanding (Mobile)");
+            ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi Sanding (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();
@@ -1156,7 +1156,7 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
 
             // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 5);
+            List<HistoryItem> historyGroups = ProsesProduksiApi.getHistoryItems(noProduksi, filterQuery, 5);
 
             // 2. Siapkan dan proses data (di latar belakang)
             HistorySummary summary = prepareHistorySummary(historyGroups);
@@ -1301,8 +1301,8 @@ public class ProsesProduksiSanding extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
             runOnUiThread(() -> {
@@ -1669,11 +1669,11 @@ public class ProsesProduksiSanding extends AppCompatActivity {
             mesinProduksi = data.getMesin();
 
             // Ambil data untuk setiap tabel
-            noMouldingList = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "SandingProduksiInputMoulding");
-            noFJList = ProductionApi.getNoFJByNoProduksi(noProduksi, "SandingProduksiInputFJ");
-            noCCList = ProductionApi.getNoCCByNoProduksi(noProduksi, "SandingProduksiInputCCAkhir");
-            noSandingList = ProductionApi.getNoSandingByNoProduksi(noProduksi, "SandingProduksiInputSanding");
-            noPackingList = ProductionApi.getNoPackingByNoProduksi(noProduksi, "SandingProduksiInputBarangJadi");
+            noMouldingList = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "SandingProduksiInputMoulding");
+            noFJList = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "SandingProduksiInputFJ");
+            noCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "SandingProduksiInputCCAkhir");
+            noSandingList = ProsesProduksiApi.getNoSandingByNoProduksi(noProduksi, "SandingProduksiInputSanding");
+            noPackingList = ProsesProduksiApi.getNoPackingByNoProduksi(noProduksi, "SandingProduksiInputBarangJadi");
 
             // Perbarui UI di thread utama
             runOnUiThread(() -> {

@@ -43,7 +43,7 @@
                 <Button
                     android:id="@+id/btnDataBaru"
                     android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_height="match_parent"
                     android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:text="Data Baru"
@@ -52,7 +52,7 @@
                 <Button
                     android:id="@+id/btnEditData"
                     android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_height="match_parent"
                     android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:text="Ubah" />
@@ -60,9 +60,33 @@
                 <Button
                     android:id="@+id/btnHapusData"
                     android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
+                    android:layout_marginRight="8dp"
                     android:text="Hapus" />
+
+                <Button
+                    android:id="@+id/btnCetak"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginRight="16dp"
+                    android:text="Cetak" />
+
+                <!-- SearchView -->
+                <androidx.appcompat.widget.SearchView
+                    android:id="@+id/searchNoKB"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:background="@drawable/searchview_background"
+                    android:queryHint="Cari..."
+                    android:padding="8dp"
+                    app:iconifiedByDefault="false"
+                    app:queryBackground="@android:color/transparent"
+                    app:searchHintIcon="@null"
+                    app:closeIcon="@drawable/ic_close"
+                    app:defaultQueryHint="Cari Kayu Bulat..." />
 
             </LinearLayout>
 
@@ -206,35 +230,41 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                    <!-- SwipeRefreshLayout membungkus ScrollView -->
-                    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                        android:id="@+id/swipeRefreshLayout"
+                    <!-- Konten utama -->
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
 
-                        <!-- ScrollView dan Table -->
-                        <ScrollView
+                        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                            android:id="@+id/swipeRefreshLayout"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent">
 
-                            <TableLayout
-                                android:id="@+id/mainTable"
+                            <ScrollView
+                                android:id="@+id/scrollView"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:stretchColumns="0"
-                                android:background="#EFEFEF">
-                                <!-- Baris tabel diisi dinamis -->
-                            </TableLayout>
-                        </ScrollView>
-                    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                                android:layout_height="wrap_content">
 
-                    <!-- ProgressBar tetap di atas -->
+                                <TableLayout
+                                    android:id="@+id/mainTable"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:stretchColumns="0"
+                                    android:background="#EFEFEF" />
+                            </ScrollView>
+                        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                    </LinearLayout>
+
+                    <!-- Loading indicator overlay -->
                     <ProgressBar
                         android:id="@+id/mainLoadingIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:visibility="gone"/>
+                        android:layout_gravity="center_horizontal"
+                        android:visibility="gone"
+                        android:clickable="false"
+                        android:focusable="false" />
                 </FrameLayout>
 
             </LinearLayout>

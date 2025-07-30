@@ -1,4 +1,5 @@
 package com.example.myapplication;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
@@ -10,7 +11,7 @@ import com.example.myapplication.utils.TableConfigUtils;
 
 
 
-import static com.example.myapplication.api.ProductionApi.isTransactionPeriodClosed;
+import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPeriodClosed;
 
 
 import android.content.Context;
@@ -57,7 +58,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import com.example.myapplication.api.ProductionApi;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
@@ -391,7 +391,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         // Memuat data dari API dan menampilkan ke tabel
         executorService.execute(() -> {
-            dataList = ProductionApi.getProductionData("S4SProduksi_h");
+            dataList = ProsesProduksiApi.getProductionData("S4SProduksi_h");
 
             runOnUiThread(() -> {
                 populateTable(dataList);
@@ -678,8 +678,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     // Mengambil data tooltip dan menampilkan tooltip
     private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
         executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProductionApi
-            TooltipData tooltipData = ProductionApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
+            // Ambil data tooltip menggunakan ProsesProduksiApi
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
 
             runOnUiThread(() -> {
                 if (tooltipData != null) {
@@ -1241,8 +1241,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         return;
                     }
 
-                    if (ProductionApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
-                        if (ProductionApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
+                    if (ProsesProduksiApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
+                        if (ProsesProduksiApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
                             handleValidData(result, config);
                         } else {
                             handleDuplicateOrInvalidUsage(result, config);
@@ -1260,7 +1260,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (ProductionApi.isDateValid(noProduksi, "S4SProduksi_h", result, config.tableNameH, config.columnName)) {
+        if (ProsesProduksiApi.isDateValid(noProduksi, "S4SProduksi_h", result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -1350,10 +1350,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel S4S
             if (!noS4SList.isEmpty()) {
-                List<String> existingNoS4S = ProductionApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
+                List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProductionApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S");
+                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S");
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1361,10 +1361,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel ST
             if (!noSTList.isEmpty()) {
-                List<String> existingNoST = ProductionApi.getNoSTByNoProduksi(noProduksi);
+                List<String> existingNoST = ProsesProduksiApi.getNoSTByNoProduksi(noProduksi);
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProductionApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved);
+                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1372,10 +1372,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel Moulding
             if (!noMouldingList.isEmpty()) {
-                List<String> existingNoMoulding = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
+                List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProductionApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding");
+                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding");
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1383,10 +1383,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel FJ
             if (!noFJList.isEmpty()) {
-                List<String> existingNoFJ = ProductionApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
+                List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProductionApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ");
+                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ");
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1394,10 +1394,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel CC
             if (!noCCList.isEmpty()) {
-                List<String> existingNoCC = ProductionApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
+                List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProductionApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir");
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1405,16 +1405,16 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Proses penyimpanan untuk tabel Reproses
             if (!noReprosesList.isEmpty()) {
-                List<String> existingNoReproses = ProductionApi.getNoReprosesByNoProduksi(noProduksi);
+                List<String> existingNoReproses = ProsesProduksiApi.getNoReprosesByNoProduksi(noProduksi);
                 List<String> newNoReproses = new ArrayList<>(noReprosesList);
                 newNoReproses.removeAll(existingNoReproses);
-                ProductionApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses, dateTimeSaved);
+                ProsesProduksiApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses, dateTimeSaved);
                 savedItems += newNoReproses.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
-            ProductionApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi S4S (Mobile)");
+            ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi S4S (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             clearAllDataLists();
@@ -1595,7 +1595,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                             "SELECT 'Reproses' AS Label, NoReproses AS KodeLabel, DateTimeSaved FROM S4SProduksiInputReproses WHERE NoProduksi = ?";
 
             // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProductionApi.getHistoryItems(noProduksi, filterQuery, 6);
+            List<HistoryItem> historyGroups = ProsesProduksiApi.getHistoryItems(noProduksi, filterQuery, 6);
 
             // 2. Siapkan dan proses data (di latar belakang)
             HistorySummary summary = prepareHistorySummary(historyGroups);
@@ -1742,12 +1742,12 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             mesinProduksi = data.getMesin();
 
             // Ambil data untuk setiap tabel
-            noS4SList = ProductionApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
-            noSTList = ProductionApi.getNoSTByNoProduksi(noProduksi);
-            noMouldingList = ProductionApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
-            noFJList = ProductionApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
-            noCCList = ProductionApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
-            noReprosesList = ProductionApi.getNoReprosesByNoProduksi(noProduksi);
+            noS4SList = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
+            noSTList = ProsesProduksiApi.getNoSTByNoProduksi(noProduksi);
+            noMouldingList = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
+            noFJList = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
+            noCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
+            noReprosesList = ProsesProduksiApi.getNoReprosesByNoProduksi(noProduksi);
 
             // Perbarui UI di thread utama
             runOnUiThread(() -> {

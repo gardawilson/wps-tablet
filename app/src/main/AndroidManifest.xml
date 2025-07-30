@@ -32,6 +32,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".PenerimaanStDariSawmill"
+            android:exported="false" />
+        <activity
             android:name=".LaporanBJ"
             android:exported="false" />
         <activity
@@ -41,7 +44,7 @@
             android:name=".LaporanCCA"
             android:exported="false" />
         <activity
-            android:name=".LmtReport"
+            android:name=".LaporanLMT"
             android:exported="false" />
         <activity
             android:name=".LaporanMLD"

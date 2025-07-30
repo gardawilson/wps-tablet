@@ -107,7 +107,7 @@
 
         <!-- CardView 3 -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/card_temp"
+            android:id="@+id/card_penerimaan_st_dari_sawmill"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -115,8 +115,7 @@
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/card_lembar_telly"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/optionalLayout"
-            android:visibility="invisible">
+            app:layout_constraintEnd_toStartOf="@id/optionalLayout">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -129,16 +128,16 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/proses"
+                    android:src="@drawable/ic_history"
                     android:contentDescription="Logo" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="S4S"
+                    android:text="Penerimaan ST Dari Sawmill"
                     android:textAlignment="center"
                     android:textColor="@color/text_brown"
-                    android:textSize="16sp" />
+                    android:textSize="18sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -150,7 +149,7 @@
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/card_quality_control_sawmill"
-            app:layout_constraintStart_toEndOf="@id/card_temp"
+            app:layout_constraintStart_toEndOf="@id/card_penerimaan_st_dari_sawmill"
             app:layout_constraintEnd_toEndOf="parent"
             android:visibility="invisible">
 
