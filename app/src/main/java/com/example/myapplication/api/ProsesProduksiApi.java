@@ -5,14 +5,18 @@ import android.util.Log;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.HistoryItem;
+import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TooltipData;
+import com.example.myapplication.utils.DateTimeUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +39,9 @@ public class ProsesProduksiApi {
                 "p.Tanggal, " +
                 "p.IdMesin, " +
                 "p.IdOperator, " +
+                "p.JamKerja, " +
+                "p.JmlhAnggota, " +
+                "p.HourMeter, " +
                 "m.NamaMesin, " +
                 "o.NamaOperator " +
                 "FROM " + tableName + " p " +
@@ -57,22 +64,223 @@ public class ProsesProduksiApi {
                 String tanggal = rs.getString("Tanggal");
                 String mesin = rs.getString("NamaMesin");
                 String operator = rs.getString("NamaOperator");
+                String jamKerja = rs.getString("JamKerja");
+                int jumlahAnggota = rs.getInt("JmlhAnggota");
+                double hourMeter = rs.getDouble("HourMeter");
 
-                // Debugging untuk memverifikasi data
-                Log.d("Database Data", "NoProduksi: " + noProduksi +
-                        ", Shift: " + shift +
-                        ", Tanggal: " + tanggal +
-                        ", Mesin: " + mesin +
-                        ", Operator: " + operator);
+                // 👉 Ambil ID-nya juga
+                int idMesin = rs.getInt("IdMesin");
+                int idOperator = rs.getInt("IdOperator");
 
                 // Tambahkan ke list ProductionData
-                productionDataList.add(new ProductionData(noProduksi, shift, tanggal, mesin, operator));
+                productionDataList.add(new ProductionData(
+                        noProduksi,
+                        shift,
+                        tanggal,
+                        mesin,
+                        operator,
+                        jamKerja,
+                        jumlahAnggota,
+                        hourMeter,
+                        idMesin,
+                        idOperator
+                ));
             }
+
         } catch (SQLException e) {
             Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
         }
 
         return productionDataList;
+    }
+
+
+    public static boolean updateProductionData(String tableName, ProductionData updatedData) {
+        String query = "UPDATE " + tableName + " SET " +
+                "Shift = ?, " +
+                "Tanggal = ?, " +
+                "IdMesin = ?, " +
+                "IdOperator = ?, " +
+                "JamKerja = ?, " +
+                "JmlhAnggota = ?, " +
+                "HourMeter = ? " +
+                "WHERE NoProduksi = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, updatedData.getShift());
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(updatedData.getTanggal())); // Format sesuai SQL: yyyy-MM-dd
+            stmt.setInt(3, updatedData.getIdMesin());
+            stmt.setInt(4, updatedData.getIdOperator());
+            stmt.setString(5, updatedData.getJamKerja());
+            stmt.setInt(6, updatedData.getJumlahAnggota());
+            stmt.setDouble(7, updatedData.getHourMeter());
+            stmt.setString(8, updatedData.getNoProduksi());
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            Log.e("DB_UPDATE", "Update error: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+
+    public static List<MesinData> getAllMesinData(int idBagian) {
+        List<MesinData> mesinList = new ArrayList<>();
+
+        String query = "SELECT IdMesin, NamaMesin FROM MstMesin WHERE Enable = 1 AND IdBagian = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setInt(1, idBagian); // Set parameter ke query
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int idMesin = rs.getInt("IdMesin");
+                    String namaMesin = rs.getString("NamaMesin");
+
+                    mesinList.add(new MesinData(idMesin, namaMesin));
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("DB_ERROR", "Gagal mengambil data mesin: " + e.getMessage());
+        }
+
+        return mesinList;
+    }
+
+
+    public static List<OperatorData> getAllOperatorData(int idBagian) {
+        List<OperatorData> operatorList = new ArrayList<>();
+
+        String query = "SELECT IdOperator, NamaOperator FROM MstOperator WHERE Enable = 1 AND IdBagian = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setInt(1, idBagian);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int idOperator = rs.getInt("IdOperator");
+                    String namaOperator = rs.getString("NamaOperator");
+
+                    operatorList.add(new OperatorData(idOperator, namaOperator));
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("DB_ERROR", "Gagal mengambil data operator: " + e.getMessage());
+        }
+
+        return operatorList;
+    }
+
+
+
+
+    // Method untuk update data production ke database
+    public static boolean updateProductionData(String tableName, ProductionData updatedData, String originalNoProduksi) {
+        // Query untuk mendapatkan ID mesin dan operator berdasarkan nama
+        String getMesinIdQuery = "SELECT IdMesin FROM MstMesin WHERE NamaMesin = ?";
+        String getOperatorIdQuery = "SELECT IdOperator FROM MstOperator WHERE NamaOperator = ?";
+
+        // Query untuk update data production
+        String updateQuery = "UPDATE " + tableName + " SET " +
+                "NoProduksi = ?, " +
+                "Shift = ?, " +
+                "IdMesin = ?, " +
+                "IdOperator = ?, " +
+                "JamKerja = ?, " +
+                "JmlhAnggota = ?, " +
+                "HourMeter = ? " +
+                "WHERE NoProduksi = ?";
+
+        Connection con = null;
+        PreparedStatement pstmtGetMesin = null;
+        PreparedStatement pstmtGetOperator = null;
+        PreparedStatement pstmtUpdate = null;
+
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false); // Start transaction
+
+            // Get ID Mesin
+            int idMesin = -1;
+            pstmtGetMesin = con.prepareStatement(getMesinIdQuery);
+            pstmtGetMesin.setString(1, updatedData.getMesin());
+            ResultSet rsMesin = pstmtGetMesin.executeQuery();
+            if (rsMesin.next()) {
+                idMesin = rsMesin.getInt("IdMesin");
+            } else {
+                Log.e("Database Update Error", "Mesin not found: " + updatedData.getMesin());
+                return false;
+            }
+            rsMesin.close();
+
+            // Get ID Operator
+            int idOperator = -1;
+            pstmtGetOperator = con.prepareStatement(getOperatorIdQuery);
+            pstmtGetOperator.setString(1, updatedData.getOperator());
+            ResultSet rsOperator = pstmtGetOperator.executeQuery();
+            if (rsOperator.next()) {
+                idOperator = rsOperator.getInt("IdOperator");
+            } else {
+                Log.e("Database Update Error", "Operator not found: " + updatedData.getOperator());
+                return false;
+            }
+            rsOperator.close();
+
+            // Update production data
+            pstmtUpdate = con.prepareStatement(updateQuery);
+            pstmtUpdate.setString(1, updatedData.getNoProduksi());
+            pstmtUpdate.setString(2, updatedData.getShift());
+            pstmtUpdate.setInt(3, idMesin);
+            pstmtUpdate.setInt(4, idOperator);
+            pstmtUpdate.setString(5, updatedData.getJamKerja());
+            pstmtUpdate.setInt(6, updatedData.getJumlahAnggota());
+            pstmtUpdate.setDouble(7, updatedData.getHourMeter());
+            pstmtUpdate.setString(8, originalNoProduksi); // WHERE condition
+
+            int rowsAffected = pstmtUpdate.executeUpdate();
+
+            if (rowsAffected > 0) {
+                con.commit();
+                Log.d("Database Update", "Production data updated successfully");
+                return true;
+            } else {
+                con.rollback();
+                Log.e("Database Update Error", "No rows affected");
+                return false;
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Update Error", "Error updating data: " + e.getMessage());
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException ex) {
+                    Log.e("Database Rollback Error", "Error during rollback: " + ex.getMessage());
+                }
+            }
+            return false;
+        } finally {
+            // Close all resources
+            try {
+                if (pstmtUpdate != null) pstmtUpdate.close();
+                if (pstmtGetOperator != null) pstmtGetOperator.close();
+                if (pstmtGetMesin != null) pstmtGetMesin.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                Log.e("Database Close Error", "Error closing database resources: " + e.getMessage());
+            }
+        }
     }
 
 
@@ -593,31 +801,126 @@ public class ProsesProduksiApi {
     public static List<BongkarSusunData> getBongkarSusunData(String tableName) {
         List<BongkarSusunData> bongkarSusunDataList = new ArrayList<>();
 
-        // Query SQL dengan nama tabel dinamis
         String query = "SELECT TOP 50 " +
                 "NoBongkarSusun, " +
                 "Tanggal, " +
+                "IsPemakaian, " +
+                "NoPenerimaanST, " +
                 "Keterangan " +
                 "FROM " + tableName + " " +
                 "ORDER BY NoBongkarSusun DESC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             PreparedStatement stmt = con.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                // Ambil data dari ResultSet
-                String noBongkarSusun = rs.getString("NoBongkarSusun");
-                String tanggal = rs.getString("Tanggal");
-                String keterangan = rs.getString("Keterangan");
+                // Handle potential NULL values
+                String noPenerimaanST = rs.getString("NoPenerimaanST");
+                if (rs.wasNull()) {
+                    noPenerimaanST = null;
+                }
 
-                bongkarSusunDataList.add(new BongkarSusunData(noBongkarSusun, tanggal, keterangan));
+                BongkarSusunData data = new BongkarSusunData(
+                        rs.getString("NoBongkarSusun"),
+                        rs.getString("Tanggal"),
+                        rs.getBoolean("IsPemakaian"),
+                        noPenerimaanST,
+                        rs.getString("Keterangan")
+                );
+                bongkarSusunDataList.add(data);
             }
         } catch (SQLException e) {
-            Log.e("Database Fetch Error", "Error fetching data: " + e.getMessage());
+            Log.e("DB_FETCH", "Error fetching BongkarSusun data: " + e.getMessage(), e);
         }
 
         return bongkarSusunDataList;
+    }
+
+    public static boolean createNewBongkarSusun(String tableName,
+                                                String tanggal,
+                                                boolean isPemakaian,
+                                                String noPenerimaanST,
+                                                String keterangan) {
+        final String TAG = "BongkarSusunDB";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+            // 1. Generate nomor baru dalam transaction
+            con.setAutoCommit(false); // Mulai transaction
+
+            String newNo = generateNewNoBongkarSusun(con, tableName); // Menerima connection sebagai parameter
+            Log.d(TAG, "Generated new NoBongkarSusun: " + newNo);
+
+            // 2. Simpan data dengan nomor baru
+            String query = "INSERT INTO " + tableName + " (" +
+                    "NoBongkarSusun, Tanggal, IsPemakaian, NoPenerimaanST, Keterangan" +
+                    ") VALUES (?, ?, ?, ?, ?)";
+
+            try (PreparedStatement stmt = con.prepareStatement(query)) {
+                stmt.setString(1, newNo);
+                stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
+                stmt.setBoolean(3, isPemakaian);
+                stmt.setString(4, noPenerimaanST != null ? noPenerimaanST.trim() : null);
+                stmt.setString(5, keterangan != null ? keterangan.trim() : null);
+
+                int rowsAffected = stmt.executeUpdate();
+
+                if (rowsAffected > 0) {
+                    con.commit(); // Commit transaction jika sukses
+                    Log.i(TAG, "Successfully created record: " + newNo);
+                    return true;
+                } else {
+                    con.rollback();
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            Log.e(TAG, "Error creating BongkarSusun: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Method generate yang dimodifikasi untuk menerima Connection
+    private static String generateNewNoBongkarSusun(Connection con, String tableName) throws SQLException {
+        String lastNoQuery = "SELECT TOP 1 NoBongkarSusun FROM " + tableName +
+                " WHERE NoBongkarSusun LIKE 'Z.%' " +
+                "ORDER BY NoBongkarSusun DESC";
+
+        try (Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(lastNoQuery)) {
+
+            if (rs.next()) {
+                String lastNo = rs.getString("NoBongkarSusun");
+                int lastNumber = Integer.parseInt(lastNo.substring(2));
+                return String.format("Z.%06d", lastNumber + 1);
+            }
+            return "Z.000001";
+        }
+    }
+    public static boolean updateBongkarSusunData(String tableName, BongkarSusunData updatedData) {
+        String query = "UPDATE " + tableName + " SET " +
+                "Tanggal = ?, " +
+                "IsPemakaian = ?, " +
+                "NoPenerimaanST = ?, " +
+                "Keterangan = ? " +
+                "WHERE NoBongkarSusun = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, updatedData.getTanggal());
+            stmt.setBoolean(2, updatedData.isPemakaian()); // Convert boolean to BIT (1/0)
+            stmt.setString(3, updatedData.getNoPenerimaanST());
+            stmt.setString(4, updatedData.getKeterangan());
+            stmt.setString(5, updatedData.getNoBongkarSusun());
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            Log.e("DB_UPDATE", "Update BongkarSusun error: " + e.getMessage());
+            return false;
+        }
     }
 
     public static List<String> getNoS4SByNoBongkarSusun(String noBongkarSusun, String tableName) {
@@ -2205,6 +2508,227 @@ public class ProsesProduksiApi {
             Log.e("SaveError", "Error saat menyimpan data Riwayat: " + e.getMessage());
         }
     }
+
+
+    public static void deleteDataByNoLabel(String noProduksi, String noLabel) {
+        String tableName = null;
+        String columnName = null;
+        String updateHeaderTable = null;
+
+        if (noProduksi.startsWith("RA")) {
+
+            if (noLabel.startsWith("E")) {
+                tableName = "S4SProduksiInputST";
+                columnName = "NoST";
+                updateHeaderTable = "ST_h";
+            } else if (noLabel.startsWith("R")) {
+                tableName = "S4SProduksiInputS4S";
+                columnName = "NoS4S";
+                updateHeaderTable = "S4S_h";
+            } else if (noLabel.startsWith("S")) {
+                tableName = "S4SProduksiInputFJ";
+                columnName = "NoFJ";
+                updateHeaderTable = "FJ_h";
+            } else if (noLabel.startsWith("T")) {
+                tableName = "S4SProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "S4SProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else {
+                Log.e("DeleteError", "Awalan noLabel tidak dikenali: " + noLabel);
+                return;
+            }
+        } else if (noProduksi.startsWith("SA")) {
+            if (noLabel.startsWith("R")) {
+                tableName = "FJProduksiInputS4S";
+                columnName = "NoS4S";
+                updateHeaderTable = "S4S_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "FJProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            }
+        } else if (noProduksi.startsWith("UA")) {
+
+            if (noLabel.startsWith("T")) {
+                tableName = "LaminatingProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "LaminatingProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "LaminatingProduksiInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "LaminatingProduksiInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        } else if (noProduksi.startsWith("TA")) {
+
+            if (noLabel.startsWith("R")) {
+                tableName = "MouldingProduksiInputS4S";
+                columnName = "NoS4S";
+                updateHeaderTable = "S4S_h";
+            } else if (noLabel.startsWith("S")) {
+                tableName = "MouldingProduksiInputFJ";
+                columnName = "NoFJ";
+                updateHeaderTable = "FJ_h";
+            } else if (noLabel.startsWith("T")) {
+                tableName = "MouldingProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("U")) {
+                tableName = "MouldingProduksiInputLaminating";
+                columnName = "NoLaminating";
+                updateHeaderTable = "Laminating_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "MouldingProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "MouldingProduksiInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "MouldingProduksiInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        } else if (noProduksi.startsWith("VA")) {
+
+            if (noLabel.startsWith("S")) {
+                tableName = "CCAkhirProduksiInputFJ";
+                columnName = "NoFJ";
+                updateHeaderTable = "FJ_h";
+            } else if (noLabel.startsWith("T")) {
+                tableName = "CCAkhirProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("U")) {
+                tableName = "CCAkhirProduksiInputLaminating";
+                columnName = "NoLaminating";
+                updateHeaderTable = "Laminating_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "CCAkhirProduksiInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "CCAkhirProduksiInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        } else if (noProduksi.startsWith("WA")) {
+
+            if (noLabel.startsWith("S")) {
+                tableName = "SandingProduksiInputFJ";
+                columnName = "NoFJ";
+                updateHeaderTable = "FJ_h";
+            } else if (noLabel.startsWith("T")) {
+                tableName = "SandingProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "SandingProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "SandingProduksiInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "SandingProduksiInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        } else if (noProduksi.startsWith("X")) {
+            if (noLabel.startsWith("T")) {
+                tableName = "PackingProduksiInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "PackingProduksiInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "PackingProduksiInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "PackingProduksiInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        } else if (noProduksi.startsWith("Z")) {
+
+            if (noLabel.startsWith("E")) {
+                tableName = "BongkarSusunInputST";
+                columnName = "NoST";
+                updateHeaderTable = "ST_h";
+            } else if (noLabel.startsWith("R")) {
+                tableName = "BongkarSusunInputS4S";
+                columnName = "NoS4S";
+                updateHeaderTable = "S4S_h";
+            } else if (noLabel.startsWith("S")) {
+                tableName = "BongkarSusunInputFJ";
+                columnName = "NoFJ";
+                updateHeaderTable = "FJ_h";
+            } else if (noLabel.startsWith("T")) {
+                tableName = "BongkarSusunInputMoulding";
+                columnName = "NoMoulding";
+                updateHeaderTable = "Moulding_h";
+            } else if (noLabel.startsWith("U")) {
+                tableName = "BongkarSusunInputLaminating";
+                columnName = "NoLaminating";
+                updateHeaderTable = "Laminating_h";
+            } else if (noLabel.startsWith("V")) {
+                tableName = "BongkarSusunInputCCAkhir";
+                columnName = "NoCCAkhir";
+                updateHeaderTable = "CCAkhir_h";
+            } else if (noLabel.startsWith("W")) {
+                tableName = "BongkarSusunInputSanding";
+                columnName = "NoSanding";
+                updateHeaderTable = "Sanding_h";
+            } else if (noLabel.startsWith("I")) {
+                tableName = "BongkarSusunInputBarangJadi";
+                columnName = "NoBJ";
+                updateHeaderTable = "BarangJadi_h";
+            }
+        }
+
+        String updateSql = "UPDATE " + updateHeaderTable + " SET DateUsage = NULL WHERE " + columnName + " = ?";
+        String deleteSql = "DELETE FROM " + tableName + " WHERE " + columnName + " = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement updateStmt = con.prepareStatement(updateSql);
+             PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
+
+            // Jalankan UPDATE DateUsage = NULL
+            updateStmt.setString(1, noLabel);
+            updateStmt.executeUpdate();
+
+            // Jalankan DELETE
+            deleteStmt.setString(1, noLabel);
+            int rowsAffected = deleteStmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                Log.d("DeleteSuccess", "Berhasil menghapus data dan reset DateUsage untuk noLabel: " + noLabel);
+            } else {
+                Log.w("DeleteWarning", "Tidak ada data yang dihapus untuk noLabel: " + noLabel);
+            }
+
+        } catch (SQLException e) {
+            Log.e("DeleteError", "Gagal menghapus data: " + e.getMessage());
+        }
+    }
+
+
 
 
 

@@ -63,6 +63,7 @@
                 android:text="BA.XXXXXX"
                 android:textSize="18sp"
                 android:layout_weight="1"
+                android:textStyle="bold"
                 android:textColor="@color/black" />
 
         </LinearLayout>

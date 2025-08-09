@@ -1,6 +1,10 @@
 package com.example.myapplication.utils;
 
+import android.app.DatePickerDialog;
+import android.content.Context;
 import android.util.Log;
+import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.text.ParseException;
@@ -10,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -143,6 +148,30 @@ public class DateTimeUtils {
             Log.e("TimeFormatError", "Gagal memformat waktu (HH:mm:ss.SSSSSSS ke HH:mm): " + e.getMessage());
             return "ERROR";
         }
+    }
+
+
+    public static void showDatePicker(Context context, final EditText targetEditText) {
+        final Calendar calendar = Calendar.getInstance();
+
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH); // 0-based
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(context,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
+                        // Bentuk tanggal dalam format input yyyy-MM-dd
+                        String rawDate = String.format(Locale.getDefault(), "%d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                        // Format pakai method yang kamu buat
+                        String formattedDate = formatDate(rawDate);
+                        // Set ke EditText
+                        targetEditText.setText(formattedDate);
+                    }
+                }, year, month, day);
+
+        datePickerDialog.show();
     }
 
 

@@ -313,19 +313,16 @@ public class SawmillApi {
     public static SawmillData getOperatorByNoMeja(String noMeja) {
         String query = "SELECT NoMeja, IdOperator1, IdOperator2 FROM MstMesinSawmill WHERE NoMeja = ?";
 
-        Log.d("SawmillApi", "getOperatorByNoMeja() dipanggil dengan NoMeja: " + noMeja);
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, noMeja);
-            Log.d("SawmillApi", "Query disiapkan: " + query);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     int idOp1 = rs.getInt("IdOperator1");
                     int idOp2 = rs.getInt("IdOperator2");
-                    Log.d("SawmillApi", "Data ditemukan - IdOperator1: " + idOp1 + ", IdOperator2: " + idOp2);
 
                     return new SawmillData(
                             null, null, null,      // noSTSawmill, shift, tglSawmill
@@ -1436,7 +1433,7 @@ public class SawmillApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
-            stmt.setString(1, tgl);
+            stmt.setString(1, formatToDatabaseDate(tgl));
             stmt.setString(2, noMeja);
 
             ResultSet rs = stmt.executeQuery();

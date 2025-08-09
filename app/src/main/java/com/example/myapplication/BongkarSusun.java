@@ -1,10 +1,14 @@
 package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
+import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -32,12 +36,15 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -61,6 +68,8 @@ import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.utils.CameraUtils;
 import com.example.myapplication.utils.CameraXAnalyzer;
+import com.example.myapplication.utils.TooltipUtils;
+import com.example.myapplication.utils.ViewUtils;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
@@ -85,6 +94,7 @@ public class BongkarSusun extends AppCompatActivity {
     private PreviewView cameraPreview;
     private Button btnCameraControl;
     private Button btnSimpan;
+    private TableRow selectedRowHeader;
     private TableRow selectedRow;
     private TextView qrResultText;
     private TextView noBongkarSusunView;
@@ -158,6 +168,11 @@ public class BongkarSusun extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoPacking;
     private LinearLayout textScanQR;
     private Button btnInputManual;
+    private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
+    private final String mainTable = "BongkarSusun_h";
+    private Button btnEdit;
+    private Button btnCreate;
+
 
 
     @Override
@@ -215,6 +230,8 @@ public class BongkarSusun extends AppCompatActivity {
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
         btnInputManual = findViewById(R.id.btnInputManual);
         textScanQR = findViewById(R.id.textScanQR);
+        btnEdit = findViewById(R.id.btnEdit);
+        btnCreate = findViewById(R.id.btnCreate);
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -244,6 +261,28 @@ public class BongkarSusun extends AppCompatActivity {
                 }
             }
         });
+
+
+        btnCreate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showCreateProductionDialog();
+            }
+        });
+
+
+        btnEdit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String noProduksi = noBongkarSusunView.getText().toString();
+                if (!noProduksi.isEmpty()) {
+                    showEditProductionDialog();
+                } else {
+                    Toast.makeText(BongkarSusun.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
 
         btnInputManual.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -395,7 +434,7 @@ public class BongkarSusun extends AppCompatActivity {
 
         // Memuat data dari API dan menampilkan ke tabel
         executorService.execute(() -> {
-            dataList = ProsesProduksiApi.getBongkarSusunData("BongkarSusun_h");
+            dataList = ProsesProduksiApi.getBongkarSusunData(mainTable);
 
             runOnUiThread(() -> {
                 populateTable(dataList);
@@ -432,6 +471,214 @@ public class BongkarSusun extends AppCompatActivity {
         btnHistorySave.setOnClickListener(v -> showHistoryDialog(noBongkarSusun));
 
     }
+
+
+    private void showCreateProductionDialog() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_field_bongkar_susun_header, null);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        // Referensi UI
+        TextView titleDialog = dialogView.findViewById(R.id.titleDialog);
+        TextView tvNoBongkarSusun = dialogView.findViewById(R.id.tvNoBongkarSusun);
+        CheckBox cbIsPemakaian = dialogView.findViewById(R.id.cbIsPemakaian);
+        EditText editTanggal = dialogView.findViewById(R.id.editTanggal);
+        EditText editNoPenerimaanST = dialogView.findViewById(R.id.editNoPenerimaanST);
+        EditText editKeterangan = dialogView.findViewById(R.id.editKeterangan);
+        ImageButton btnClose = dialogView.findViewById(R.id.btnCloseDialogInput);
+        Button btnSimpanBongkarSusun = dialogView.findViewById(R.id.btnSimpanBongkarSusun);
+
+        // Untuk create, NoBongkarSusun belum di-generate → kasih placeholder
+        titleDialog.setText("Bongkar Susun (Tambah Data)");
+        tvNoBongkarSusun.setText("Z.XXXXXX");
+
+        editTanggal.setInputType(InputType.TYPE_NULL);
+        editTanggal.setFocusable(false);
+        editTanggal.setOnClickListener(v -> {
+            DateTimeUtils.showDatePicker(BongkarSusun.this, editTanggal);
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        btnSimpanBongkarSusun.setOnClickListener(v -> {
+            loadingDialogHelper.show(this);
+
+            if (validateBongkarSusunInputs(editTanggal, editNoPenerimaanST)) {
+                String tanggal = editTanggal.getText().toString().trim();
+                boolean isPemakaian = cbIsPemakaian.isChecked();
+                String noPenerimaanST = editNoPenerimaanST.getText().toString().trim();
+                String keterangan = editKeterangan.getText().toString().trim();
+
+                executorService.execute(() -> {
+                    boolean success = ProsesProduksiApi.createNewBongkarSusun(
+                            "BongkarSusun_h",
+                            tanggal,
+                            isPemakaian,
+                            noPenerimaanST.isEmpty() ? null : noPenerimaanST,
+                            keterangan.isEmpty() ? null : keterangan
+                    );
+
+                    if (success) {
+                        dataList = ProsesProduksiApi.getBongkarSusunData("BongkarSusun_h");
+                    }
+
+                    runOnUiThread(() -> {
+                        loadingDialogHelper.hide();
+                        if (success) {
+                            dialog.dismiss();
+                            Toast.makeText(BongkarSusun.this, "Data berhasil dibuat", Toast.LENGTH_SHORT).show();
+                            populateTable(dataList);
+                        } else {
+                            Toast.makeText(BongkarSusun.this, "Gagal membuat data", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                });
+            } else {
+                loadingDialogHelper.hide();
+            }
+        });
+
+        dialog.show();
+    }
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------METHOD EDIT HEADER--------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void showEditProductionDialog() {
+        // Inflate dialog layout
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_field_bongkar_susun_header, null);
+
+        // Create dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        // Make dialog background transparent for custom styling
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        // Get references to dialog views
+        TextView titleDialog = dialogView.findViewById(R.id.titleDialog);
+        TextView tvNoBongkarSusun = dialogView.findViewById(R.id.tvNoBongkarSusun);
+        CheckBox cbIsPemakaian = dialogView.findViewById(R.id.cbIsPemakaian);
+        EditText editTanggal = dialogView.findViewById(R.id.editTanggal);
+        EditText editNoPenerimaanST = dialogView.findViewById(R.id.editNoPenerimaanST);
+        EditText editKeterangan = dialogView.findViewById(R.id.editKeterangan);
+        ImageButton btnClose = dialogView.findViewById(R.id.btnCloseDialogInput);
+        Button btnSimpanBongkarSusun = dialogView.findViewById(R.id.btnSimpanBongkarSusun);
+
+        titleDialog.setText("Bongkar Susun (Ubah)");
+
+
+        // Populate fields with selected data
+        populateDialogFields(tvNoBongkarSusun, cbIsPemakaian, editTanggal, editNoPenerimaanST, editKeterangan, selectedBongkarSusunData);
+
+
+        editTanggal.setInputType(InputType.TYPE_NULL);
+        editTanggal.setFocusable(false);
+        editTanggal.setOnClickListener(v -> {
+            DateTimeUtils.showDatePicker(BongkarSusun.this, editTanggal);
+        });
+
+        // Close button click listener
+        btnClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        // Save button click listener
+        btnSimpanBongkarSusun.setOnClickListener(v -> {
+            loadingDialogHelper.show(this);
+
+            if (validateBongkarSusunInputs(editTanggal, editNoPenerimaanST)) {
+                // Ambil data dari UI
+                String noBongkarSusun = tvNoBongkarSusun.getText().toString().trim();
+                boolean isPemakaian = cbIsPemakaian.isChecked(); // Get CheckBox state
+                String tanggal = DateTimeUtils.formatToDatabaseDate(editTanggal.getText().toString().trim());
+                String noPenerimaanST = editNoPenerimaanST.getText().toString().trim();
+                String keterangan = editKeterangan.getText().toString().trim();
+
+                // Buat objek updated data
+                BongkarSusunData updatedData = new BongkarSusunData(
+                        noBongkarSusun,
+                        tanggal,
+                        isPemakaian,
+                        noPenerimaanST.isEmpty() ? null : noPenerimaanST, // Handle empty string as null
+                        keterangan
+                );
+
+                executorService.execute(() -> {
+                    boolean success = ProsesProduksiApi.updateBongkarSusunData("BongkarSusun_h", updatedData);
+                    dataList = ProsesProduksiApi.getBongkarSusunData("BongkarSusun_h");
+
+                    runOnUiThread(() -> {
+                        loadingDialogHelper.hide();
+                        if (success) {
+                            dialog.dismiss();
+                            Toast.makeText(BongkarSusun.this, "Data berhasil diupdate", Toast.LENGTH_SHORT).show();
+                            populateTable(dataList); // Refresh table data
+                        } else {
+                            Toast.makeText(BongkarSusun.this, "Gagal mengupdate data", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                });
+            } else {
+                loadingDialogHelper.hide();
+            }
+        });
+
+
+
+        dialog.show();
+    }
+
+
+
+    private void populateDialogFields(TextView tvNoBongkarSusun,
+                                      CheckBox cbIsPemakaian,
+                                      EditText editTanggal,
+                                      EditText editNoPenerimaanST,
+                                      EditText editKeterangan,
+                                      BongkarSusunData data) {
+        tvNoBongkarSusun.setText(data.getNoBongkarSusun());
+
+        // Set CheckBox berdasarkan nilai isPemakaian dari data
+        cbIsPemakaian.setChecked(data.isPemakaian());
+
+        editTanggal.setText(DateTimeUtils.formatDate(data.getTanggal()));
+        editNoPenerimaanST.setText(data.getNoPenerimaanST());
+        editKeterangan.setText(data.getKeterangan());
+    }
+
+
+    private boolean validateBongkarSusunInputs(EditText editTanggal, EditText editNoPenerimaanST) {
+        boolean isValid = true;
+
+        if (editTanggal.getText().toString().trim().isEmpty()) {
+            editTanggal.setError("Tanggal harus diisi");
+            editTanggal.requestFocus();
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+
+
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------METHOD UNTUK PENANGANAN KAMERA DENGAN SCAN QR-----------------------------------------------------------------------//
@@ -640,20 +887,20 @@ public class BongkarSusun extends AppCompatActivity {
 
             row.setOnClickListener(v -> {
                 // Reset warna baris sebelumnya (jika ada)
-                if (selectedRow != null) {
-                    int previousRowIndex = (int) selectedRow.getTag();
+                if (selectedRowHeader != null) {
+                    int previousRowIndex = (int) selectedRowHeader.getTag();
                     if (previousRowIndex % 2 == 0) {
-                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
                     } else {
-                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
                     }
-                    resetTextColor(selectedRow); // Kembalikan warna teks ke hitam
+                    resetTextColor(selectedRowHeader); // Kembalikan warna teks ke hitam
                 }
 
                 // Tandai baris yang baru dipilih
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
                 setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
-                selectedRow = row;
+                selectedRowHeader = row;
 
                 // Simpan data yang dipilih
                 selectedBongkarSusunData = data;
@@ -681,22 +928,48 @@ public class BongkarSusun extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noST : noSTList) {
             TableRow row = new TableRow(this);
             row.setTag(rowIndex);
 
-            // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noST, 1.0f);
             row.addView(textView);
 
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noST, "ST_h", "ST_d", "NoST"));
+            // Buat salinan final untuk digunakan dalam lambda
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoST = noST;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoST,
+                        "ST_h",
+                        "ST_d",
+                        "NoST",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshSTTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noSTTableLayout.addView(row);
@@ -704,8 +977,10 @@ public class BongkarSusun extends AppCompatActivity {
         }
     }
 
+
     private void populateNoS4STable(List<String> noS4SList) {
         noS4STableLayout.removeAllViews();
+
         int rowIndex = 0;
 
         if (noS4SList == null || noS4SList.isEmpty()) {
@@ -720,64 +995,54 @@ public class BongkarSusun extends AppCompatActivity {
         // Isi tabel
         for (String noS4S : noS4SList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
-            // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noS4S, 1.0f);
             row.addView(textView);
 
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
+            // Buat salinan final untuk digunakan dalam lambda
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoS4S = noS4S;
 
-            // Tetapkan warna latar belakang berdasarkan indeks baris
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                // ✅ Ini callback ketika DELETE berhasil
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoS4S,
+                        "S4S_h",
+                        "S4S_d",
+                        "NoS4S",
+                        () -> {
+                            // Ini callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshS4STable
+                );
+            });
+
+
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
-            // Tambahkan baris ke TableLayout
             noS4STableLayout.addView(row);
             rowIndex++;
         }
     }
 
-    private void populateNoMouldingTable(List<String> noMouldingList) {
-        noMouldingTableLayout.removeAllViews();
-        int rowIndex = 0;
-
-        if (noMouldingList == null || noMouldingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noMouldingTableLayout.addView(noDataView);
-            return;
-
-        }
-
-        // Data tabel
-        for (String noMoulding : noMouldingList) {
-            TableRow row = new TableRow(this);
-
-            row.setTag(rowIndex);
-
-            TextView textView = createTextView(noMoulding, 1.0f);
-            row.addView(textView);
-
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
-
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
-            } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
-            }
-
-            noMouldingTableLayout.addView(row);
-            rowIndex++;
-        }
-    }
 
     private void populateNoFJTable(List<String> noFJList) {
         noFJTableLayout.removeAllViews();
@@ -792,20 +1057,47 @@ public class BongkarSusun extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noFJ : noFJList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noFJ, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoFJ = noFJ;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoFJ,
+                        "FJ_h",
+                        "FJ_d",
+                        "NoFJ",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshFJTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noFJTableLayout.addView(row);
@@ -813,39 +1105,68 @@ public class BongkarSusun extends AppCompatActivity {
         }
     }
 
-    private void populateNoCCTable(List<String> noCCList) {
-        noCCTableLayout.removeAllViews();
+
+    private void populateNoMouldingTable(List<String> noMouldingList) {
+        noMouldingTableLayout.removeAllViews();
         int rowIndex = 0;
 
-        if (noCCList == null || noCCList.isEmpty()) {
+        if (noMouldingList == null || noMouldingList.isEmpty()) {
             TextView noDataView = new TextView(this);
             noDataView.setText("Tidak ada Data");
             noDataView.setGravity(Gravity.CENTER);
             noDataView.setPadding(16, 16, 16, 16);
-            noCCTableLayout.addView(noDataView);
+            noMouldingTableLayout.addView(noDataView);
             return;
         }
 
-        // Data tabel
-        for (String noCC : noCCList) {
+        // Isi tabel
+        for (String noMoulding : noMouldingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
-            TextView textView = createTextView(noCC, 1.0f);
+            TextView textView = createTextView(noMoulding, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoMoulding = noMoulding;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoMoulding,
+                        "Moulding_h",
+                        "Moulding_d",
+                        "NoMoulding",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshMouldingTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
-            noCCTableLayout.addView(row);
+            noMouldingTableLayout.addView(row);
             rowIndex++;
         }
     }
+
 
     private void populateNoLaminatingTable(List<String> noLaminatingList) {
         noLaminatingTableLayout.removeAllViews();
@@ -860,23 +1181,112 @@ public class BongkarSusun extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noLaminating : noLaminatingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noLaminating, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noLaminating, "Laminating_h", "Laminating_d", "NoLaminating"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoLaminating = noLaminating;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoLaminating,
+                        "Laminating_h",
+                        "Laminating_d",
+                        "NoLaminating",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshLaminatingTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noLaminatingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+
+    private void populateNoCCTable(List<String> noCCList) {
+        noCCTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noCCList == null || noCCList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noCCTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Isi tabel
+        for (String noCC : noCCList) {
+            TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noCC, 1.0f);
+            row.addView(textView);
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoCC = noCC;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoCC,
+                        "CCAkhir_h",
+                        "CCAkhir_d",
+                        "NoCCAkhir",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshCCTable
+                );
+            });
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+
+            noCCTableLayout.addView(row);
             rowIndex++;
         }
     }
@@ -894,26 +1304,49 @@ public class BongkarSusun extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
         for (String noSanding : noSandingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noSanding, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noSanding, "Sanding_h", "Sanding_d", "NoSanding"));
 
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
-            } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
-            }
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoSanding = noSanding;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoSanding,
+                        "Sanding_h",
+                        "Sanding_d",
+                        "NoSanding",
+                        () -> {
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshSandingTable
+                );
+            });
+
+            row.setBackgroundColor(ContextCompat.getColor(this,
+                    rowIndex % 2 == 0 ? R.color.background_cream : R.color.white));
 
             noSandingTableLayout.addView(row);
             rowIndex++;
         }
     }
+
 
     private void populateNoPackingTable(List<String> noPackingList) {
         noPackingTableLayout.removeAllViews();
@@ -928,27 +1361,52 @@ public class BongkarSusun extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
         for (String noPacking : noPackingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noPacking, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noPacking, "BarangJadi_h", "BarangJadi_d", "NoBJ"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoPacking = noPacking;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoPacking,
+                        "BarangJadi_h",
+                        "BarangJadi_d",
+                        "NoBJ",
+                        () -> {
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noBongkarSusun,
+                        this::refreshPackingTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noPackingTableLayout.addView(row);
             rowIndex++;
         }
     }
-
+    
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------METHOD ADD DATA KE TABLE LIST DENGAN PRE-CONDITION---------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -1065,7 +1523,7 @@ public class BongkarSusun extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (ProsesProduksiApi.isDateValidInBongkarSusun(noBongkarSusun, "BongkarSusun_h", result, config.tableNameH, config.columnName)) {
+        if (ProsesProduksiApi.isDateValidInBongkarSusun(noBongkarSusun, mainTable, result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -1847,6 +2305,173 @@ public class BongkarSusun extends AppCompatActivity {
             });
         });
     }
+
+
+    private void refreshSTTable() {
+        // Tampilkan loading
+        loadingIndicatorNoST.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoSTList = ProsesProduksiApi.getNoSTByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputST");
+
+            runOnUiThread(() -> {
+                noSTList = updatedNoSTList; // jika Anda ingin menyimpan global
+                updateTable(
+                        updatedNoSTList,
+                        sumSTLabel,
+                        loadingIndicatorNoST,
+                        noSTTableLayout,
+                        this::populateNoSTTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshS4STable() {
+        // Tampilkan loading
+        loadingIndicatorNoS4S.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoS4SList = ProsesProduksiApi.getNoS4SByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputS4S");
+
+            runOnUiThread(() -> {
+                noS4SList = updatedNoS4SList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoS4SList,
+                        sumS4SLabel,
+                        loadingIndicatorNoS4S,
+                        noS4STableLayout,
+                        this::populateNoS4STable
+                );
+            });
+        });
+    }
+
+
+    private void refreshFJTable() {
+        // Tampilkan loading
+        loadingIndicatorNoFJ.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoFJList = ProsesProduksiApi.getNoFJByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputFJ");
+
+            runOnUiThread(() -> {
+                noFJList = updatedNoFJList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoFJList,
+                        sumFJLabel,
+                        loadingIndicatorNoFJ,
+                        noFJTableLayout,
+                        this::populateNoFJTable
+                );
+            });
+        });
+    }
+
+    private void refreshMouldingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoMoulding.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoMouldingList = ProsesProduksiApi.getNoMouldingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputMoulding");
+
+            runOnUiThread(() -> {
+                noMouldingList = updatedNoMouldingList;
+                updateTable(
+                        updatedNoMouldingList,
+                        sumMouldingLabel,
+                        loadingIndicatorNoMoulding,
+                        noMouldingTableLayout,
+                        this::populateNoMouldingTable
+                );
+            });
+        });
+    }
+
+    private void refreshLaminatingTable() {
+        loadingIndicatorNoLaminating.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoLaminatingList = ProsesProduksiApi.getNoLaminatingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputLaminating");
+
+            runOnUiThread(() -> {
+                noLaminatingList = updatedNoLaminatingList;
+                updateTable(
+                        updatedNoLaminatingList,
+                        sumLaminatingLabel,
+                        loadingIndicatorNoLaminating,
+                        noLaminatingTableLayout,
+                        this::populateNoLaminatingTable
+                );
+            });
+        });
+    }
+
+
+
+    private void refreshCCTable() {
+        // Tampilkan loading
+        loadingIndicatorNoCC.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoCCList = ProsesProduksiApi.getNoCCByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputCCAkhir");
+
+            runOnUiThread(() -> {
+                noCCList = updatedNoCCList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoCCList,
+                        sumCCLabel,
+                        loadingIndicatorNoCC,
+                        noCCTableLayout,
+                        this::populateNoCCTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshSandingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoSanding.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoSandingList = ProsesProduksiApi.getNoSandingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputSanding");
+
+            runOnUiThread(() -> {
+                noSandingList = updatedNoSandingList; // update list jika dibutuhkan di tempat lain
+                updateTable(
+                        updatedNoSandingList,
+                        sumSandingLabel,
+                        loadingIndicatorNoSanding,
+                        noSandingTableLayout,
+                        this::populateNoSandingTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshPackingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoPacking.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoPackingList = ProsesProduksiApi.getNoPackingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputBarangJadi");
+
+            runOnUiThread(() -> {
+                noPackingList = updatedNoPackingList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoPackingList,
+                        sumPackingLabel,
+                        loadingIndicatorNoPacking,
+                        noPackingTableLayout,
+                        this::populateNoPackingTable
+                );
+            });
+        });
+    }
+
 
     private <T> void updateTable(
             List<T> dataList,

@@ -444,6 +444,9 @@ public class Sawmill extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> {
             // Ambil data dari EditText dan Spinner
+            btnSave.setEnabled(false);
+            loadingDialogHelper.show(view.getContext());
+
             SpecialConditionData selectedSpecialCondition = (SpecialConditionData) spinSpecialCondition.getSelectedItem();
             OperatorData selectedOperator1 = (OperatorData) spinOperator1.getSelectedItem();
             OperatorData selectedOperator2 = (OperatorData) spinOperator2.getSelectedItem();
@@ -536,6 +539,9 @@ public class Sawmill extends AppCompatActivity {
 
                         // Setelah operasi selesai, update UI di main thread
                         runOnUiThread(() -> {
+                            loadingDialogHelper.hide();
+                            btnSave.setEnabled(true);
+
                             AlertDialog.Builder builderAlert = new AlertDialog.Builder(this);
                             View dialogView = getLayoutInflater().inflate(R.layout.alert_success, null);
 
@@ -598,8 +604,7 @@ public class Sawmill extends AppCompatActivity {
         }
         return true; // default: anggap ditutup kalau gagal parsing
     }
-
-
+    
 
     private void showDatePickerDialog(final EditText dateEditText) {
         // Mendapatkan tanggal hari ini
@@ -1414,7 +1419,6 @@ public class Sawmill extends AppCompatActivity {
                     kbAdapter.clear();
                     kbAdapter.notifyDataSetChanged();
                 }
-
                 noKB.setSelection(noKB.getText().length());
                 isEditing = false;
             }
@@ -1431,6 +1435,9 @@ public class Sawmill extends AppCompatActivity {
 
         Button btnSave = view.findViewById(R.id.btnSimpan);
         btnSave.setOnClickListener(v -> {
+            btnSave.setEnabled(false);
+            loadingDialogHelper.show(view.getContext());
+
             // Ambil data dari EditText dan Spinner
             SpecialConditionData selectedSpecialCondition = (SpecialConditionData) spinSpecialCondition.getSelectedItem();
             OperatorData selectedOperator1 = (OperatorData) spinOperator1.getSelectedItem();
@@ -1465,8 +1472,11 @@ public class Sawmill extends AppCompatActivity {
                 // Simpan data
                 saveData(dialog, shiftVal, tanggalVal, noKBVal, noMejaVal, idSpecialConditionVal,
                         jlhBalokTerpakaiVal, jlhBatangVal, hourMeterVal, idOperator1Val, idOperator2Val,
-                        remarkVal, beratBalokTimVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal);
+                        remarkVal, beratBalokTimVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal,
+                        btnSave, loadingDialogHelper);
             } else {
+                loadingDialogHelper.hide();
+                btnSave.setEnabled(true);
                 Toast.makeText(this, "Data belum lengkap!", Toast.LENGTH_SHORT).show();
             }
         });
@@ -1525,7 +1535,8 @@ public class Sawmill extends AppCompatActivity {
                           String noMejaVal, int idSpecialConditionVal, int jlhBalokTerpakaiVal,
                           String jlhBatangVal, String hourMeterVal, int idOperator1Val, int idOperator2Val,
                           String remarkVal, String beratBalokTimVal, String jenisKayuVal,
-                          String jamMulaiVal, String jamBerhentiVal, String totalJamKerjaVal) {
+                          String jamMulaiVal, String jamBerhentiVal, String totalJamKerjaVal,
+                          Button btnSave, LoadingDialogHelper loadingDialogHelper) {
 
         executorService.execute(() -> {
             String newNoTellySawmill = SawmillApi.getNextNoTellySawmill();
@@ -1539,12 +1550,19 @@ public class Sawmill extends AppCompatActivity {
                             jamMulaiVal, jamBerhentiVal, totalJamKerjaVal
                     );
 
-                    runOnUiThread(() -> showSuccessDialog(newNoTellySawmill, dialog));
+                    runOnUiThread(() -> {
+                        loadingDialogHelper.hide();
+                        btnSave.setEnabled(true);
+                        showSuccessDialog(newNoTellySawmill, dialog);
+                    });
 
                 } catch (Exception e) {
                     runOnUiThread(() -> {
+                        loadingDialogHelper.hide();
+                        btnSave.setEnabled(true);
                         Toast.makeText(this, "Tidak dapat menyimpan, " + e.getMessage(), Toast.LENGTH_LONG).show();
                     });
+
                 }
             } else {
                 runOnUiThread(() -> {
@@ -2669,10 +2687,10 @@ public class Sawmill extends AppCompatActivity {
                 return;
             }
 
-            if (idGradeKB == -1) {
-                Toast.makeText(this, "Harap pilih grade terlebih dahulu!", Toast.LENGTH_SHORT).show();
-                return;
-            }
+//            if (idGradeKB == -1) {
+//                Toast.makeText(this, "Harap pilih grade terlebih dahulu!", Toast.LENGTH_SHORT).show();
+//                return;
+//            }
 
             float tebal = Float.parseFloat(acuanTebal);
             float lebar = Float.parseFloat(acuanLebar);
@@ -3134,9 +3152,6 @@ public class Sawmill extends AppCompatActivity {
                 currentIsBagusKulit, currentIdGradeKB, currentNameGradeKB
         );
 
-        // Tambahkan ke list
-        detailDataList.add(detailData);
-
         // Update data
         inputData.setPanjang(panjangValue);
         inputData.setPcs(pcsValue);
@@ -3203,7 +3218,7 @@ public class Sawmill extends AppCompatActivity {
             if (Float.compare(data.getTebal(), tebal) == 0 &&
                     Float.compare(data.getLebar(), lebar) == 0 &&
                     Float.compare(data.getPanjang(), panjang) == 0 &&
-                    data.getIdGradeKB() == idGradeKB) {
+                    ((data.getIdGradeKB() == idGradeKB) || data.getNamaGrade() == null)) {
                 return true;
             }
         }

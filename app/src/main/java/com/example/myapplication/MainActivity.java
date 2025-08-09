@@ -22,6 +22,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.utils.SharedPrefUtils;
 
 import java.io.File;
 import java.security.MessageDigest;
@@ -30,6 +31,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Base64;
@@ -98,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (isLoginSuccessful) {
-                        saveUsername(username);
+//                        SharedPrefUtils.saveUsername(username);
                         // Start the task to insert into Riwayat
                         String capitalizedUsername = capitalizeFirstLetter(username);
 
@@ -339,15 +345,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    private void enableLoginControls(boolean enable) {
-//        runOnUiThread(() -> {
-//            Username.setEnabled(enable);
-//            Password.setEnabled(enable);
-//            BtnLogin.setEnabled(enable);
-//            BtnRegistrasi.setEnabled(enable);
-//        });
-//    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -371,15 +368,33 @@ public class MainActivity extends AppCompatActivity {
     private boolean validateLogin(String username, String password) {
         boolean isValid = false;
         Connection con = ConnectionClass();
+
         if (con != null) {
-            String query = "SELECT COUNT(*) FROM dbo.MstUsername WHERE Username = ? AND Password = ?";
+            String query = "SELECT DISTINCT MUGM.IdUGroup, MUGP.NoPermission " +
+                    "FROM dbo.MstUsername MU " +
+                    "JOIN dbo.MstUserGroupMember MUGM ON MU.IdUsername = MUGM.IdUsername " +
+                    "JOIN dbo.MstUserGroupPermission MUGP ON MUGM.IdUGroup = MUGP.IdUGroup " +
+                    "WHERE MU.Username = ? AND MU.Password = ? " +
+                    "AND MUGP.Allow = 1";
+
             try (PreparedStatement ps = con.prepareStatement(query)) {
                 ps.setString(1, username);
                 ps.setString(2, hashPassword(password));
+
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        int count = rs.getInt(1);
-                        isValid = count > 0;
+                    Set<String> roleSet = new HashSet<>();
+                    Set<String> permissionSet = new HashSet<>();
+
+                    while (rs.next()) {
+                        roleSet.add(rs.getString("IdUGroup"));
+                        permissionSet.add(rs.getString("NoPermission"));
+                    }
+
+                    if (!roleSet.isEmpty()) {
+                        SharedPrefUtils.saveUsername(this, username);
+                        SharedPrefUtils.saveRoles(this, new ArrayList<>(roleSet));
+                        SharedPrefUtils.savePermissions(this, new ArrayList<>(permissionSet));
+                        isValid = true;
                     }
                 }
             } catch (SQLException e) {
@@ -394,15 +409,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.e("Connection Error", "Failed to connect to the database.");
         }
+
         return isValid;
     }
 
-    private void saveUsername(String username) {
-        SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("username", username);
-        editor.apply();
-    }
+
+
 
     private String hashPassword(String password) {
         try {

@@ -16,11 +16,13 @@ import android.content.DialogInterface;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.utils.SharedPrefUtils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Date;
 
@@ -48,53 +50,67 @@ public class MenuUtama extends AppCompatActivity {
         Sawmill = findViewById(R.id.Sawmill);
         Laporan = findViewById(R.id.Laporan);
 
-        SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-        String username = prefs.getString("username", "");
-        String capitalizedUsername = capitalizeFirstLetter(username);
+        String username = SharedPrefUtils.getUsername(this);
 
-//        if (!username.equals("x")) {
-//            ProsesProduksi.setEnabled(false);
-//            ProsesProduksi.setAlpha(0.5f);
-//        }
+        // Ambil list role dari SharedPreferences
+        List<String> userRoles = SharedPrefUtils.getRoles(MenuUtama.this);
 
-        usernameView.setText(capitalizedUsername + " !");
+        usernameView.setText(username + " !");
 
         BtnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Start the task to insert into Riwayat
                 String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                String activity = String.format("User %s Telah Logout", capitalizedUsername);
-                new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+                String activity = String.format("User %s Telah Logout", username);
+                new SaveToRiwayatTask(username, currentDateTime, activity).execute();
 
                 Intent intent = new Intent(MenuUtama.this, MainActivity.class);
                 startActivity(intent);
             }
         });
 
-        InputLabel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MenuUtama.this, InputLabel.class);
-                startActivity(intent);
-            }
-        });
 
-        ProsesProduksi.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
-                startActivity(intent);
-            }
-        });
+        // Cek apakah user memiliki IdUGroup "30" = Tally
+        if (userRoles.contains("20")) {
+            // Hanya aktifkan jika termasuk group 30
+            InputLabel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(MenuUtama.this, InputLabel.class);
+                    startActivity(intent);
+                }
+            });
 
-        StockOpname.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MenuUtama.this, StockOpname.class);
-                startActivity(intent);
-            }
-        });
+            ProsesProduksi.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
+                    startActivity(intent);
+                }
+            });
+
+        } else {
+            // Disable klik dan tampilkan visual tidak aktif (opsional)
+            InputLabel.setAlpha(0.5f);
+            ProsesProduksi.setAlpha(0.5f);
+        }
+
+
+        // Cek apakah user memiliki IdUGroup "20" = Stock Opname
+        if (userRoles.contains("20")) {
+            StockOpname.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(MenuUtama.this, StockOpname.class);
+                    startActivity(intent);
+                }
+            });
+        } else {
+            // Disable klik dan tampilkan visual tidak aktif (opsional)
+            StockOpname.setAlpha(0.5f);
+        }
+
 
         Sawmill.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,14 +129,6 @@ public class MenuUtama extends AppCompatActivity {
         });
     }
 
-
-    //Fungsi untuk membuat huruf kapital
-    public String capitalizeFirstLetter(String inputUsername) {
-        if (inputUsername == null || inputUsername.isEmpty()) {
-            return inputUsername; // Jika null atau kosong, kembalikan string asli
-        }
-        return inputUsername.substring(0, 1).toUpperCase() + inputUsername.substring(1).toLowerCase();
-    }
 
     private class SaveToRiwayatTask extends AsyncTask<Void, Void, Boolean> {
         private String username;

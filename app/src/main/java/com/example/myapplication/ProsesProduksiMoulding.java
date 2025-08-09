@@ -1,10 +1,13 @@
 package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
+import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -31,12 +34,14 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -60,6 +65,8 @@ import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.utils.CameraUtils;
 import com.example.myapplication.utils.CameraXAnalyzer;
+import com.example.myapplication.utils.TooltipUtils;
+import com.example.myapplication.utils.ViewUtils;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
@@ -83,6 +90,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private PreviewView cameraPreview;
     private Button btnCameraControl;
     private Button btnSimpan;
+    private TableRow selectedRowHeader;
     private TableRow selectedRow;
     private TextView qrResultText;
     private TextView noProduksiView;
@@ -160,6 +168,9 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoSanding;
     private ProgressBar loadingIndicatorNoPacking;
     private Button btnInputManual;
+    private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
+    private Button btnEdit;
+    private final String mainTable = "MouldingProduksi_h";
 
 
     @Override
@@ -215,6 +226,8 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         loadingIndicatorNoSanding = findViewById(R.id.loadingIndicatorNoSanding);
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
         btnInputManual = findViewById(R.id.btnInputManual);
+        btnEdit = findViewById(R.id.btnEdit);
+
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -244,6 +257,19 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                 }
             }
         });
+
+        btnEdit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String noProduksi = noProduksiView.getText().toString();
+                if (!noProduksi.isEmpty()) {
+                    showEditProductionDialog();
+                } else {
+                    Toast.makeText(ProsesProduksiMoulding.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
 
         btnInputManual.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -397,7 +423,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
         // Memuat data dari API dan menampilkan ke tabel
         executorService.execute(() -> {
-            dataList = ProsesProduksiApi.getProductionData("MouldingProduksi_h");
+            dataList = ProsesProduksiApi.getProductionData(mainTable);
 
             runOnUiThread(() -> {
                 populateTable(dataList);
@@ -433,6 +459,212 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
         btnHistorySave.setOnClickListener(v -> showHistoryDialog(noProduksi));
 
+    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------METHOD EDIT HEADER--------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void showEditProductionDialog() {
+        // Inflate dialog layout
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_edit_proses_produksi, null);
+
+        // Create dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        // Make dialog background transparent for custom styling
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        // Get references to dialog views
+        TextView tvNoProduksi = dialogView.findViewById(R.id.tvNoProduksi);
+        Spinner spinShift = dialogView.findViewById(R.id.spinShift);
+        EditText editTanggal = dialogView.findViewById(R.id.editTanggal);
+        Spinner spinMesin = dialogView.findViewById(R.id.spinMesin);
+        Spinner spinOperator = dialogView.findViewById(R.id.spinOperator);
+        EditText editJlhAnggota = dialogView.findViewById(R.id.editJlhAnggota);
+        EditText editJamKerja = dialogView.findViewById(R.id.editJamKerja);
+        EditText editHourMeter = dialogView.findViewById(R.id.editHourMeter);
+        ImageButton btnClose = dialogView.findViewById(R.id.btnCloseDialogInput);
+        Button btnSimpan = dialogView.findViewById(R.id.btnSimpanProduction);
+
+        // Setup spinner for shift
+        setupShiftSpinner(spinShift);
+
+        loadMesinSpinner(spinMesin, selectedProductionData.getIdMesin());
+
+        loadOperatorSpinner(spinOperator, selectedProductionData.getIdOperator(), selectedProductionData.getOperator());
+
+        // Populate fields with selected data
+        populateDialogFields(tvNoProduksi, spinShift, editTanggal, spinMesin, spinOperator, editJlhAnggota, editJamKerja, editHourMeter, selectedProductionData);
+
+
+        editTanggal.setInputType(InputType.TYPE_NULL);
+        editTanggal.setFocusable(false);
+        editTanggal.setOnClickListener(v -> {
+            DateTimeUtils.showDatePicker(ProsesProduksiMoulding.this, editTanggal);
+        });
+
+        // Close button click listener
+        btnClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        // Save button click listener
+        btnSimpan.setOnClickListener(v -> {
+            loadingDialogHelper.show(this);
+            if (validateInputs(tvNoProduksi, editTanggal, spinMesin, spinOperator)) {
+                // Ambil data dari UI
+                String noProduksi = tvNoProduksi.getText().toString().trim();
+                String shift = spinShift.getSelectedItem().toString();
+                String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
+                int idMesin = ((MesinData) spinMesin.getSelectedItem()).getIdMesin();
+                int idOperator = ((OperatorData) spinOperator.getSelectedItem()).getIdOperator();
+                String jamKerja = editJamKerja.getText().toString().trim();
+                int jumlahAnggota = Integer.parseInt(editJlhAnggota.getText().toString().trim());
+                double hourMeter = Double.parseDouble(editHourMeter.getText().toString().trim());
+
+                // Buat objek ProductionData
+                ProductionData updatedData = new ProductionData(
+                        noProduksi, shift, tanggal, "", "", jamKerja,
+                        jumlahAnggota, hourMeter, idMesin, idOperator
+                );
+
+                executorService.execute(() -> {
+                    boolean success = ProsesProduksiApi.updateProductionData(mainTable, updatedData);
+                    dataList = ProsesProduksiApi.getProductionData(mainTable);
+
+
+                    runOnUiThread(() -> {
+                        if (success) {
+                            dialog.dismiss();
+                            Toast.makeText(ProsesProduksiMoulding.this, "Data berhasil diupdate", Toast.LENGTH_SHORT).show();
+                            populateTable(dataList);
+                            loadingDialogHelper.hide();
+                        } else {
+                            Toast.makeText(ProsesProduksiMoulding.this, "Gagal mengupdate data", Toast.LENGTH_SHORT).show();
+                            loadingDialogHelper.hide();
+                        }
+                    });
+                });
+            }
+        });
+
+
+
+        dialog.show();
+    }
+
+
+
+    private void populateDialogFields(TextView tvNoProduksi, Spinner spinShift, EditText editTanggal,
+                                      Spinner spinMesin, Spinner spinOperator, EditText editJlhAnggota, EditText editJamKerja, EditText editHourMeter, ProductionData data) {
+        tvNoProduksi.setText(data.getNoProduksi());
+        editTanggal.setText(DateTimeUtils.formatDate(data.getTanggal()));
+        editJlhAnggota.setText(String.valueOf(data.getJumlahAnggota()));
+        editJamKerja.setText(data.getJamKerja());
+        editHourMeter.setText(String.valueOf(data.getHourMeter()));
+
+        // Set spinner selection based on shift value
+        ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinShift.getAdapter();
+        if (adapter != null && data.getShift() != null) {
+            int position = adapter.getPosition(data.getShift());
+            if (position >= 0) {
+                spinShift.setSelection(position);
+            }
+        }
+    }
+
+    private boolean validateInputs(TextView tvNoProduksi, EditText editTanggal,
+                                   Spinner spinMesin, Spinner spinOperator) {
+
+        if (editTanggal.getText().toString().trim().isEmpty()) {
+            editTanggal.setError("Tanggal harus diisi");
+            editTanggal.requestFocus();
+            return false;
+        }
+
+        return true;
+    }
+
+
+    private void setupShiftSpinner(Spinner spinShift) {
+        // Setup spinner adapter for shift options
+        String[] shiftOptions = {"1", "2", "3"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, shiftOptions);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinShift.setAdapter(adapter);
+    }
+
+
+    private void loadMesinSpinner(Spinner spinner, int selectedIdMesin) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            List<MesinData> mesinList = ProsesProduksiApi.getAllMesinData(3);
+
+            // Kembali ke UI thread untuk update Spinner
+            runOnUiThread(() -> {
+                ArrayAdapter<MesinData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mesinList);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                spinner.setAdapter(adapter);
+
+                // Set item terpilih jika ada
+                for (int i = 0; i < mesinList.size(); i++) {
+                    if (mesinList.get(i).getIdMesin() == selectedIdMesin) {
+                        spinner.setSelection(i);
+                        break;
+                    }
+                }
+            });
+        });
+    }
+
+
+    private void loadOperatorSpinner(Spinner spinner, int selectedIdOperator, String selectedOperatorName) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            List<OperatorData> operatorList = ProsesProduksiApi.getAllOperatorData(3);
+
+            // Cek apakah selectedIdOperator ada dalam list
+            boolean found = false;
+            for (OperatorData operator : operatorList) {
+                if (operator.getIdOperator() == selectedIdOperator) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // Jika tidak ditemukan, tambahkan operator dummy dengan id dan nama yang sama
+            if (!found && selectedIdOperator != 0) {
+                OperatorData newOperator = new OperatorData(selectedIdOperator, selectedOperatorName);
+                operatorList.add(0, newOperator); // bisa ditaruh di awal agar langsung muncul
+            }
+
+            runOnUiThread(() -> {
+                ArrayAdapter<OperatorData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorList);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                spinner.setAdapter(adapter);
+
+                // Set item terpilih
+                for (int i = 0; i < operatorList.size(); i++) {
+                    if (operatorList.get(i).getIdOperator() == selectedIdOperator) {
+                        spinner.setSelection(i);
+                        break;
+                    }
+                }
+            });
+        });
     }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -647,20 +879,20 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
             row.setOnClickListener(v -> {
                 // Reset warna baris sebelumnya (jika ada)
-                if (selectedRow != null) {
-                    int previousRowIndex = (int) selectedRow.getTag();
+                if (selectedRowHeader != null) {
+                    int previousRowIndex = (int) selectedRowHeader.getTag();
                     if (previousRowIndex % 2 == 0) {
-                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
                     } else {
-                        selectedRow.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
                     }
-                    resetTextColor(selectedRow); // Kembalikan warna teks ke hitam
+                    resetTextColor(selectedRowHeader); // Kembalikan warna teks ke hitam
                 }
 
                 // Tandai baris yang baru dipilih
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
                 setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
-                selectedRow = row;
+                selectedRowHeader = row;
 
                 // Simpan data yang dipilih
                 selectedProductionData = data;
@@ -677,6 +909,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
     private void populateNoS4STable(List<String> noS4SList) {
         noS4STableLayout.removeAllViews();
+
         int rowIndex = 0;
 
         if (noS4SList == null || noS4SList.isEmpty()) {
@@ -691,64 +924,54 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         // Isi tabel
         for (String noS4S : noS4SList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
-            // Tambahkan TextView ke baris tabel
             TextView textView = createTextView(noS4S, 1.0f);
             row.addView(textView);
 
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noS4S, "S4S_h", "S4S_d", "NoS4S"));
+            // Buat salinan final untuk digunakan dalam lambda
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoS4S = noS4S;
 
-            // Tetapkan warna latar belakang berdasarkan indeks baris
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                // ✅ Ini callback ketika DELETE berhasil
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoS4S,
+                        "S4S_h",
+                        "S4S_d",
+                        "NoS4S",
+                        () -> {
+                            // Ini callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshS4STable
+                );
+            });
+
+
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
-            // Tambahkan baris ke TableLayout
             noS4STableLayout.addView(row);
             rowIndex++;
         }
     }
 
-    private void populateNoMouldingTable(List<String> noMouldingList) {
-        noMouldingTableLayout.removeAllViews();
-        int rowIndex = 0;
-
-        if (noMouldingList == null || noMouldingList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Tidak ada Data");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            noMouldingTableLayout.addView(noDataView);
-            return;
-
-        }
-
-        // Data tabel
-        for (String noMoulding : noMouldingList) {
-            TableRow row = new TableRow(this);
-
-            row.setTag(rowIndex);
-
-            TextView textView = createTextView(noMoulding, 1.0f);
-            row.addView(textView);
-
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noMoulding, "Moulding_h", "Moulding_d", "NoMoulding"));
-
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
-            } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
-            }
-
-            noMouldingTableLayout.addView(row);
-            rowIndex++;
-        }
-    }
 
     private void populateNoFJTable(List<String> noFJList) {
         noFJTableLayout.removeAllViews();
@@ -763,26 +986,116 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noFJ : noFJList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noFJ, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noFJ, "FJ_h", "FJ_d", "NoFJ"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoFJ = noFJ;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoFJ,
+                        "FJ_h",
+                        "FJ_d",
+                        "NoFJ",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshFJTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noFJTableLayout.addView(row);
             rowIndex++;
         }
     }
+
+
+    private void populateNoMouldingTable(List<String> noMouldingList) {
+        noMouldingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noMouldingList == null || noMouldingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noMouldingTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Isi tabel
+        for (String noMoulding : noMouldingList) {
+            TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noMoulding, 1.0f);
+            row.addView(textView);
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoMoulding = noMoulding;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoMoulding,
+                        "Moulding_h",
+                        "Moulding_d",
+                        "NoMoulding",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshMouldingTable
+                );
+            });
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+
+            noMouldingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
 
     private void populateNoCCTable(List<String> noCCList) {
         noCCTableLayout.removeAllViews();
@@ -797,26 +1110,54 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noCC : noCCList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noCC, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noCC, "CCAkhir_h", "CCAkhir_d", "NoCCAkhir"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoCC = noCC;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoCC,
+                        "CCAkhir_h",
+                        "CCAkhir_d",
+                        "NoCCAkhir",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshCCTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noCCTableLayout.addView(row);
             rowIndex++;
         }
     }
+
 
     private void populateNoLaminatingTable(List<String> noLaminatingList) {
         noLaminatingTableLayout.removeAllViews();
@@ -831,26 +1172,54 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
+        // Isi tabel
         for (String noLaminating : noLaminatingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noLaminating, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noLaminating, "Laminating_h", "Laminating_d", "NoLaminating"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoLaminating = noLaminating;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoLaminating,
+                        "Laminating_h",
+                        "Laminating_d",
+                        "NoLaminating",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshLaminatingTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noLaminatingTableLayout.addView(row);
             rowIndex++;
         }
     }
+
 
     private void populateNoSandingTable(List<String> noSandingList) {
         noSandingTableLayout.removeAllViews();
@@ -865,26 +1234,49 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
         for (String noSanding : noSandingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noSanding, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noSanding, "Sanding_h", "Sanding_d", "NoSanding"));
 
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
-            } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
-            }
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoSanding = noSanding;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoSanding,
+                        "Sanding_h",
+                        "Sanding_d",
+                        "NoSanding",
+                        () -> {
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshSandingTable
+                );
+            });
+
+            row.setBackgroundColor(ContextCompat.getColor(this,
+                    rowIndex % 2 == 0 ? R.color.background_cream : R.color.white));
 
             noSandingTableLayout.addView(row);
             rowIndex++;
         }
     }
+
 
     private void populateNoPackingTable(List<String> noPackingList) {
         noPackingTableLayout.removeAllViews();
@@ -899,20 +1291,45 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             return;
         }
 
-        // Data tabel
         for (String noPacking : noPackingList) {
             TableRow row = new TableRow(this);
-
             row.setTag(rowIndex);
 
             TextView textView = createTextView(noPacking, 1.0f);
             row.addView(textView);
-            row.setOnClickListener(view -> fetchDataAndShowTooltip(view, noPacking, "BarangJadi_h", "BarangJadi_d", "NoBJ"));
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoPacking = noPacking;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoPacking,
+                        "BarangJadi_h",
+                        "BarangJadi_d",
+                        "NoBJ",
+                        () -> {
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        },
+                        noProduksi,
+                        this::refreshPackingTable
+                );
+            });
 
             if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream)); // Warna untuk baris genap
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
             }
 
             noPackingTableLayout.addView(row);
@@ -1036,7 +1453,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (ProsesProduksiApi.isDateValid(noProduksi, "MouldingProduksi_h", result, config.tableNameH, config.columnName)) {
+        if (ProsesProduksiApi.isDateValid(noProduksi, mainTable, result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -1392,224 +1809,6 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------TOOLTIP METHOD------------------------- -------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-    // Mengambil data tooltip dan menampilkan tooltip
-    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
-        executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProsesProduksiApi
-            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
-
-            // Pindahkan eksekusi ke UI thread untuk menampilkan tooltip
-            runOnUiThread(() -> {
-                if (tooltipData != null) {
-                    // Tampilkan tooltip dengan data yang diperoleh
-                    showTooltip(
-                            anchorView,
-                            tooltipData.getNoLabel(),
-                            tooltipData.getFormattedDateTime(),
-                            tooltipData.getJenis(),
-                            tooltipData.getSpkDetail(),
-                            tooltipData.getSpkAsalDetail(),
-                            tooltipData.getNamaGrade(),
-                            tooltipData.isLembur(),
-                            tooltipData.getTableData(),
-                            tooltipData.getTotalPcs(),
-                            tooltipData.getTotalM3(),
-                            tableH
-                    );
-                } else {
-                    // Tampilkan pesan error jika data tidak ditemukan
-                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-    }
-
-
-    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, String tableH) {
-        // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
-
-        // Set data pada TextView
-        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
-        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
-        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
-        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
-
-        // Referensi TableLayout
-        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
-
-        // Membuat Header Tabel Secara Dinamis
-        TableRow headerRow = new TableRow(this);
-        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
-
-        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
-        for (String headerText : headerTexts) {
-            TextView headerTextView = new TextView(this);
-            headerTextView.setText(headerText);
-            headerTextView.setGravity(Gravity.CENTER);
-            headerTextView.setPadding(8, 8, 8, 8);
-            headerTextView.setTextColor(Color.WHITE);
-            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
-            headerRow.addView(headerTextView);
-        }
-
-        // Tambahkan Header ke TableLayout
-        tableLayout.addView(headerRow);
-
-        // Tambahkan Data ke TableLayout
-        for (String[] row : tableData) {
-            TableRow tableRow = new TableRow(this);
-            tableRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-            ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
-
-            for (String cell : row) {
-                TextView textView = new TextView(this);
-                textView.setText(cell);
-                textView.setGravity(Gravity.CENTER);
-                textView.setPadding(8, 8, 8, 8);
-                textView.setTextColor(Color.BLACK);
-                tableRow.addView(textView);
-            }
-            tableLayout.addView(tableRow);
-        }
-
-        // Tambahkan Baris untuk Total Pcs
-        TableRow totalRow = new TableRow(this);
-        totalRow.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        totalRow.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan total dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            totalRow.addView(emptyCell);
-        }
-
-        TextView totalLabel = new TextView(this);
-        totalLabel.setText("Total :");
-        totalLabel.setGravity(Gravity.END);
-        totalLabel.setPadding(8, 8, 8, 8);
-        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalLabel);
-
-        // Cell untuk Total Pcs
-        TextView totalValue = new TextView(this);
-        totalValue.setText(String.valueOf(totalPcs));
-        totalValue.setGravity(Gravity.CENTER);
-        totalValue.setPadding(8, 8, 8, 8);
-        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalValue);
-
-        // Tambahkan totalRow ke TableLayout
-        tableLayout.addView(totalRow);
-
-        // Tambahkan Baris untuk Total M3
-        TableRow m3Row = new TableRow(this);
-        m3Row.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        m3Row.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan m3 dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            m3Row.addView(emptyCell);
-        }
-
-        TextView m3Label = new TextView(this);
-        m3Label.setText("M3 :");
-        m3Label.setGravity(Gravity.END);
-        m3Label.setPadding(8, 8, 8, 8);
-        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Label);
-
-        // Cell untuk Total M3
-        DecimalFormat df = new DecimalFormat("0.0000");
-        TextView m3Value = new TextView(this);
-        m3Value.setText(df.format(totalM3));
-        m3Value.setGravity(Gravity.CENTER);
-        m3Value.setPadding(8, 8, 8, 8);
-        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Value);
-
-        // Tambahkan m3Row ke TableLayout
-        tableLayout.addView(m3Row);
-
-        //TOOLTIP VIEW PRECONDITION
-        if (tableH.equals("ST_h")) {
-            tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
-            tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
-        } else {
-            tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
-            tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
-        }
-
-
-        // Buat PopupWindow
-        PopupWindow popupWindow = new PopupWindow(
-                tooltipView,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-
-        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
-
-        // Ukur ukuran tooltip sebelum menampilkannya
-        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int tooltipWidth = tooltipView.getMeasuredWidth();
-        int tooltipHeight = tooltipView.getMeasuredHeight();
-
-        // Dapatkan posisi anchorView
-        int[] location = new int[2];
-        anchorView.getLocationOnScreen(location);
-
-        // Hitung posisi tooltip
-        int x = location[0] - tooltipWidth;
-        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int screenHeight = displayMetrics.heightPixels;
-        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
-
-        // Menaikkan pointer ketika popup melebihi batas layout
-        Log.d("TooltipDebug", "TrianglePointer Y: " + y);
-        Log.d("TooltipDebug", "TrianglePointer tooltip : " + (screenHeight - tooltipHeight) );
-
-        if (y < 60) {
-            trianglePointer.setY(y - 60);
-        }
-        else if(y > (screenHeight - tooltipHeight)){
-            trianglePointer.setY(y - (screenHeight - tooltipHeight));
-        }
-
-
-
-        // Tampilkan tooltip
-        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
-    }
-
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------HELPER METHOD-------------------------- -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
@@ -1796,6 +1995,155 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
             });
         });
     }
+
+
+    private void refreshS4STable() {
+        // Tampilkan loading
+        loadingIndicatorNoS4S.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoS4SList = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "MouldingProduksiInputS4S");
+
+            runOnUiThread(() -> {
+                noS4SList = updatedNoS4SList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoS4SList,
+                        sumS4SLabel,
+                        loadingIndicatorNoS4S,
+                        noS4STableLayout,
+                        this::populateNoS4STable
+                );
+            });
+        });
+    }
+
+
+    private void refreshFJTable() {
+        // Tampilkan loading
+        loadingIndicatorNoFJ.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoFJList = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "MouldingProduksiInputFJ");
+
+            runOnUiThread(() -> {
+                noFJList = updatedNoFJList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoFJList,
+                        sumFJLabel,
+                        loadingIndicatorNoFJ,
+                        noFJTableLayout,
+                        this::populateNoFJTable
+                );
+            });
+        });
+    }
+
+
+
+    private void refreshMouldingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoMoulding.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoMouldingList = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "MouldingProduksiInputMoulding");
+
+            runOnUiThread(() -> {
+                noMouldingList = updatedNoMouldingList;
+                updateTable(
+                        updatedNoMouldingList,
+                        sumMouldingLabel,
+                        loadingIndicatorNoMoulding,
+                        noMouldingTableLayout,
+                        this::populateNoMouldingTable
+                );
+            });
+        });
+    }
+
+    private void refreshLaminatingTable() {
+        loadingIndicatorNoLaminating.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoLaminatingList = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "MouldingProduksiInputLaminating");
+
+            runOnUiThread(() -> {
+                noLaminatingList = updatedNoLaminatingList;
+                updateTable(
+                        updatedNoLaminatingList,
+                        sumLaminatingLabel,
+                        loadingIndicatorNoLaminating,
+                        noLaminatingTableLayout,
+                        this::populateNoLaminatingTable
+                );
+            });
+        });
+    }
+
+
+
+    private void refreshCCTable() {
+        // Tampilkan loading
+        loadingIndicatorNoCC.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "MouldingProduksiInputCCAkhir");
+
+            runOnUiThread(() -> {
+                noCCList = updatedNoCCList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoCCList,
+                        sumCCLabel,
+                        loadingIndicatorNoCC,
+                        noCCTableLayout,
+                        this::populateNoCCTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshSandingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoSanding.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoSandingList = ProsesProduksiApi.getNoSandingByNoProduksi(noProduksi, "MouldingProduksiInputSanding");
+
+            runOnUiThread(() -> {
+                noSandingList = updatedNoSandingList; // update list jika dibutuhkan di tempat lain
+                updateTable(
+                        updatedNoSandingList,
+                        sumSandingLabel,
+                        loadingIndicatorNoSanding,
+                        noSandingTableLayout,
+                        this::populateNoSandingTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshPackingTable() {
+        // Tampilkan loading
+        loadingIndicatorNoPacking.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoPackingList = ProsesProduksiApi.getNoPackingByNoProduksi(noProduksi, "MouldingProduksiInputBarangJadi");
+
+            runOnUiThread(() -> {
+                noPackingList = updatedNoPackingList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoPackingList,
+                        sumPackingLabel,
+                        loadingIndicatorNoPacking,
+                        noPackingTableLayout,
+                        this::populateNoPackingTable
+                );
+            });
+        });
+    }
+
+
 
     private <T> void updateTable(
             List<T> dataList,
