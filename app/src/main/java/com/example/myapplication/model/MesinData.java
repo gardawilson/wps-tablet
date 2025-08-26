@@ -1,16 +1,16 @@
 package com.example.myapplication.model;
 
 public class MesinData {
-    private int idMesin;
+    private String noProduksi;
     private String namaMesin;
 
-    public MesinData(int idMesin, String namaMesin) {
-        this.idMesin = idMesin;
+    public MesinData(String noProduksi, String namaMesin) {
+        this.noProduksi = noProduksi;
         this.namaMesin = namaMesin;
     }
 
-    public int getIdMesin() {
-        return idMesin;
+    public String getNoProduksi() {
+        return noProduksi;
     }
 
     public String getNamaMesin() {
@@ -19,6 +19,6 @@ public class MesinData {
 
     @Override
     public String toString() {
-        return namaMesin; // Yang akan ditampilkan di spinner
+        return namaMesin + " - " + noProduksi;
     }
 }

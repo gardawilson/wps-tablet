@@ -1,13 +1,14 @@
 package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
-import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -171,6 +172,8 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private final String mainTable = "CCAkhirProduksi_h";
     private Button btnEdit;
+    private List<String> userPermissions;
+
 
 
     @Override
@@ -198,6 +201,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         noMouldingTableLayout = findViewById(R.id.noMouldingTableLayout);
         noFJTableLayout = findViewById(R.id.noFJTableLayout);
         noLaminatingTableLayout = findViewById(R.id.noLaminatingTableLayout);
+        noCCTableLayout = findViewById(R.id.noCCTableLayout);
         noSandingTableLayout = findViewById(R.id.noSandingTableLayout);
         noPackingTableLayout = findViewById(R.id.noPackingTableLayout);
         jumlahLabel = findViewById(R.id.jumlahLabel);
@@ -218,6 +222,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         loadingIndicatorNoMoulding = findViewById(R.id.loadingIndicatorNoMoulding);
         loadingIndicatorNoFJ = findViewById(R.id.loadingIndicatorNoFJ);
         loadingIndicatorNoLaminating = findViewById(R.id.loadingIndicatorNoLaminating);
+        loadingIndicatorNoCC = findViewById(R.id.loadingIndicatorNoCC);
         loadingIndicatorNoSanding = findViewById(R.id.loadingIndicatorNoSanding);
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
         btnInputManual = findViewById(R.id.btnInputManual);
@@ -236,6 +241,10 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
 
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
+
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnEdit, "proses_cca:update");
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -522,7 +531,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                 String noProduksi = tvNoProduksi.getText().toString().trim();
                 String shift = spinShift.getSelectedItem().toString();
                 String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
-                int idMesin = ((MesinData) spinMesin.getSelectedItem()).getIdMesin();
+                int idMesin = ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin();
                 int idOperator = ((OperatorData) spinOperator.getSelectedItem()).getIdOperator();
                 String jamKerja = editJamKerja.getText().toString().trim();
                 int jumlahAnggota = Integer.parseInt(editJlhAnggota.getText().toString().trim());
@@ -605,11 +614,11 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
-            List<MesinData> mesinList = ProsesProduksiApi.getAllMesinData(5);
+            List<MesinProsesProduksiData> mesinList = ProsesProduksiApi.getAllMesinData(5);
 
             // Kembali ke UI thread untuk update Spinner
             runOnUiThread(() -> {
-                ArrayAdapter<MesinData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mesinList);
+                ArrayAdapter<MesinProsesProduksiData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mesinList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinner.setAdapter(adapter);
 
@@ -948,10 +957,32 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshFJTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoFJ + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoFJ,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoFJ);
+                                runOnUiThread(this::refreshFJTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1010,10 +1041,32 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshMouldingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoMoulding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoMoulding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoMoulding);
+                                runOnUiThread(this::refreshMouldingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1072,10 +1125,32 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshLaminatingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoLaminating + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoLaminating,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoLaminating);
+                                runOnUiThread(this::refreshLaminatingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1085,6 +1160,89 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
             }
 
             noLaminatingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void populateNoCCTable(List<String> noCCList) {
+        noCCTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noCCList == null || noCCList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noCCTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Isi tabel
+        for (String noCC : noCCList) {
+            TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noCC, 1.0f);
+            row.addView(textView);
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoCC = noCC;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoCC,
+                        "CCAkhir_h",
+                        "CCAkhir_d",
+                        "NoCCAkhir",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        }
+                );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoCC + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoCC,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoCC);
+                                runOnUiThread(this::refreshCCTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
+            });
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+
+            noCCTableLayout.addView(row);
             rowIndex++;
         }
     }
@@ -1132,10 +1290,32 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshSandingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoSanding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoSanding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoSanding);
+                                runOnUiThread(this::refreshSandingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             row.setBackgroundColor(ContextCompat.getColor(this,
@@ -1189,10 +1369,32 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshPackingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_cca:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoPacking + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoPacking,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoPacking);
+                                runOnUiThread(this::refreshPackingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1280,7 +1482,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                 }
 
                 // Filter prefix:
-                if (!result.startsWith("S") && !result.startsWith("T")  && !result.startsWith("U")  && !result.startsWith("W") && !result.startsWith("I")) {
+                if (!result.startsWith("S") && !result.startsWith("T")  && !result.startsWith("U")  && !result.startsWith("W") && !result.startsWith("I") && !result.startsWith("V")) {
                     runOnUiThread(() -> displayErrorState(
                             "Label " + result + " Tidak Sesuai", R.raw.denied_data));
                     return;
@@ -1413,7 +1615,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         executor.execute(() -> {
             Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
 
-            int totalItems = noFJList.size() + noMouldingList.size() + noLaminatingList.size() + noSandingList.size() + noPackingList.size();
+            int totalItems = noFJList.size() + noMouldingList.size() + noLaminatingList.size() + noSandingList.size() + noPackingList.size() + noCCList.size();
             int savedItems = 0;
 
             // Proses penyimpanan untuk tabel Moulding
@@ -1471,6 +1673,17 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
+            // Proses penyimpanan untuk tabel CC
+            if (!noCCList.isEmpty()) {
+                List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "CCAkhirProduksiInputCCAkhir");
+                List<String> newNoCC = new ArrayList<>(noCCList);
+                newNoCC.removeAll(existingNoCC);
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "CCAkhirProduksiInputCCAkhir");
+                savedItems += newNoCC.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
             ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noProduksi + " Pada Proses Produksi CrossCut (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
@@ -1481,6 +1694,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
             noLaminatingList.clear();
             noSandingList.clear();
             noPackingList.clear();
+            noCCList.clear();
             scannedResults.clear();
 
             runOnUiThread(() -> {
@@ -1502,7 +1716,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
-//-------------------------------------------HISTORY METHOD------------------------- -------------------------------------------------------------------//
+//-------------------------------------------HISTORY METHOD---------------------------------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
     private void showHistoryDialog(String noProduksi) {
@@ -1959,6 +2173,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         loadingIndicatorNoLaminating.setVisibility(visibility);
         loadingIndicatorNoSanding.setVisibility(visibility);
         loadingIndicatorNoPacking.setVisibility(visibility);
+        loadingIndicatorNoCC.setVisibility(visibility);
     }
 
     private void setAllTableLayoutsVisibility(int visibility) {
@@ -1967,6 +2182,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         noLaminatingTableLayout.setVisibility(visibility);
         noSandingTableLayout.setVisibility(visibility);
         noPackingTableLayout.setVisibility(visibility);
+        noCCTableLayout.setVisibility(visibility);
     }
 
     private void clearAllDataLists() {
@@ -1975,6 +2191,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         noFJList.clear();
         noCCList.clear();
         noLaminatingList.clear();
+        noCCList.clear();
         noSandingList.clear();
         noPackingList.clear();
         scannedResults.clear();
@@ -2037,6 +2254,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
             noLaminatingList = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "CCAkhirProduksiInputLaminating");
             noSandingList = ProsesProduksiApi.getNoSandingByNoProduksi(noProduksi, "CCAkhirProduksiInputSanding");
             noPackingList = ProsesProduksiApi.getNoPackingByNoProduksi(noProduksi, "CCAkhirProduksiInputBarangJadi");
+            noCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "CCAkhirProduksiInputCCAkhir");
 
             // Perbarui UI di thread utama
             runOnUiThread(() -> {
@@ -2049,6 +2267,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                 updateTable(noMouldingList, sumMouldingLabel, loadingIndicatorNoMoulding, noMouldingTableLayout, this::populateNoMouldingTable);
                 updateTable(noFJList, sumFJLabel, loadingIndicatorNoFJ, noFJTableLayout, this::populateNoFJTable);
                 updateTable(noLaminatingList, sumLaminatingLabel, loadingIndicatorNoLaminating, noLaminatingTableLayout, this::populateNoLaminatingTable);
+                updateTable(noCCList, sumCCLabel, loadingIndicatorNoCC, noCCTableLayout, this::populateNoCCTable);
                 updateTable(noSandingList, sumSandingLabel, loadingIndicatorNoSanding, noSandingTableLayout, this::populateNoSandingTable);
                 updateTable(noPackingList, sumPackingLabel, loadingIndicatorNoPacking, noPackingTableLayout, this::populateNoPackingTable);
             });
@@ -2111,6 +2330,26 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                         loadingIndicatorNoLaminating,
                         noLaminatingTableLayout,
                         this::populateNoLaminatingTable
+                );
+            });
+        });
+    }
+
+    private void refreshCCTable() {
+        // Tampilkan loading
+        loadingIndicatorNoCC.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "CCAkhirProduksiInputCCAkhir");
+
+            runOnUiThread(() -> {
+                noCCList = updatedNoCCList; // update list jika diperlukan di tempat lain
+                updateTable(
+                        updatedNoCCList,
+                        sumCCLabel,
+                        loadingIndicatorNoCC,
+                        noCCTableLayout,
+                        this::populateNoCCTable
                 );
             });
         });

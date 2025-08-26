@@ -38,659 +38,660 @@
 
         </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.4"
-        android:orientation="horizontal"
-        android:background="@drawable/border_disabled">
-
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="8dp">
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.4"
+            android:orientation="horizontal"
+            android:background="@drawable/border_disabled">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Tebal"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/inputTebal"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Tebal"
-                    android:inputType="numberDecimal"
-                    android:completionThreshold="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Lebar"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/inputLebar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Lebar"
-                    android:inputType="numberDecimal"
-                    android:completionThreshold="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Panjang"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/inputPanjang"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Panjang"
-                    android:inputType="numberDecimal"
-                    android:completionThreshold="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Pcs"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/inputPcs"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Pcs"
-                    android:inputType="numberDecimal"
-                    android:completionThreshold="1" />
-            </LinearLayout>
-
-
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="end">
-
-                <Button
-                    android:id="@+id/BtnClearDetail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Reset"
-                    android:textColor="@color/primary_dark"
-                    android:textAlignment="textEnd"
-                    android:background="@android:color/transparent" />
-
-                <Button
-                    android:id="@+id/BtnInputDetail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tetapkan" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:background="@drawable/border_divider">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/textSisaPCS"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Sisa : 0"
-                    android:textStyle="bold" />
-
-                <TableLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#EFEFEF"
-                    android:stretchColumns="0">
-
-                    <TableRow
-                        android:background="@color/hijau">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Pjg"
-                            android:padding="8dp"
-                            android:gravity="center"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"/>
-
-                        <View
-                            android:layout_width="1px"
-                            android:layout_height="match_parent"
-                            android:background="@color/gray" />
-
-                        <!-- Kolom Shift -->
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Pcs"
-                            android:padding="8dp"
-                            android:gravity="center"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"/>
-
-                        <View
-                            android:layout_width="1px"
-                            android:layout_height="match_parent"
-                            android:background="@color/gray" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.5"
-                            android:text=""
-                            android:padding="8dp"
-                            android:gravity="center"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"/>
-
-                    </TableRow>
-
-                </TableLayout>
-
-                <ScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1">
-
-                    <TableLayout
-                        android:id="@+id/TabelInputPjgPcs"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:stretchColumns="0"
-                        android:background="#EFEFEF">
-
-                        <!-- Baris isi tabel akan dimuat secara dinamis -->
-
-                    </TableLayout>
-
-                </ScrollView>
-
-                <!-- Button untuk menambahkan data -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/addRowButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tambah"
-                    app:icon="@android:drawable/ic_input_add"
-                    app:iconPadding="8dp"
-                    android:layout_margin="4dp" />
-
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <!-- ScrollView dengan weight untuk mengisi ruang yang tersisa -->
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:fillViewport="true">
+                android:orientation="vertical"
+                android:padding="8dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp">
 
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tebal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <AutoCompleteTextView
+                        android:id="@+id/inputTebal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Tebal"
+                        android:inputType="numberDecimal"
+                        android:completionThreshold="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Lebar"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <AutoCompleteTextView
+                        android:id="@+id/inputLebar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Lebar"
+                        android:inputType="numberDecimal"
+                        android:completionThreshold="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Panjang"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <AutoCompleteTextView
+                        android:id="@+id/inputPanjang"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Panjang"
+                        android:inputType="numberDecimal"
+                        android:completionThreshold="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Pcs"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <AutoCompleteTextView
+                        android:id="@+id/inputPcs"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Pcs"
+                        android:inputType="numberDecimal"
+                        android:completionThreshold="1" />
+                </LinearLayout>
+
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="end">
+
+                    <Button
+                        android:id="@+id/BtnClearDetail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Grade"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginBottom="4dp" />
+                        android:text="Reset"
+                        android:textColor="@color/primary_dark"
+                        android:textAlignment="textEnd"
+                        android:background="@android:color/transparent" />
+
+                    <Button
+                        android:id="@+id/BtnInputDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tetapkan" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:background="@drawable/border_divider">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textSisaPCS"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Sisa : 0"
+                        android:textStyle="bold" />
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#EFEFEF"
+                        android:stretchColumns="0">
+
+                        <TableRow
+                            android:background="@color/hijau">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pjg"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Shift -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Pcs"
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.5"
+                                android:text=""
+                                android:padding="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                        </TableRow>
+
+                    </TableLayout>
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1">
+
+                        <TableLayout
+                            android:id="@+id/TabelInputPjgPcs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stretchColumns="0"
+                            android:background="#EFEFEF">
+
+                            <!-- Baris isi tabel akan dimuat secara dinamis -->
+
+                        </TableLayout>
+
+                    </ScrollView>
+
+                    <!-- Button untuk menambahkan data -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/addRowButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tambah"
+                        app:icon="@android:drawable/ic_input_add"
+                        app:iconPadding="8dp"
+                        android:layout_margin="4dp" />
+
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- ScrollView dengan weight untuk mengisi ruang yang tersisa -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:orientation="vertical"
+                        android:padding="8dp">
 
-                        <Spinner
-                            android:id="@+id/spinGradeDetail"
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Grade"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp" />
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <Spinner
+                                android:id="@+id/spinGradeDetail"
+                                android:layout_width="match_parent"
+                                android:layout_height="36dp"
+                                android:background="@drawable/border_input"
+                                android:elevation="1dp" />
+
+                        </LinearLayout>
+
+                        <RadioGroup
+                            android:id="@+id/radioGroupBagusKulit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/radioBagus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginRight="16dp"
+                                android:text="Bagus"
+                                android:enabled="false" />
+
+                            <RadioButton
+                                android:id="@+id/radioKulit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:enabled="false"
+                                android:text="Kulit" />
+                        </RadioGroup>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Satuan Tbl-Lbr"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#E0E0E0">
+
+                            <RadioGroup
+                                android:id="@+id/radioGroupUOMTblLebar"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <RadioButton
+                                    android:id="@+id/radioMillimeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Millimeter"
+                                    android:textSize="15sp"
+                                    android:checked="true"
+                                    android:layout_marginBottom="2dp"/>
+
+                                <RadioButton
+                                    android:id="@+id/radioInch"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Inch"
+                                    android:textSize="15sp"
+                                    android:enabled="false"/>
+
+                            </RadioGroup>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Satuan Panjang"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="4dp"/>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="1dp"
+                            app:strokeColor="#E0E0E0">
+
+                            <RadioGroup
+                                android:id="@+id/radioGroupUOMPanjang"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <RadioButton
+                                    android:id="@+id/radioFeet"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Feet"
+                                    android:checked="true"
+                                    android:textSize="15sp"/>
+
+                                <RadioButton
+                                    android:id="@+id/radioMeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Meter"
+                                    android:textSize="15sp"
+                                    android:layout_marginBottom="2dp"
+                                    android:enabled="false" />
+
+                                <RadioButton
+                                    android:id="@+id/radioCentimeter"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="28dp"
+                                    android:text="Centimeter"
+                                    android:textSize="15sp"
+                                    android:layout_marginBottom="2dp"
+                                    android:enabled="false" />
+
+                            </RadioGroup>
+
+                        </com.google.android.material.card.MaterialCardView>
 
                     </LinearLayout>
 
-                    <RadioGroup
-                        android:id="@+id/radioGroupBagusKulit"
-                        android:layout_width="wrap_content"
+                </ScrollView>
+
+                <!-- Button area yang tetap di bawah -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
+
+                    <Button
+                        android:id="@+id/btnSaveDetail"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <RadioButton
-                            android:id="@+id/radioBagus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginRight="16dp"
-                            android:text="Bagus"
-                            android:enabled="false" />
-
-                        <RadioButton
-                            android:id="@+id/radioKulit"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:enabled="false"
-                            android:text="Kulit" />
-                    </RadioGroup>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Satuan Tbl-Lbr"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#E0E0E0">
-
-                        <RadioGroup
-                            android:id="@+id/radioGroupUOMTblLebar"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="8dp">
-
-                            <RadioButton
-                                android:id="@+id/radioMillimeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Millimeter"
-                                android:textSize="15sp"
-                                android:checked="true"
-                                android:layout_marginBottom="2dp"/>
-
-                            <RadioButton
-                                android:id="@+id/radioInch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Inch"
-                                android:textSize="15sp"/>
-
-                        </RadioGroup>
-
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Satuan Panjang"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="4dp"/>
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#E0E0E0">
-
-                        <RadioGroup
-                            android:id="@+id/radioGroupUOMPanjang"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="8dp">
-
-                            <RadioButton
-                                android:id="@+id/radioFeet"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Feet"
-                                android:checked="true"
-                                android:textSize="15sp"/>
-
-                            <RadioButton
-                                android:id="@+id/radioMeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Meter"
-                                android:textSize="15sp"
-                                android:layout_marginBottom="2dp"
-                                android:enabled="false" />
-
-                            <RadioButton
-                                android:id="@+id/radioCentimeter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
-                                android:text="Centimeter"
-                                android:textSize="15sp"
-                                android:layout_marginBottom="2dp"
-                                android:enabled="false" />
-
-                        </RadioGroup>
-
-                    </com.google.android.material.card.MaterialCardView>
-
+                        android:layout_weight="1"
+                        android:text="Simpan" />
                 </LinearLayout>
 
-            </ScrollView>
-
-            <!-- Button area yang tetap di bawah -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="8dp">
-
-                <Button
-                    android:id="@+id/btnSaveDetail"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Simpan" />
             </LinearLayout>
 
         </LinearLayout>
 
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="List Detail"
-        android:textSize="18sp"
-        android:paddingTop="16dp"
-        android:textStyle="bold"
-        android:textColor="@color/black" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.4"
-        android:orientation="vertical">
-
-        <!-- Header Tabel -->
-        <TableLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#EFEFEF">
+            android:text="List Detail"
+            android:textSize="18sp"
+            android:paddingTop="16dp"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
 
-            <TableRow
-                android:background="@color/hijau">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="No"
-                    android:gravity="center"
-                    android:layout_weight="0.3"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Tebal"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Lebar"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Panjang"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Pcs"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Keterangan"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-                <View
-                    android:layout_width="1px"
-                    android:layout_height="match_parent"
-                    android:background="@color/gray" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Bagus/Kulit"
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textColor="@color/white" />
-
-            </TableRow>
-        </TableLayout>
-
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="0dp"
+            android:layout_weight="0.4"
+            android:orientation="vertical">
 
-            <!-- ScrollView untuk konten utama -->
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_above="@+id/bottomLayout">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ProgressBar
-                        android:id="@+id/detailSawmilLoadingIndicator"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerInParent="true"
-                        android:visibility="gone" />
-
-                    <TableLayout
-                        android:id="@+id/detailSawmillTableLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#FFFFFF"
-                        android:stretchColumns="0">
-                    </TableLayout>
-                </RelativeLayout>
-            </ScrollView>
-
-            <!-- Layout untuk teks di bagian bawah -->
-            <LinearLayout
-                android:id="@+id/bottomLayout"
+            <!-- Header Tabel -->
+            <TableLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:orientation="horizontal">
+                android:background="#EFEFEF">
 
-                <TextView
-                    android:id="@+id/textJumlah"
-                    android:layout_width="0dp"
+                <TableRow
+                    android:background="@color/hijau">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="No"
+                        android:gravity="center"
+                        android:layout_weight="0.3"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Tebal"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Lebar"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Panjang"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Pcs"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Keterangan"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="Bagus/Kulit"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                </TableRow>
+            </TableLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- ScrollView untuk konten utama -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_above="@+id/bottomLayout">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <ProgressBar
+                            android:id="@+id/detailSawmilLoadingIndicator"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
+
+                        <TableLayout
+                            android:id="@+id/detailSawmillTableLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#FFFFFF"
+                            android:stretchColumns="0">
+                        </TableLayout>
+                    </RelativeLayout>
+                </ScrollView>
+
+                <!-- Layout untuk teks di bagian bawah -->
+                <LinearLayout
+                    android:id="@+id/bottomLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Jumlah: 0"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black" />
+                    android:layout_alignParentBottom="true"
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/textTon"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Ton: 0"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black" />
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/textJumlah"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Jumlah: 0"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black" />
 
-        </RelativeLayout>
+                    <TextView
+                        android:id="@+id/textTon"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ton: 0"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black" />
+                </LinearLayout>
 
-    </LinearLayout>
+            </RelativeLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 

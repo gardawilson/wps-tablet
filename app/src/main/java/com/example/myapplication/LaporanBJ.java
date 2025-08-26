@@ -36,29 +36,6 @@ public class LaporanBJ extends AppCompatActivity {
 
     }
 
-//    private void showLaporanMutasiBJ() {
-//        DateRangeDialogHelper.show(this, (tglAwal, tglAkhir) -> {
-//            String reportName = "CrMutasiBJ";
-//
-//            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
-//                    + "?reportName=" + reportName
-//                    + "&TglAwal=" + tglAwal
-//                    + "&TglAkhir=" + tglAkhir
-//                    + "&StartDate=" + tglAwal
-//                    + "&EndDate=" + tglAkhir
-//                    + "&Username=" + username;
-//
-//            loadingDialogHelper.show(this);
-//
-//            PdfUtils.downloadAndOpenPDF(
-//                    this,
-//                    url,
-//                    "Mutasi Barang Jadi.pdf",
-//                    executorService,
-//                    loadingDialogHelper
-//            );
-//        });
-//    }
 
     private void showLaporanMutasiBJ() {
         DateRangeDialogHelper.show(this, DateRangeDialogHelper.DefaultTanggalMode.BULAN_LALU, (tglAwal, tglAkhir) -> {

@@ -309,20 +309,6 @@
             </RelativeLayout>
         </ScrollView>
 
-        <!-- Tombol Hapus (ikon saja) -->
-        <ImageButton
-            android:id="@+id/btnDeleteData"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="4dp"
-            android:background="@drawable/bg_icon_button"
-            android:padding="8dp"
-            android:src="@drawable/ic_delete"
-            app:tint="@color/white"
-            android:tooltipText="Keluarkan dari proses"
-            android:contentDescription="Hapus Data" />
-
     </LinearLayout>
 
 </LinearLayout>

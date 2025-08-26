@@ -575,6 +575,8 @@ public class Sawmill extends AppCompatActivity {
                     } catch (Exception e) {
                         // Jika terjadi error, beri tahu pengguna di main thread
                         runOnUiThread(() -> {
+                            loadingDialogHelper.hide();
+                            btnSave.setEnabled(true);
                             Toast.makeText(Sawmill.this, "Tidak dapat mengupdate data, " + e.getMessage(), Toast.LENGTH_LONG).show();
                         });
                     }
@@ -2028,8 +2030,8 @@ public class Sawmill extends AppCompatActivity {
         runOnUiThread(() -> {
             new AlertDialog.Builder(this)
                     .setTitle("Konfirmasi")
-                    .setMessage("Apakah Anda yakin ingin menyelesaikan No Kayu Bulat " + data.getNoKayuBulat() +
-                            " pada tanggal " + formatDate(data.getTglSawmill()) + "?")
+                    .setMessage("Apakah Anda yakin ingin menyelesaikan Kayu Bulat dengan Nomor " + data.getNoKayuBulat() +
+                            " ?")
                     .setPositiveButton("Ya", (dialog, which) -> {
                         // Lanjutkan proses insert di background thread
                         executorService.execute(() -> {
@@ -2040,9 +2042,7 @@ public class Sawmill extends AppCompatActivity {
                                 return;
                             }
 
-                            String success = SawmillApi.insertPenerimaanSTSawmillWithDetail(
-                                    data.getNoKayuBulat(), data.getTglSawmill()
-                            );
+                            String success = SawmillApi.insertPenerimaanSTSawmillWithDetail(data.getNoKayuBulat());
 
                             runOnUiThread(() -> {
                                 if (success == null) {

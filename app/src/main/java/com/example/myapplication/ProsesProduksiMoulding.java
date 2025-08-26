@@ -1,13 +1,13 @@
 package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
-import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.TableConfig;
-import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -19,7 +19,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -39,7 +38,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -72,7 +70,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -171,6 +168,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private Button btnEdit;
     private final String mainTable = "MouldingProduksi_h";
+    private List<String> userPermissions;
 
 
     @Override
@@ -231,7 +229,6 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
-
         // Inisialisasi View scanner overlay
         scannerOverlay = findViewById(R.id.scannerOverlay);
 
@@ -240,6 +237,10 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
 
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
+
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnEdit, "proses_mld:update");
 
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
@@ -526,7 +527,7 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                 String noProduksi = tvNoProduksi.getText().toString().trim();
                 String shift = spinShift.getSelectedItem().toString();
                 String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
-                int idMesin = ((MesinData) spinMesin.getSelectedItem()).getIdMesin();
+                int idMesin = ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin();
                 int idOperator = ((OperatorData) spinOperator.getSelectedItem()).getIdOperator();
                 String jamKerja = editJamKerja.getText().toString().trim();
                 int jumlahAnggota = Integer.parseInt(editJlhAnggota.getText().toString().trim());
@@ -610,11 +611,11 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
-            List<MesinData> mesinList = ProsesProduksiApi.getAllMesinData(3);
+            List<MesinProsesProduksiData> mesinList = ProsesProduksiApi.getAllMesinData(3);
 
             // Kembali ke UI thread untuk update Spinner
             runOnUiThread(() -> {
-                ArrayAdapter<MesinData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mesinList);
+                ArrayAdapter<MesinProsesProduksiData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mesinList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinner.setAdapter(adapter);
 
@@ -954,10 +955,32 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshS4STable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoS4S + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoS4S,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoS4S);
+                                runOnUiThread(this::refreshS4STable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
 
@@ -1017,10 +1040,32 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshFJTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoFJ + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoFJ,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoFJ);
+                                runOnUiThread(this::refreshFJTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1079,10 +1124,32 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshMouldingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoMoulding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoMoulding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoMoulding);
+                                runOnUiThread(this::refreshMouldingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1141,10 +1208,32 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshCCTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoCC + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoCC,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoCC);
+                                runOnUiThread(this::refreshCCTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1203,10 +1292,33 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshLaminatingTable
+                        }
                 );
+            });
+
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoLaminating + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoLaminating,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoLaminating);
+                                runOnUiThread(this::refreshLaminatingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1263,10 +1375,32 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshSandingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoSanding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoSanding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoSanding);
+                                runOnUiThread(this::refreshSandingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             row.setBackgroundColor(ContextCompat.getColor(this,
@@ -1320,10 +1454,33 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noProduksi,
-                        this::refreshPackingTable
+                        }
                 );
+
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_mld:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoPacking + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoPacking,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoPacking);
+                                runOnUiThread(this::refreshPackingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {

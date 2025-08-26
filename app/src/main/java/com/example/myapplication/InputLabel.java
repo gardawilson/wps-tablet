@@ -8,16 +8,21 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
+
+import java.util.List;
+
 public class InputLabel extends AppCompatActivity {
 
-private CardView S4S;
-private CardView FingerJoin;
-private CardView Moulding;
-private CardView Laminating;
-private CardView CrossCut;
-private CardView Sanding;
-private CardView Packing;
-private CardView SawnTimber;
+    private CardView S4S;
+    private CardView FingerJoin;
+    private CardView Moulding;
+    private CardView Laminating;
+    private CardView CrossCut;
+    private CardView Sanding;
+    private CardView Packing;
+    private CardView SawnTimber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +39,19 @@ private CardView SawnTimber;
         Packing = findViewById(R.id.Packing);
         SawnTimber = findViewById(R.id.SawnTimber);
 
+
+        //PERMISSION CHECK
+        PermissionUtils.permissionCheck(this, SawnTimber, "label_st:read");
+        PermissionUtils.permissionCheck(this, S4S, "label_s4s:read");
+        PermissionUtils.permissionCheck(this, FingerJoin, "label_fj:read");
+        PermissionUtils.permissionCheck(this, Moulding, "label_mld:read");
+        PermissionUtils.permissionCheck(this, Laminating, "label_lmt:read");
+        PermissionUtils.permissionCheck(this, CrossCut, "label_cca:read");
+        PermissionUtils.permissionCheck(this, Sanding, "label_snd:read");
+        PermissionUtils.permissionCheck(this, Packing, "label_bj:read");
+
+
+
         S4S.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -41,6 +59,7 @@ private CardView SawnTimber;
                 startActivity(intent);
             }
         });
+
 
         FingerJoin.setOnClickListener(new View.OnClickListener() {
             @Override

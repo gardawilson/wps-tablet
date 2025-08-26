@@ -3942,7 +3942,7 @@ public class SawnTimber extends AppCompatActivity {
                 con = ConnectionClass();
                 if (con != null) {
 
-                    String query = "INSERT INTO ST_h (NoST, NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, IdStickBy, IsUpah, IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, Remark, IsSLP, IsSticked, StartKering, IsBagusKulit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    String query = "INSERT INTO ST_h (NoST, NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, IdStickBy, IsUpah, IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, Remark, IsSLP, IsSticked, StartKering, IsBagusKulit, IdLokasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     PreparedStatement ps = con.prepareStatement(query);
 
                     ps.setString(1, noST);
@@ -3961,6 +3961,13 @@ public class SawnTimber extends AppCompatActivity {
                     ps.setInt(14, isSticked);
                     ps.setInt(15, isKering);
                     ps.setInt(16, isBagusKulit);
+
+                    if (isKering == 0) {
+                        ps.setString(17, "L01");
+                    } else {
+                        ps.setNull(17, java.sql.Types.VARCHAR);
+                    }
+
 
                     int rowsAffected = ps.executeUpdate();
                     if (rowsAffected > 0) {

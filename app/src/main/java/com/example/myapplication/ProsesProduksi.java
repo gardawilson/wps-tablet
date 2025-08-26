@@ -8,6 +8,13 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
+
+import org.bouncycastle.util.Pack;
+
+import java.util.List;
+
 public class ProsesProduksi extends AppCompatActivity {
 
     private CardView S4SProduksi;
@@ -35,13 +42,26 @@ public class ProsesProduksi extends AppCompatActivity {
         BongkarSusun = findViewById(R.id.BongkarSusun);
 
 
+        //PERMISSION CHECK
+        PermissionUtils.permissionCheck(this, S4SProduksi, "proses_s4s:read");
+        PermissionUtils.permissionCheck(this, FJProduksi, "proses_fj:read");
+        PermissionUtils.permissionCheck(this, MouldingProduksi, "proses_mld:read");
+        PermissionUtils.permissionCheck(this, LaminatingProduksi, "proses_lmt:read");
+        PermissionUtils.permissionCheck(this, CrossCutProduksi, "proses_cca:read");
+        PermissionUtils.permissionCheck(this, SandingProduksi, "proses_snd:read");
+        PermissionUtils.permissionCheck(this, PackingProduksi, "proses_bj:read");
+        PermissionUtils.permissionCheck(this, BongkarSusun, "bongkar_susun:read");
+
+
+
         S4SProduksi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent( ProsesProduksi.this, ProsesProduksiS4S.class);
+                Intent intent = new Intent(ProsesProduksi.this, ProsesProduksiS4S.class);
                 startActivity(intent);
             }
         });
+
 
         FJProduksi.setOnClickListener(new View.OnClickListener() {
             @Override

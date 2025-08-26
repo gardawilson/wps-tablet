@@ -463,6 +463,9 @@ public class SawmillApi {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false);  // mulai transaksi
 
+            // PERBAIKAN: Validasi stock SEBELUM insert header
+            validateStockBeforeInsert(con, noKayuBulat, balokTerpakai, jenisKayu);
+
             insertSTSawmillHeader(con, noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja,
                     idSawmillSpecialCondition, balokTerpakai, jlhBatangRajang,
                     hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja);
@@ -499,6 +502,163 @@ public class SawmillApi {
         }
     }
 
+    /**
+     * PERBAIKAN: Method untuk validasi stock sebelum insert header
+     * Menggunakan query yang sama persis seperti di insertBalokTerpakai/insertBalokTerpakaiKG
+     * tapi hanya untuk check, tidak melakukan insert
+     */
+    private static void validateStockBeforeInsert(Connection con, String noKayuBulat, int jlhBalokTerpakai, String jenisKayu) throws SQLException {
+        if (jenisKayu != null && jenisKayu.toLowerCase().contains("rambung")) {
+            validateStockKG(con, noKayuBulat, jlhBalokTerpakai);
+        } else {
+            validateStockRegular(con, noKayuBulat, jlhBalokTerpakai);
+        }
+    }
+
+    private static void validateStockRegular(Connection con, String noKayuBulat, int jlhBalokTerpakai) throws SQLException {
+        String queryPriority = "SELECT A.NoKayuBulat, A.Jenis AS Grade, A.StokALL, " +
+                "A.StokTersedia - (CASE WHEN B.Pcs IS NULL THEN 0 ELSE B.Pcs END) AS StokTersedia, " +
+                "B.Pcs, " +
+                "((CAST((A.StokTersedia) AS DECIMAL(10,2)) / A.StokALL) * 100) AS Priority " +
+                "FROM ( " +
+                "  SELECT A.NoKayuBulat, SUM(COUNT(A.NoKayuBulat)) OVER() AS StokALL, " +
+                "  COUNT(A.NoKayuBulat) AS StokTersedia, Jenis " +
+                "  FROM ( " +
+                "    SELECT A.NoKayuBulat, " +
+                "    CASE " +
+                "      WHEN A.IdPengukuran = '2' THEN " +
+                "        CASE " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 0 AND C.IsMCMata = 0 AND C.IsBangkang = 1 THEN 'STD BKG' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 1 AND C.IsMCMata = 0 AND C.IsBangkang = 1 THEN 'MC BKG' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 0 AND C.IsMCMata = 1 AND C.IsBangkang = 0 THEN 'MC MATA' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 1 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'MC' " +
+                "          WHEN C.IsAfkir = 1 AND C.IsMC = 0 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'AFKIR' " +
+                "          ELSE CASE WHEN C.Tebal * C.Lebar >= 9 THEN 'STD' ELSE 'AFKIR' END " +
+                "        END " +
+                "      WHEN A.IdPengukuran = '10' THEN " +
+                "        CASE " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 0 AND C.IsMCMata = 1 AND C.IsBangkang = 0 THEN 'MC MATA' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 1 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'MC' " +
+                "          WHEN C.IsAfkir = 1 AND C.IsMC = 0 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'AFKIR' " +
+                "          ELSE CASE WHEN C.Tebal * C.Lebar >= 25 THEN 'STD' WHEN C.Tebal * C.Lebar >= 9 THEN 'MC' ELSE 'AFKIR' END " +
+                "        END " +
+                "      WHEN A.IdPengukuran = '11' THEN " +
+                "        CASE " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 0 AND C.IsMCMata = 1 AND C.IsBangkang = 0 THEN 'MC MATA' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 1 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'MC' " +
+                "          WHEN C.IsAfkir = 0 AND C.IsMC = 0 AND C.IsMCMata = 0 AND C.IsBangkang = 1 THEN 'BKG' " +
+                "          WHEN C.IsAfkir = 1 AND C.IsMC = 0 AND C.IsMCMata = 0 AND C.IsBangkang = 0 THEN 'AFKIR' " +
+                "          ELSE CASE WHEN C.Tebal * C.Lebar >= 16 THEN 'STD' ELSE 'AFKIR' END " +
+                "        END " +
+                "    END AS Jenis " +
+                "    FROM KayuBulat_h A " +
+                "    INNER JOIN KayuBulat_d C ON C.NoKayuBulat = A.NoKayuBulat " +
+                "    WHERE A.NoKayuBulat = '" + noKayuBulat + "' " +
+                "  ) A " +
+                "  GROUP BY A.NoKayuBulat, A.Jenis " +
+                ") A " +
+                "LEFT JOIN ( " +
+                "  SELECT B.NoKayuBulat, Grade, SUM(Pcs) AS Pcs " +
+                "  FROM STSawmill_dBalokGantung A " +
+                "  INNER JOIN STSawmill_h B ON B.NoSTSawmill = A.NoSTSawmill " +
+                "  GROUP BY B.NoKayuBulat, Grade " +
+                ") B ON B.NoKayuBulat = A.NoKayuBulat AND B.Grade = A.Jenis " +
+                "ORDER BY Priority DESC";
+
+        try (Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(queryPriority)) {
+
+            int sisaBalok = jlhBalokTerpakai;
+            int sumStokTersedia = 0;
+            boolean hasData = false;
+
+            while (rs.next()) {
+                hasData = true;
+                int stokTersedia = rs.getObject("StokTersedia") != null ? rs.getInt("StokTersedia") : 0;
+                sumStokTersedia += stokTersedia;
+
+                if (jlhBalokTerpakai > 0) {
+                    if (stokTersedia <= 0) continue;
+
+                    int pcsAvailable = Math.min(sisaBalok, stokTersedia);
+                    sisaBalok -= pcsAvailable;
+
+                    if (sisaBalok <= 0) break;
+                }
+            }
+
+            if (!hasData) {
+                throw new SQLException("No stock data found for NoKayuBulat: " + noKayuBulat);
+            }
+
+            // Hanya lempar error kalau benar-benar butuh stok
+            if (jlhBalokTerpakai > 0 && sisaBalok > 0) {
+                throw new SQLException("Jumlah balok yang tersisa : " + sumStokTersedia);
+
+            }
+        }
+    }
+
+
+    private static void validateStockKG(Connection con, String noKayuBulat, int jlhBalokTerpakai) throws SQLException {
+        // Query sama persis dengan insertBalokTerpakaiKG
+        String queryPriority =
+                "SELECT A.NoKayuBulat, A.IdGradeKB, A.StokALL, " +
+                        "       A.StokTersedia - (CASE WHEN B.Pcs IS NULL THEN 0 ELSE B.Pcs END) AS StokTersedia, " +
+                        "       B.Pcs, " +
+                        "       ((CAST((A.StokTersedia) AS DECIMAL(10,2)) / A.StokALL) * 100) AS Priority " +
+                        "FROM ( " +
+                        "    SELECT A.NoKayuBulat, IdGradeKB, " +
+                        "           SUM(SUM(JmlhBatang)) OVER() AS StokALL, " +
+                        "           SUM(JmlhBatang) AS StokTersedia " +
+                        "    FROM KayuBulatKG_d A " +
+                        "    WHERE A.NoKayuBulat = ? " +
+                        "    GROUP BY A.NoKayuBulat, IdGradeKB " +
+                        ") A " +
+                        "LEFT JOIN ( " +
+                        "    SELECT B.NoKayuBulat, IdGradeKB, SUM(Pcs) AS Pcs " +
+                        "    FROM STSawmill_dBalokGantungKG A " +
+                        "    INNER JOIN STSawmill_h B ON B.NoSTSawmill = A.NoSTSawmill " +
+                        "    GROUP BY B.NoKayuBulat, IdGradeKB " +
+                        ") B ON B.NoKayuBulat = A.NoKayuBulat AND B.IdGradeKB = A.IdGradeKB " +
+                        "ORDER BY Priority DESC";
+
+        try (PreparedStatement ps = con.prepareStatement(queryPriority)) {
+            ps.setString(1, noKayuBulat);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                int sisaBalok = jlhBalokTerpakai;
+                int sumStokTersedia = 0;
+                boolean hasData = false;
+
+                while (rs.next()) {
+                    hasData = true;
+
+                    int stokTersedia = rs.getObject("StokTersedia") != null ? rs.getInt("StokTersedia") : 0;
+                    sumStokTersedia += stokTersedia;
+
+                    // Kalau user tidak minta balok (jlhBalokTerpakai = 0), skip perhitungan tapi tetap set hasData
+                    if (jlhBalokTerpakai == 0) {
+                        continue;
+                    }
+
+                    if (stokTersedia <= 0) continue;
+
+                    int pcsAvailable = Math.min(sisaBalok, stokTersedia);
+                    sisaBalok -= pcsAvailable;
+                }
+
+                if (!hasData) {
+                    throw new SQLException("No stock data found for Rambung NoKayuBulat: " + noKayuBulat);
+                }
+
+                // Kalau ada permintaan balok > 0 tapi stok tidak cukup
+                if (sisaBalok > 0) {
+                    throw new SQLException("Jumlah balok yang tersisa : " + sumStokTersedia);
+                }
+            }
+        }
+    }
 
     public static void insertSTSawmillHeader(Connection con,
                                              String noSTSawmill, int shift, String tglSawmill,
@@ -510,7 +670,6 @@ public class SawmillApi {
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
-
 
         try (PreparedStatement stmt = con.prepareStatement(query)) {
             String formattedTgl = formatToDatabaseDate(tglSawmill);
@@ -533,13 +692,14 @@ public class SawmillApi {
             }
 
             stmt.setString(12, remark);
-
             stmt.setString(13, jamMulai);
+
             if (jamBerhenti == null || jamBerhenti.isEmpty()) {
                 stmt.setNull(14, java.sql.Types.TIME);
             } else {
-                stmt.setString(14, jamBerhenti); // atau setTime dengan Time.valueOf(...)
+                stmt.setString(14, jamBerhenti);
             }
+
             stmt.setString(15, totalJamKerja);
 
             stmt.executeUpdate();
@@ -555,7 +715,6 @@ public class SawmillApi {
             stmt.executeUpdate();
         }
     }
-
 
     public static void insertBalokTerpakai(Connection con, String noSTSawmill, String noKayuBulat, int jlhBalokTerpakai) throws SQLException {
         String queryPriority = "SELECT A.NoKayuBulat, A.Jenis AS Grade, A.StokALL, " +
@@ -611,17 +770,13 @@ public class SawmillApi {
              ResultSet rs = stmt.executeQuery(queryPriority)) {
 
             int sisaBalok = jlhBalokTerpakai;
-
             int sumStokTersedia = 0;
 
             while (rs.next() && sisaBalok > 0) {
                 String grade = rs.getString("Grade");
-
-                // cek apakah stokTersedia null, default jadi 0 jika null
                 int stokTersedia = rs.getObject("StokTersedia") != null ? rs.getInt("StokTersedia") : 0;
                 sumStokTersedia += stokTersedia;
 
-                // skip jika stok tidak tersedia
                 if (stokTersedia <= 0) continue;
 
                 int pcsInsert = Math.min(sisaBalok, stokTersedia);
@@ -644,7 +799,6 @@ public class SawmillApi {
             }
         }
     }
-
 
     public static void insertBalokTerpakaiKG(Connection con, String noSTSawmill, String noKayuBulat, int jlhBalokTerpakai) throws SQLException {
         String queryPriority = "SELECT A.NoKayuBulat, A.IdGradeKB, A.StokALL, " +
@@ -675,7 +829,6 @@ public class SawmillApi {
 
             while (rs.next() && sisaBalok > 0) {
                 String idGradeKB = rs.getString("IdGradeKB");
-
                 int stokTersedia = rs.getObject("StokTersedia") != null ? rs.getInt("StokTersedia") : 0;
                 sumStokTersedia += stokTersedia;
 
@@ -1238,8 +1391,9 @@ public class SawmillApi {
     }
 
 
-    public static String insertPenerimaanSTSawmillWithDetail(String noKayuBulat, String tglLaporan) {
+    public static String insertPenerimaanSTSawmillWithDetail(String noKayuBulat) {
         String checkExisting = "SELECT TglLaporan FROM PenerimaanSTSawmill_h WHERE NoKayuBulat = ?";
+        String getLatestTglSawmill = "SELECT TOP 1 TglSawmill FROM STSawmill_h WHERE NoKayuBulat = ? ORDER BY TglSawmill DESC";
         String nextNoPenerimaan = generateNextNoPenerimaanST();
         if (nextNoPenerimaan == null) return null;
 
@@ -1257,6 +1411,21 @@ public class SawmillApi {
                 if (rs.next()) {
                     return rs.getString("TglLaporan"); // Sudah ada, kembalikan TglLaporan
                 }
+            }
+
+            // Ambil tglSawmill terbaru
+            String tglLaporan = null;
+            try (PreparedStatement stmtTgl = con.prepareStatement(getLatestTglSawmill)) {
+                stmtTgl.setString(1, noKayuBulat);
+                ResultSet rs = stmtTgl.executeQuery();
+                if (rs.next()) {
+                    tglLaporan = rs.getString("TglSawmill");
+                }
+            }
+
+            if (tglLaporan == null) {
+                Log.e("Insert Error", "Tidak ada TglSawmill untuk NoKayuBulat: " + noKayuBulat);
+                return null;
             }
 
             con.setAutoCommit(false); // Mulai transaksi
@@ -1291,7 +1460,7 @@ public class SawmillApi {
 
             // Update DateUsage di KayuBulat_h
             try (PreparedStatement stmtUpdateUsage = con.prepareStatement(updateDateUsage)) {
-                stmtUpdateUsage.setString(1, tglLaporan); // atau gunakan Timestamp sekarang
+                stmtUpdateUsage.setString(1, tglLaporan);
                 stmtUpdateUsage.setString(2, noKayuBulat);
                 stmtUpdateUsage.executeUpdate();
             }
@@ -1301,7 +1470,6 @@ public class SawmillApi {
 
         } catch (SQLException e) {
             Log.e("Insert Error", "Gagal simpan: " + e.getMessage());
-            // Pastikan rollback jika gagal
             try (Connection conRollback = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
                 conRollback.rollback();
             } catch (SQLException ex) {
@@ -1310,6 +1478,7 @@ public class SawmillApi {
             return null;
         }
     }
+
 
 
 

@@ -1,14 +1,12 @@
 package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
-import com.example.myapplication.model.MesinData;
-import com.example.myapplication.model.OperatorData;
-import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -36,7 +34,6 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -44,7 +41,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -172,6 +168,8 @@ public class BongkarSusun extends AppCompatActivity {
     private final String mainTable = "BongkarSusun_h";
     private Button btnEdit;
     private Button btnCreate;
+    private List<String> userPermissions;
+
 
 
 
@@ -245,6 +243,10 @@ public class BongkarSusun extends AppCompatActivity {
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
 
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnEdit, "bongkar_susun:update");
+        PermissionUtils.permissionCheck(this, btnCreate, "bongkar_susun:create");
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -960,10 +962,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshSTTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoST + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoST,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoST);
+                                runOnUiThread(this::refreshSTTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1025,10 +1049,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshS4STable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoS4S + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoS4S,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoS4S);
+                                runOnUiThread(this::refreshS4STable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
 
@@ -1088,10 +1134,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshFJTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoFJ + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoFJ,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoFJ);
+                                runOnUiThread(this::refreshFJTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1150,10 +1218,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshMouldingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoMoulding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoMoulding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoMoulding);
+                                runOnUiThread(this::refreshMouldingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1212,10 +1302,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshLaminatingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoLaminating + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoLaminating,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoLaminating);
+                                runOnUiThread(this::refreshLaminatingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1274,10 +1386,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshCCTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoCC + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoCC,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoCC);
+                                runOnUiThread(this::refreshCCTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {
@@ -1333,10 +1467,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshSandingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoSanding + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoSanding,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoSanding);
+                                runOnUiThread(this::refreshSandingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             row.setBackgroundColor(ContextCompat.getColor(this,
@@ -1390,10 +1546,32 @@ public class BongkarSusun extends AppCompatActivity {
                                 ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
                                 selectedRow = null;
                             }
-                        },
-                        noBongkarSusun,
-                        this::refreshPackingTable
+                        }
                 );
+            });
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("bongkar_susun:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoPacking + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noBongkarSusun + " " + currentNoPacking,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noBongkarSusun, currentNoPacking);
+                                runOnUiThread(this::refreshPackingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
             });
 
             if (rowIndex % 2 == 0) {

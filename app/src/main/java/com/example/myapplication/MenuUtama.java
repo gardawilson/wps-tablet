@@ -16,6 +16,8 @@ import android.content.DialogInterface;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.RiwayatUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 
 import java.sql.Connection;
@@ -52,64 +54,68 @@ public class MenuUtama extends AppCompatActivity {
 
         String username = SharedPrefUtils.getUsername(this);
 
-        // Ambil list role dari SharedPreferences
-        List<String> userRoles = SharedPrefUtils.getRoles(MenuUtama.this);
-
         usernameView.setText(username + " !");
+
+
+        //PERMISSION CHECK
+        PermissionUtils.permissionCheck(this, StockOpname, "stock_opname:read");
+        PermissionUtils.permissionCheck(this, Sawmill, "proses_sawmill:read");
+        PermissionUtils.permissionCheck(this, Laporan, "laporan:read");
+
 
         BtnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Start the task to insert into Riwayat
-                String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                String activity = String.format("User %s Telah Logout", username);
-                new SaveToRiwayatTask(username, currentDateTime, activity).execute();
+                // Simpan aktivitas logout menggunakan RiwayatUtils dengan ExecutorService
+                String activity = RiwayatUtils.formatLogoutActivity(username);
+                RiwayatUtils.saveToRiwayat(MenuUtama.this, username, activity, new RiwayatUtils.RiwayatCallback() {
+                    @Override
+                    public void onSuccess() {
+                        // Callback ini sudah dijalankan di UI thread
+                        Log.d("Logout", "Logout activity saved successfully");
+                        // Bisa tambahkan Toast atau update UI lainnya di sini
+                    }
 
+                    @Override
+                    public void onError(String errorMessage) {
+                        // Callback ini sudah dijalankan di UI thread
+                        Log.e("Logout", "Failed to save logout activity: " + errorMessage);
+                        // Bisa tambahkan error handling di sini
+                    }
+                });
+
+                // Navigate to MainActivity
                 Intent intent = new Intent(MenuUtama.this, MainActivity.class);
                 startActivity(intent);
             }
         });
 
 
-        // Cek apakah user memiliki IdUGroup "30" = Tally
-        if (userRoles.contains("20")) {
-            // Hanya aktifkan jika termasuk group 30
-            InputLabel.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(MenuUtama.this, InputLabel.class);
-                    startActivity(intent);
-                }
-            });
+        // Hanya aktifkan jika termasuk group 30
+        InputLabel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, InputLabel.class);
+                startActivity(intent);
+            }
+        });
 
-            ProsesProduksi.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
-                    startActivity(intent);
-                }
-            });
-
-        } else {
-            // Disable klik dan tampilkan visual tidak aktif (opsional)
-            InputLabel.setAlpha(0.5f);
-            ProsesProduksi.setAlpha(0.5f);
-        }
+        ProsesProduksi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, ProsesProduksi.class);
+                startActivity(intent);
+            }
+        });
 
 
-        // Cek apakah user memiliki IdUGroup "20" = Stock Opname
-        if (userRoles.contains("20")) {
-            StockOpname.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(MenuUtama.this, StockOpname.class);
-                    startActivity(intent);
-                }
-            });
-        } else {
-            // Disable klik dan tampilkan visual tidak aktif (opsional)
-            StockOpname.setAlpha(0.5f);
-        }
+        StockOpname.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MenuUtama.this, StockOpname.class);
+                startActivity(intent);
+            }
+        });
 
 
         Sawmill.setOnClickListener(new View.OnClickListener() {
@@ -120,6 +126,7 @@ public class MenuUtama extends AppCompatActivity {
             }
         });
 
+
         Laporan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -127,62 +134,6 @@ public class MenuUtama extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-    }
-
-
-    private class SaveToRiwayatTask extends AsyncTask<Void, Void, Boolean> {
-        private String username;
-        private String currentDate;
-        private String activity;
-
-        public SaveToRiwayatTask(String username, String currentDate, String activity) {
-            this.username = username;
-            this.currentDate = currentDate;
-            this.activity = activity;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-            boolean success = false;
-
-            if (con != null) {
-                try {
-                    // Query untuk insert ke tabel Riwayat
-                    String query = "INSERT INTO dbo.Riwayat (Nip, Tgl, Aktivitas) VALUES (?, ?, ?)";
-                    Log.d("SQL Query", "Executing query: " + query);
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, username);
-                    ps.setString(2, currentDate);
-                    ps.setString(3, activity);
-
-                    int rowsAffected = ps.executeUpdate();
-                    Log.d("Database", "Rows affected: " + rowsAffected);
-
-                    ps.close();
-                    con.close();
-
-                    success = rowsAffected > 0;
-                    Log.d("Riwayat", "Data successfully inserted into Riwayat.");
-
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return success;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            // Update UI atau beri feedback ke pengguna setelah data disimpan
-            if (success) {
-                Log.d("Riwayat", "Data berhasil disimpan di Riwayat");
-            } else {
-                Log.e("Riwayat", "Gagal menyimpan data di Riwayat");
-            }
-        }
     }
 
     @Override

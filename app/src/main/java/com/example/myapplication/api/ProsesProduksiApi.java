@@ -5,7 +5,7 @@ import android.util.Log;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.HistoryItem;
-import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.OperatorData;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TooltipData;
@@ -16,7 +16,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -129,8 +128,8 @@ public class ProsesProduksiApi {
 
 
 
-    public static List<MesinData> getAllMesinData(int idBagian) {
-        List<MesinData> mesinList = new ArrayList<>();
+    public static List<MesinProsesProduksiData> getAllMesinData(int idBagian) {
+        List<MesinProsesProduksiData> mesinList = new ArrayList<>();
 
         String query = "SELECT IdMesin, NamaMesin FROM MstMesin WHERE Enable = 1 AND IdBagian = ?";
 
@@ -144,7 +143,7 @@ public class ProsesProduksiApi {
                     int idMesin = rs.getInt("IdMesin");
                     String namaMesin = rs.getString("NamaMesin");
 
-                    mesinList.add(new MesinData(idMesin, namaMesin));
+                    mesinList.add(new MesinProsesProduksiData(idMesin, namaMesin));
                 }
             }
 

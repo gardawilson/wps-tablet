@@ -386,8 +386,14 @@ public class MainActivity extends AppCompatActivity {
                     Set<String> permissionSet = new HashSet<>();
 
                     while (rs.next()) {
-                        roleSet.add(rs.getString("IdUGroup"));
-                        permissionSet.add(rs.getString("NoPermission"));
+                        String groupId = rs.getString("IdUGroup");
+                        String noPermission = rs.getString("NoPermission");
+
+                        roleSet.add(groupId);
+                        permissionSet.add(noPermission);
+
+                        // Logcat output
+                        Log.d("LoginPermission", "Group: " + groupId + " | Permission: " + noPermission);
                     }
 
                     if (!roleSet.isEmpty()) {

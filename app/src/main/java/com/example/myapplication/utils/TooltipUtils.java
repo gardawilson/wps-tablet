@@ -41,11 +41,9 @@ public class TooltipUtils {
                                                String tableH,
                                                String tableD,
                                                String mainColumn,
-                                               TooltipDismissListener dismissListener,
-                                               String noProduksi,
-                                               OnDeleteSuccessListener deleteSuccessListener) {
+                                               TooltipDismissListener dismissListener) {
         // 1. Langsung tampilkan tooltip dengan loading state
-        PopupWindow popupWindow = showLoadingTooltip(activity, anchorView, noLabel, noProduksi, executorService, deleteSuccessListener);
+        PopupWindow popupWindow = showLoadingTooltip(activity, anchorView, noLabel, executorService);
 
         // 2. Tambahkan dismiss listener
         popupWindow.setOnDismissListener(() -> {
@@ -61,7 +59,7 @@ public class TooltipUtils {
             activity.runOnUiThread(() -> {
                 if (tooltipData != null && tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
                     // 4. Update tooltip dengan data yang sudah di-fetch
-                    updateTooltipWithData(activity, popupWindow, tooltipData, tableH, noProduksi, executorService, deleteSuccessListener);
+                    updateTooltipWithData(activity, popupWindow, tooltipData, tableH, executorService);
                 } else {
                     // 5. Tampilkan error state
                     showErrorTooltip(activity, popupWindow, noLabel);
@@ -75,20 +73,13 @@ public class TooltipUtils {
         void onTooltipDismissed();
     }
 
-    public interface OnDeleteSuccessListener {
-        void onDeleteSuccess();
-    }
-
-
     /**
      * Menampilkan tooltip dengan state loading menggunakan layout existing
      */
     private static PopupWindow showLoadingTooltip(Activity activity,
                                                   View anchorView,
                                                   String noLabel,
-                                                  String noProduksi,
-                                                  ExecutorService executorService,
-                                                  OnDeleteSuccessListener deleteSuccessListener) {
+                                                  ExecutorService executorService) {
 
         // Inflate layout tooltip existing
         View tooltipView = LayoutInflater.from(activity).inflate(R.layout.tooltip_layout_right, null);
@@ -99,54 +90,9 @@ public class TooltipUtils {
         // Sembunyikan tabel dan ganti dengan loading indicator
         showLoadingIndicator(activity, tooltipView);
 
-        // Setup tombol delete dengan callback
-        setupDeleteButtonWithToast(tooltipView, activity, noLabel, noProduksi, executorService, deleteSuccessListener);
-
         // Buat dan tampilkan popup
         return createAndShowPopupWindow(activity, anchorView, tooltipView);
     }
-
-
-    private static void setupDeleteButtonWithToast(View tooltipView,
-                                                   Activity activity,
-                                                   String noLabel,
-                                                   String noProduksi,
-                                                   ExecutorService executorService,
-                                                   OnDeleteSuccessListener deleteSuccessListener) {
-
-        ImageButton btnDelete = tooltipView.findViewById(R.id.btnDeleteData);
-
-        if (btnDelete != null) {
-            btnDelete.setOnClickListener(v -> {
-                // Tampilkan dialog konfirmasi
-                new AlertDialog.Builder(activity)
-                        .setTitle("Konfirmasi Hapus")
-                        .setMessage("Apakah Anda yakin ingin mengeluarkan label " + noLabel + " dari proses produksi ini?")
-                        .setPositiveButton("Hapus", (dialog, which) -> {
-                            // Tampilkan Toast
-                            Toast.makeText(activity,
-                                    "Menghapus data " + noProduksi + " " + noLabel,
-                                    Toast.LENGTH_SHORT).show();
-
-                            // Jalankan penghapusan di background thread
-                            executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, noLabel);
-
-                                activity.runOnUiThread(() -> {
-                                    if (deleteSuccessListener != null) {
-                                        deleteSuccessListener.onDeleteSuccess();
-                                    }
-                                });
-                            });
-                        })
-                        .setNegativeButton("Batal", (dialog, which) -> {
-                            dialog.dismiss(); // Tutup dialog tanpa melakukan apa-apa
-                        })
-                        .show();
-            });
-        }
-    }
-
 
 
     /**
@@ -237,9 +183,7 @@ public class TooltipUtils {
                                               PopupWindow popupWindow,
                                               TooltipData tooltipData,
                                               String tableH,
-                                              String noProduksi,
-                                              ExecutorService executorService,
-                                              OnDeleteSuccessListener deleteSuccessListener) {
+                                              ExecutorService executorService) {
 
         View tooltipView = popupWindow.getContentView();
         int normalColor = Color.BLACK;
@@ -279,23 +223,6 @@ public class TooltipUtils {
         // Setup visibilitas elemen berdasarkan tableH
         setupVisibilityByTableType(tooltipView, tableH);
 
-        // ✅ Setup tombol Delete + Callback
-        setupDeleteButtonWithToast(
-                tooltipView,
-                activity,
-                tooltipData.getNoLabel(),
-                noProduksi,
-                executorService,
-                () -> {
-                    // Tutup tooltip
-                    popupWindow.dismiss();
-
-                    // Callback jika delete sukses
-                    if (deleteSuccessListener != null) {
-                        deleteSuccessListener.onDeleteSuccess();
-                    }
-                }
-        );
     }
 
 
@@ -587,7 +514,7 @@ public class TooltipUtils {
 
         popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
+        popupWindow.setFocusable(false);
 
         // Ukur ukuran tooltip sebelum menampilkannya
         tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);

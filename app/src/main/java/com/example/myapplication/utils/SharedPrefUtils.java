@@ -12,7 +12,6 @@ public class SharedPrefUtils {
     // Nama file SharedPreferences
     private static final String PREFS_NAME = "LoginPrefs";
 
-
     // Key untuk menyimpan username
     private static final String KEY_USERNAME = "username";
 
