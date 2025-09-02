@@ -30,402 +30,439 @@
             android:layout_height="match_parent"
             android:fillViewport="true">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <TextView
-                android:id="@+id/title_left"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
-                android:text="LABEL MOULDING"
-                android:textColor="@color/black"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <!-- Search Section -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <TextView
-                    android:layout_width="120dp"
+                    android:id="@+id/title_left"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No. MLD"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
+                    android:layout_marginBottom="15dp"
+                    android:text="LABEL MOULDING"
+                    android:textColor="@color/black"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
 
-                <FrameLayout
-                    android:layout_width="0dp"
+                <!-- Search Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
 
-                    <SearchView
-                        android:id="@+id/NoMoulding"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        app:iconifiedByDefault="false"
-                        app:queryHint="Search here..."
-                        style="@style/Widget.AppCompat.SearchView.ActionBar" />
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No. MLD"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <EditText
+                            android:id="@+id/NoMoulding"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_disabled"
+                            android:hint="T.XXXXXX"
+                            android:padding="8dp"
+                            android:inputType="text"
+                            android:singleLine="true"
+                            android:enabled="false"/>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+                <!-- EditText Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Tgl / Jam"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
 
                     <EditText
-                        android:id="@+id/NoMoulding_display"
-                        android:layout_width="match_parent"
+                        android:id="@+id/Date"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:layout_marginRight="10dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Tanggal"
+                        android:focusable="false"/>
+
+                    <EditText
+                        android:id="@+id/Time"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
                         android:layout_height="36dp"
                         android:padding="6dp"
                         android:textSize="18sp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp"
-                        android:visibility="gone"
-                        android:hint="T.XXXXXX" />
-                </FrameLayout>
+                        android:hint="Jam"
+                        android:focusable="false"/>
+                </LinearLayout>
 
-            </LinearLayout>
-
-            <!-- EditText Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Tgl / Jam"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/DateM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:padding="6dp"
-                    android:layout_marginRight="10dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Tanggal"
-                    android:focusable="false"/>
-
-                <EditText
-                    android:id="@+id/TimeM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Jam"
-                    android:focusable="false"/>
-            </LinearLayout>
-
-            <!-- Spinner 1 Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Jenis Kayu"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinKayuM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
-
-                <!-- RadioGroup dengan RadioButton -->
-                <RadioGroup
-                    android:id="@+id/radioGroupM"
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <RadioButton
-                        android:id="@+id/radioButtonMesinM"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Mesin"
-                        android:textSize="18sp"
-                        android:layout_marginEnd="4dp"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp"
-                        android:layout_marginBottom="10dp"/>
-
-                    <RadioButton
-                        android:id="@+id/radioButtonBSusunM"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:text="Susun"
-                        android:layout_marginEnd="4dp"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp" />
-                </RadioGroup>
-
-                <!-- Spinner di sebelah kanan RadioButton -->
+                <!-- Spinner 1 Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Jenis Kayu"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
 
                     <Spinner
-                        android:id="@+id/SpinMesinM"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:id="@+id/SpinKayu"
+                        android:layout_width="0dp"
                         android:layout_weight="1"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        android:layout_marginBottom="10dp"/>
-
-                    <Spinner
-                        android:id="@+id/SpinSusunM"
-                        android:layout_width="match_parent"
                         android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <!-- RadioGroup dengan RadioButton -->
+                    <RadioGroup
+                        android:id="@+id/radioGroup"
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <RadioButton
+                            android:id="@+id/radioButtonMesin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mesin"
+                            android:textSize="18sp"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:layout_marginBottom="10dp"/>
+
+                        <RadioButton
+                            android:id="@+id/radioButtonBSusun"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="18sp"
+                            android:text="Susun"
+                            android:layout_marginEnd="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp" />
+                    </RadioGroup>
+
+                    <!-- Spinner di sebelah kanan RadioButton -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_vertical">
+
+                        <Spinner
+                            android:id="@+id/SpinMesin"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp"
+                            android:layout_marginBottom="10dp"/>
+
+                        <EditText
+                            android:id="@+id/mesinView"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/border_disabled"
+                            android:elevation="1dp"
+                            android:layout_marginBottom="10dp"
+                            android:enabled="false"
+                            android:visibility="gone"/>
+
+                        <Spinner
+                            android:id="@+id/SpinSusun"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp" />
+
+                        <EditText
+                            android:id="@+id/susunView"
+                            android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/border_disabled"
+                            android:elevation="1dp"
+                            android:enabled="false"
+                            android:visibility="gone"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Telly"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinTelly"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No SPK"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinSPK"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No SPK Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinSPKAsal"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Grade"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinGrade"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    >
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="FJ Profile"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinProfile"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Fisik"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/SpinFisik"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Lokasi"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <Spinner
+                        android:id="@+id/spinLokasi"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="15dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="No ST Asal"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/NoSTAM"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="-" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="15dp">
+
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="Remark"
+                        android:textSize="18sp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/remarkLabel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_input"
+                        android:elevation="1dp"
+                        android:hint="Maks 50 Karakter"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:maxLength="50"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"/>
 
                 </LinearLayout>
 
             </LinearLayout>
-
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Telly"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinTellyM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No SPK"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinSPKM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No SPK Asal"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinSPKAsalM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Grade"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinGradeM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                >
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="FJ Profile"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinProfileM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Fisik"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <Spinner
-                    android:id="@+id/SpinFisikM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="15dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="No ST Asal"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/NoSTAM"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="36dp"
-                    android:padding="6dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="-" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:text="Remark"
-                    android:textSize="18sp"
-                    android:textColor="@color/black" />
-
-                <EditText
-                    android:id="@+id/remarkLabel"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:padding="8dp"
-                    android:textSize="18sp"
-                    android:background="@drawable/border_input"
-                    android:elevation="1dp"
-                    android:hint="Maks 50 Karakter"
-                    android:gravity="top|start"
-                    android:inputType="textMultiLine"
-                    android:minLines="3"
-                    android:maxLines="5"
-                    android:maxLength="50"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"/>
-
-            </LinearLayout>
-
-        </LinearLayout>
 
         </ScrollView>
 
@@ -504,7 +541,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailTebalM"
+                                android:id="@+id/DetailTebal"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -533,7 +570,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailLebarM"
+                                android:id="@+id/DetailLebar"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -562,7 +599,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailPanjangM"
+                                android:id="@+id/DetailPanjang"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -591,7 +628,7 @@
                                 android:textColor="@color/black" />
 
                             <EditText
-                                android:id="@+id/DetailPcsM"
+                                android:id="@+id/DetailPcs"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -763,16 +800,30 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
+
                         <!-- Header Tabel -->
                         <TextView
                             android:id="@+id/labelCount"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:textSize="18sp"
                             android:layout_margin="4dp"
                             android:text="Total Label: 0"
                             android:textStyle="bold"
                             android:padding="4dp" />
+
+                        <ImageButton
+                            android:id="@+id/BtnExpandView"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:backgroundTint="@color/hijau"
+                            android:src="@drawable/ic_list"
+                            android:scaleType="centerInside"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="8dp"
+                            app:tint="@color/black"/>
 
                     </LinearLayout>
 
@@ -988,7 +1039,7 @@
                                 android:textStyle="bold"/>
 
                             <TextView
-                                android:id="@+id/JumlahPcsM"
+                                android:id="@+id/JumlahPcs"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -1016,7 +1067,7 @@
                                 android:textStyle="bold"/>
 
                             <TextView
-                                android:id="@+id/M3M"
+                                android:id="@+id/M3"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -1036,7 +1087,7 @@
                         android:gravity="center">
 
                         <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBAfkirM"
+                            android:id="@+id/CBAfkir"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Afkir / Reject"
@@ -1044,7 +1095,7 @@
                             android:layout_marginRight="20dp" />
 
                         <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBLemburM"
+                            android:id="@+id/CBLembur"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lembur"
@@ -1082,7 +1133,7 @@
             android:gravity="center_horizontal">
 
             <Button
-                android:id="@+id/BtnDataBaruM"
+                android:id="@+id/BtnDataBaru"
                 android:layout_width="150dp"
                 android:layout_height="60dp"
                 android:text="Data Baru"
@@ -1091,7 +1142,7 @@
                 android:layout_marginEnd="8dp"/>
 
             <Button
-                android:id="@+id/BtnSimpanM"
+                android:id="@+id/BtnSimpan"
                 android:layout_width="150dp"
                 android:layout_height="60dp"
                 android:text="Simpan"
@@ -1101,7 +1152,17 @@
                 android:visibility="gone"/>
 
             <Button
-                android:id="@+id/BtnBatalM"
+                android:id="@+id/btnUpdate"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Simpan"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/BtnBatal"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Batal"
@@ -1110,7 +1171,7 @@
                 android:layout_marginEnd="8dp"/>
 
             <Button
-                android:id="@+id/BtnPrintM"
+                android:id="@+id/BtnPrint"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Print"
@@ -1118,7 +1179,7 @@
                 android:backgroundTint="@color/hijau"/>
 
             <Button
-                android:id="@+id/BtnInputDetailM"
+                android:id="@+id/BtnInputDetail"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Input Detail"
@@ -1127,7 +1188,7 @@
                 android:visibility="gone"/>
 
             <Button
-                android:id="@+id/BtnHapusDetailM"
+                android:id="@+id/BtnHapusDetail"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Hapus"

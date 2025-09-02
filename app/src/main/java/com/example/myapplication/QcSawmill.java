@@ -28,7 +28,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.api.SawmillApi;
-import com.example.myapplication.model.JenisKayuData;
+import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.QcSawmillData;
 import com.example.myapplication.model.QcSawmillDetailData;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -273,7 +273,7 @@ public class QcSawmill extends AppCompatActivity {
             String tglVal = DateTimeUtils.formatToDatabaseDate(editTgl.getText().toString());
             String mejaVal = editMeja.getText().toString();
 
-            JenisKayuData selectedJenisKayu = (JenisKayuData) spinJenisKayu.getSelectedItem();
+            MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) spinJenisKayu.getSelectedItem();
             int idJenisKayu = (selectedJenisKayu != null) ? selectedJenisKayu.getIdJenisKayu() : -1;
 
             boolean valid = true;
@@ -356,7 +356,7 @@ public class QcSawmill extends AppCompatActivity {
             String tglVal = editTgl.getText().toString();
             String mejaVal = editMeja.getText().toString();
 
-            JenisKayuData selectedJenisKayu = (JenisKayuData) spinJenisKayu.getSelectedItem();
+            MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) spinJenisKayu.getSelectedItem();
             int idJenisKayu = (selectedJenisKayu != null) ? selectedJenisKayu.getIdJenisKayu() : -1;
 
             boolean valid = true;
@@ -455,18 +455,18 @@ public class QcSawmill extends AppCompatActivity {
 
 
     private void loadJenisKayuDataToSpinner(final Spinner spinJenisKayu, final int selectedIdJenisKayu, final ProgressBar progressBar) {
-        final List<JenisKayuData> jenisKayuList = new ArrayList<>();
-        jenisKayuList.add(new JenisKayuData(-1, "PILIH"));
+        final List<MstJenisKayuData> jenisKayuList = new ArrayList<>();
+        jenisKayuList.add(new MstJenisKayuData(-1, "PILIH"));
 
         progressBar.setVisibility(View.VISIBLE);
         spinJenisKayu.setEnabled(false);
 
         executorService.execute(() -> {
-            List<JenisKayuData> fromDb = SawmillApi.getJenisKayuList();
+            List<MstJenisKayuData> fromDb = SawmillApi.getJenisKayuList();
             jenisKayuList.addAll(fromDb);
 
             runOnUiThread(() -> {
-                ArrayAdapter<JenisKayuData> adapter = new ArrayAdapter<>(QcSawmill.this, android.R.layout.simple_spinner_item, jenisKayuList);
+                ArrayAdapter<MstJenisKayuData> adapter = new ArrayAdapter<>(QcSawmill.this, android.R.layout.simple_spinner_item, jenisKayuList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinJenisKayu.setAdapter(adapter);
 
@@ -490,7 +490,7 @@ public class QcSawmill extends AppCompatActivity {
         spinJenisKayu.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                JenisKayuData selectedJenisKayu = (JenisKayuData) spinJenisKayu.getSelectedItem();
+                MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) spinJenisKayu.getSelectedItem();
 
                 if (selectedJenisKayu != null && selectedJenisKayu.getIdJenisKayu() != -1) {
                     spinJenisKayu.setBackgroundResource(R.drawable.border_input);

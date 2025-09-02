@@ -4,7 +4,7 @@ import android.util.Log;
 
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LabelDetailData;
-import com.example.myapplication.model.MesinData;
+import com.example.myapplication.model.MstMesinData;
 import com.example.myapplication.model.S4sData;
 
 import java.sql.Connection;
@@ -89,7 +89,7 @@ public class S4sApi {
                 "LEFT JOIN " +
                 "    MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
                 "WHERE " +
-                "    h.NoS4S LIKE ? AND h.DateUsage IS NULL " +
+                "    h.NoS4S LIKE ? OR h.NoSPK LIKE ? AND h.DateUsage IS NULL " +
                 "ORDER BY h.NoS4S DESC " +
                 "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -98,8 +98,9 @@ public class S4sApi {
 
             String likeKeyword = "%" + searchKeyword + "%";
             stmt.setString(1, likeKeyword); // NoS4S
-            stmt.setInt(2, offset);
-            stmt.setInt(3, pageSize);
+            stmt.setString(2, likeKeyword); // NoS4S
+            stmt.setInt(3, offset);
+            stmt.setInt(4, pageSize);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -335,10 +336,8 @@ public class S4sApi {
 
 
 
-
-
-    public static List<MesinData> getMesinList(String selectedDate) {
-        List<MesinData> mesinList = new ArrayList<>();
+    public static List<MstMesinData> getMesinList(String selectedDate) {
+        List<MstMesinData> mesinList = new ArrayList<>();
 
         String query = "SELECT a.IdMesin, CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, a.NoProduksi " +
                 "FROM dbo.S4SProduksi_h a " +
@@ -361,7 +360,7 @@ public class S4sApi {
                     String nomorProduksi = rs.getString("NoProduksi");
                     String namaMesin = rs.getString("NamaMesin");
 
-                    mesinList.add(new MesinData(nomorProduksi, namaMesin));
+                    mesinList.add(new MstMesinData(nomorProduksi, namaMesin));
                 }
             }
 
@@ -373,7 +372,7 @@ public class S4sApi {
         return mesinList;
     }
 
-    public static String generateNewNoS4S() {
+    public static String generateNewNumber() {
         String query = "SELECT MAX(NoS4S) FROM dbo.S4S_h";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());

@@ -68,26 +68,17 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1">
 
-                        <SearchView
+                        <EditText
                             android:id="@+id/NoST"
                             android:layout_width="match_parent"
                             android:layout_height="36dp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            app:iconifiedByDefault="false"
-                            app:queryHint="Search here..."
-                            style="@style/Widget.AppCompat.SearchView.ActionBar" />
+                            android:background="@drawable/border_disabled"
+                            android:hint="E.XXXXXX"
+                            android:padding="8dp"
+                            android:inputType="text"
+                            android:singleLine="true"
+                            android:enabled="false"/>
 
-                        <EditText
-                            android:id="@+id/NoST_display"
-                            android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:padding="6dp"
-                            android:textSize="18sp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            android:visibility="gone"
-                            android:hint="E.XXXXXX" />
                     </FrameLayout>
 
                     <LinearLayout
@@ -152,25 +143,14 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1">
 
-                        <SearchView
-                            android:id="@+id/NoKayuBulat"
-                            android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:background="@drawable/border_input"
-                            android:elevation="1dp"
-                            app:iconifiedByDefault="false"
-                            app:queryHint="Search here..."
-                            style="@style/Widget.AppCompat.SearchView.ActionBar" />
-
                         <EditText
-                            android:id="@+id/NoKB_display"
+                            android:id="@+id/NoKayuBulat"
                             android:layout_width="match_parent"
                             android:layout_height="36dp"
                             android:padding="6dp"
                             android:textSize="18sp"
                             android:background="@drawable/border_input"
                             android:elevation="1dp"
-                            android:visibility="gone"
                             android:hint="A.XXXXXX" />
 
                     </FrameLayout>
@@ -632,6 +612,19 @@
                         android:elevation="1dp"
                         android:enabled="false" />
 
+                    <EditText
+                        android:id="@+id/susunView"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:padding="6dp"
+                        android:textSize="18sp"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp"
+                        android:focusable="false"
+                        android:enabled="false"
+                        android:visibility="gone"/>
+
                     <com.google.android.material.checkbox.MaterialCheckBox
                         android:id="@+id/cbBongkarSusun"
                         android:layout_width="wrap_content"
@@ -745,19 +738,19 @@
                     <TableLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="#EFEFEF"
-                        android:stretchColumns="0">
-                        <!-- Membuat kolom proporsional -->
+                        android:background="#EFEFEF">
 
+                        <!-- Membuat kolom proporsional -->
                         <TableRow android:background="@color/hijau">
 
-                            <!-- Kolom No. Produksi -->
+                            <!-- Kolom Detail -->
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:layout_weight="0.5"
                                 android:gravity="center"
-                                android:padding="8dp"
                                 android:text="No"
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
@@ -771,12 +764,14 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:padding="8dp"
                                 android:text="T"
                                 android:textColor="@color/white"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                />
 
                             <View
                                 android:layout_width="1px"
@@ -787,9 +782,10 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:padding="8dp"
                                 android:text="L"
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
@@ -803,9 +799,10 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:padding="8dp"
                                 android:text="P"
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
@@ -819,28 +816,29 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:padding="8dp"
                                 android:text="Pcs"
                                 android:textColor="@color/white"
                                 android:textStyle="bold" />
 
-                            <!--                            <View-->
-                            <!--                                android:layout_width="1px"-->
-                            <!--                                android:layout_height="match_parent"-->
-                            <!--                                android:background="@color/gray" />-->
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
 
-                            <!--                            &lt;!&ndash; Kolom Tanggal &ndash;&gt;-->
-                            <!--                            <TextView-->
-                            <!--                                android:layout_width="0dp"-->
-                            <!--                                android:layout_height="wrap_content"-->
-                            <!--                                android:layout_weight="1"-->
-                            <!--                                android:gravity="center"-->
-                            <!--                                android:padding="8dp"-->
-                            <!--                                android:text="Aksi"-->
-                            <!--                                android:textColor="@color/white"-->
-                            <!--                                android:textStyle="bold" />-->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="Aksi"
+                                android:textColor="@color/white"
+                                android:textStyle="bold" />
 
                         </TableRow>
 
@@ -862,6 +860,18 @@
                     </ScrollView>
 
                 </LinearLayout>
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabAddDetailData"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="16dp"
+                    android:src="@drawable/ic_add"
+                    android:contentDescription="Tambah Detail"
+                    app:backgroundTint="@color/primary"
+                    app:tint="@android:color/white"
+                    android:visibility="gone"/>
 
             </androidx.cardview.widget.CardView>
 
@@ -1179,283 +1189,287 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <ImageButton
-                        android:id="@+id/btnSwapToLabelList"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="4dp"
-                        android:background="?android:attr/selectableItemBackground"
-                        android:src="@drawable/swap_horiz" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:gravity="center_vertical"
-                        android:textSize="16sp"
-                        android:text="Detail"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <ScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fillViewport="true">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="#FFFFFF"
-                        android:padding="8dp">
+                        android:orientation="horizontal">
+
+                        <ImageButton
+                            android:id="@+id/btnSwapToLabelList"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:padding="4dp"
+                            android:src="@drawable/swap_horiz"
+                            android:scaleType="centerInside"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:layout_gravity="center_vertical"
+                            app:tint="@color/black" />
 
                         <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Total Detail"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
                             android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            android:layout_marginStart="4dp" />
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="#E0E0E0">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="10dp">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.2"
-                                        android:text="Jlh"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.1"
-                                        android:text=":"
-                                        android:textSize="18sp"
-                                        android:gravity="center"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:id="@+id/JumlahPcsST"
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.7"
-                                        android:text="0"
-                                        android:textSize="18sp"
-                                        android:layout_marginStart="8dp"
-                                        android:textColor="@color/black" />
-
-                                </LinearLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.2"
-                                        android:text="M³"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.1"
-                                        android:text=":"
-                                        android:textSize="18sp"
-                                        android:gravity="center"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:id="@+id/M3ST"
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.7"
-                                        android:text="0"
-                                        android:layout_marginStart="8dp"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black" />
-
-                                </LinearLayout>
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical">
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.2"
-                                        android:text="Ton"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.1"
-                                        android:text=":"
-                                        android:textSize="18sp"
-                                        android:gravity="center"
-                                        android:textColor="@color/black"
-                                        android:textStyle="bold"/>
-
-                                    <TextView
-                                        android:id="@+id/Ton"
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="0.7"
-                                        android:text="0"
-                                        android:layout_marginStart="8dp"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black" />
-
-                                </LinearLayout>
-
-                            </LinearLayout>
-
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Satuan Tbl-Lbr"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginBottom="4dp"
-                            android:layout_marginTop="12dp"/>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="#E0E0E0">
-
-                            <RadioGroup
-                                android:id="@+id/radioGroupUOMTblLebar"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <RadioButton
-                                    android:id="@+id/radioMillimeter"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="28dp"
-                                    android:text="Millimeter"
-                                    android:textSize="15sp"
-                                    android:checked="true"
-                                    android:layout_marginBottom="2dp"/>
-
-                                <RadioButton
-                                    android:id="@+id/radioInch"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="28dp"
-                                    android:text="Inch"
-                                    android:textSize="15sp"/>
-
-                            </RadioGroup>
-
-                        </com.google.android.material.card.MaterialCardView>
-
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Satuan Panjang"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginTop="12dp"
-                            android:layout_marginBottom="4dp"/>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="#E0E0E0">
-
-                            <RadioGroup
-                                android:id="@+id/radioGroupUOMPanjang"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <RadioButton
-                                    android:id="@+id/radioFeet"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="28dp"
-                                    android:text="Feet"
-                                    android:checked="true"
-                                    android:textSize="15sp"/>
-
-                                <RadioButton
-                                    android:id="@+id/radioMeter"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="28dp"
-                                    android:text="Meter"
-                                    android:textSize="15sp"
-                                    android:layout_marginBottom="2dp"
-                                    android:enabled="false" />
-
-                                <RadioButton
-                                    android:id="@+id/radioCentimeter"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="28dp"
-                                    android:text="Centimeter"
-                                    android:textSize="15sp"
-                                    android:layout_marginBottom="2dp"
-                                    android:enabled="false" />
-
-                            </RadioGroup>
-
-                        </com.google.android.material.card.MaterialCardView>
-
+                            android:text="Detail"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
-                </ScrollView>
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fillViewport="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="#FFFFFF"
+                            android:padding="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total Detail"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/black"
+                                android:layout_marginStart="4dp" />
+
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="#E0E0E0">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:padding="10dp">
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical">
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.2"
+                                            android:text="Jlh"
+                                            android:textSize="18sp"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.1"
+                                            android:text=":"
+                                            android:textSize="18sp"
+                                            android:gravity="center"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:id="@+id/JumlahPcsST"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.7"
+                                            android:text="0"
+                                            android:textSize="18sp"
+                                            android:layout_marginStart="8dp"
+                                            android:textColor="@color/black" />
+
+                                    </LinearLayout>
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical">
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.2"
+                                            android:text="M³"
+                                            android:textSize="18sp"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.1"
+                                            android:text=":"
+                                            android:textSize="18sp"
+                                            android:gravity="center"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:id="@+id/M3ST"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.7"
+                                            android:text="0"
+                                            android:layout_marginStart="8dp"
+                                            android:textSize="18sp"
+                                            android:textColor="@color/black" />
+
+                                    </LinearLayout>
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical">
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.2"
+                                            android:text="Ton"
+                                            android:textSize="18sp"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.1"
+                                            android:text=":"
+                                            android:textSize="18sp"
+                                            android:gravity="center"
+                                            android:textColor="@color/black"
+                                            android:textStyle="bold"/>
+
+                                        <TextView
+                                            android:id="@+id/Ton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="0.7"
+                                            android:text="0"
+                                            android:layout_marginStart="8dp"
+                                            android:textSize="18sp"
+                                            android:textColor="@color/black" />
+
+                                    </LinearLayout>
+
+                                </LinearLayout>
+
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Satuan Tbl-Lbr"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/black"
+                                android:layout_marginStart="4dp"
+                                android:layout_marginBottom="4dp"
+                                android:layout_marginTop="12dp"/>
+
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="#E0E0E0">
+
+                                <RadioGroup
+                                    android:id="@+id/radioGroupUOMTblLebar"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:padding="8dp">
+
+                                    <RadioButton
+                                        android:id="@+id/radioMillimeter"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="Millimeter"
+                                        android:textSize="15sp"
+                                        android:checked="true"
+                                        android:layout_marginBottom="2dp"/>
+
+                                    <RadioButton
+                                        android:id="@+id/radioInch"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="Inch"
+                                        android:textSize="15sp"/>
+
+                                </RadioGroup>
+
+                            </com.google.android.material.card.MaterialCardView>
+
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Satuan Panjang"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/black"
+                                android:layout_marginStart="4dp"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginBottom="4dp"/>
+
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="#E0E0E0">
+
+                                <RadioGroup
+                                    android:id="@+id/radioGroupUOMPanjang"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:padding="8dp">
+
+                                    <RadioButton
+                                        android:id="@+id/radioFeet"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="Feet"
+                                        android:checked="true"
+                                        android:textSize="15sp"/>
+
+                                    <RadioButton
+                                        android:id="@+id/radioMeter"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="Meter"
+                                        android:textSize="15sp"
+                                        android:layout_marginBottom="2dp"
+                                        android:enabled="false" />
+
+                                    <RadioButton
+                                        android:id="@+id/radioCentimeter"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="Centimeter"
+                                        android:textSize="15sp"
+                                        android:layout_marginBottom="2dp"
+                                        android:enabled="false" />
+
+                                </RadioGroup>
+
+                            </com.google.android.material.card.MaterialCardView>
+
+                        </LinearLayout>
+
+                    </ScrollView>
 
                 </LinearLayout>
 
@@ -1494,21 +1508,36 @@
 
                             <ImageButton
                                 android:id="@+id/btnSwapToUOM"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
+                                android:layout_width="35dp"
+                                android:layout_height="35dp"
                                 android:padding="4dp"
-                                android:background="?android:attr/selectableItemBackground"
                                 android:src="@drawable/swap_horiz"
-                                android:layout_gravity="start"
-                                android:contentDescription="Tambah Data" />
+                                android:scaleType="centerInside"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:layout_gravity="center_vertical"
+                                app:tint="@color/black" />
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:gravity="center_vertical"
-                                android:textSize="16sp"
-                                android:text="Ouput"
-                                android:textStyle="bold" />
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textSize="18sp"
+                                android:layout_margin="4dp"
+                                android:text="Output"
+                                android:textStyle="bold"
+                                android:padding="4dp" />
+
+                            <ImageButton
+                                android:id="@+id/BtnExpandView"
+                                android:layout_width="35dp"
+                                android:layout_height="35dp"
+                                android:backgroundTint="@color/hijau"
+                                android:src="@drawable/ic_list"
+                                android:scaleType="centerInside"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="8dp"
+                                app:tint="@color/black"/>
                         </LinearLayout>
 
                         <!-- Header Tabel -->
@@ -1711,8 +1740,7 @@
                         <TableLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:background="#EFEFEF"
-                            android:stretchColumns="0">
+                            android:background="#EFEFEF">
 
                             <TableRow
                                 android:background="@color/hijau">
@@ -1721,9 +1749,10 @@
                                 <TextView
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:layout_marginBottom="8dp"
                                     android:layout_weight="1"
                                     android:text="Grade"
-                                    android:padding="8dp"
                                     android:gravity="center"
                                     android:textStyle="bold"
                                     android:textColor="@color/white"/>
@@ -1737,9 +1766,10 @@
                                 <TextView
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:layout_marginBottom="8dp"
                                     android:layout_weight="0.5"
                                     android:text="Pcs"
-                                    android:padding="8dp"
                                     android:gravity="center"
                                     android:textStyle="bold"
                                     android:textColor="@color/white"/>
@@ -1753,9 +1783,10 @@
                                 <TextView
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:layout_marginBottom="8dp"
                                     android:layout_weight="0.5"
                                     android:text="Aksi"
-                                    android:padding="8dp"
                                     android:gravity="center"
                                     android:textStyle="bold"
                                     android:textColor="@color/white"/>
@@ -1799,7 +1830,6 @@
     </androidx.cardview.widget.CardView>
 
     <!-- CardView Kanan Bawah -->
-
     <LinearLayout
         android:id="@+id/card_bottom_right"
         android:layout_width="0dp"
@@ -1809,7 +1839,6 @@
         app:layout_constraintTop_toBottomOf="@id/card_top_right"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="16dp">
-
 
         <!-- Button Container -->
         <LinearLayout
@@ -1832,6 +1861,17 @@
 
             <Button
                 android:id="@+id/BtnSimpanST"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:text="Simpan"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/btnUpdate"
                 android:layout_width="0dp"
                 android:layout_height="60dp"
                 android:layout_weight="1"

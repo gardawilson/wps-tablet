@@ -6,7 +6,7 @@ import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.HistoryItem;
 import com.example.myapplication.model.MesinProsesProduksiData;
-import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.ProductionData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -155,8 +155,8 @@ public class ProsesProduksiApi {
     }
 
 
-    public static List<OperatorData> getAllOperatorData(int idBagian) {
-        List<OperatorData> operatorList = new ArrayList<>();
+    public static List<MstOperatorData> getAllOperatorData(int idBagian) {
+        List<MstOperatorData> operatorList = new ArrayList<>();
 
         String query = "SELECT IdOperator, NamaOperator FROM MstOperator WHERE Enable = 1 AND IdBagian = ?";
 
@@ -170,7 +170,7 @@ public class ProsesProduksiApi {
                     int idOperator = rs.getInt("IdOperator");
                     String namaOperator = rs.getString("NamaOperator");
 
-                    operatorList.add(new OperatorData(idOperator, namaOperator));
+                    operatorList.add(new MstOperatorData(idOperator, namaOperator));
                 }
             }
 

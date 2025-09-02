@@ -1,17 +1,16 @@
 package com.example.myapplication.api;
 
-import android.util.Log;
-
 import com.example.myapplication.config.DatabaseConfig;
-import com.example.myapplication.model.FisikData;
-import com.example.myapplication.model.GradeData;
-import com.example.myapplication.model.JenisKayuData;
+import com.example.myapplication.model.MstFisikData;
+import com.example.myapplication.model.MstGradeData;
+import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.LokasiData;
-import com.example.myapplication.model.ProfileData;
-import com.example.myapplication.model.SpkData;
-import com.example.myapplication.model.SusunData;
+import com.example.myapplication.model.MstBjData;
+import com.example.myapplication.model.MstProfileData;
+import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
-import com.example.myapplication.model.WarnaData;
+import com.example.myapplication.model.MstWarnaData;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -26,8 +25,8 @@ import java.util.Locale;
 
 public class MasterApi {
 
-    public static List<WarnaData> getWarnaList() {
-        List<WarnaData> warnaList = new ArrayList<>();
+    public static List<MstWarnaData> getWarnaList() {
+        List<MstWarnaData> warnaList = new ArrayList<>();
         String query = "SELECT IdWarna, NamaWarna FROM MstWarna";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -38,7 +37,7 @@ public class MasterApi {
                 int id = rs.getInt("IdWarna");
                 String nama = rs.getString("NamaWarna");
 
-                warnaList.add(new WarnaData(id, nama));
+                warnaList.add(new MstWarnaData(id, nama));
             }
 
         } catch (SQLException e) {
@@ -75,8 +74,8 @@ public class MasterApi {
     }
 
 
-    public static List<GradeData> getGradeList(int idJenisKayu, String category) {
-        List<GradeData> gradeList = new ArrayList<>();
+    public static List<MstGradeData> getGradeList(int idJenisKayu, String category) {
+        List<MstGradeData> gradeList = new ArrayList<>();
         String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                 "FROM MstGrade a " +
                 "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
@@ -93,7 +92,7 @@ public class MasterApi {
                 while (rs.next()) {
                     int idGrade = rs.getInt("IdGrade");
                     String namaGrade = rs.getString("NamaGrade");
-                    gradeList.add(new GradeData(idGrade, namaGrade));
+                    gradeList.add(new MstGradeData(idGrade, namaGrade));
                 }
             }
 
@@ -106,9 +105,9 @@ public class MasterApi {
 
 
     // Di class MasterApi atau helper model terpisah
-    public static List<JenisKayuData> getJenisKayuList() {
-        List<JenisKayuData> jenisKayuList = new ArrayList<>();
-        String query = "SELECT IdJenisKayu, Jenis FROM dbo.MstJenisKayu " +
+    public static List<MstJenisKayuData> getJenisKayuList() {
+        List<MstJenisKayuData> jenisKayuList = new ArrayList<>();
+        String query = "SELECT IdJenisKayu, Jenis, IsUpah FROM dbo.MstJenisKayu " +
                 "WHERE Enable = 1 AND IsInternal = 1 AND IsNonST = 1";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -118,8 +117,33 @@ public class MasterApi {
             while (rs.next()) {
                 int idJenisKayu = rs.getInt("IdJenisKayu");
                 String namaJenisKayu = rs.getString("Jenis");
+                int isUpah = rs.getInt("IsUpah");
 
-                jenisKayuList.add(new JenisKayuData(idJenisKayu, namaJenisKayu));
+                jenisKayuList.add(new MstJenisKayuData(idJenisKayu, namaJenisKayu, isUpah));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return jenisKayuList;
+    }
+
+
+    public static List<MstJenisKayuData> getJenisKayuSTList() {
+        List<MstJenisKayuData> jenisKayuList = new ArrayList<>();
+        String query = "SELECT IdJenisKayu, Jenis, IsUpah FROM dbo.MstJenisKayu WHERE IsST = 1";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                int idJenisKayu = rs.getInt("IdJenisKayu");
+                String namaJenisKayu = rs.getString("Jenis");
+                int isUpah = rs.getInt("IsUpah");
+
+                jenisKayuList.add(new MstJenisKayuData(idJenisKayu, namaJenisKayu, isUpah));
             }
 
         } catch (SQLException e) {
@@ -157,8 +181,8 @@ public class MasterApi {
 
 
 
-    public static List<SpkData> getSPKList() {
-        List<SpkData> spkList = new ArrayList<>();
+    public static List<MstSpkData> getSPKList() {
+        List<MstSpkData> spkList = new ArrayList<>();
         String query = "SELECT s.NoSPK, b.Buyer " +
                 "FROM MstSPK_h s " +
                 "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
@@ -172,7 +196,7 @@ public class MasterApi {
                 String noSPK = rs.getString("NoSPK");
                 String buyer = rs.getString("Buyer");
 
-                spkList.add(new SpkData(noSPK, buyer));
+                spkList.add(new MstSpkData(noSPK, buyer));
             }
 
         } catch (SQLException e) {
@@ -184,8 +208,8 @@ public class MasterApi {
     }
 
 
-    public static List<SusunData> getSusunList(String selectedDate) {
-        List<SusunData> susunList = new ArrayList<>();
+    public static List<MstSusunData> getSusunList(String selectedDate) {
+        List<MstSusunData> susunList = new ArrayList<>();
 
         String query = "SELECT NoBongkarSusun " +
                 "FROM dbo.BongkarSusun_h " +
@@ -199,7 +223,7 @@ public class MasterApi {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String noBongkarSusun = rs.getString("NoBongkarSusun");
-                    susunList.add(new SusunData(noBongkarSusun));
+                    susunList.add(new MstSusunData(noBongkarSusun));
                 }
             }
 
@@ -210,7 +234,6 @@ public class MasterApi {
 
         return susunList;
     }
-
 
 
     public static boolean isPeriodValid(String dateToCheck) {
@@ -292,8 +315,8 @@ public class MasterApi {
         return tellyList;
     }
 
-    public static List<FisikData> getFisikList(int IdWarehouse) {
-        List<FisikData> fisikList = new ArrayList<>();
+    public static List<MstFisikData> getFisikList(int IdWarehouse) {
+        List<MstFisikData> fisikList = new ArrayList<>();
 
         String query = "SELECT Singkatan FROM dbo.MstWarehouse WHERE IdWarehouse = ?";
 
@@ -305,7 +328,7 @@ public class MasterApi {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String singkatan = rs.getString("Singkatan");
-                    fisikList.add(new FisikData(singkatan));
+                    fisikList.add(new MstFisikData(singkatan));
                 }
             }
 
@@ -318,8 +341,8 @@ public class MasterApi {
     }
 
 
-    public static List<ProfileData> getProfileList() {
-        List<ProfileData> profileList = new ArrayList<>();
+    public static List<MstProfileData> getProfileList() {
+        List<MstProfileData> profileList = new ArrayList<>();
 
         String query = "SELECT Profile, IdFJProfile FROM dbo.MstFJProfile WHERE IdFJProfile != 0";
 
@@ -330,7 +353,7 @@ public class MasterApi {
             while (rs.next()) {
                 String namaProfile = rs.getString("Profile");
                 String idFJProfile = rs.getString("IdFJProfile");
-                profileList.add(new ProfileData(namaProfile, idFJProfile));
+                profileList.add(new MstProfileData(namaProfile, idFJProfile));
             }
 
         } catch (SQLException e) {
@@ -339,6 +362,32 @@ public class MasterApi {
         }
 
         return profileList;
+    }
+
+    public static List<MstBjData> getBarangJadiList() {
+        List<MstBjData> bjList = new ArrayList<>();
+
+        String query = "SELECT IdBarangJadi, NamaBarangJadi " +
+                "FROM dbo.MstBarangJadi " +
+                "WHERE Enable = 1 " +
+                "ORDER BY NamaBarangJadi ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int idBarangJadi = rs.getInt("IdBarangJadi");
+                String namaBarangJadi = rs.getString("NamaBarangJadi");
+                bjList.add(new MstBjData(idBarangJadi, namaBarangJadi));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data barang jadi:");
+            e.printStackTrace();
+        }
+
+        return bjList;
     }
 
 

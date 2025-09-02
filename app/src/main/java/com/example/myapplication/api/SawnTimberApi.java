@@ -4,10 +4,15 @@ import android.util.Log;
 
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.CustomerData;
+import com.example.myapplication.model.GradeDetailData;
+import com.example.myapplication.model.LabelDetailData;
+import com.example.myapplication.model.MstGradeStickData;
+import com.example.myapplication.model.MstStickData;
 import com.example.myapplication.model.OutputDataST;
 import com.example.myapplication.model.STPembelianData;
 import com.example.myapplication.model.STPembelianDataReject;
 import com.example.myapplication.model.STUpahData;
+import com.example.myapplication.model.StData;
 import com.example.myapplication.model.SupplierData;
 
 import java.sql.Connection;
@@ -433,6 +438,772 @@ public class SawnTimberApi {
     }
 
 
+    public static List<MstStickData> getStickByList() {
+        List<MstStickData> stickByList = new ArrayList<>();
+
+        String query = "SELECT IdStickBy, NamaStickBy " +
+                "FROM dbo.MstStickBy " +
+                "WHERE Enable = 1";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String idStickBy = rs.getString("IdStickBy");
+                String namaStickBy = rs.getString("NamaStickBy");
+
+                stickByList.add(new MstStickData(idStickBy, namaStickBy));
+            }
+
+            // Tambahkan dummy di awal list
+            stickByList.add(0, new MstStickData("", "PILIH"));
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data StickBy:");
+            e.printStackTrace();
+        }
+
+        return stickByList;
+    }
+
+
+    public static List<MstGradeStickData> getGradeStickList() {
+        List<MstGradeStickData> gradeStickList = new ArrayList<>();
+
+        String query = "SELECT IdGradeStick, NamaGradeStick FROM dbo.MstGradeStick";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int idGradeStick = rs.getInt("IdGradeStick");
+                String namaGradeStick = rs.getString("NamaGradeStick");
+
+                gradeStickList.add(new MstGradeStickData(idGradeStick, namaGradeStick));
+            }
+
+            // tambahkan dummy default
+            gradeStickList.add(0, new MstGradeStickData(0, "PILIH"));
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data GradeStick:");
+            e.printStackTrace();
+        }
+
+        return gradeStickList;
+    }
+
+
+    public static List<StData> getSawnTimberData(int page, int pageSize, String searchKeyword) {
+        List<StData> sawnTimberDataList = new ArrayList<>();
+
+        int offset = (page - 1) * pageSize;
+
+        // Query lengkap dengan semua JOIN yang diperlukan, disesuaikan dengan model StData
+        String query = "SELECT " +
+                "h.NoST, " +
+                "h.NoKayuBulat, " +
+                "h.IdJenisKayu, " +
+                "k.Jenis, " +
+                "h.IdStickBy, " +
+                "s.NamaStickBy, " +
+                "h.NoSPK, " +
+                "h.DateCreate, " +
+                "h.IdOrgTelly, " +
+                "t.NamaOrgTelly, " +
+                "h.Remark, " +
+                "p.NoPenerimaanST AS NoPenerimaanSTPembelian, " +
+                "u.NoPenerimaanST AS NoPenerimaanSTUpah, " +
+                "h.IsSLP, " +
+                "h.VacuumDate, " +
+                "b.NoBongkarSusun, " +
+                "h.IdUOMTblLebar, " +
+                "h.IdUOMPanjang " +
+                "FROM ST_h h " +
+                "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                "LEFT JOIN MstStickBy s ON h.IdStickBy = s.IdStickBy " +
+                "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                "LEFT JOIN PenerimaanSTPembelian_d p ON h.NoST = p.NoST " +
+                "LEFT JOIN PenerimaanSTUpah_d u ON h.NoST = u.NoST " +
+                "LEFT JOIN BongkarSusunOutputST b ON h.NoST = b.NoST " +
+                "WHERE " +
+                "(h.NoST LIKE ? OR h.NoSPK LIKE ?) " +
+                "AND h.DateUsage IS NULL " +
+                "AND EXISTS (SELECT 1 FROM ST_d d WHERE d.NoST = h.NoST) " +
+                "ORDER BY h.NoST DESC " +
+                "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            String likeKeyword = "%" + searchKeyword + "%";
+            stmt.setString(1, likeKeyword); // NoST
+            stmt.setString(2, likeKeyword); // NoSPK
+            stmt.setInt(3, offset);
+            stmt.setInt(4, pageSize);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    sawnTimberDataList.add(new StData(
+                            rs.getString("NoST"),
+                            rs.getString("NoKayuBulat"),
+                            rs.getInt("IdJenisKayu"),
+                            rs.getString("Jenis"),
+                            rs.getString("IdStickBy"),
+                            rs.getString("NamaStickBy"),
+                            rs.getString("NoSPK"),
+                            rs.getString("DateCreate"),
+                            rs.getString("IdOrgTelly"),
+                            rs.getString("NamaOrgTelly"),
+                            rs.getString("Remark"),
+                            rs.getString("NoPenerimaanSTPembelian"),
+                            rs.getString("NoPenerimaanSTUpah"),
+                            rs.getInt("IsSLP"),
+                            rs.getString("VacuumDate"),
+                            rs.getString("NoBongkarSusun"),
+                            rs.getInt("IdUOMTblLebar"),
+                            rs.getInt("IdUOMPanjang")
+                            ));
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data sawn timber:");
+            e.printStackTrace();
+        }
+
+        return sawnTimberDataList;
+    }
+
+
+    public static int getTotalLabelCount(String searchKeyword) {
+        int totalLabel = 0;
+
+        String query =
+                "SELECT COUNT(*) AS TotalLabel " +
+                        "FROM ST_h h " +
+                        "WHERE h.NoST LIKE ? " +
+                        "AND h.DateUsage IS NULL " +
+                        "AND EXISTS ( " +
+                        "   SELECT 1 FROM ST_d d " +
+                        "   WHERE d.NoST = h.NoST " +
+                        ")";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, "%" + searchKeyword + "%");
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    totalLabel = rs.getInt("TotalLabel");
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Fetch Error", "Error fetching total label count: " + e.getMessage());
+        }
+
+        return totalLabel;
+    }
+
+
+
+    public static StData getSawnTimberHeader(String noST) {
+        String queryHeader = "SELECT " +
+                "h.NoST, " +
+                "h.NoKayuBulat, " +
+                "h.IdJenisKayu, " +
+                "k.Jenis, " +
+                "h.IdStickBy, " +
+                "s.NamaStickBy, " +
+                "h.NoSPK, " +
+                "h.DateCreate, " +
+                "h.IdOrgTelly, " +
+                "t.NamaOrgTelly, " +
+                "h.Remark, " +
+                "p.NoPenerimaanST AS NoPenerimaanSTPembelian, " +
+                "u.NoPenerimaanST AS NoPenerimaanSTUpah, " +
+                "h.IsSLP, " +
+                "h.VacuumDate, " +
+                "b.NoBongkarSusun, " +
+                "h.IdUOMTblLebar, " +
+                "h.IdUOMPanjang " +
+                "FROM ST_h h " +
+                "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
+                "LEFT JOIN MstStickBy s ON h.IdStickBy = s.IdStickBy " +
+                "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
+                "LEFT JOIN PenerimaanSTPembelian_d p ON h.NoST = p.NoST " +
+                "LEFT JOIN PenerimaanSTUpah_d u ON h.NoST = u.NoST " +
+                "LEFT JOIN BongkarSusunOutputST b ON h.NoST = b.NoST " +
+                "WHERE h.NoST = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(queryHeader)) {
+
+            ps.setString(1, noST);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new StData(
+                            rs.getString("NoST"),
+                            rs.getString("NoKayuBulat"),
+                            rs.getInt("IdJenisKayu"),
+                            rs.getString("Jenis"),
+                            rs.getString("IdStickBy"),
+                            rs.getString("NamaStickBy"),
+                            rs.getString("NoSPK"),
+                            rs.getString("DateCreate"),
+                            rs.getString("IdOrgTelly"),
+                            rs.getString("NamaOrgTelly"),
+                            rs.getString("Remark"),
+                            rs.getString("NoPenerimaanSTPembelian"),
+                            rs.getString("NoPenerimaanSTUpah"),
+                            rs.getInt("IsSLP"),
+                            rs.getString("VacuumDate"),
+                            rs.getString("NoBongkarSusun"),
+                            rs.getInt("IdUOMTblLebar"),
+                            rs.getInt("IdUOMPanjang")
+                            );
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil header sawn timber:");
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Get sawn timber detail data by NoST
+     */
+    public static List<LabelDetailData> getSawnTimberDetail(String noST) {
+        List<LabelDetailData> detailList = new ArrayList<>();
+
+        String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
+                "FROM ST_d " +
+                "WHERE NoST = ? " +
+                "ORDER BY NoUrut";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(queryDetail)) {
+
+            ps.setString(1, noST);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String tebal = rs.getString("Tebal");
+                    String lebar = rs.getString("Lebar");
+                    String panjang = rs.getString("Panjang");
+                    String pcs = rs.getString("JmlhBatang");
+
+                    detailList.add(new LabelDetailData(tebal, lebar, panjang, pcs));
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil detail sawn timber:");
+            e.printStackTrace();
+        }
+
+        return detailList;
+    }
+
+    /**
+     * Get sawn timber grade data by NoST
+     */
+    public static List<GradeDetailData> getSawnTimberGrade(String noST) {
+        List<GradeDetailData> gradeList = new ArrayList<>();
+
+        String queryGrade = "SELECT " +
+                "s.IdGradeStick, " +
+                "s.JumlahStick, " +
+                "m.NamaGradeStick " +
+                "FROM STStick s " +
+                "INNER JOIN MstGradeStick m ON m.IdGradeStick = s.IdGradeStick " +
+                "WHERE NoST = ? " +
+                "ORDER BY IdGradeStick";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(queryGrade)) {
+
+            ps.setString(1, noST);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int idGradeStick = rs.getInt("IdGradeStick");
+                    String namaGradeStick = rs.getString("NamaGradeStick");
+                    String jumlahGradeStick = rs.getString("JumlahStick");
+
+                    gradeList.add(new GradeDetailData(idGradeStick, namaGradeStick, jumlahGradeStick));
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil grade sawn timber:");
+            e.printStackTrace();
+        }
+
+        return gradeList;
+    }
+
+
+
+    // Di SawnTimberApi.java - Tambahkan method transaction
+    public static String saveSawnTimberTransaction(String noKayuBulat, String jenisKayu,
+                                                   String noSPK, String telly, String stickBy,
+                                                   String dateCreate, String isVacuum, String remark,
+                                                   int isSLP, int isSticked, int isKering,
+                                                   int isBagusKulit, int isUpah, int idUOMTblLebar,
+                                                   int idUOMPanjang, List<LabelDetailData> detailList,
+                                                   List<GradeDetailData> gradeList, String noPenST,
+                                                   int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked) {
+
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false); // Start transaction
+
+            // 1. Generate new number
+            String newNoST = generateNewNumberWithConnection(con);
+            if (newNoST == null) {
+                throw new SQLException("Gagal generate nomor ST baru");
+            }
+
+            // 2. Save header
+            saveSawnTimberHeaderWithConnection(con, newNoST, noKayuBulat, jenisKayu, noSPK, telly, stickBy,
+                    dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
+                    isBagusKulit, isUpah, idUOMTblLebar, idUOMPanjang);
+
+            // 3. Save detail
+            for (int i = 0; i < detailList.size(); i++) {
+                LabelDetailData dataRow = detailList.get(i);
+                saveSawnTimberDetailWithConnection(con, newNoST, i + 1,
+                        Double.parseDouble(dataRow.getTebal()),
+                        Double.parseDouble(dataRow.getLebar()),
+                        Double.parseDouble(dataRow.getPanjang()),
+                        Integer.parseInt(dataRow.getPcs()));
+            }
+
+            // 4. Save grade (jika bukan kayu lat)
+            if (gradeList != null && !gradeList.isEmpty()) {
+                for (GradeDetailData gradeDetailList : gradeList) {
+                    saveSawnTimberGradeWithConnection(con, newNoST,
+                            gradeDetailList.getGradeId(), gradeDetailList.getJumlah());
+                }
+            }
+
+            // 5. Save penerimaan
+            if (labelVersion == 1) {
+                savePenerimaanSTPembelianWithConnection(con, noPenST, newNoST);
+            } else if (labelVersion == 2) {
+                savePenerimaanSTUpahWithConnection(con, noPenST, newNoST);
+            }
+
+            // 6. Save bongkar susun
+            if (cbBongkarSusunChecked && noBongkarSusun != null) {
+                saveBongkarSusunOutputSTWithConnection(con, newNoST, noBongkarSusun);
+            }
+
+            con.commit(); // Commit transaction
+            return newNoST; // Return generated NoST instead of boolean
+
+        } catch (Exception e) {
+            System.err.println("[DB_ERROR] Transaction gagal: " + e.getMessage());
+            e.printStackTrace();
+            if (con != null) {
+                try {
+                    con.rollback(); // Rollback jika ada error
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
+            return null; // Return null jika gagal
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true); // Reset auto commit
+                    con.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    // Helper method untuk generate number dengan connection yang sama
+    private static String generateNewNumberWithConnection(Connection con) throws SQLException {
+        String query = "SELECT MAX(NoST) FROM dbo.ST_h";
+
+        try (PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                String lastNoST = rs.getString(1);
+
+                if (lastNoST != null && lastNoST.startsWith("E.")) {
+                    String numericPart = lastNoST.substring(2);
+                    int numericValue = Integer.parseInt(numericPart);
+                    int newNumericValue = numericValue + 1;
+
+                    return "E." + String.format("%06d", newNumericValue);
+                }
+            }
+        }
+
+        return "E.000001"; // Default jika belum ada data
+    }
+
+    // Helper methods untuk save dengan connection yang sama
+    private static void saveSawnTimberHeaderWithConnection(Connection con, String noST, String noKayuBulat,
+                                                           String jenisKayu, String noSPK, String telly,
+                                                           String stickBy, String dateCreate, String isVacuum,
+                                                           String remark, int isSLP, int isSticked, int isKering,
+                                                           int isBagusKulit, int isUpah, int idUOMTblLebar,
+                                                           int idUOMPanjang) throws SQLException {
+
+        noKayuBulat = (noKayuBulat == null || noKayuBulat.trim().isEmpty()) ? null : noKayuBulat;
+
+        String query = "INSERT INTO ST_h (NoST, NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, " +
+                "IdStickBy, IsUpah, IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, " +
+                "Remark, IsSLP, IsSticked, StartKering, IsBagusKulit, IdLokasi) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.setString(2, noKayuBulat);
+            ps.setString(3, jenisKayu);
+            ps.setString(4, noSPK);
+            ps.setString(5, telly);
+            ps.setString(6, stickBy);
+            ps.setInt(7, isUpah);
+            ps.setInt(8, idUOMTblLebar);
+            ps.setInt(9, idUOMPanjang);
+            ps.setString(10, dateCreate);
+            ps.setString(11, isVacuum);
+            ps.setString(12, remark);
+            ps.setInt(13, isSLP);
+            ps.setInt(14, isSticked);
+            ps.setInt(15, isKering);
+            ps.setInt(16, isBagusKulit);
+
+            if (isKering == 0) {
+                ps.setString(17, "L01");
+            } else {
+                ps.setNull(17, java.sql.Types.VARCHAR);
+            }
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert header ST");
+            }
+        }
+    }
+
+    private static void saveSawnTimberDetailWithConnection(Connection con, String noST, int noUrut,
+                                                           double tebal, double lebar, double panjang,
+                                                           int pcs) throws SQLException {
+        String query = "INSERT INTO dbo.ST_d (NoST, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.setInt(2, noUrut);
+            ps.setDouble(3, tebal);
+            ps.setDouble(4, lebar);
+            ps.setDouble(5, panjang);
+            ps.setInt(6, pcs);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert detail ST baris " + noUrut);
+            }
+        }
+    }
+
+    private static void saveSawnTimberGradeWithConnection(Connection con, String noST, int gradeId,
+                                                          String jumlah) throws SQLException {
+        String query = "INSERT INTO dbo.STStick (NoST, IdGradeStick, JumlahStick) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.setInt(2, gradeId);
+            ps.setString(3, jumlah);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert grade ST");
+            }
+        }
+    }
+
+    private static void savePenerimaanSTPembelianWithConnection(Connection con, String noPenerimaanST,
+                                                                String noST) throws SQLException {
+        String query = "INSERT INTO dbo.PenerimaanSTPembelian_d (NoPenerimaanST, NoST) VALUES (?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noPenerimaanST);
+            ps.setString(2, noST);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert penerimaan ST pembelian");
+            }
+        }
+    }
+
+    private static void savePenerimaanSTUpahWithConnection(Connection con, String noPenerimaanST,
+                                                           String noST) throws SQLException {
+        String query = "INSERT INTO dbo.PenerimaanSTUpah_d (NoPenerimaanST, NoST) VALUES (?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noPenerimaanST);
+            ps.setString(2, noST);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert penerimaan ST upah");
+            }
+        }
+    }
+
+    private static void saveBongkarSusunOutputSTWithConnection(Connection con, String noST,
+                                                               String noBongkarSusun) throws SQLException {
+        String query = "INSERT INTO dbo.BongkarSusunOutputST (NoST, NoBongkarSusun) VALUES (?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.setString(2, noBongkarSusun);
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal insert bongkar susun output ST");
+            }
+        }
+    }
+
+
+
+    // Di SawnTimberApi.java - Method transaction untuk update
+    public static boolean updateSawnTimberTransaction(String noST, String noKayuBulat, String jenisKayu,
+                                                      String noSPK, String telly, String stickBy,
+                                                      String dateCreate, String isVacuum, String remark,
+                                                      int isSLP, int isSticked, int isKering,
+                                                      int isBagusKulit, int isUpah, int idUOMTblLebar,
+                                                      int idUOMPanjang, List<LabelDetailData> detailList,
+                                                      List<GradeDetailData> gradeList, String noPenST,
+                                                      int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked) {
+
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false); // Start transaction
+
+            // 1. Update header
+            updateSawnTimberHeaderWithConnection(con, noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy,
+                    dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
+                    isBagusKulit, isUpah, idUOMTblLebar, idUOMPanjang);
+
+            // 2. Delete existing detail dan insert yang baru
+            deleteSawnTimberDetailWithConnection(con, noST);
+            for (int i = 0; i < detailList.size(); i++) {
+                LabelDetailData dataRow = detailList.get(i);
+                saveSawnTimberDetailWithConnection(con, noST, i + 1,
+                        Double.parseDouble(dataRow.getTebal()),
+                        Double.parseDouble(dataRow.getLebar()),
+                        Double.parseDouble(dataRow.getPanjang()),
+                        Integer.parseInt(dataRow.getPcs()));
+            }
+
+            // 3. Delete existing grade dan insert yang baru (jika bukan kayu lat)
+            deleteSawnTimberGradeWithConnection(con, noST);
+            if (gradeList != null && !gradeList.isEmpty()) {
+                for (GradeDetailData gradeDetailList : gradeList) {
+                    saveSawnTimberGradeWithConnection(con, noST,
+                            gradeDetailList.getGradeId(), gradeDetailList.getJumlah());
+                }
+            }
+
+
+            // 5. Update bongkar susun (delete dan insert baru)
+            deleteBongkarSusunOutputSTWithConnection(con, noST);
+            if (cbBongkarSusunChecked && noBongkarSusun != null) {
+                saveBongkarSusunOutputSTWithConnection(con, noST, noBongkarSusun);
+            }
+
+            con.commit(); // Commit transaction
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("[DB_ERROR] Update transaction gagal: " + e.getMessage());
+            e.printStackTrace();
+            if (con != null) {
+                try {
+                    con.rollback(); // Rollback jika ada error
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
+            return false;
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true); // Reset auto commit
+                    con.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    // Helper method untuk update header
+    private static void updateSawnTimberHeaderWithConnection(Connection con, String noST, String noKayuBulat,
+                                                             String jenisKayu, String noSPK, String telly,
+                                                             String stickBy, String dateCreate, String isVacuum,
+                                                             String remark, int isSLP, int isSticked, int isKering,
+                                                             int isBagusKulit, int isUpah, int idUOMTblLebar,
+                                                             int idUOMPanjang) throws SQLException {
+
+        noKayuBulat = (noKayuBulat == null || noKayuBulat.trim().isEmpty()) ? null : noKayuBulat;
+
+        String query = "UPDATE ST_h SET NoKayuBulat = ?, IdJenisKayu = ?, NoSPK = ?, IdOrgTelly = ?, " +
+                "IdStickBy = ?, IsUpah = ?, IdUOMTblLebar = ?, IdUOMPanjang = ?, DateCreate = ?, " +
+                "VacuumDate = ?, Remark = ?, IsSLP = ?, IsSticked = ?, StartKering = ?, " +
+                "IsBagusKulit = ?, IdLokasi = ? WHERE NoST = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            if (noKayuBulat == null || noKayuBulat.trim().isEmpty() || noKayuBulat.equals("-")) {
+                ps.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(1, noKayuBulat);
+            }
+
+            ps.setString(2, jenisKayu);
+            ps.setString(3, noSPK);
+            ps.setString(4, telly);
+            ps.setString(5, stickBy);
+            ps.setInt(6, isUpah);
+            ps.setInt(7, idUOMTblLebar);
+            ps.setInt(8, idUOMPanjang);
+            ps.setString(9, dateCreate);
+            ps.setString(10, isVacuum);
+            ps.setString(11, remark);
+            ps.setInt(12, isSLP);
+            ps.setInt(13, isSticked);
+            ps.setInt(14, isKering);
+            ps.setInt(15, isBagusKulit);
+
+            if (isKering == 0) {
+                ps.setString(16, "L01");
+            } else {
+                ps.setNull(16, java.sql.Types.VARCHAR);
+            }
+
+            ps.setString(17, noST); // WHERE clause
+
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Gagal update header ST - No data found with NoST: " + noST);
+            }
+        }
+    }
+
+    // Helper methods untuk delete existing data
+    private static void deleteSawnTimberDetailWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.ST_d WHERE NoST = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.executeUpdate(); // Tidak perlu check rows affected karena bisa saja kosong
+        }
+    }
+
+    private static void deleteSawnTimberGradeWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.STStick WHERE NoST = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.executeUpdate();
+        }
+    }
+
+    private static void deleteBongkarSusunOutputSTWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.BongkarSusunOutputST WHERE NoST = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.executeUpdate();
+        }
+    }
+
+    // 1) Hapus relasi penerimaan pembelian
+    private static void deletePenerimaanSTPembelianWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.PenerimaanSTPembelian_d WHERE NoST = ?";
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.executeUpdate(); // boleh 0 row kalau memang tidak ada
+        }
+    }
+
+    // 2) Hapus relasi penerimaan upah
+    private static void deletePenerimaanSTUpahWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.PenerimaanSTUpah_d WHERE NoST = ?";
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            ps.executeUpdate(); // boleh 0 row
+        }
+    }
+
+    // 3) Hapus header ST (paling terakhir)
+    private static int deleteSawnTimberHeaderWithConnection(Connection con, String noST) throws SQLException {
+        String query = "DELETE FROM dbo.ST_h WHERE NoST = ?";
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            return ps.executeUpdate(); // harusnya 1 kalau ada
+        }
+    }
+
+
+    public static boolean deleteSawnTimberTransaction(String noST) {
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false);
+
+            // Urutan: child → parent
+            deleteBongkarSusunOutputSTWithConnection(con, noST);
+            deleteSawnTimberGradeWithConnection(con, noST);
+            deleteSawnTimberDetailWithConnection(con, noST);
+            deletePenerimaanSTPembelianWithConnection(con, noST);
+            deletePenerimaanSTUpahWithConnection(con, noST);
+
+            int headerDeleted = deleteSawnTimberHeaderWithConnection(con, noST);
+            if (headerDeleted != 1) {
+                throw new SQLException("Header ST tidak ditemukan / gagal dihapus: " + noST);
+            }
+
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            System.err.println("[DB_ERROR] Delete transaction gagal: " + e.getMessage());
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (SQLException e) { e.printStackTrace(); }
+            }
+        }
+    }
 
 
 

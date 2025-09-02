@@ -7,10 +7,10 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.example.myapplication.config.DatabaseConfig;
-import com.example.myapplication.model.JenisKayuData;
+import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.KayuBulatData;
-import com.example.myapplication.model.MejaData;
-import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.MstMejaData;
+import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.PenerimaanSTSawmillData;
 import com.example.myapplication.model.QcSawmillData;
 import com.example.myapplication.model.QcSawmillDetailData;
@@ -264,8 +264,8 @@ public class SawmillApi {
     }
 
 
-    public static List<OperatorData> getOperatorList() {
-        List<OperatorData> operatorList = new ArrayList<>();
+    public static List<MstOperatorData> getOperatorList() {
+        List<MstOperatorData> operatorList = new ArrayList<>();
         String query = "SELECT IdOperator, NamaOperator FROM MstOperator WHERE (IdBagian = 8 OR IdBagian = 9) AND ENABLE = 1";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -276,7 +276,7 @@ public class SawmillApi {
                 int id = rs.getInt("IdOperator");
                 String nama = rs.getString("NamaOperator");
 
-                operatorList.add(new OperatorData(id, nama));
+                operatorList.add(new MstOperatorData(id, nama));
             }
 
         } catch (SQLException e) {
@@ -287,8 +287,8 @@ public class SawmillApi {
     }
 
 
-    public static List<MejaData> getAllMeja() {
-        List<MejaData> list = new ArrayList<>();
+    public static List<MstMejaData> getAllMeja() {
+        List<MstMejaData> list = new ArrayList<>();
         String query = "SELECT NoMeja, NamaMeja FROM MstMesinSawmill ORDER BY NoMeja ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -296,7 +296,7 @@ public class SawmillApi {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                list.add(new MejaData(
+                list.add(new MstMejaData(
                         rs.getString("NoMeja"),
                         rs.getString("NamaMeja")
                 ));
@@ -411,6 +411,7 @@ public class SawmillApi {
 
         return null;
     }
+
 
     public static String getNextNoTellySawmill() {
         String query = "SELECT TOP 1 NoSTSawmill FROM STSawmill_h ORDER BY NoSTSawmill DESC";
@@ -1792,10 +1793,10 @@ public class SawmillApi {
     }
 
 
-    public static List<JenisKayuData> getJenisKayuList() {
-        List<JenisKayuData> jenisKayuList = new ArrayList<>();
+    public static List<MstJenisKayuData> getJenisKayuList() {
+        List<MstJenisKayuData> jenisKayuList = new ArrayList<>();
 
-        String query = "SELECT IdJenisKayu, Jenis FROM MstJenisKayu WHERE Enable = 1 ORDER BY Jenis";
+        String query = "SELECT IdJenisKayu, Jenis, IsUpah FROM MstJenisKayu WHERE Enable = 1 ORDER BY Jenis";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              Statement stmt = con.createStatement();
@@ -1804,8 +1805,9 @@ public class SawmillApi {
             while (rs.next()) {
                 int idJenisKayu = rs.getInt("IdJenisKayu");
                 String jenis = rs.getString("Jenis");
+                int isUpah = rs.getInt("IsUpah");
 
-                JenisKayuData jenisKayuData = new JenisKayuData(idJenisKayu, jenis);
+                MstJenisKayuData jenisKayuData = new MstJenisKayuData(idJenisKayu, jenis, isUpah);
                 jenisKayuList.add(jenisKayuData);
             }
 

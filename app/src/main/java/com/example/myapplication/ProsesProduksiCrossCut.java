@@ -2,7 +2,7 @@ package com.example.myapplication;
 
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
-import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
@@ -532,7 +532,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
                 String shift = spinShift.getSelectedItem().toString();
                 String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
                 int idMesin = ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin();
-                int idOperator = ((OperatorData) spinOperator.getSelectedItem()).getIdOperator();
+                int idOperator = ((MstOperatorData) spinOperator.getSelectedItem()).getIdOperator();
                 String jamKerja = editJamKerja.getText().toString().trim();
                 int jumlahAnggota = Integer.parseInt(editJlhAnggota.getText().toString().trim());
                 double hourMeter = Double.parseDouble(editHourMeter.getText().toString().trim());
@@ -638,11 +638,11 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
-            List<OperatorData> operatorList = ProsesProduksiApi.getAllOperatorData(5);
+            List<MstOperatorData> operatorList = ProsesProduksiApi.getAllOperatorData(5);
 
             // Cek apakah selectedIdOperator ada dalam list
             boolean found = false;
-            for (OperatorData operator : operatorList) {
+            for (MstOperatorData operator : operatorList) {
                 if (operator.getIdOperator() == selectedIdOperator) {
                     found = true;
                     break;
@@ -651,12 +651,12 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
 
             // Jika tidak ditemukan, tambahkan operator dummy dengan id dan nama yang sama
             if (!found && selectedIdOperator != 0) {
-                OperatorData newOperator = new OperatorData(selectedIdOperator, selectedOperatorName);
+                MstOperatorData newOperator = new MstOperatorData(selectedIdOperator, selectedOperatorName);
                 operatorList.add(0, newOperator); // bisa ditaruh di awal agar langsung muncul
             }
 
             runOnUiThread(() -> {
-                ArrayAdapter<OperatorData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorList);
+                ArrayAdapter<MstOperatorData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinner.setAdapter(adapter);
 
@@ -1722,18 +1722,20 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
     private void showHistoryDialog(String noProduksi) {
         executorService.execute(() -> {
             String filterQuery =
-                            "SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputMoulding WHERE NoProduksi = ? " +
+                    "SELECT 'Moulding' AS Label, NoMoulding AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputMoulding WHERE NoProduksi = ? " +
                             "UNION ALL " +
                             "SELECT 'FJ' AS Label, NoFJ AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputFJ WHERE NoProduksi = ? " +
                             "UNION ALL " +
                             "SELECT 'Laminating' AS Label, NoLaminating AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputLaminating WHERE NoProduksi = ? " +
+                            "UNION ALL " +
+                            "SELECT 'CrossCut' AS Label, NoCCAkhir AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputCCAkhir WHERE NoProduksi = ? " +
                             "UNION ALL " +
                             "SELECT 'Sanding' AS Label, NoSanding AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputSanding WHERE NoProduksi = ? " +
                             "UNION ALL " +
                             "SELECT 'Packing' AS Label, NoBJ AS KodeLabel, DateTimeSaved FROM CCAkhirProduksiInputBarangJadi WHERE NoProduksi = ? " ;
 
             // 1. Ambil data history dari API
-            List<HistoryItem> historyGroups = ProsesProduksiApi.getHistoryItems(noProduksi, filterQuery, 5);
+            List<HistoryItem> historyGroups = ProsesProduksiApi.getHistoryItems(noProduksi, filterQuery, 6);
 
             // 2. Siapkan dan proses data (di latar belakang)
             HistorySummary summary = prepareHistorySummary(historyGroups);

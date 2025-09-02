@@ -66,26 +66,17 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1">
 
-                    <SearchView
+                    <EditText
                         android:id="@+id/NoLaminating"
                         android:layout_width="match_parent"
                         android:layout_height="36dp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        app:iconifiedByDefault="false"
-                        app:queryHint="Search here..."
-                        style="@style/Widget.AppCompat.SearchView.ActionBar" />
+                        android:background="@drawable/border_disabled"
+                        android:hint="U.XXXXXX"
+                        android:padding="8dp"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        android:enabled="false"/>
 
-                    <EditText
-                        android:id="@+id/NoLaminating_display"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:padding="6dp"
-                        android:textSize="18sp"
-                        android:background="@drawable/border_input"
-                        android:elevation="1dp"
-                        android:visibility="gone"
-                        android:hint="U.XXXXXX" />
                 </FrameLayout>
 
             </LinearLayout>
@@ -107,7 +98,7 @@
                     android:textColor="@color/black" />
 
                 <EditText
-                    android:id="@+id/DateL"
+                    android:id="@+id/Date"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -120,7 +111,7 @@
                     android:focusable="false"/>
 
                 <EditText
-                    android:id="@+id/TimeL"
+                    android:id="@+id/Time"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -148,7 +139,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinKayuL"
+                    android:id="@+id/SpinKayu"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -165,13 +156,13 @@
 
                 <!-- RadioGroup dengan RadioButton -->
                 <RadioGroup
-                    android:id="@+id/radioGroupL"
+                    android:id="@+id/radioGroup"
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
                     <RadioButton
-                        android:id="@+id/radioButtonMesinL"
+                        android:id="@+id/radioButtonMesin"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="18sp"
@@ -182,7 +173,7 @@
                         android:layout_marginBottom="10dp"/>
 
                     <RadioButton
-                        android:id="@+id/radioButtonBSusunL"
+                        android:id="@+id/radioButtonBSusun"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="18sp"
@@ -200,7 +191,7 @@
                     android:gravity="center_vertical">
 
                     <Spinner
-                        android:id="@+id/SpinMesinL"
+                        android:id="@+id/SpinMesin"
                         android:layout_width="match_parent"
                         android:layout_height="36dp"
                         android:layout_weight="1"
@@ -208,12 +199,36 @@
                         android:elevation="1dp"
                         android:layout_marginBottom="10dp"/>
 
+                    <EditText
+                        android:id="@+id/mesinView"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:padding="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp"
+                        android:layout_marginBottom="10dp"
+                        android:enabled="false"
+                        android:visibility="gone"/>
+
+
                     <Spinner
-                        android:id="@+id/SpinSusunL"
+                        android:id="@+id/SpinSusun"
                         android:layout_width="match_parent"
                         android:layout_height="36dp"
                         android:background="@drawable/border_input"
                         android:elevation="1dp" />
+
+                    <EditText
+                        android:id="@+id/susunView"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:padding="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/border_disabled"
+                        android:elevation="1dp"
+                        android:enabled="false"
+                        android:visibility="gone"/>
 
                 </LinearLayout>
 
@@ -236,7 +251,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinTellyL"
+                    android:id="@+id/SpinTelly"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -260,7 +275,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinSPKL"
+                    android:id="@+id/SpinSPK"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -284,7 +299,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinSPKAsalL"
+                    android:id="@+id/SpinSPKAsal"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -308,7 +323,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinGradeL"
+                    android:id="@+id/SpinGrade"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -332,7 +347,7 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinProfileL"
+                    android:id="@+id/SpinProfile"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -355,7 +370,30 @@
                     android:textColor="@color/black" />
 
                 <Spinner
-                    android:id="@+id/SpinFisikL"
+                    android:id="@+id/SpinFisik"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="36dp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="15dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="Lokasi"
+                    android:textSize="18sp"
+                    android:textColor="@color/black" />
+
+                <Spinner
+                    android:id="@+id/spinLokasi"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="36dp"
@@ -503,7 +541,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailTebalL"
+                                android:id="@+id/DetailTebal"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -532,7 +570,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailLebarL"
+                                android:id="@+id/DetailLebar"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -561,7 +599,7 @@
                                 android:textColor="@color/black" />
 
                             <AutoCompleteTextView
-                                android:id="@+id/DetailPanjangL"
+                                android:id="@+id/DetailPanjang"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -590,7 +628,7 @@
                                 android:textColor="@color/black" />
 
                             <EditText
-                                android:id="@+id/DetailPcsL"
+                                android:id="@+id/DetailPcs"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -762,16 +800,30 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
+
                         <!-- Header Tabel -->
                         <TextView
                             android:id="@+id/labelCount"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:textSize="18sp"
                             android:layout_margin="4dp"
                             android:text="Total Label: 0"
                             android:textStyle="bold"
                             android:padding="4dp" />
+
+                        <ImageButton
+                            android:id="@+id/BtnExpandView"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:backgroundTint="@color/hijau"
+                            android:src="@drawable/ic_list"
+                            android:scaleType="centerInside"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="8dp"
+                            app:tint="@color/black"/>
 
                     </LinearLayout>
 
@@ -987,7 +1039,7 @@
                                 android:textStyle="bold"/>
 
                             <TextView
-                                android:id="@+id/JumlahPcsL"
+                                android:id="@+id/JumlahPcs"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -1015,7 +1067,7 @@
                                 android:textStyle="bold"/>
 
                             <TextView
-                                android:id="@+id/M3L"
+                                android:id="@+id/M3"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -1036,7 +1088,7 @@
                         android:gravity="center">
 
                         <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBAfkirL"
+                            android:id="@+id/CBAfkir"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Afkir / Reject"
@@ -1044,7 +1096,7 @@
                             android:layout_marginRight="20dp" />
 
                         <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/CBLemburL"
+                            android:id="@+id/CBLembur"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Lembur"
@@ -1059,8 +1111,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.cardview.widget.CardView>
-
-
 
     <!-- CardView Kanan Bawah -->
     <LinearLayout
@@ -1083,7 +1133,7 @@
             android:gravity="center_horizontal">
 
             <Button
-                android:id="@+id/BtnDataBaruL"
+                android:id="@+id/BtnDataBaru"
                 android:layout_width="150dp"
                 android:layout_height="60dp"
                 android:text="Data Baru"
@@ -1092,7 +1142,7 @@
                 android:layout_marginEnd="8dp"/>
 
             <Button
-                android:id="@+id/BtnSimpanL"
+                android:id="@+id/BtnSimpan"
                 android:layout_width="150dp"
                 android:layout_height="60dp"
                 android:text="Simpan"
@@ -1102,7 +1152,17 @@
                 android:visibility="gone"/>
 
             <Button
-                android:id="@+id/BtnBatalL"
+                android:id="@+id/btnUpdate"
+                android:layout_width="150dp"
+                android:layout_height="60dp"
+                android:text="Simpan"
+                android:textSize="22sp"
+                android:backgroundTint="@color/hijau"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/BtnBatal"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Batal"
@@ -1111,7 +1171,7 @@
                 android:layout_marginEnd="8dp"/>
 
             <Button
-                android:id="@+id/BtnPrintL"
+                android:id="@+id/BtnPrint"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Print"
@@ -1119,7 +1179,7 @@
                 android:backgroundTint="@color/hijau"/>
 
             <Button
-                android:id="@+id/BtnInputDetailL"
+                android:id="@+id/BtnInputDetail"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Input Detail"
@@ -1128,7 +1188,7 @@
                 android:visibility="gone"/>
 
             <Button
-                android:id="@+id/BtnHapusDetailL"
+                android:id="@+id/BtnHapusDetail"
                 android:layout_width="wrap_content"
                 android:layout_height="60dp"
                 android:text="Hapus"

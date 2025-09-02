@@ -6,21 +6,20 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.graphics.PorterDuff;
-import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.InputType;
-import android.util.DisplayMetrics;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -29,12 +28,11 @@ import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -47,22 +45,35 @@ import android.widget.ImageView;
 
 import java.io.OutputStream;
 
-import com.example.myapplication.api.ProsesProduksiApi;
+import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.SawnTimberApi;
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.model.GradeDetailData;
+import com.example.myapplication.model.LabelDetailData;
+import com.example.myapplication.model.LokasiData;
+import com.example.myapplication.model.MstGradeStickData;
+import com.example.myapplication.model.MstJenisKayuData;
+import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.MstStickData;
+import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.OutputDataST;
-import com.example.myapplication.model.TooltipData;
+import com.example.myapplication.model.StData;
+import com.example.myapplication.model.TellyData;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import android.view.inputmethod.InputMethodManager;
 import android.content.SharedPreferences;
 
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -79,6 +90,13 @@ import java.util.Locale;
 import java.util.Collections;
 
 
+import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
+import com.example.myapplication.utils.TableUtils;
+import com.example.myapplication.utils.TooltipUtils;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.itextpdf.kernel.pdf.canvas.draw.DashedLine;
 import com.itextpdf.layout.element.LineSeparator;
 import com.itextpdf.layout.element.Paragraph;
@@ -104,9 +122,9 @@ import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SawnTimber extends AppCompatActivity {
 
@@ -118,8 +136,8 @@ public class SawnTimber extends AppCompatActivity {
     private Button BtnPrintST;
     private Button BtnTambahStickST;
     private Button BtnClearDetailST;
-    private SearchView NoST;
-    private SearchView NoKayuBulat;
+    private EditText NoST;
+    private EditText NoKayuBulat;
     private EditText Supplier;
     private EditText NoTruk;
     private EditText NoPlatTruk;
@@ -161,10 +179,8 @@ public class SawnTimber extends AppCompatActivity {
     private RadioButton radioBagus;
     private RadioButton radioKulit;
     boolean isCreateMode = false;
-    private EditText NoST_display;
-    private EditText NoKB_display;
     private TableLayout TabelInputPjgPcs;
-    private List<DataRow> temporaryDataListDetail = new ArrayList<>();
+    private List<LabelDetailData> temporaryDataListDetail = new ArrayList<>();
     private Button addRowButton;
     private CardView inner_card_detail;
     private CardView inner_card_top_left;
@@ -189,6 +205,18 @@ public class SawnTimber extends AppCompatActivity {
     private CardView inner_card_label_list;
     private ImageButton btnSwapToUOM;
     private ImageButton btnSwapToLabelList ;
+    private List<GradeDetailData> temporaryDataListGrade = new ArrayList<>();
+    private EditText susunView;
+    private ImageButton BtnExpandView;
+    private List<String> userPermissions;
+    private Button btnUpdate;
+    private TableRow selectedRowHeader = null;
+    int page = 1;
+    int currentPage = 0;
+    boolean isLoading = false;
+    private FloatingActionButton fabAddDetailData;
+    private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
+
 
 
 
@@ -230,6 +258,7 @@ public class SawnTimber extends AppCompatActivity {
         CBKering = findViewById(R.id.CBKering);
         CBStick = findViewById(R.id.CBStick);
         CBUpah = findViewById(R.id.CBUpah);
+        radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
         radioMillimeter = findViewById(R.id.radioMillimeter);
         radioInch = findViewById(R.id.radioInch);
         radioFeet = findViewById(R.id.radioFeet);
@@ -238,8 +267,6 @@ public class SawnTimber extends AppCompatActivity {
         radioBagusKulit = findViewById(R.id.radioGroupBagusKulit);
         M3 = findViewById(R.id.M3ST);
         Ton = findViewById(R.id.Ton);
-        NoST_display = findViewById(R.id.NoST_display);
-        NoKB_display = findViewById(R.id.NoKB_display);
         TabelInputPjgPcs = findViewById(R.id.TabelInputPjgPcs);
         addRowButton = findViewById(R.id.addRowButton);
         remarkLabel = findViewById(R.id.remarkLabel);
@@ -265,11 +292,23 @@ public class SawnTimber extends AppCompatActivity {
         inner_card_label_list = findViewById(R.id.inner_card_label_list);
         btnSwapToUOM = findViewById(R.id.btnSwapToUOM);
         btnSwapToLabelList = findViewById(R.id.btnSwapToLabelList);
+        susunView = findViewById(R.id.susunView);
+        BtnExpandView = findViewById(R.id.BtnExpandView);
+        btnUpdate = findViewById(R.id.btnUpdate);
+        noPenerimaanST = findViewById(R.id.noPenerimaanST);
+        fabAddDetailData = findViewById(R.id.fabAddDetailData);
+
         inner_card_detail.setVisibility(View.GONE);
-        NoST_display.setVisibility(View.GONE);
-        SpinLokasi.setEnabled(false);
         inner_card_top_right.setVisibility(View.GONE);
+
         disableForm();
+
+        BtnExpandView.setOnClickListener(v -> showListDialogOnDemand());
+
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnUpdate, "label_st:update");
+        PermissionUtils.permissionCheck(this, fabAddDetailData, "label_st:update");
 
 
         //VERSI ST
@@ -299,9 +338,20 @@ public class SawnTimber extends AppCompatActivity {
 
         setCurrentDateTime();
         onClickDateOutput(rawDate);
-
-        noPenerimaanST = findViewById(R.id.noPenerimaanST);
         noPenerimaanST.setText(noPenST);
+
+
+        radioMillimeter.setOnClickListener(v -> {
+            jumlahPcsST();
+            m3();
+            ton();
+        });
+
+        radioInch.setOnClickListener(v -> {
+            jumlahPcsST();
+            m3();
+            ton();
+        });
 
         btnScrollBottom.setOnClickListener(v -> {
             scrollHeader.post(() -> scrollHeader.smoothScrollTo(0, scrollHeader.getBottom()));
@@ -390,92 +440,117 @@ public class SawnTimber extends AppCompatActivity {
         });
 
 
-        NoKayuBulat.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        NoST.addTextChangedListener(new TextWatcher() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                loadKayuBulat(query);
-//                closeKeyboard();
-                return true;
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Tidak perlu
             }
 
             @Override
-            public boolean onQueryTextChange(String newText) {
-                loadKayuBulat(newText);
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!isCreateMode) {
+                    String newText = s.toString();
+
+                    if(!newText.isEmpty()) {
+                        loadSubmittedData(newText);
+                        BtnPrintST.setEnabled(true);
+                    } else {
+                        enableForm();
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Tidak perlu
+            }
+        });
+
+
+        NoKayuBulat.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Tidak dipakai
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Panggil fungsi setiap kali teks berubah
+                loadKayuBulat(s.toString());
                 NoKayuBulat.setBackgroundResource(R.drawable.border_input);
-                return true;
-            }
-        });
-
-        NoST.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                if (!isCreateMode) {
-                    loadSawnTimber(query);
-//                    closeKeyboard();
-                }
-                return true;
             }
 
             @Override
-            public boolean onQueryTextChange(String newText) {
-                if (!isCreateMode) {
-                    if(!newText.isEmpty()){
-                        disableForm();
-                        loadSawnTimber(newText);
-                    }
-                    else{
-//                        enableForm();
-                    }
-                }
-                return true;
+            public void afterTextChanged(Editable s) {
+                // Tidak dipakai
             }
         });
+
 
         BtnDataBaruST.setOnClickListener(v -> {
-            setCreateMode(true);
+
+            loadingDialogHelper.show(this);
+
+            // ====== init state sinkron ======
+            isCreateMode = true;
             setCurrentDateTime();
+            setCurrentDateTimeVacuum();
             enableForm();
 
-            new LoadSPKTask().execute();
-            new LoadTellyTask().execute();
-            new LoadStickByTask().execute();
-            new LoadJenisKayuTask().execute();
-            new LoadGradeStickTask().execute();
-            new LoadLokasiTask().execute();
-            new LoadSusunTask().execute(rawDate);
+            // ====== counter untuk semua loader async ======
+            final int totalTasks = 7; // sesuaikan jumlah loader async di bawah
+            final AtomicInteger doneCount = new AtomicInteger(0);
 
-            setCurrentDateTimeVacuum();
+            Runnable checkAllDone = () -> {
+                if (doneCount.incrementAndGet() == totalTasks) {
+                    runOnUiThread(() -> {
+                        // Semua spinner selesai → tutup loading & update UI
+                        loadingDialogHelper.hide();
 
-            addRowButton.setVisibility(View.GONE);
-            BtnSimpanST.setEnabled(true);
-            BtnTambahStickST.setEnabled(true);
-            BtnInputDetailST.setEnabled(true);
-            BtnBatalST.setEnabled(true);
-            BtnPrintST.setEnabled(false);
-            BtnDataBaruST.setVisibility(View.GONE);
-            BtnSimpanST.setVisibility(View.VISIBLE);
-            NoST.setVisibility(View.GONE);
-            NoST_display.setVisibility(View.VISIBLE);
-            NoST_display.setEnabled(false);
-            NoST_display.setText("");
-            NoKayuBulat.setQuery("", false);
-            cbSLP.setChecked(false);
-            cbVacuum.setChecked(false);
-            cbBongkarSusun.setChecked(false);
-            radioBagus.setChecked(false);
-            radioKulit.setChecked(false);
-            resetDetailData();
-            resetGradeData();
-            DetailPanjangST.setText("4");
-            remarkLabel.setText("");
-            addRowButton.setVisibility(View.GONE);
+                        addRowButton.setVisibility(View.GONE);
+                        BtnSimpanST.setEnabled(true);
+                        BtnTambahStickST.setEnabled(true);
+                        BtnInputDetailST.setEnabled(true);
+                        BtnBatalST.setEnabled(true);
+                        BtnPrintST.setEnabled(false);
 
+                        BtnDataBaruST.setVisibility(View.GONE);
+                        BtnSimpanST.setVisibility(View.VISIBLE);
+                        btnUpdate.setVisibility(View.GONE);
 
-            if (labelVersion == -1) {
-                noPenerimaanST.setText("");
-            }
+                        NoKayuBulat.setText("");
+                        cbSLP.setChecked(false);
+                        cbVacuum.setChecked(false);
+                        cbBongkarSusun.setChecked(false);
+                        radioBagus.setChecked(false);
+                        radioKulit.setChecked(false);
+                        fabAddDetailData.setVisibility(View.GONE);
 
+                        resetDetailData();
+                        resetGradeData();
+                        DetailPanjangST.setText("4");
+                        remarkLabel.setText("");
+                        susunView.setVisibility(View.GONE);
+                        SpinBongkarSusun.setVisibility(View.VISIBLE);
+
+                        if (labelVersion == -1) {
+                            noPenerimaanST.setText("");
+                        }
+                    });
+                }
+            };
+
+            // ====== panggil semua loader async dgn callback ======
+            // Pastikan setiap fungsi loader punya overload (param terakhir Runnable onDone)
+            loadSPKSpinner("", checkAllDone);
+            loadTellySpinner("", checkAllDone);
+            loadStickBySpinner("", checkAllDone);
+            loadJenisKayuSpinner(0, checkAllDone);
+            loadGradeStickSpinner(0, checkAllDone);
+            loadLokasiSpinner("", "", checkAllDone);
+            loadSusunSpinner(checkAllDone, rawDate);
         });
+
 
         BtnInputDetailST.setOnClickListener(view -> {
             String tebal = DetailTebalST.getText().toString();
@@ -489,9 +564,16 @@ public class SawnTimber extends AppCompatActivity {
             ton();
         });
 
+        fabAddDetailData.setOnClickListener(view -> {
+            showAddDetailDialog();
+        });
+
+
         BtnTambahStickST.setOnClickListener(view -> {
             addDataGrade(noST);
         });
+
+
 
         JumlahStick.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -531,7 +613,6 @@ public class SawnTimber extends AppCompatActivity {
 
             addRowButton.setVisibility(View.GONE);
             sisaPCS.setText("Sisa : 0");
-
         });
 
         TglStickBundel.setOnClickListener(v -> showDatePickerDialogStick());
@@ -575,151 +656,197 @@ public class SawnTimber extends AppCompatActivity {
                 BtnDataBaruST.setEnabled(true);
                 BtnSimpanST.setEnabled(false);
                 BtnPrintST.setEnabled(false);
-                NoST.setVisibility(View.VISIBLE);
-                NoST_display.setVisibility(View.GONE);
                 BtnDataBaruST.setVisibility(View.VISIBLE);
                 BtnSimpanST.setVisibility(View.GONE);
                 TabelInputPjgPcs.removeAllViews();
                 BtnPrintST.setEnabled(true);
+                btnUpdate.setVisibility(View.GONE);
+                fabAddDetailData.setVisibility(View.GONE);
+
             }
         });
+
 
         BtnSimpanST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String noKayuBulat = NoKayuBulat.getQuery().toString().trim();
+                loadingDialogHelper.show(SawnTimber.this);
+
+                String noKayuBulat = NoKayuBulat.getText().toString().trim();
                 String noPenST = noPenerimaanST.getText().toString().trim();
-                JenisKayu selectedJenisKayu = (JenisKayu) SpinKayu.getSelectedItem();
-                String jenisKayu = selectedJenisKayu.getIdJenisKayu();
-                String namaJenisKayu = selectedJenisKayu.getNamaJenisKayu();
-                SPK selectedSPK = (SPK) SpinSPK.getSelectedItem();
+                MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
+                int jenisKayu = selectedJenisKayu.getIdJenisKayu();
+                String namaJenisKayu = selectedJenisKayu.getJenis();
+                MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
                 String noSPK = selectedSPK.getNoSPK();
-                Susun selectedSusun = (Susun) SpinBongkarSusun.getSelectedItem();
+                MstSusunData selectedSusun = (MstSusunData) SpinBongkarSusun.getSelectedItem();
                 String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
-                String telly = ((Telly) SpinTelly.getSelectedItem()).getIdOrgTelly();
-                String stickBy = ((StickBy) SpinStickBy.getSelectedItem()).getIdStickBy();
-                String dateCreate = rawDate;
+                String telly = ((TellyData) SpinTelly.getSelectedItem()).getIdOrgTelly();
+                String stickBy = ((MstStickData) SpinStickBy.getSelectedItem()).getIdStickBy();
+                String dateCreate = TglStickBundel.getText().toString().trim();
                 String dateVacuum = rawDateVacuum;
                 String remark = remarkLabel.getText().toString();
-                String isSLP = cbSLP.isChecked() ? "1" : "0";
+                int isSLP = cbSLP.isChecked() ? 1 : 0;
                 String isVacuum = cbVacuum.isChecked() ? dateVacuum : null;
-                String isSticked = CBStick.isChecked() ? "1" : "0";
-                String isKering = CBKering.isChecked() ? "1" : "0";
+                int isSticked = CBStick.isChecked() ? 1 : 0;
+                int isKering = CBKering.isChecked() ? 1 : 0;
+                int isUpah = CBUpah.isChecked() ? 1 : 0;
+                int idUOMTblLebar = radioMillimeter.isChecked() ? 1 : 3;
 
-                // Validasi: Cek apakah ada field yang kosong
-                boolean valid = true;
-                NoKayuBulat.setBackgroundResource(R.drawable.border_input);
-
-
-                if (noKayuBulat.isEmpty() && labelVersion == -1 && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
-                    NoKayuBulat.setBackgroundResource(R.drawable.spinner_error);  // Background merah untuk error
-                    valid = false;
+                // Validasi input
+                if (!validateInputs(noKayuBulat, namaJenisKayu, jenisKayu, stickBy, noSPK)) {
+                    Toast.makeText(SawnTimber.this, "Silahkan lengkapi data!", Toast.LENGTH_SHORT).show();
+                    loadingDialogHelper.hide();
+                    return;
                 }
 
-                if (jenisKayu.isEmpty()) {
-                    // Menambahkan error pada spinner dan memberi pesan kesalahan
-                    SpinKayu.setBackgroundResource(R.drawable.spinner_error);
-                    valid = false;
-                }
+                // Check kayu bulat exists
+                checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
+                    if (!exists) {
+                        Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
+                        loadingDialogHelper.hide();
+                        return;
+                    }
 
-                if (stickBy.isEmpty()) {
-                    // Menambahkan error pada spinner dan memberi pesan kesalahan
-                    SpinStickBy.setBackgroundResource(R.drawable.spinner_error);
-                    valid = false;
-                }
-
-                if (noSPK.isEmpty() || noSPK.equals("PILIH")) {
-                    // Menambahkan error pada spinner dan memberi pesan kesalahan
-                    SpinSPK.setBackgroundResource(R.drawable.spinner_error);
-                    valid = false;
-                }
-
-//                if (temporaryDataListGrade.isEmpty() && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
-//                    valid = false;
-//                }
-
-                if (valid) {
-                    checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
-
-                        CountDownLatch latch = new CountDownLatch(1);
-                        setAndSaveNoST(latch);
+                    // Process save in background thread
+                    executorService.execute(() -> {
                         try {
-                            latch.await();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (latch.getCount() == 0) {
-                            if (exists) {
-                                String isBagusKulit = "0";
-
-                                if (selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-                                    isBagusKulit = radioBagus.isChecked() ? "1" : (radioKulit.isChecked() ? "2" : "0");
-                                }
-
-                                new UpdateDataTask().execute(noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy, dateCreate, isVacuum, remark, isSLP, isSticked, isKering, isBagusKulit);
-
-                                for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-                                    DataRow dataRow = temporaryDataListDetail.get(i);
-                                    saveDataToDatabase(noST, i + 1, Double.parseDouble(dataRow.tebal), Double.parseDouble(dataRow.lebar),
-                                            Double.parseDouble(dataRow.panjang), Integer.parseInt(dataRow.pcs));
-                                }
-
-                                if (!selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-                                    for (int i = 0; i < temporaryDataListGrade.size(); i++) {
-                                        DataRow2 dataRow2 = temporaryDataListGrade.get(i);
-                                        saveDataToDatabase2(noST, dataRow2.gradeId, dataRow2.jumlah);
-                                    }
-                                }
-
-                                if (labelVersion == 1) {
-                                    savePenerimaanSTPembelian(noPenST, noST);
-                                } else if (labelVersion == 2) {
-                                    savePenerimaanSTUpah(noPenST, noST);
-                                }
-
-                                //check apakah masuk Bongkar Susun
-                                if (cbBongkarSusun.isChecked()) {
-                                    new SaveBongkarSusunTask(noBongkarSusun, noST).execute();
-
-                                }
-
-                                NoKB_display.setText(noKayuBulat);
-                                NoKayuBulat.setVisibility(View.GONE);
-                                NoKB_display.setVisibility(View.VISIBLE);
-                                BtnDataBaruST.setVisibility(View.VISIBLE);
-                                BtnSimpanST.setVisibility(View.GONE);
-                                BtnPrintST.setEnabled(true);
-                                BtnBatalST.setEnabled(false);
-                                NoKB_display.setEnabled(false);
-                                BtnPrintST.setEnabled(true);
-                                disableForm();
-//                                Toast.makeText(SawnTimber.this, "Data berhasil disimpan.", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
+                            // Prepare grade list untuk kayu non-lat
+                            List<GradeDetailData> gradeListToSave = null;
+                            if (!selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
+                                gradeListToSave = temporaryDataListGrade;
                             }
+
+                            int isBagusKulit = 0;
+                            if (selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
+                                isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+                            }
+
+                            // Call transaction method - return String NoST yang di-generate
+                            String generatedNoST = SawnTimberApi.saveSawnTimberTransaction(
+                                    noKayuBulat, String.valueOf(jenisKayu), noSPK, telly, stickBy,
+                                    dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
+                                    isBagusKulit, isUpah, idUOMTblLebar, 4,
+                                    temporaryDataListDetail, gradeListToSave, noPenST,
+                                    labelVersion, noBongkarSusun, cbBongkarSusun.isChecked()
+                            );
+
+                            runOnUiThread(() -> {
+                                if (generatedNoST != null) {
+                                    // Update UI dengan NoST yang baru di-generate
+                                    NoST.setText(generatedNoST);
+                                    noST = generatedNoST; // Update variable global juga
+
+                                    BtnDataBaruST.setVisibility(View.VISIBLE);
+                                    BtnSimpanST.setVisibility(View.GONE);
+                                    BtnPrintST.setEnabled(true);
+                                    fabAddDetailData.setVisibility(View.GONE);
+                                    disableForm();
+                                    onClickDateOutput(dateCreate);
+
+                                    loadingDialogHelper.hide();
+
+                                    Toast.makeText(SawnTimber.this,
+                                            "Data berhasil disimpan",
+                                            Toast.LENGTH_SHORT).show();
+                                } else {
+                                    loadingDialogHelper.hide();
+                                    Toast.makeText(SawnTimber.this,
+                                            "Gagal menyimpan data. Silakan coba lagi.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                        } catch (Exception e) {
+                            runOnUiThread(() -> {
+                                loadingDialogHelper.hide();
+
+                                Toast.makeText(SawnTimber.this,
+                                        "Error: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            });
+
                         }
                     });
+                });
+            }
+        });
 
-                } else {
+
+        btnUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                // Pastikan noST sudah ada (sedang dalam mode edit)
+                if (noST == null || noST.isEmpty()) {
+                    Toast.makeText(SawnTimber.this, "Tidak ada data yang dipilih untuk diupdate!", Toast.LENGTH_SHORT).show();
+                    loadingDialogHelper.hide();
+                    return;
+                }
+
+                String noKayuBulat = NoKayuBulat.getText().toString().trim();
+                String noPenST = noPenerimaanST.getText().toString().trim();
+                MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
+                int jenisKayu = selectedJenisKayu.getIdJenisKayu();
+                String namaJenisKayu = selectedJenisKayu.getJenis();
+                MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+                String noSPK = selectedSPK.getNoSPK();
+                MstSusunData selectedSusun = (MstSusunData) SpinBongkarSusun.getSelectedItem();
+                String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
+                String telly = ((TellyData) SpinTelly.getSelectedItem()).getIdOrgTelly();
+                String stickBy = ((MstStickData) SpinStickBy.getSelectedItem()).getIdStickBy();
+                String dateCreate = DateTimeUtils.formatToDatabaseDate(TglStickBundel.getText().toString().trim());
+                String dateVacuum = rawDateVacuum;
+                String remark = remarkLabel.getText().toString();
+                int isSLP = cbSLP.isChecked() ? 1 : 0;
+                String isVacuum = cbVacuum.isChecked() ? dateVacuum : null;
+                int isSticked = CBStick.isChecked() ? 1 : 0;
+                int isKering = CBKering.isChecked() ? 1 : 0;
+                int isUpah = CBUpah.isChecked() ? 1 : 0;
+                int idUOMTblLebar = radioMillimeter.isChecked() ? 1 : 3;
+
+                // Validasi input
+                if (!validateInputs(noKayuBulat, namaJenisKayu, jenisKayu, stickBy, noSPK)) {
                     Toast.makeText(SawnTimber.this, "Silahkan lengkapi data!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Check kayu bulat exists (jika bukan kayu lat dan noKayuBulat tidak kosong)
+                if (noKayuBulat.isEmpty() && !noPenST.isEmpty()) {
+                    checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
+                        if (!exists) {
+                            Toast.makeText(SawnTimber.this, "No Kayu Bulat tidak ditemukan dalam database!", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Lanjutkan proses update jika kayu bulat valid
+                        processUpdateData(noKayuBulat, jenisKayu, noSPK, telly, stickBy, dateCreate,
+                                isVacuum, remark, isSLP, isSticked, isKering, isUpah, selectedJenisKayu,
+                                idUOMTblLebar, noPenST, noBongkarSusun);
+                    });
+                } else {
+                    // Langsung proses update jika kayu lat atau noKayuBulat kosong
+                    processUpdateData(noKayuBulat, jenisKayu, noSPK, telly, stickBy, dateCreate,
+                            isVacuum, remark, isSLP, isSticked, isKering, isUpah, selectedJenisKayu,
+                            idUOMTblLebar, noPenST, noBongkarSusun);
                 }
             }
         });
+
 
         SpinKayu.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if(isCreateMode){
                     SpinKayu.setBackgroundResource(R.drawable.border_input);
-                    JenisKayu selectedJenisKayu = (JenisKayu) parent.getItemAtPosition(position);
+                    MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) parent.getItemAtPosition(position);
                     if (selectedJenisKayu.getIsUpah() == 1) {
                         CBUpah.setChecked(true);
                     } else {
                         CBUpah.setChecked(false);
                     }
 
-                    if (selectedJenisKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
+                    if (selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
                         radioBagus.setEnabled(true);
                         radioKulit.setEnabled(true);
                         radioBagus.setChecked(true);
@@ -767,7 +894,7 @@ public class SawnTimber extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Validasi input terlebih dahulu
-                if (NoST.getQuery() == null || NoST.getQuery().toString().trim().isEmpty()) {
+                if (NoST.getText() == null || NoST.getText().toString().trim().isEmpty()) {
                     Toast.makeText(SawnTimber.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -779,7 +906,7 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
                 // Cek status HasBeenPrinted di database
-                String noST = NoST.getQuery().toString().trim();
+                String noST = NoST.getText().toString().trim();
                 checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
@@ -795,7 +922,7 @@ public class SawnTimber extends AppCompatActivity {
                             String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
                             String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
                             String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
-                            String noKayuBulat = NoKayuBulat.getQuery() != null ? NoKayuBulat.getQuery().toString().trim() : "";
+                            String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
                             String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "";
                             String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
                             String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
@@ -870,13 +997,13 @@ public class SawnTimber extends AppCompatActivity {
         });
 
 
-        // Atur listener untuk cb Bongkar Susun
+        // Atur listener untuk cb Bongkar MstSusunData
         cbBongkarSusun.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Jika checkbox dicentang, aktifkan Bongkar Susun Spinner
+            // Jika checkbox dicentang, aktifkan Bongkar MstSusunData Spinner
             if (isChecked) {
                 SpinBongkarSusun.setEnabled(true);
             } else {
-                // Jika checkbox tidak dicentang, nonaktifkan Bongkar Susun Spinner
+                // Jika checkbox tidak dicentang, nonaktifkan Bongkar MstSusunData Spinner
                 SpinBongkarSusun.setEnabled(false);
             }
         });
@@ -888,9 +1015,457 @@ public class SawnTimber extends AppCompatActivity {
         btnSwapToLabelList.setOnClickListener(v -> {
             flipCard(inner_card_top_right, inner_card_label_list);
         });
+
+
+        radioGroupUOMTblLebar.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.radioMillimeter) {
+                // Kalau Millimeter dipilih
+                m3();
+                ton();
+                jumlahPcsST();
+
+            } else if (checkedId == R.id.radioInch) {
+                // Kalau Inch dipilih
+                m3();
+                ton();
+                jumlahPcsST();
+            }
+        });
     }
 
+
+
     //METHOD SAWN TIMBER
+
+    // Method helper untuk proses update
+    private void processUpdateData(String noKayuBulat, int jenisKayu, String noSPK, String telly,
+                                   String stickBy, String dateCreate, String isVacuum, String remark,
+                                   int isSLP, int isSticked, int isKering, int isUpah,
+                                   MstJenisKayuData selectedJenisKayu,
+                                   int idUOMTblLebar, String noPenST, String noBongkarSusun) {
+
+        loadingDialogHelper.show(this);
+
+        // Process update in background thread
+        executorService.execute(() -> {
+            try {
+                // ⬇️ Tambahkan log untuk memeriksa nilai dateCreate
+                Log.d("processUpdateData", "dateCreate dikirim: " + dateCreate);
+
+                // Prepare grade list untuk kayu non-lat
+                List<GradeDetailData> gradeListToSave = null;
+                if (!selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
+                    gradeListToSave = temporaryDataListGrade;
+                }
+
+                int isBagusKulit = 0;
+                if (selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
+                    isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
+                }
+
+                // Call update transaction method
+                boolean updateSuccess = SawnTimberApi.updateSawnTimberTransaction(
+                        noST, noKayuBulat, String.valueOf(jenisKayu), noSPK, telly, stickBy,
+                        dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
+                        isBagusKulit, isUpah, idUOMTblLebar, 4,
+                        temporaryDataListDetail, gradeListToSave, noPenST,
+                        labelVersion, noBongkarSusun, cbBongkarSusun.isChecked()
+                );
+
+                runOnUiThread(() -> {
+                    if (updateSuccess) {
+                        btnUpdate.setVisibility(View.GONE);
+                        BtnSimpanST.setVisibility(View.GONE);
+                        BtnDataBaruST.setVisibility(View.VISIBLE);
+                        BtnPrintST.setEnabled(true);
+                        fabAddDetailData.setVisibility(View.GONE);
+                        disableForm();
+
+                        Toast.makeText(SawnTimber.this,
+                                "Data berhasil diupdate untuk No ST: " + noST,
+                                Toast.LENGTH_SHORT).show();
+
+                        loadingDialogHelper.hide();
+                    } else {
+                        Toast.makeText(SawnTimber.this,
+                                "Gagal mengupdate data. Silakan coba lagi.",
+                                Toast.LENGTH_LONG).show();
+
+                        loadingDialogHelper.hide();
+                    }
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(SawnTimber.this,
+                            "Error update: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    loadingDialogHelper.hide();
+
+                });
+            }
+        });
+    }
+
+
+
+    // Method validasi terpisah untuk cleaner code
+    private boolean validateInputs(String noKayuBulat, String namaJenisKayu, int jenisKayu,
+                                   String stickBy, String noSPK) {
+        boolean valid = true;
+
+        // Reset background
+        NoKayuBulat.setBackgroundResource(R.drawable.border_input);
+        SpinKayu.setBackgroundResource(R.drawable.border_input);
+        SpinStickBy.setBackgroundResource(R.drawable.border_input);
+        SpinSPK.setBackgroundResource(R.drawable.border_input);
+
+        if (noKayuBulat.isEmpty() && labelVersion == -1 && !namaJenisKayu.toLowerCase().contains("kayu lat")) {
+            NoKayuBulat.setBackgroundResource(R.drawable.spinner_error);
+            valid = false;
+        }
+
+        if (jenisKayu <= 0) {
+            SpinKayu.setBackgroundResource(R.drawable.spinner_error);
+            valid = false;
+        }
+
+        if (stickBy.isEmpty()) {
+            SpinStickBy.setBackgroundResource(R.drawable.spinner_error);
+            valid = false;
+        }
+
+        if (noSPK.isEmpty() || noSPK.equals("PILIH")) {
+            SpinSPK.setBackgroundResource(R.drawable.spinner_error);
+            valid = false;
+        }
+
+        return valid;
+    }
+
+
+    //LABEL LIST
+    private void showListDialogOnDemand() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_list_item_st, null);
+
+        TableLayout tableLayout = dialogView.findViewById(R.id.tableHeaderLabel);
+        ProgressBar loadingIndicator = dialogView.findViewById(R.id.listLabelLoadingIndicator);
+
+        ScrollView scrollView = dialogView.findViewById(R.id.scrollViewTable);
+
+        EditText searchInput = dialogView.findViewById(R.id.searchInput);
+        ImageView clearButton = dialogView.findViewById(R.id.clearButton);
+
+        Button btnEditData = dialogView.findViewById(R.id.btnEditData);
+        Button btnDeleteData = dialogView.findViewById(R.id.btnDeleteData);
+
+        TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
+
+        // Reset selection state
+        selectedRowHeader = null;
+
+        executorService.execute(() -> {
+            // 🔹 Jalankan delete di background thread
+            int totalLabel = SawnTimberApi.getTotalLabelCount("");
+
+            // 🔹 Update UI kembali
+            runOnUiThread(() -> {
+                tvSumLabel.setText("LIST LABEL ST " + "(" + String.valueOf(totalLabel) + ")");
+
+            });
+
+        });
+
+
+        // Variable untuk menyimpan data yang dipilih
+        final StData[] selectedData = {null};
+
+        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
+            int diff = (view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY()));
+
+            if (diff <= 50 && !isLoading) { // 50px sebelum mentok bawah
+                isLoading = true;
+                currentPage++;
+                loadMoreData(tableLayout, selectedData);
+            }
+        });
+
+        tableLayout.removeAllViews();
+        loadingIndicator.setVisibility(View.VISIBLE); // tampilkan loading
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+            layoutParams.copyFrom(window.getAttributes());
+            layoutParams.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.7);
+            layoutParams.height = (int) (getResources().getDisplayMetrics().heightPixels);
+            window.setAttributes(layoutParams);
+        }
+
+        // Click listener untuk button Edit
+        btnEditData.setOnClickListener(v -> {
+            if (selectedData[0] != null) {
+                isCreateMode = false;
+
+                // Mengisi NoS4S dengan data yang dipilih
+                NoST.setText(selectedData[0].getNoST());
+
+                // Tutup dialog
+                dialog.dismiss();
+
+                btnUpdate.setVisibility(View.VISIBLE);
+                BtnSimpanST.setVisibility(View.GONE);
+                BtnDataBaruST.setVisibility(View.GONE);
+
+
+                SpinBongkarSusun.setVisibility(View.GONE);
+                susunView.setVisibility(View.VISIBLE);
+
+                fabAddDetailData.setVisibility(View.VISIBLE);
+
+                btnUpdate.setVisibility(View.VISIBLE);
+
+
+                // Optional: tampilkan pesan sukses
+//                Toast.makeText(this, "Data dipilih: " + selectedData[0].getNoS4S(), Toast.LENGTH_SHORT).show();
+            } else {
+                // Tampilkan pesan jika belum ada row yang dipilih
+                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Click listener untuk button Delete (opsional, sesuai kebutuhan)
+        btnDeleteData.setOnClickListener(v -> {
+            if (selectedData[0] != null) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi")
+                        .setMessage("Apakah Anda yakin ingin menghapus data " + selectedData[0].getNoST() + "?")
+                        .setPositiveButton("Ya", (dialogInterface, i) -> {
+                            executorService.execute(() -> {
+                                try {
+                                    // 🔹 Jalankan delete di background thread
+                                    boolean success = SawnTimberApi.deleteSawnTimberTransaction(selectedData[0].getNoST());
+
+                                    // 🔹 Update UI kembali
+                                    runOnUiThread(() -> {
+                                        if (success) {
+                                            Toast.makeText(this,
+                                                    "Data " + selectedData[0].getNoST() + " dihapus",
+                                                    Toast.LENGTH_SHORT).show();
+
+                                            // contoh: refresh tabel/list setelah delete
+                                            loadSearchData(tableLayout, loadingIndicator, "", selectedData);
+                                        } else {
+                                            Toast.makeText(this,
+                                                    "Gagal menghapus data",
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
+                                        dialogInterface.dismiss();
+                                    });
+                                } catch (Exception e) {
+                                    runOnUiThread(() ->
+                                            Toast.makeText(this,
+                                                    "Error: " + e.getMessage(),
+                                                    Toast.LENGTH_SHORT).show()
+                                    );
+                                }
+                            });
+                        })
+                        .setNegativeButton("Tidak", null)
+                        .show();
+            } else {
+                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Munculkan / sembunyikan tombol clear
+                if (s.length() > 0) {
+                    clearButton.setVisibility(View.VISIBLE);
+                } else {
+                    clearButton.setVisibility(View.GONE);
+                }
+
+                // Reset selection saat search
+                selectedRowHeader = null;
+                selectedData[0] = null; // Reset selected data
+
+                // Logika search
+                String keyword = s.toString().trim();
+                page = 1; // reset halaman
+                loadSearchData(tableLayout, loadingIndicator, keyword, selectedData);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Aksi tombol clear
+        clearButton.setOnClickListener(v -> {
+            searchInput.setText(""); // Hapus teks
+        });
+
+        // Jalankan fetch data di background setelah dialog ditampilkan
+        executorService.execute(() -> {
+            List<StData> list = SawnTimberApi.getSawnTimberData(page, 50, "");
+
+            runOnUiThread(() -> {
+                loadingIndicator.setVisibility(View.GONE); // sembunyikan loading
+                tableLayout.removeAllViews(); // hapus semua tampilan sebelumnya
+
+                if (list == null || list.isEmpty()) {
+                    TextView noDataView = new TextView(this);
+                    noDataView.setText("Data tidak ditemukan");
+                    noDataView.setGravity(Gravity.CENTER);
+                    noDataView.setPadding(16, 16, 16, 16);
+                    tableLayout.addView(noDataView);
+                    return;
+                }
+
+                addRowsToTable(tableLayout, list, 0, selectedData);
+            });
+        });
+    }
+
+    private void loadSearchData(TableLayout tableLayout, ProgressBar loadingIndicator, String keyword, StData[] selectedData) {
+        loadingIndicator.setVisibility(View.VISIBLE);
+        tableLayout.removeAllViews();
+
+        executorService.execute(() -> {
+            List<StData> list = SawnTimberApi.getSawnTimberData(page, 50, keyword);
+
+            runOnUiThread(() -> {
+                loadingIndicator.setVisibility(View.GONE);
+                if (list == null || list.isEmpty()) {
+                    TextView noDataView = new TextView(this);
+                    noDataView.setText("Data tidak ditemukan");
+                    noDataView.setGravity(Gravity.CENTER);
+                    noDataView.setPadding(16, 16, 16, 16);
+                    tableLayout.addView(noDataView);
+                    return;
+                }
+
+                addRowsToTable(tableLayout, list, 0, selectedData);
+            });
+        });
+    }
+
+    private void loadMoreData(TableLayout tableLayout, StData[] selectedData) {
+        executorService.execute(() -> {
+            List<StData> moreData = SawnTimberApi.getSawnTimberData(currentPage, 50, "");
+            runOnUiThread(() -> {
+                if (moreData != null && !moreData.isEmpty()) {
+                    int startIndex = tableLayout.getChildCount();
+                    addRowsToTable(tableLayout, moreData, startIndex, selectedData);
+                }
+                isLoading = false;
+            });
+        });
+    }
+
+    // Method yang sudah diupdate untuk menyimpan selected data
+    private void addRowsToTable(TableLayout tableLayout, List<StData> list, int startRowIndex, StData[] selectedData) {
+        int rowIndex = startRowIndex;
+
+        for (StData data : list) {
+            TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
+
+            TextView col1 = TableUtils.createTextView(this, data.getNoST(), 1f);
+            TextView col2 = TableUtils.createTextView(this, DateTimeUtils.formatDate(data.getDateCreate()), 1f);
+            TextView col3 = TableUtils.createTextView(this, data.getNoKayuBulat(), 1f);
+            TextView col4 = TableUtils.createTextView(this, data.getJenis(), 1f);
+            TextView col5 = TableUtils.createTextView(this, data.getNoSPK(), 1f);
+            TextView col6 = TableUtils.createTextView(this, data.getNamaOrgTelly(), 1f);
+
+            row.addView(col1);
+            row.addView(TableUtils.createDivider(this));
+            row.addView(col2);
+            row.addView(TableUtils.createDivider(this));
+            row.addView(col3);
+            row.addView(TableUtils.createDivider(this));
+            row.addView(col4);
+            row.addView(TableUtils.createDivider(this));
+            row.addView(col5);
+            row.addView(TableUtils.createDivider(this));
+            row.addView(col6);
+
+            // Set background color berdasarkan index
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+
+            // Set click listener yang konsisten untuk semua row
+            row.setOnClickListener(v -> {
+                // Reset previous selection
+                if (selectedRowHeader != null) {
+                    int prevIndex = (int) selectedRowHeader.getTag();
+                    if (prevIndex % 2 == 0) {
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                    } else {
+                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                    }
+                    TableUtils.resetTextColor(this, selectedRowHeader);
+                }
+
+                // Set new selection
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+                TableUtils.setTextColor(this, row, R.color.white);
+                selectedRowHeader = row;
+
+                // Simpan data yang dipilih
+                selectedData[0] = data;
+
+                // Call click handler
+                onRowClick(data);
+            });
+
+            tableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
+    private void onRowClick(StData data) {
+
+        noST = data.getNoST();
+
+        // Tampilkan tooltip
+        TooltipUtils.fetchDataAndShowTooltip(
+                this,
+                executorService,
+                selectedRowHeader,
+                data.getNoST(), // currentNoS4S
+                "ST_h",
+                "ST_d",
+                "NoST",
+                () -> {
+                    // Callback saat popup ditutup
+                    if (selectedRowHeader != null) {
+                        int currentIndex = (int) selectedRowHeader.getTag();
+//                        ViewUtils.resetRowSelection(this, selectedRowHeader, currentIndex);
+//                        selectedRowHeader = null;
+                    }
+                }
+        );
+    }
+
+
+
 
     private void flipTwoToOne(View toHide1, View toHide2, View toShow) {
         // Animasi hide kedua view secara paralel
@@ -1047,11 +1622,11 @@ public class SawnTimber extends AppCompatActivity {
                 Toast.makeText(this, "Tidak ada nilai!", Toast.LENGTH_SHORT).show();
             } else {
                 // Tambahkan pcs yang dihapus ke data dengan panjang == panjangAcuan
-                for (DataRow row : temporaryDataListDetail) {
-                    if (Float.parseFloat(row.panjang) == panjangAcuan) {
-                        int updatedPcs = Integer.parseInt(row.pcs) + Integer.parseInt(pcs); // Tambahkan pcs yang dihapus
-                        row.pcs = String.valueOf(updatedPcs); // Update pcs
-                        sisaPCS.setText("Sisa : " + row.pcs);
+                for (LabelDetailData row : temporaryDataListDetail) {
+                    if (Float.parseFloat(row.getPanjang()) == panjangAcuan) {
+                        int updatedPcs = Integer.parseInt(row.getPcs()) + Integer.parseInt(pcs); // Tambahkan pcs yang dihapus
+                        row.setPcs(String.valueOf(updatedPcs)); // Update pcs
+                        sisaPCS.setText("Sisa : " + row.getPcs());
                     }
                 }
 
@@ -1071,14 +1646,15 @@ public class SawnTimber extends AppCompatActivity {
                 TabelInputPjgPcs.removeView(newRow);
 
                 // Menghapus data terkait dari temporaryDataListDetail berdasarkan panjang
-                for (DataRow row : temporaryDataListDetail) {
-                    if (row.panjang.equals(panjangToDelete)) {
+                for (LabelDetailData row : temporaryDataListDetail) {
+                    if (row.getPanjang().equals(panjangToDelete)) {
                         temporaryDataListDetail.remove(row);  // Hapus data dari list berdasarkan panjang
                         break;
                     }
                 }
                 // Memperbarui tabel setelah penghapusan data
-                updateTable(Float.parseFloat(panjangToDelete));  // Memperbarui tabel utama
+                // Gunakan updateTableFromTemporaryDataDetail() instead of updateTable()
+                updateTableFromTemporaryDataDetail();
                 jumlahPcsST();
                 m3();
                 ton();
@@ -1116,10 +1692,10 @@ public class SawnTimber extends AppCompatActivity {
 
         if (!panjang.isEmpty() && !pcs.isEmpty() && !panjang.equals("0") && !pcs.equals("0")) {
 
-            for (DataRow row : temporaryDataListDetail) {
-                if (Float.parseFloat(row.panjang) == panjangAcuan) {
-                    if (Integer.parseInt(row.pcs) <= Integer.parseInt(pcs)) {
-                        sisaPCS.setText("Sisa : " + row.pcs);
+            for (LabelDetailData row : temporaryDataListDetail) {
+                if (Float.parseFloat(row.getPanjang()) == panjangAcuan) {
+                    if (Integer.parseInt(row.getPcs()) <= Integer.parseInt(pcs)) {
+                        sisaPCS.setText("Sisa : " + row.getPcs());
                         Toast.makeText(this, "Pcs melebihi jumlah sisa", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -1202,7 +1778,8 @@ public class SawnTimber extends AppCompatActivity {
         void onResult(boolean exists);
     }
 
-    private void disableForm(){
+    private void disableForm() {
+        NoKayuBulat.setEnabled(false);
         SpinKayu.setEnabled(false);
         SpinGrade.setEnabled(false);
         SpinSPK.setEnabled(false);
@@ -1215,6 +1792,7 @@ public class SawnTimber extends AppCompatActivity {
         DetailPanjangST.setEnabled(false);
         DetailPcsST.setEnabled(false);
         BtnInputDetailST.setEnabled(false);
+        TglStickBundel.setEnabled(false);
         TglVacuum.setEnabled(false);
         SpinBongkarSusun.setEnabled(false);
         BtnSimpanST.setEnabled(false);
@@ -1231,12 +1809,59 @@ public class SawnTimber extends AppCompatActivity {
 
         flipTwoToOne(inner_card_top_left, inner_card_top_center, inner_card_detail);
 
-        for (ImageButton btn : deleteButtons) {
-            btn.setVisibility(View.INVISIBLE);
+        // Loop semua row di tabel
+        for (int i = 0; i < Tabel.getChildCount(); i++) {
+            View rowView = Tabel.getChildAt(i);
+            if (rowView instanceof TableRow) {
+                TableRow row = (TableRow) rowView;
+                // Loop semua child di row
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof LinearLayout) {
+                        LinearLayout actionLayout = (LinearLayout) child;
+                        for (int k = 0; k < actionLayout.getChildCount(); k++) {
+                            View actionChild = actionLayout.getChildAt(k);
+                            if (actionChild instanceof ImageButton) {
+                                actionChild.setEnabled(false); // disable tombol edit & delete
+                                actionChild.setAlpha(0.5f); // opsional: kasih efek transparan biar keliatan disable
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        // Loop semua row di tabel2
+        for (int i = 0; i < Tabel2.getChildCount(); i++) {
+            View rowView = Tabel2.getChildAt(i);
+            if (rowView instanceof TableRow) {
+                TableRow row = (TableRow) rowView;
+                // Loop semua child di row
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof ImageButton) {
+                        child.setEnabled(false);
+                        child.setAlpha(0.5f);
+                    }
+                    else if (child instanceof LinearLayout) {
+                        // fallback kalau nanti ada actionLayout juga
+                        LinearLayout actionLayout = (LinearLayout) child;
+                        for (int k = 0; k < actionLayout.getChildCount(); k++) {
+                            View actionChild = actionLayout.getChildAt(k);
+                            if (actionChild instanceof ImageButton) {
+                                actionChild.setEnabled(false);
+                                actionChild.setAlpha(0.5f);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
-    private void enableForm(){
+    private void enableForm() {
+        NoKayuBulat.setEnabled(true);
         SpinKayu.setEnabled(true);
         SpinGrade.setEnabled(true);
         SpinSPK.setEnabled(true);
@@ -1251,7 +1876,6 @@ public class SawnTimber extends AppCompatActivity {
         BtnInputDetailST.setEnabled(true);
         BtnSimpanST.setEnabled(true);
         BtnPrintST.setEnabled(true);
-        NoKB_display.setVisibility(View.GONE);
         NoKayuBulat.setVisibility(View.VISIBLE);
         remarkLabel.setEnabled(true);
         CBKering.setEnabled(true);
@@ -1260,8 +1884,13 @@ public class SawnTimber extends AppCompatActivity {
         cbBongkarSusun.setEnabled(true);
         radioBagus.setEnabled(true);
         radioKulit.setEnabled(true);
+        TglStickBundel.setEnabled(true);
 
-        flipOneToTwo(inner_card_detail, inner_card_top_left, inner_card_top_center);
+        if (isCreateMode) {
+            flipOneToTwo(inner_card_detail, inner_card_top_left, inner_card_top_center);
+        } else {
+            flipTwoToOne(inner_card_top_left, inner_card_top_center, inner_card_detail);
+        }
     }
 
 
@@ -1273,10 +1902,6 @@ public class SawnTimber extends AppCompatActivity {
         }
     }
 
-    //SET false jika ingin search data
-    private void setCreateMode(boolean isCreate) {
-        this.isCreateMode = isCreate;
-    }
 
     // Method untuk set single value ke spinner
     private void setSpinnerValue(Spinner spinner, String value) {
@@ -1361,7 +1986,6 @@ public class SawnTimber extends AppCompatActivity {
                     }
                 } else {
                     runOnUiThread(() -> {
-
                         Toast.makeText(getApplicationContext(),
                                 "Koneksi database gagal",
                                 Toast.LENGTH_SHORT).show();
@@ -1564,256 +2188,354 @@ public class SawnTimber extends AppCompatActivity {
         }).start();
     }
 
-    private void loadSawnTimber(String noST) {
-        // Tampilkan progress dialog
+    private void loadSubmittedData(String noST) {
+        loadingDialogHelper.show(this);
+
+        // Reset data dan tampilkan loading
         resetDetailData();
         resetGradeData();
-        new Thread(() -> {
-            Connection connection = null;
+
+        // Gunakan executor service seperti contoh loadSubmittedData
+        executorService.execute(() -> {
             try {
-                connection = ConnectionClass();
-                if (connection != null) {
-                    // Query untuk header
-                    String queryHeader = "SELECT " +
-                            "h.NoKayuBulat, " +
-                            "k.Jenis, " +
-                            "s.NamaStickBy, " +
-                            "h.NoSPK, " +
-                            "h.DateCreate, " +
-                            "t.NamaOrgTelly, " +
-                            "h.Remark, " +
-                            "p.NoPenerimaanST AS NoPenerimaanSTPembelian, " +
-                            "u.NoPenerimaanST AS NoPenerimaanSTUpah, " +
-                            "h.IsSLP, " +
-                            "h.VacuumDate " +
-                            "FROM ST_h h " +
-                            "LEFT JOIN MstJenisKayu k ON h.IdJenisKayu = k.IdJenisKayu " +
-                            "LEFT JOIN MstStickBy s ON h.IdStickBy = s.IdStickBy " +
-                            "LEFT JOIN MstOrgTelly t ON h.IdOrgTelly = t.IdOrgTelly " +
-                            "LEFT JOIN PenerimaanSTPembelian_d p ON h.NoST = p.NoST " +
-                            "LEFT JOIN PenerimaanSTUpah_d u ON h.NoST = u.NoST " +
-                            "WHERE h.NoST = ?";
+                // Load header data menggunakan API class
+                StData headerData = SawnTimberApi.getSawnTimberHeader(noST);
 
-                    // Query untuk detail
-                    String queryDetail = "SELECT Tebal, Lebar, Panjang, JmlhBatang " +
-                            "FROM ST_d " +
-                            "WHERE NoST = ? " +
-                            "ORDER BY NoUrut";
+                if (headerData != null) {
+                    // Load detail dan grade data menggunakan API class
+                    List<LabelDetailData> detailDataList = SawnTimberApi.getSawnTimberDetail(noST);
+                    List<GradeDetailData> gradeDataList = SawnTimberApi.getSawnTimberGrade(noST);
 
-                    // Query untuk grade
-                    String queryGrade = "SELECT " +
-                            "s.IdGradeStick, " +
-                            "s.JumlahStick, " +
-                            "m.NamaGradeStick " +
-                            "FROM STStick s " +
-                            "INNER JOIN MstGradeStick m ON m.IdGradeStick = s.IdGradeStick " +
-                            "WHERE NoST = ?" +
-                            "ORDER BY IdGradeStick";
+                    // Update temporary data
+                    temporaryDataListDetail.clear();
+                    temporaryDataListDetail.addAll(detailDataList);
 
-                    // Menggunakan try-with-resources untuk header
-                    try (PreparedStatement stmt = connection.prepareStatement(queryHeader)) {
-                        stmt.setString(1, noST);
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                // Mengambil data header
-                                final String noKayuBulat = rs.getString("NoKayuBulat") != null ? rs.getString("NoKayuBulat") : "-";
-                                final String namaKayu = rs.getString("Jenis") != null ? rs.getString("Jenis") : "-";
-                                final String namaStickBy = rs.getString("NamaStickBy") != null ? rs.getString("NamaStickBy") : "-";
-                                final String noSPK = rs.getString("NoSPK") != null ? rs.getString("NoSPK") : "-";
-                                final String tglStickBundel = rs.getString("DateCreate") != null ? rs.getString("DateCreate") : "-";
-                                final String namaOrgTelly = rs.getString("NamaOrgTelly") != null ? rs.getString("NamaOrgTelly") : "-";
-                                final String remark = rs.getString("Remark") != null ? rs.getString("Remark") : "-";
-                                final String noPenSTPembelian = rs.getString("NoPenerimaanSTPembelian") != null ? rs.getString("NoPenerimaanSTPembelian") : "-";
-                                final String noPenSTUpah = rs.getString("NoPenerimaanSTUpah") != null ? rs.getString("NoPenerimaanSTUpah") : "-";
-                                final int isSLP = rs.getInt("IsSLP");
-                                final String vacuumDate = rs.getString("VacuumDate") != null ? rs.getString("VacuumDate") : "-";
+                    temporaryDataListGrade.clear();
+                    temporaryDataListGrade.addAll(gradeDataList);
 
-                                // Mengambil data detail
-                                try (PreparedStatement stmtDetail = connection.prepareStatement(queryDetail)) {
-                                    stmtDetail.setString(1, noST);
-                                    try (ResultSet rsDetail = stmtDetail.executeQuery()) {
-                                        while (rsDetail.next()) {
-                                            String tebal = rsDetail.getString("Tebal");
-                                            String lebar = rsDetail.getString("Lebar");
-                                            String panjang = rsDetail.getString("Panjang");
-                                            String pcs = rsDetail.getString("JmlhBatang");
-
-                                            // Buat objek DataRow baru dan tambahkan ke list
-                                            DataRow newRow = new DataRow(tebal, lebar, panjang, pcs);
-                                            temporaryDataListDetail.add(newRow);
-                                        }
-                                    }
-                                }
-
-                                try (PreparedStatement stmtGrade = connection.prepareStatement(queryGrade)) {
-                                    stmtGrade.setString(1, noST);
-                                    try (ResultSet rsGrade = stmtGrade.executeQuery()) {
-                                        while (rsGrade.next()) {
-                                            int idGradeStick = rsGrade.getInt("IdGradeStick");
-                                            String namaGradeStick = rsGrade.getString("NamaGradeStick");
-                                            String jumlahGradeStick = rsGrade.getString("JumlahStick");
-
-                                            // Buat objek DataRow baru dan tambahkan ke list
-                                            DataRow2 newRow = new DataRow2(idGradeStick, namaGradeStick, jumlahGradeStick);
-                                            temporaryDataListGrade.add(newRow);
-                                        }
-                                    }
-                                }
-
-                                // Update UI di thread utama
-                                runOnUiThread(() -> {
-                                    try {
-                                        // Update header fields
-                                        NoKayuBulat.setQuery(noKayuBulat, true);
-                                        setSpinnerValue(SpinKayu, namaKayu);
-                                        setSpinnerValue(SpinStickBy, namaStickBy);
-                                        setSpinnerValue(SpinSPK, noSPK);
-                                        setSpinnerValue(SpinTelly, namaOrgTelly);
-                                        TglStickBundel.setText(tglStickBundel);
-                                        remarkLabel.setText(remark);
-                                        cbSLP.setChecked(isSLP == 1);
-
-                                        TglVacuum.setText(vacuumDate);
-                                        if (!vacuumDate.equals("-")) {
-                                            cbVacuum.setChecked(true);
-                                        }
-
-
-                                        // Update tabel detail
-                                        updateTableFromTemporaryDataDetail();
-                                        updateTableFromTemporaryDataGrade();
-                                        m3();
-                                        ton();
-                                        jumlahPcsST();
-
-                                        if (noKayuBulat.equals("-") && noPenSTUpah.equals("-")) {
-                                            loadPenerimaanSTPembelian(noPenSTPembelian);
-                                            noPenerimaanST.setText(noPenSTPembelian);
-
-                                        } else if (noKayuBulat.equals("-") && noPenSTPembelian.equals("-")) {
-                                            loadPenerimaanSTUpah(noPenSTUpah);
-                                            noPenerimaanST.setText(noPenSTUpah);
-
-                                        } else {
-                                            loadKayuBulat(noKayuBulat);
-                                            noPenerimaanST.setText("-");
-                                        }
-
-
-                                        Toast.makeText(getApplicationContext(),
-                                                "Data berhasil dimuat",
-                                                Toast.LENGTH_SHORT).show();
-                                    } catch (Exception e) {
-
-                                        Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
-                                        Toast.makeText(getApplicationContext(),
-                                                "Gagal memperbarui tampilan",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            } else {
-                                runOnUiThread(() -> {
-
-//                                    Toast.makeText(getApplicationContext(),
-//                                            "Data tidak ditemukan untuk NoST: " + noST,
-//                                            Toast.LENGTH_SHORT).show();
-                                });
-                            }
-                        }
-                    }
-                } else {
+                    // Update UI di thread utama
                     runOnUiThread(() -> {
+                        try {
+                            updateUIWithSawnTimberData(headerData);
+                            updateTableFromTemporaryDataDetail();
+                            updateTableFromTemporaryDataGrade();
+                            m3();
+                            ton();
+                            jumlahPcsST();
 
+                            if (userPermissions.contains("label_st:update")) {
+                                enableForm();
+                            } else {
+                                disableForm();
+                            }
+
+                            Toast.makeText(getApplicationContext(),
+                                        "Data berhasil dimuat",
+                                        Toast.LENGTH_SHORT).show();
+                            } catch (Exception e) {
+                                Log.e("UI Update Error", "Error updating UI: " + e.getMessage());
+                                Toast.makeText(getApplicationContext(),
+                                        "Gagal memperbarui tampilan",
+                                        Toast.LENGTH_SHORT).show();
+                                loadingDialogHelper.hide();
+                            }
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            Toast.makeText(getApplicationContext(),
+                                    "Data Gagal dimuat",
+                                    Toast.LENGTH_SHORT).show();
+                            loadingDialogHelper.hide();
+                        });
+                    }
+                } catch (Exception e) {
+                    final String errorMessage = e.getMessage();
+                    runOnUiThread(() -> {
                         Toast.makeText(getApplicationContext(),
-                                "Koneksi database gagal",
-                                Toast.LENGTH_SHORT).show();
+                                "Error: " + errorMessage,
+                                Toast.LENGTH_LONG).show();
+                        loadingDialogHelper.hide();
+                        Log.e("Database Error", "Error loading sawn timber data", e);
                     });
                 }
-            } catch (SQLException e) {
-                final String errorMessage = e.getMessage();
-                runOnUiThread(() -> {
-
-                    Toast.makeText(getApplicationContext(),
-                            "Error: " + errorMessage,
-                            Toast.LENGTH_LONG).show();
-                    Log.e("Database Error", "Error executing query: " + errorMessage);
-                });
-            } finally {
-                if (connection != null) {
-                    try {
-                        connection.close();
-                    } catch (SQLException e) {
-                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
-                    }
-                }
-            }
-        }).start();
+            });
     }
 
-    //     Method baru untuk memperbarui tabel dari temporaryDataListDetail
-    private void updateTableFromTemporaryDataDetail() {
-        // Perbarui rowCount
-        rowCount = 0;
+    /**
+     * Method untuk update UI dengan data header yang sudah di-load
+     */
+    private void updateUIWithSawnTimberData(StData headerData) {
+        // ====== total loader async ======
+        final int totalTasks = 5; // jumlah spinner yang kamu load di sini
+        final AtomicInteger doneCount = new AtomicInteger(0);
 
+        Runnable checkAllDone = () -> {
+            if (doneCount.incrementAndGet() == totalTasks) {
+                runOnUiThread(() -> loadingDialogHelper.hide());
+            }
+        };
+
+        // ====== field biasa (langsung set) ======
+        NoKayuBulat.setText(headerData.getNoKayuBulat());
+        TglStickBundel.setText(DateTimeUtils.formatDate(headerData.getDateCreate()));
+        remarkLabel.setText(headerData.getRemark());
+        cbSLP.setChecked(headerData.getIsSLP() == 1);
+
+        susunView.setText(headerData.getNoBongkarSusun());
+        cbBongkarSusun.setChecked(!headerData.getNoBongkarSusun().equals("-"));
+
+        TglVacuum.setText(headerData.getVacuumDate());
+        cbVacuum.setChecked(!headerData.getVacuumDate().equals("-"));
+
+        // ====== panggil semua loader spinner dengan callback ======
+        loadJenisKayuSpinner(headerData.getIdJenisKayu(), checkAllDone);
+        loadStickBySpinner(headerData.getIdStickBy(), checkAllDone);
+        loadSPKSpinner(headerData.getNoSPK(), checkAllDone);
+        loadTellySpinner(headerData.getIdOrgTelly(), checkAllDone);
+        loadGradeStickSpinner(0, checkAllDone);
+
+        // ====== Logic untuk penerimaan ST (bukan async spinner) ======
+        if (headerData.getNoKayuBulat().equals("-") && headerData.getNoPenerimaanSTUpah().equals("-")) {
+            loadPenerimaanSTPembelian(headerData.getNoPenerimaanSTPembelian());
+            noPenerimaanST.setText(headerData.getNoPenerimaanSTPembelian());
+        } else if (headerData.getNoKayuBulat().equals("-") && headerData.getNoPenerimaanSTPembelian().equals("-")) {
+            loadPenerimaanSTUpah(headerData.getNoPenerimaanSTUpah());
+            noPenerimaanST.setText(headerData.getNoPenerimaanSTUpah());
+        } else {
+            loadKayuBulat(headerData.getNoKayuBulat());
+            noPenerimaanST.setText("-");
+        }
+    }
+
+
+    // Method untuk memperbarui tabel dari temporaryDataListDetail
+    private void updateTableFromTemporaryDataDetail() {
+        rowCount = 0;
+        Tabel.removeAllViews(); // reset table sebelum render ulang
         DecimalFormat df = new DecimalFormat("#,###.##");
 
-        for (DataRow data : temporaryDataListDetail) {
+        for (LabelDetailData data : temporaryDataListDetail) {
             TableRow newRow = new TableRow(this);
             TableRow.LayoutParams rowParams = new TableRow.LayoutParams(
                     TableRow.LayoutParams.MATCH_PARENT,
                     TableRow.LayoutParams.WRAP_CONTENT);
             newRow.setLayoutParams(rowParams);
 
-            // Set background warna untuk baris alternate (opsional)
+            // Set background warna alternate
             if (rowCount % 2 == 0) {
                 newRow.setBackgroundColor(Color.parseColor("#ffffff"));
             }
 
             // Tambahkan kolom-kolom
-            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.pcs)), 1f);
+            addTextViewToRowWithWeight(newRow, String.valueOf(++rowCount), 0.5f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.getTebal())), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.getLebar())), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(data.getPanjang())), 1f);
+            addTextViewToRowWithWeight(newRow, df.format(Integer.parseInt(data.getPcs())), 1f);
 
-//            // Tambahkan tombol hapus dengan lebar tetap
-//            Button deleteButton = new Button(this);
-//            deleteButton.setText("");
-//            deleteButton.setTextSize(12);
+            // Layout untuk tombol Edit & Delete
+            LinearLayout actionLayout = new LinearLayout(this);
+            actionLayout.setOrientation(LinearLayout.HORIZONTAL);
 
-//            // Atur style tombol
-//            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(0,
-//                    TableRow.LayoutParams.WRAP_CONTENT, 1f);
-//            buttonParams.setMargins(5, 5, 5, 5);
-//            deleteButton.setLayoutParams(buttonParams);
-//            deleteButton.setPadding(10, 5, 10, 5);
-//            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.transparent));
-//            deleteButton.setTextColor(Color.BLACK);
-//
-//            newRow.addView(deleteButton);
+            // === Tombol Edit ===
+            ImageButton editButton = new ImageButton(this);
+            editButton.setImageResource(R.drawable.ic_edit);
+            editButton.setBackgroundColor(Color.TRANSPARENT);
+            editButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            editButton.setPadding(5, 5, 5, 5);
+
+            LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            editParams.setMargins(0, 0, 10, 0);
+            editButton.setLayoutParams(editParams);
+
+            editButton.setOnClickListener(v -> showEditDetailDialog(data));
+
+            actionLayout.addView(editButton);
+
+            // === Tombol Delete ===
+            ImageButton deleteButton = new ImageButton(this);
+            deleteButton.setImageResource(R.drawable.ic_delete);
+            deleteButton.setBackgroundColor(Color.TRANSPARENT);
+            deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            deleteButton.setPadding(15, 5, 5, 5);
+
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            deleteParams.setMargins(10, 0, 0, 0);
+            deleteButton.setLayoutParams(deleteParams);
+
+            deleteButton.setOnClickListener(v -> {
+                // hapus data dari list
+                temporaryDataListDetail.remove(data);
+
+                // render ulang tabel (rowCount otomatis reset)
+                updateTableFromTemporaryDataDetail();
+
+                // hitung ulang total
+                jumlahPcsST();
+                m3();
+                ton();
+            });
+
+            actionLayout.addView(deleteButton);
+
+            // tambahkan actionLayout ke row
+            newRow.addView(actionLayout);
+
             Tabel.addView(newRow);
         }
     }
 
-    private void updateTableFromTemporaryDataGrade() {
-        // Perbarui rowCount
-        rowCount = 0;
+    private void showAddDetailDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Tambah Detail");
 
-        for (DataRow2 data : temporaryDataListGrade) {
+        // Inflate layout XML yg sama
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_detail_label, null);
+        builder.setView(dialogView);
+
+        TextInputEditText editTebal = dialogView.findViewById(R.id.editTebal);
+        TextInputEditText editLebar = dialogView.findViewById(R.id.editLebar);
+        TextInputEditText editPanjang = dialogView.findViewById(R.id.editPanjang);
+        TextInputEditText editJumlah = dialogView.findViewById(R.id.editJumlah);
+
+        builder.setPositiveButton("Simpan", (dialog, which) -> {
+            String tebal = editTebal.getText().toString().trim();
+            String lebar = editLebar.getText().toString().trim();
+            String panjang = editPanjang.getText().toString().trim();
+            String pcs = editJumlah.getText().toString().trim();
+
+            // Validasi input
+            if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty() || pcs.isEmpty()) {
+                Toast.makeText(this, "Semua field harus diisi!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Cek duplikasi (hanya itu precondition yg dipakai untuk ADD)
+            boolean isDuplicate = false;
+            for (LabelDetailData existingData : temporaryDataListDetail) {
+                if (existingData.getTebal().equals(tebal) &&
+                        existingData.getLebar().equals(lebar) &&
+                        existingData.getPanjang().equals(panjang)) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (isDuplicate) {
+                Toast.makeText(this, "Data dengan ukuran tersebut sudah ada!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Tambahkan data baru
+            LabelDetailData newData = new LabelDetailData(tebal, lebar, panjang, pcs);
+            temporaryDataListDetail.add(newData);
+
+            // Refresh tabel
+            Tabel.removeViews(1, Tabel.getChildCount() - 1);
+            updateTableFromTemporaryDataDetail();
+            jumlahPcsST();
+            m3();
+            ton();
+        });
+
+        builder.setNegativeButton("Batal", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
+    private void showEditDetailDialog(LabelDetailData data) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Edit Detail");
+
+        // Inflate layout XML
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_detail_label, null);
+        builder.setView(dialogView);
+
+        TextInputEditText editTebal = dialogView.findViewById(R.id.editTebal);
+        TextInputEditText editLebar = dialogView.findViewById(R.id.editLebar);
+        TextInputEditText editPanjang = dialogView.findViewById(R.id.editPanjang);
+        TextInputEditText editJumlah = dialogView.findViewById(R.id.editJumlah);
+
+        // Set nilai awal
+        editTebal.setText(data.getTebal());
+        editLebar.setText(data.getLebar());
+        editPanjang.setText(data.getPanjang());
+        editJumlah.setText(data.getPcs());
+
+        builder.setPositiveButton("Simpan", (dialog, which) -> {
+            // Update data
+            data.setTebal(editTebal.getText().toString());
+            data.setLebar(editLebar.getText().toString());
+            data.setPanjang(editPanjang.getText().toString());
+            data.setPcs(editJumlah.getText().toString());
+
+            // Refresh tabel
+            Tabel.removeViews(1, Tabel.getChildCount() - 1);
+            updateTableFromTemporaryDataDetail();
+            jumlahPcsST();
+            m3();
+            ton();
+        });
+
+        builder.setNegativeButton("Batal", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
+    private void updateTableFromTemporaryDataGrade() {
+        // Reset table sebelum render ulang
+        rowCount = 0;
+        Tabel2.removeAllViews();
+
+        for (GradeDetailData data : temporaryDataListGrade) {
             TableRow newRow = new TableRow(this);
             newRow.setLayoutParams(new TableRow.LayoutParams(
                     TableRow.LayoutParams.MATCH_PARENT,
                     TableRow.LayoutParams.WRAP_CONTENT));
 
-            // Tambahkan kolom-kolom dengan format yang sama seperti addDataDetail
-//            addTextViewToRowWithWeight(newRow, String.valueOf(data.gradeId), 1f);
-            addTextViewToRowWithWeight(newRow, data.gradeName, 1f);
-            addTextViewToRowWithWeight(newRow, data.jumlah, 0.5f);
-            addTextViewToRowWithWeight(newRow, "", 0.5f);
+            // === Kolom Grade Name (1f)
+            addTextViewToRowWithWeight(newRow, data.getGradeName(), 1f);
 
+            // === Kolom Jumlah (0.5f)
+            addTextViewToRowWithWeight(newRow, data.getJumlah(), 0.5f);
+
+            // === Kolom Delete Button (0.5f)
+            ImageButton deleteButton = new ImageButton(this);
+            deleteButton.setImageResource(R.drawable.ic_delete);
+            deleteButton.setBackgroundColor(Color.TRANSPARENT);
+            deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            deleteButton.setPadding(15, 5, 5, 5);
+
+            TableRow.LayoutParams btnParams = new TableRow.LayoutParams(
+                    0, // penting: width 0 supaya weight bekerja
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    0.5f // weight 0.5f
+            );
+            deleteButton.setLayoutParams(btnParams);
+
+            deleteButton.setOnClickListener(v -> {
+                temporaryDataListGrade.remove(data);
+                updateTableFromTemporaryDataGrade();
+                // hitungTotalGrade(); // kalau ada
+            });
+
+            newRow.addView(deleteButton);
+
+            // Tambahkan row ke tabel
             Tabel2.addView(newRow);
         }
     }
+
 
 
 
@@ -1954,53 +2676,10 @@ public class SawnTimber extends AppCompatActivity {
         }).start();
     }
 
-    private boolean validateKayuLatSelection() {
-        JenisKayu selectedKayu = (JenisKayu) SpinKayu.getSelectedItem();
-        if (selectedKayu != null && selectedKayu.getNamaJenisKayu().toLowerCase().contains("kayu lat")) {
-//            if (!radioBagus.isChecked() && !radioKulit.isChecked()) {
-//                Toast.makeText(this, "Silahkan pilih (Bagus/Kulit)", Toast.LENGTH_SHORT).show();
-//                return false;
-//            }
-        }
-        return true;
-    }
-
-    private static class DataRow {
-        String tebal;
-        String lebar;
-        String panjang;
-        String pcs;
-        int rowId;
-        private static int nextId = 1;
-
-        DataRow(String tebal, String lebar, String panjang, String pcs) {
-            this.tebal = tebal;
-            this.lebar = lebar;
-            this.panjang = panjang;
-            this.pcs = pcs;
-            this.rowId = nextId++;
-        }
-    }
-
-    private static class DataRow2 {
-        int gradeId;
-        String gradeName;
-        String jumlah;
-        int rowId;
-        private static int nextId = 1;
-
-        DataRow2(int gradeId, String gradeName, String jumlah) {
-            this.gradeId = gradeId;
-            this.gradeName = gradeName;
-            this.jumlah = jumlah;
-            this.rowId = nextId++;
-        }
-    }
 
     private void clearTableData() {
-        NoST.setQuery("", false);
-        NoST_display.setText("");
-        NoKayuBulat.setQuery("", false);
+        NoST.setText("");
+        NoKayuBulat.setText("");
         Supplier.setText("");
         NoTruk.setText("");
         NoPlatTruk.setText("");
@@ -2013,7 +2692,7 @@ public class SawnTimber extends AppCompatActivity {
         CBUpah.setChecked(false);
         SpinSPK.setSelection(0);
         TglVacuum.setText("");
-        NoKayuBulat.setQuery("", false);
+        NoKayuBulat.setText("");
         setSpinnerValue(SpinKayu, "-");
         setSpinnerValue(SpinStickBy, "-");
         setSpinnerValue(SpinTelly, "-");
@@ -2021,7 +2700,6 @@ public class SawnTimber extends AppCompatActivity {
         cbBongkarSusun.setChecked(false);
         cbSLP.setChecked(false);
 
-        NoST_display.setVisibility(View.GONE);
 
     }
 
@@ -2030,13 +2708,13 @@ public class SawnTimber extends AppCompatActivity {
             double totalTON = 0.0;
             boolean isMillimeter = radioMillimeter.isChecked();
 
-            for (DataRow row : temporaryDataListDetail) {
+            for (LabelDetailData row : temporaryDataListDetail) {
 
                 // Parse nilai-nilai langsung tanpa membersihkan
-                double tebal = Double.parseDouble(row.tebal);
-                double lebar = Double.parseDouble(row.lebar);
-                double panjang = Double.parseDouble(row.panjang);
-                int pcs = Integer.parseInt(row.pcs);
+                double tebal = Double.parseDouble(row.getTebal());
+                double lebar = Double.parseDouble(row.getLebar());
+                double panjang = Double.parseDouble(row.getPanjang());
+                int pcs = Integer.parseInt(row.getPcs());
 
                 // Hitung ton untuk baris ini
                 double rowTON;
@@ -2075,32 +2753,56 @@ public class SawnTimber extends AppCompatActivity {
 
     private void m3() {
         try {
-            double totalM3 = 0.0;
+            BigDecimal totalM3 = BigDecimal.ZERO;
             boolean isMillimeter = radioMillimeter.isChecked();
 
-            for (DataRow row : temporaryDataListDetail) {
+            for (LabelDetailData row : temporaryDataListDetail) {
 
-                // Parse nilai-nilai langsung tanpa membersihkan
-                double tebal = Double.parseDouble(row.tebal);
-                double lebar = Double.parseDouble(row.lebar);
-                double panjang = Double.parseDouble(row.panjang);
-                int pcs = Integer.parseInt(row.pcs);
+                // Parse nilai-nilai
+                BigDecimal tebal = new BigDecimal(row.getTebal());
+                BigDecimal lebar = new BigDecimal(row.getLebar());
+                BigDecimal panjang = new BigDecimal(row.getPanjang());
+                BigDecimal pcs = new BigDecimal(row.getPcs());
 
-                // Hitung m3 untuk baris ini
-                double rowM3;
+                BigDecimal rowM3;
 
-                if(isMillimeter){
-                    rowM3 = ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000) * 1.416;
-                    rowM3 = Math.floor(rowM3 * 10000) / 10000;
+                if (isMillimeter) {
+                    // ((tebal * lebar * panjang * pcs * 304.8 / 1000000000 / 1.416 * 10000) / 10000) * 1.416
+                    rowM3 = tebal
+                            .multiply(lebar)
+                            .multiply(panjang)
+                            .multiply(pcs)
+                            .multiply(BigDecimal.valueOf(304.8))
+                            .divide(BigDecimal.valueOf(1000000000), 10, RoundingMode.HALF_UP)
+                            .divide(BigDecimal.valueOf(1.416), 10, RoundingMode.HALF_UP);
+
+                    // floor 4 desimal
+                    rowM3 = rowM3.multiply(BigDecimal.valueOf(10000));
+                    rowM3 = rowM3.setScale(0, RoundingMode.FLOOR);
+                    rowM3 = rowM3.divide(BigDecimal.valueOf(10000), 4, RoundingMode.HALF_UP);
+
+                    rowM3 = rowM3.multiply(BigDecimal.valueOf(1.416));
+
+                } else {
+                    // ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000) * 1.416
+                    rowM3 = tebal
+                            .multiply(lebar)
+                            .multiply(panjang)
+                            .multiply(pcs)
+                            .divide(BigDecimal.valueOf(7200.8), 10, RoundingMode.HALF_UP);
+
+                    // floor 4 desimal
+                    rowM3 = rowM3.multiply(BigDecimal.valueOf(10000));
+                    rowM3 = rowM3.setScale(0, RoundingMode.FLOOR);
+                    rowM3 = rowM3.divide(BigDecimal.valueOf(10000), 4, RoundingMode.HALF_UP);
+
+                    rowM3 = rowM3.multiply(BigDecimal.valueOf(1.416));
                 }
-                else{
-                    rowM3 = ((tebal * lebar * panjang * pcs / 7200.8 * 10000) / 10000) * 1.416;
-                    rowM3 = Math.floor(rowM3 * 10000) / 10000;
-                }
-                totalM3 += rowM3;
+
+                totalM3 = totalM3.add(rowM3);
             }
 
-            // Format hasil
+            // Format hasil dengan 4 desimal
             DecimalFormat df = new DecimalFormat("0.0000");
             String formattedM3 = df.format(totalM3);
 
@@ -2108,17 +2810,16 @@ public class SawnTimber extends AppCompatActivity {
             TextView M3TextView = findViewById(R.id.M3ST);
             if (M3TextView != null) {
                 M3TextView.setText(formattedM3);
-                // Debug: Konfirmasi setText
                 Log.d("M3_DEBUG", "TextView updated with: " + formattedM3);
             } else {
                 Log.e("M3_DEBUG", "M3TextView is null!");
             }
 
         } catch (Exception e) {
-            Log.e("M3_DEBUG", "Error in ton calculation: " + e.getMessage());
-            e.printStackTrace();
+            Log.e("M3_DEBUG", "Error in M3 calculation: " + e.getMessage(), e);
         }
     }
+
 
     private void jumlahPcsST() {
         TableLayout table = findViewById(R.id.Tabel);
@@ -2156,364 +2857,124 @@ public class SawnTimber extends AppCompatActivity {
     }
 
     private void populateTableOutput(List<OutputDataST> noSTList) {
-        TextView labelCountView = findViewById(R.id.labelCount);
+        runOnUiThread(() -> {
+            TextView labelCountView = findViewById(R.id.labelCount);
 
-        if (TableOutput == null) {
-            Log.e("populateTableOutput", "TableOutput tidak ditemukan di layout!");
-            return;
-        }
-
-        TableOutput.removeAllViews();
-
-        if (noSTList == null || noSTList.isEmpty()) {
-            TextView noData = new TextView(this);
-            noData.setText("Tidak ada label");
-            noData.setPadding(16, 16, 16, 16);
-            noData.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            TableOutput.addView(noData);
-
-            if (labelCountView != null) {
-                labelCountView.setText("Total : " + noSTList.size());
+            if (TableOutput == null) {
+                Log.e("populateTableOutput", "TableOutput tidak ditemukan di layout!");
+                return;
             }
-            return;
-        }
 
-        for (int i = 0; i < noSTList.size(); i++) {
-            OutputDataST data = noSTList.get(i);
-            TableRow row = new TableRow(this);
-            row.setLayoutParams(new TableLayout.LayoutParams(
-                    TableLayout.LayoutParams.MATCH_PARENT,
-                    TableLayout.LayoutParams.WRAP_CONTENT  // ⬅️ ini penting
-            ));
+            TableOutput.removeAllViews();
+            selectedRowHeader = null; // Reset setiap kali load data baru
 
-            // === Warna selang-seling ===
-            int bgColor = (i % 2 == 0)
-                    ? ContextCompat.getColor(this, R.color.background_cream) // genap
-                    : ContextCompat.getColor(this, R.color.white);            // ganjil
-            row.setBackgroundColor(bgColor);
+            int labelCount = 0;
 
-            // === Kolom 1: NoST ===
-            TextView noSTView = new TextView(this);
-            noSTView.setText(data.getNoST());
-            noSTView.setPadding(16, 16, 16, 16);
-            noSTView.setTextSize(16);
-            noSTView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            noSTView.setGravity(Gravity.CENTER);
+            if (noSTList == null || noSTList.isEmpty()) {
+                TextView noData = new TextView(this);
+                noData.setText("Tidak ada label");
+                noData.setPadding(16, 16, 16, 16);
+                noData.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                TableOutput.addView(noData);
 
-            TableRow.LayoutParams noSTParams = new TableRow.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.7f  // ⬅️ WRAP_CONTENT
-            );
-            noSTParams.gravity = Gravity.CENTER;
-            noSTView.setLayoutParams(noSTParams);
-
-
-            // === Divider ===
-            View divider = new View(this);
-            divider.setLayoutParams(new TableRow.LayoutParams(
-                    1, ViewGroup.LayoutParams.MATCH_PARENT));
-            divider.setBackgroundColor(ContextCompat.getColor(this, R.color.gray));
-
-            // === Kolom 2: Ikon Printed ===
-            ImageView iconView = new ImageView(this);
-            int iconRes = data.isHasBeenPrinted()
-                    ? R.drawable.ic_done     // printed
-                    : R.drawable.ic_undone;  // not printed
-            iconView.setImageResource(iconRes);
-            iconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            iconView.setPadding(8, 8, 8, 8);
-
-            TableRow.LayoutParams iconParams = new TableRow.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.3f  // ⬅️ WRAP_CONTENT
-            );
-            iconParams.gravity = Gravity.CENTER;
-            iconView.setLayoutParams(iconParams);
-
-            // Tambahkan ke row
-            row.addView(noSTView);
-            row.addView(divider);
-            row.addView(iconView);
-
-            // Tambahkan ke tabel
-            TableOutput.addView(row);
-
-            // Tambahkan OnClickListener untuk menampilkan tooltip
-            row.setOnClickListener(view -> {
-                String currentNoST = data.getNoST(); // Ambil nilai noST dari objek data saat ini
-                fetchDataAndShowTooltip(
-                        view,
-                        currentNoST,  // Gunakan noST dari data iterasi saat ini
-                        "ST_h",
-                        "ST_d",
-                        "NoST"
-                );
-            });
-            if (labelCountView != null) {
-                labelCountView.setText("Total : " + noSTList.size());
-            }
-        }
-    }
-
-
-    // Mengambil data tooltip dan menampilkan tooltip
-    private void fetchDataAndShowTooltip(View anchorView, String noLabel, String tableH, String tableD, String mainColumn) {
-        executorService.execute(() -> {
-            // Ambil data tooltip menggunakan ProsesProduksiApi
-            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(noLabel, tableH, tableD, mainColumn);
-
-            runOnUiThread(() -> {
-                if (tooltipData != null) {
-                    // Pengecekan lebih lanjut jika data dalam tooltipData null
-                    if (tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
-
-                        // Tampilkan tooltip dengan data yang diperoleh
-                        showTooltip(
-                                anchorView,
-                                tooltipData.getNoLabel(),
-                                tooltipData.getFormattedDateTime(),
-                                tooltipData.getJenis(),
-                                tooltipData.getSpkDetail(),
-                                tooltipData.getSpkAsalDetail(),
-                                tooltipData.getNamaGrade(),
-                                tooltipData.isLembur(),
-                                tooltipData.getTableData(),
-                                tooltipData.getTotalPcs(),
-                                tooltipData.getTotalM3(),
-                                tooltipData.getTotalTon(),
-                                tooltipData.getNoPlat(),
-                                tooltipData.getNoKBSuket(),
-                                tableH
-                        );
-
-
-
-                    } else {
-                        // Tampilkan pesan error jika data utama tidak ada
-                        Toast.makeText(this, "Data tooltip tidak lengkap", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    // Tampilkan pesan error jika tooltipData null
-                    Toast.makeText(this, "Error fetching tooltip data", Toast.LENGTH_SHORT).show();
+                if (labelCountView != null) {
+                    labelCountView.setText("Total : 0");
                 }
-            });
+                return;
+            }
 
+            for (int i = 0; i < noSTList.size(); i++) {
+                OutputDataST data = noSTList.get(i);
+
+                TableRow row = new TableRow(this);
+                TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
+                        TableLayout.LayoutParams.MATCH_PARENT,
+                        TableLayout.LayoutParams.WRAP_CONTENT
+                );
+                row.setLayoutParams(rowParams);
+                row.setPadding(0, 10, 0, 10);
+
+                // Set tag index row
+                row.setTag(i);
+
+                // Warna selang-seling
+                if (i % 2 == 0) {
+                    row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                } else {
+                    row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                }
+
+                // === Kolom 1: NoST ===
+                TextView noSTView = new TextView(this);
+                noSTView.setText(data.getNoST());
+                noSTView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+                noSTView.setGravity(Gravity.CENTER);
+                noSTView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                row.addView(noSTView);
+
+                // === Kolom 2: Ikon Printed ===
+                ImageView iconView = new ImageView(this);
+                iconView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
+                iconView.setScaleType(ImageView.ScaleType.CENTER);
+                int iconRes = data.isHasBeenPrinted()
+                        ? R.drawable.ic_done
+                        : R.drawable.ic_undone;
+                iconView.setImageResource(iconRes);
+                iconView.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
+                row.addView(iconView);
+
+                // === Event klik row ===
+                row.setOnClickListener(v -> {
+                    // Reset row sebelumnya kalau ada
+                    if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
+                        int prevIndex = (int) selectedRowHeader.getTag();
+                        if (prevIndex % 2 == 0) {
+                            selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                        } else {
+                            selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                        }
+                    }
+
+                    // Highlight row baru
+                    selectedRowHeader = row;
+                    row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+                    TableUtils.setTextColor(this, row, R.color.white);
+
+                    // Tooltip dengan callback reset warna
+                    TooltipUtils.fetchDataAndShowTooltip(
+                            this,
+                            executorService,
+                            selectedRowHeader,
+                            data.getNoST(),
+                            "ST_h",
+                            "ST_d",
+                            "NoST",
+                            () -> {
+                                if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
+                                    int currentIndex = (int) selectedRowHeader.getTag();
+                                    if (currentIndex % 2 == 0) {
+                                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                                    } else {
+                                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                                    }
+                                    TableUtils.setTextColor(this, row, R.color.black);
+                                    selectedRowHeader = null;
+                                } else {
+                                    selectedRowHeader = null;
+                                }
+                            }
+                    );
+                });
+
+                TableOutput.addView(row);
+                labelCount++;
+            }
+
+            if (labelCountView != null) {
+                labelCountView.setText("Total : " + labelCount);
+            }
         });
     }
-
-    private void showTooltip(View anchorView, String noLabel, String formattedDateTime, String jenis, String spkDetail, String spkAsalDetail, String namaGrade, boolean isLembur, List<String[]> tableData, int totalPcs, double totalM3, double totalTon, String noPlat, String noKBSuket, String tableH) {
-        // Inflate layout tooltip
-        View tooltipView = LayoutInflater.from(this).inflate(R.layout.tooltip_layout_right, null);
-
-        // Set data pada TextView
-        ((TextView) tooltipView.findViewById(R.id.tvNoLabel)).setText(noLabel);
-        ((TextView) tooltipView.findViewById(R.id.tvDateTime)).setText(formattedDateTime);
-        ((TextView) tooltipView.findViewById(R.id.tvJenis)).setText(jenis);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPK)).setText(spkDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNoSPKAsal)).setText(spkAsalDetail);
-        ((TextView) tooltipView.findViewById(R.id.tvNamaGrade)).setText(namaGrade);
-        ((TextView) tooltipView.findViewById(R.id.tvIsLembur)).setText(isLembur ? "Yes" : "No");
-        ((TextView) tooltipView.findViewById(R.id.tvNoPlat)).setText(noPlat);
-        ((TextView) tooltipView.findViewById(R.id.tvNoKBSuket)).setText(noKBSuket);
-
-        // Referensi TableLayout
-        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
-
-        // Membuat Header Tabel Secara Dinamis
-        TableRow headerRow = new TableRow(this);
-        headerRow.setBackgroundColor(getResources().getColor(R.color.hijau));
-
-        String[] headerTexts = {"Tebal", "Lebar", "Panjang", "Pcs"};
-        for (String headerText : headerTexts) {
-            TextView headerTextView = new TextView(this);
-            headerTextView.setText(headerText);
-            headerTextView.setGravity(Gravity.CENTER);
-            headerTextView.setPadding(8, 8, 8, 8);
-            headerTextView.setTextColor(Color.WHITE);
-            headerTextView.setTypeface(Typeface.DEFAULT_BOLD);
-            headerRow.addView(headerTextView);
-        }
-
-        // Tambahkan Header ke TableLayout
-        tableLayout.addView(headerRow);
-
-        // Tambahkan Data ke TableLayout
-        for (String[] row : tableData) {
-            TableRow tableRow = new TableRow(this);
-            tableRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-            ));
-            tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
-
-            for (String cell : row) {
-                TextView textView = new TextView(this);
-                textView.setText(cell);
-                textView.setGravity(Gravity.CENTER);
-                textView.setPadding(8, 8, 8, 8);
-                textView.setTextColor(Color.BLACK);
-                tableRow.addView(textView);
-            }
-            tableLayout.addView(tableRow);
-        }
-
-        // Tambahkan Baris untuk Total Pcs
-        TableRow totalRow = new TableRow(this);
-        totalRow.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        totalRow.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan total dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            totalRow.addView(emptyCell);
-        }
-
-        TextView totalLabel = new TextView(this);
-        totalLabel.setText("Total :");
-        totalLabel.setGravity(Gravity.END);
-        totalLabel.setPadding(8, 8, 8, 8);
-        totalLabel.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalLabel);
-
-        // Cell untuk Total Pcs
-        TextView totalValue = new TextView(this);
-        totalValue.setText(String.valueOf(totalPcs));
-        totalValue.setGravity(Gravity.CENTER);
-        totalValue.setPadding(8, 8, 8, 8);
-        totalValue.setTypeface(Typeface.DEFAULT_BOLD);
-        totalRow.addView(totalValue);
-
-        // Tambahkan totalRow ke TableLayout
-        tableLayout.addView(totalRow);
-
-        // Tambahkan Baris untuk Total M3
-        TableRow m3Row = new TableRow(this);
-        m3Row.setLayoutParams(new TableRow.LayoutParams(
-                TableRow.LayoutParams.MATCH_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        ));
-
-        m3Row.setBackgroundColor(Color.WHITE);
-
-        // Cell kosong untuk memisahkan m3 dengan tabel
-        for (int i = 0; i < 2; i++) {
-            TextView emptyCell = new TextView(this);
-            emptyCell.setText(""); // Cell kosong
-            m3Row.addView(emptyCell);
-        }
-
-        TextView m3Label = new TextView(this);
-        m3Label.setText("M3 :");
-        m3Label.setGravity(Gravity.END);
-        m3Label.setPadding(8, 8, 8, 8);
-        m3Label.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Label);
-
-        // Cell untuk Total M3
-        DecimalFormat df = new DecimalFormat("0.0000");
-        TextView m3Value = new TextView(this);
-        m3Value.setText(df.format(totalM3));
-        m3Value.setGravity(Gravity.CENTER);
-        m3Value.setPadding(8, 8, 8, 8);
-        m3Value.setTypeface(Typeface.DEFAULT_BOLD);
-        m3Row.addView(m3Value);
-
-        // Tambahkan m3Row ke TableLayout
-        tableLayout.addView(m3Row);
-
-        //TOOLTIP VIEW PRECONDITION
-        if (tableH.equals("ST_h")) {
-            tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
-            tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
-
-            // Tambahkan Baris untuk Total Ton
-            TableRow tonRow = new TableRow(this);
-            tonRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.MATCH_PARENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-            ));
-
-            tonRow.setBackgroundColor(Color.WHITE);
-
-            // Cell kosong untuk memisahkan m3 dengan tabel
-            for (int i = 0; i < 2; i++) {
-                TextView emptyCell = new TextView(this);
-                emptyCell.setText(""); // Cell kosong
-                tonRow.addView(emptyCell);
-            }
-
-            TextView tonLabel = new TextView(this);
-            tonLabel.setText("Ton :");
-            tonLabel.setGravity(Gravity.END);
-            tonLabel.setPadding(8, 8, 8, 8);
-            tonLabel.setTypeface(Typeface.DEFAULT_BOLD);
-            tonRow.addView(tonLabel);
-
-            // Cell untuk Total Ton
-            TextView tonValue = new TextView(this);
-            tonValue.setText(df.format(totalTon));
-            tonValue.setGravity(Gravity.CENTER);
-            tonValue.setPadding(8, 8, 8, 8);
-            tonValue.setTypeface(Typeface.DEFAULT_BOLD);
-            tonRow.addView(tonValue);
-
-            // Tambahkan m3Row ke TableLayout
-            tableLayout.addView(tonRow);
-        } else {
-            tooltipView.findViewById(R.id.tvNoKBSuket).setVisibility(View.GONE);
-            tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
-        }
-
-        // Buat PopupWindow
-        PopupWindow popupWindow = new PopupWindow(
-                tooltipView,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-
-        popupWindow.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setFocusable(true);
-
-        // Ukur ukuran tooltip sebelum menampilkannya
-        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int tooltipWidth = tooltipView.getMeasuredWidth();
-        int tooltipHeight = tooltipView.getMeasuredHeight();
-
-        // Dapatkan posisi anchorView
-        int[] location = new int[2];
-        anchorView.getLocationOnScreen(location);
-
-        // Hitung posisi tooltip
-        int x = location[0] - tooltipWidth;
-        int y = location[1] + (anchorView.getHeight() / 2) - (tooltipHeight / 2);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int screenHeight = displayMetrics.heightPixels;
-        ImageView trianglePointer = tooltipView.findViewById(R.id.trianglePointer);
-
-        // Menaikkan pointer ketika popup melebihi batas layout
-        Log.d("TooltipDebug", "TrianglePointer Y: " + y);
-        Log.d("TooltipDebug", "TrianglePointer tooltip : " + (screenHeight - tooltipHeight) );
-
-        if (y < 60) {
-            trianglePointer.setY(y - 60);
-        }
-        else if(y > (screenHeight - tooltipHeight)){
-            trianglePointer.setY(y - (screenHeight - tooltipHeight));
-        }
-
-
-
-        // Tampilkan tooltip
-        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
-    }
-
 
 
     private void setCurrentDateTimeVacuum() {
@@ -2660,7 +3121,7 @@ public class SawnTimber extends AppCompatActivity {
     }
 
     private Uri createPdf(String noST, String jenisKayu, String tglStickBundle, String tellyBy, String noSPK, String stickBy, String platTruk,
-                          List<DataRow> temporaryDataListDetail, String noKayuBulat, String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
+                          List<LabelDetailData> temporaryDataListDetail, String noKayuBulat, String namaSupplier, String noTruk, String jumlahPcs, String m3, String ton,
                           int printCount, String username, String remark, int isSLP, String idUOMTblLebar, String idUOMPanjang, String noPenST, int labelVersion, String customer) throws IOException {
         // Validasi parameter wajib
         if (noST == null || noST.trim().isEmpty()) {
@@ -2812,11 +3273,11 @@ public class SawnTimber extends AppCompatActivity {
                 // Isi tabel
                 DecimalFormat df = new DecimalFormat("#,###.##");
 
-                for (DataRow row : temporaryDataListDetail) {
-                    String tebal = (row.tebal != null) ? df.format(Float.parseFloat(row.tebal)) : "-";
-                    String lebar = (row.lebar != null) ? df.format(Float.parseFloat(row.lebar)) : "-";
-                    String panjang = (row.panjang != null) ? df.format(Float.parseFloat(row.panjang)) : "-";
-                    String pcs = (row.pcs != null) ? df.format(Integer.parseInt(row.pcs)) : "-";
+                for (LabelDetailData row : temporaryDataListDetail) {
+                    String tebal = (row.getTebal() != null) ? df.format(Float.parseFloat(row.getTebal())) : "-";
+                    String lebar = (row.getLebar() != null) ? df.format(Float.parseFloat(row.getLebar())) : "-";
+                    String panjang = (row.getPanjang() != null) ? df.format(Float.parseFloat(row.getPanjang())) : "-";
+                    String pcs = (row.getPcs() != null) ? df.format(Integer.parseInt(row.getPcs())) : "-";
 
                     table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
                     table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
@@ -2920,8 +3381,6 @@ public class SawnTimber extends AppCompatActivity {
                 }
 
 
-
-
                 document.close();
                 pdfUri = uri;
 
@@ -2962,7 +3421,7 @@ public class SawnTimber extends AppCompatActivity {
                     String formattedDate = outputDateFormat.format(date);
 
                     TglStickBundel.setText(formattedDate);
-                    new LoadSusunTask().execute(rawDate);
+                    loadSusunSpinner(rawDate);
                     onClickDateOutput(rawDate);
 
                 } catch (Exception e) {
@@ -3021,8 +3480,8 @@ public class SawnTimber extends AppCompatActivity {
 
         // Cek duplikasi data
         boolean isDuplicate = false;
-        for (DataRow existingData : temporaryDataListDetail) {
-            if (existingData.tebal.equals(tebal) && existingData.panjang.equals(panjang) && existingData.lebar.equals(lebar)) {
+        for (LabelDetailData existingData : temporaryDataListDetail) {
+            if (existingData.getTebal().equals(tebal) && existingData.getPanjang().equals(panjang) && existingData.getLebar().equals(lebar)) {
                 isDuplicate = true;
                 break;
             }
@@ -3042,28 +3501,29 @@ public class SawnTimber extends AppCompatActivity {
             // Pengecekan: jika temporaryDataListDetail kosong, jangan lanjutkan pengurangan
             if (!temporaryDataListDetail.isEmpty()) {
                 // Lakukan pengecekan dan pengurangan pcs untuk panjang == panjangAcuan
-                for (DataRow dataRow : temporaryDataListDetail) {
-                    if (Float.parseFloat(dataRow.panjang) == panjangAcuan) {
-                        int updatedPcs = Integer.parseInt(dataRow.pcs) - Integer.parseInt(pcs); // Kurangi pcs
-                        dataRow.pcs = String.valueOf(updatedPcs); // Update nilai pcs
-                        sisaPCS.setText("Sisa : " + dataRow.pcs);
+                for (LabelDetailData dataRow : temporaryDataListDetail) {
+                    if (Float.parseFloat(dataRow.getPanjang()) == panjangAcuan) {
+                        int updatedPcs = Integer.parseInt(dataRow.getPcs()) - Integer.parseInt(pcs); // Kurangi pcs
+                        dataRow.setPcs(String.valueOf(updatedPcs)); // Update nilai pcs
+                        sisaPCS.setText("Sisa : " + dataRow.getPcs());
                     }
                 }
             }
 
-            // Buat objek DataRow baru
-            DataRow newDataRow = new DataRow(tebal, lebar, panjang, pcs);
+            // Buat objek LabelDetailData baru
+            LabelDetailData newDataRow = new LabelDetailData(tebal, lebar, panjang, pcs);
             temporaryDataListDetail.add(newDataRow);
 
             // Urutkan data berdasarkan panjang
-            Collections.sort(temporaryDataListDetail, new Comparator<DataRow>() {
+            Collections.sort(temporaryDataListDetail, new Comparator<LabelDetailData>() {
                 @Override
-                public int compare(DataRow o1, DataRow o2) {
-                    return Float.compare(Float.parseFloat(o1.panjang), Float.parseFloat(o2.panjang));
+                public int compare(LabelDetailData o1, LabelDetailData o2) {
+                    return Float.compare(Float.parseFloat(o1.getPanjang()), Float.parseFloat(o2.getPanjang()));
                 }
             });
 
-            updateTable(panjangAcuan);
+            // Gunakan updateTableFromTemporaryDataDetail() instead of updateTable()
+            updateTableFromTemporaryDataDetail();
 
             addNewRow();  // Panggil fungsi untuk menambahkan row baru
 
@@ -3077,73 +3537,6 @@ public class SawnTimber extends AppCompatActivity {
 
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    // Method untuk memperbarui tampilan tabel setelah perubahan data
-    private void updateTable(float panjangAcuan) {
-        // Hapus semua baris yang ada di tabel
-        Tabel.removeAllViews();
-
-        // Tambahkan semua baris yang ada di temporaryDataListDetail
-        for (int i = 0; i < temporaryDataListDetail.size(); i++) {
-            DataRow dataRow = temporaryDataListDetail.get(i);
-
-            // Buat baris tabel baru
-            TableRow newRow = new TableRow(this);
-            newRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.MATCH_PARENT,
-                    TableRow.LayoutParams.WRAP_CONTENT));
-            DecimalFormat df = new DecimalFormat("#,###.##");
-
-            // Tambahkan kolom-kolom data dengan weight
-            addTextViewToRowWithWeight(newRow, String.valueOf(i + 1), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.tebal)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.lebar)), 1f);
-            addTextViewToRowWithWeight(newRow, df.format(Float.parseFloat(dataRow.panjang)), 1f);
-            addTextViewToRowWithWeight(newRow, String.valueOf(Integer.parseInt(dataRow.pcs)), 1f);
-
-            // Buat dan tambahkan tombol hapus
-            Button deleteButton = new Button(this);
-            deleteButton.setText("Hapus");
-            deleteButton.setTextSize(12);
-
-            // Atur style tombol
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 1f);
-            buttonParams.setMargins(5, 5, 5, 5);
-            deleteButton.setLayoutParams(buttonParams);
-            deleteButton.setPadding(10, 5, 10, 5);
-            deleteButton.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            deleteButton.setTextColor(Color.BLACK);
-
-            // Set listener tombol hapus
-            deleteButton.setOnClickListener(v -> {
-                // Ambil nilai pcs yang akan dihapus
-                int pcsDeleted = Integer.parseInt(dataRow.pcs);
-
-                // Hapus baris dari tabel
-                Tabel.removeView(newRow);
-                temporaryDataListDetail.remove(dataRow);
-
-                // Tambahkan pcs yang dihapus ke data dengan panjang == panjangAcuan
-                for (DataRow row : temporaryDataListDetail) {
-                    if (Float.parseFloat(row.panjang) == panjangAcuan) {
-                        int updatedPcs = Integer.parseInt(row.pcs) + pcsDeleted; // Tambahkan pcs yang dihapus
-                        row.pcs = String.valueOf(updatedPcs); // Update pcs
-                    }
-                }
-
-                // Update tabel setelah penghapusan dan pengembalian pcs
-                updateRowNumbers();
-                jumlahPcsST();
-                m3();
-                ton();
-                updateTable(panjangAcuan);
-            });
-
-//            newRow.addView(deleteButton);
-            Tabel.addView(newRow);
         }
     }
 
@@ -3207,12 +3600,11 @@ public class SawnTimber extends AppCompatActivity {
 
 
     //Fungsi untuk add data Grade
-    private List<DataRow2> temporaryDataListGrade = new ArrayList<>();
     private List<ImageButton> deleteButtons = new ArrayList<>();
 
 
     private void addDataGrade(String noST) {
-        GradeStick selectedGrade = (GradeStick) SpinGrade.getSelectedItem();
+        MstGradeStickData selectedGrade = (MstGradeStickData) SpinGrade.getSelectedItem();
         String gradeName = selectedGrade.getNamaGradeStick();
         int gradeId = selectedGrade.getIdGradeStick();
         String jumlah = JumlahStick.getText().toString();
@@ -3227,68 +3619,12 @@ public class SawnTimber extends AppCompatActivity {
         }
 
         try {
-            // Buat objek DataRow2 baru
-            DataRow2 newDataRow = new DataRow2(gradeId, gradeName, jumlah);
+            // Buat objek GradeDetailData baru
+            GradeDetailData newDataRow = new GradeDetailData(gradeId, gradeName, jumlah);
             temporaryDataListGrade.add(newDataRow);
 
-            TableRow newRow = new TableRow(this);
-            newRow.setLayoutParams(new TableRow.LayoutParams(
-                    TableRow.LayoutParams.MATCH_PARENT,
-                    TableRow.LayoutParams.WRAP_CONTENT));
-
-
-            // Nama Grade
-            TextView gradeTextView = new TextView(this);
-            gradeTextView.setText(gradeName);
-            gradeTextView.setLayoutParams(new TableRow.LayoutParams(0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 1f));
-            gradeTextView.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
-            gradeTextView.setPadding(10, 35, 10, 15); // Menambahkan padding yang seimbang
-            newRow.addView(gradeTextView);
-
-            // Jumlah
-            TextView jumlahTextView = new TextView(this);
-            jumlahTextView.setText(jumlah);
-            jumlahTextView.setLayoutParams(new TableRow.LayoutParams(0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
-            jumlahTextView.setGravity(Gravity.CENTER);
-            jumlahTextView.setPadding(10, 10, 10, 10);
-            newRow.addView(jumlahTextView);
-
-            // Tombol Hapus (ImageButton)
-            ImageButton deleteButton = new ImageButton(this);
-            deleteButton.setImageResource(R.drawable.ic_close); // Ganti dengan gambar ikon sesuai kebutuhan
-            deleteButton.setContentDescription("Delete button"); // Deskripsi untuk aksesibilitas
-
-            // Atur latar belakang tombol menjadi merah
-            deleteButton.setBackgroundColor(Color.TRANSPARENT); // Mengubah latar belakang menjadi merah
-
-            // Beri tint warna putih pada ikon
-            deleteButton.setColorFilter(Color.RED, PorterDuff.Mode.SRC_IN); // Menyaring warna ikon menjadi putih
-
-            // Atur layout button
-            TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(
-                    0,
-                    TableRow.LayoutParams.WRAP_CONTENT, 0.5f); // Bobot 0.5f sesuai permintaan
-            buttonParams.setMargins(5, 5, 5, 5);
-            deleteButton.setLayoutParams(buttonParams);
-
-            // Mengatur gambar agar proporsional
-            deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-
-
-            // Set listener tombol hapus
-            deleteButton.setOnClickListener(v -> {
-                Tabel2.removeView(newRow);
-                temporaryDataListGrade.remove(newDataRow);
-            });
-
-            newRow.addView(deleteButton);
-            deleteButtons.add(deleteButton);
-
-
-            // Tambahkan baris ke tabel
-            Tabel2.addView(newRow);
+            // ✅ Gunakan method render ulang agar konsisten
+            updateTableFromTemporaryDataGrade();
 
             // Bersihkan form input
             SpinGrade.setSelection(0);
@@ -3300,10 +3636,11 @@ public class SawnTimber extends AppCompatActivity {
         }
     }
 
+
     // Metode untuk mengecek ID grade yang sudah ada
     private boolean checkIfGradeIdExists(int gradeId) {
-        for (DataRow2 data : temporaryDataListGrade) {
-            if (data.gradeId == gradeId) {  // Akses langsung ke field gradeId
+        for (GradeDetailData data : temporaryDataListGrade) {
+            if (data.getGradeId() == gradeId) {  // Akses langsung ke field gradeId
                 Toast.makeText(this, "Data Grade telah terisi", Toast.LENGTH_SHORT).show();
 
                 return true;
@@ -3327,986 +3664,288 @@ public class SawnTimber extends AppCompatActivity {
     }
 
 
-    // Save Data Detail
-    private void saveDataToDatabase(String noST, int noUrut, double tebal, double lebar, double panjang, int pcs) {
-        new SaveDataTaskDetail().execute(noST, String.valueOf(noUrut), String.valueOf(tebal), String.valueOf(lebar),
-                String.valueOf(panjang), String.valueOf(pcs));
-    }
-
-    private class SaveDataTaskDetail extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noST = params[0];
-            String noUrut = params[1];
-            String tebal = params[2];
-            String lebar = params[3];
-            String panjang = params[4];
-            String pcs = params[5];
-
-            try {
-                Connection connection = ConnectionClass();
-                if (connection != null) {
-                    String query = "INSERT INTO dbo.ST_d (NoST, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
-                    PreparedStatement preparedStatement = connection.prepareStatement(query);
-                    preparedStatement.setString(1, noST);
-                    preparedStatement.setInt(2, Integer.parseInt(noUrut));
-                    preparedStatement.setDouble(3, Double.parseDouble(tebal));
-                    preparedStatement.setDouble(4, Double.parseDouble(lebar));
-                    preparedStatement.setDouble(5, Double.parseDouble(panjang));
-                    preparedStatement.setInt(6, Integer.parseInt(pcs));
-
-                    int rowsAffected = preparedStatement.executeUpdate();
-                    return rowsAffected > 0;
-                } else {
-                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
-                }
-            } catch (SQLException e) {
-                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage());
-                e.printStackTrace();
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-                Log.d("DB_INSERT", "Data Detail berhasil disimpan");
-            } else {
-                Log.e("DB_INSERT", "Data gagal disimpan");
-            }
-        }
-    }
-
-    // Save Data Grade
-    private void saveDataToDatabase2(String noST, int gradeId, String jumlah) {
-        new SaveDataGrade().execute(noST, String.valueOf(gradeId), jumlah);
-    }
-
-    private class SaveDataGrade extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String noST = params[0];
-            String gradeId = params[1];
-            String jumlah = params[2];
-
-            try {
-                // Cek nilai parameter
-//                Log.d("SaveDataGrade", "noST: " + noST + ", gradeId: " + gradeId + ", jumlah: " + jumlah);
-
-                Connection connection = ConnectionClass();
-                if (connection != null) {
-                    String query = "INSERT INTO dbo.STStick (NoST, IdGradeStick, JumlahStick) VALUES (?, ?, ?)";
-                    PreparedStatement preparedStatement = connection.prepareStatement(query);
-                    preparedStatement.setString(1, noST);
-                    preparedStatement.setInt(2, Integer.parseInt(gradeId));  // Pastikan gradeId valid
-                    preparedStatement.setString(3, jumlah);
-
-                    int rowsAffected = preparedStatement.executeUpdate();
-                    if (rowsAffected > 0) {
-//                        Log.d("DB_INSERT", "Data Grade berhasil disimpan");
-                        return true;
-                    } else {
-                        Log.e("DB_INSERT", "Data Grade gagal disimpan");
-                    }
-                } else {
-                    Log.e("DB_CONNECTION", "Koneksi ke database gagal");
-                }
-            } catch (SQLException e) {
-                Log.e("DB_ERROR", "SQL Exception: " + e.getMessage(), e);
-            } catch (Exception e) {
-                Log.e("GENERAL_ERROR", "General Exception: " + e.getMessage(), e);
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (success) {
-//                Toast.makeText(SawnTimber.this, "Data Grade berhasil disimpan", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SawnTimber.this, "Gagal menyimpan data Grade", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
 
 
-    @SuppressWarnings("deprecation")
-    private class SaveBongkarSusunTask extends AsyncTask<Void, Void, Boolean> {
-        private String noBongkarSusun;
-        private String noST;
-
-        public SaveBongkarSusunTask(String noBongkarSusun, String noST) {
-            this.noBongkarSusun = noBongkarSusun;
-            this.noST = noST;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "INSERT INTO dbo.BongkarSusunOutputST (NoST, NoBongkarSusun) VALUES (?, ?)";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, noST);
-                    ps.setString(2, noBongkarSusun);
-                    ps.executeUpdate();
-                    ps.close();
-                    con.close();
-                    return true;
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                    return false;
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-//            loadOutputByMesinSusun(noBongkarSusun, false);
-        }
-    }
 
 
-    private void setAndSaveNoST(final CountDownLatch latch) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Connection con = ConnectionClass();
-                noST = null;
-                boolean success = false;
 
-                if (con != null) {
-                    try {
-                        // Query untuk mendapatkan NoST terakhir
-                        String query = "SELECT MAX(NoST) FROM dbo.ST_h";
-                        PreparedStatement ps = con.prepareStatement(query);
-                        ResultSet rs = ps.executeQuery();
+    private void loadGradeStickSpinner(int selectedIdGrade, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            // Ambil data grade stick
+            List<MstGradeStickData> gradeStickList = SawnTimberApi.getGradeStickList();
 
-                        if (rs.next()) {
-                            String lastNoST = rs.getString(1);
-
-                            if (lastNoST != null && lastNoST.startsWith("E.")) {
-                                String numericPart = lastNoST.substring(2);
-                                int numericValue = Integer.parseInt(numericPart);
-                                int newNumericValue = numericValue + 1;
-
-                                // Membuat NoST baru
-                                noST = "E." + String.format("%06d", newNumericValue);
-                            }
-                        }
-
-                        rs.close();
-                        ps.close();
-                        con.close();
-                        success = true;
-                    } catch (Exception e) {
-                        Log.e("Database Error", e.getMessage());
-                        success = false;
-                    }
-                } else {
-                    Log.e("Connection Error", "Failed to connect to the database.");
-                    success = false;
-                }
-
-                // Setelah operasi selesai, lakukan update UI di thread utama
-                if (success) {
-                    String finalNewNoST = noST;
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NoST.setQuery(finalNewNoST, true);
-                            NoST.setVisibility(View.GONE);
-                            NoST_display.setVisibility(View.VISIBLE);
-                            NoST_display.setText(finalNewNoST);
-                            NoST_display.setEnabled(false);
-//                            Toast.makeText(S4S.this, "NoST berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                } else {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.e("Error", "Failed to set or save NoST.");
-                            Toast.makeText(SawnTimber.this, "Gagal mengatur atau menyimpan NoST.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-
-                // Memberitahukan bahwa thread selesai
-                latch.countDown();
-            }
-        }).start();
-    }
-
-    public class LoadJenisKayuTask extends AsyncTask<Void, Void, List<JenisKayu>> {
-        @Override
-        protected List<JenisKayu> doInBackground(Void... voids) {
-            List<JenisKayu> jenisKayuList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT IdJenisKayu, Jenis, IsUpah FROM dbo.MstJenisKayu WHERE IsST = 1"; // Ambil IsUpah
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idJenisKayu = rs.getString("IdJenisKayu");
-                        String namaJenisKayu = rs.getString("Jenis");
-                        int isUpah = rs.getInt("IsUpah"); // Ambil nilai IsUpah
-
-                        JenisKayu jenisKayu = new JenisKayu(idJenisKayu, namaJenisKayu, isUpah);
-                        jenisKayuList.add(jenisKayu);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return jenisKayuList;
-        }
-
-        @Override
-        protected void onPostExecute(List<JenisKayu> jenisKayuList) {
-            JenisKayu dummyKayu1 = new JenisKayu("", "PILIH", 0);
-            jenisKayuList.add(0, dummyKayu1);
-
-            ArrayAdapter<JenisKayu> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, jenisKayuList);
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-            SpinKayu.setAdapter(adapter);
-            SpinKayu.setSelection(0);
-        }
-    }
-
-    private class LoadSPKTask extends AsyncTask<Void, Void, List<SPK>> {
-        @Override
-        protected List<SPK> doInBackground(Void... voids) {
-            List<SPK> spkList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT s.NoSPK, b.Buyer " +
-                            "FROM MstSPK_h s " +
-                            "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
-                            "WHERE s.enable = 1 ";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String noSPK = rs.getString("NoSPK");
-                        String buyer = rs.getString("Buyer");
-
-                        // Buat objek SPK dengan kedua nilai
-                        SPK spk = new SPK(noSPK, buyer);
-                        spkList.add(spk);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return spkList;
-        }
-
-        @Override
-        protected void onPostExecute(List<SPK> spkList) {
-            // Tambahkan item PILIH di awal list
-            SPK dummySPK = new SPK("PILIH");
-            spkList.add(0, dummySPK);
-
-            ArrayAdapter<SPK> adapter = new ArrayAdapter<>(SawnTimber.this,
-                    android.R.layout.simple_spinner_item, spkList);
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-
-            SpinSPK.setAdapter(adapter);
-            SpinSPK.setSelection(0);
-        }
-    }
-
-
-    private class LoadSusunTask extends AsyncTask<String, Void, List<Susun>> {
-        @Override
-        protected List<Susun> doInBackground(String... params) {
-            List<Susun> susunList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    // Ambil tanggal saat ini jika tidak ada parameter
-                    String selectedDate;
-                    if (params != null && params.length > 0) {
-                        selectedDate = params[0];
-                    } else {
-                        selectedDate = TglStickBundel.getText().toString();
-                    }
-
-                    String query = "SELECT NoBongkarSusun FROM dbo.BongkarSusun_h WHERE Tanggal = ?";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ps.setString(1, selectedDate);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String nomorBongkarSusun = rs.getString("NoBongkarSusun");
-
-                        Susun susun = new Susun(nomorBongkarSusun);
-                        susunList.add(susun);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-            return susunList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Susun> susunList) {
-            if (!susunList.isEmpty()) {
-                ArrayAdapter<Susun> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, susunList);
+            runOnUiThread(() -> {
+                ArrayAdapter<MstGradeStickData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        gradeStickList
+                );
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-                SpinBongkarSusun.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Failed to load susun data");
-                SpinBongkarSusun.setAdapter(null);
-//                TabelOutput.removeAllViews();
-            }
-        }
-    }
-
-
-    private class LoadGradeStickTask extends AsyncTask<Void, Void, List<GradeStick>> {
-        @Override
-        protected List<GradeStick> doInBackground(Void... voids) {
-            List<GradeStick> gradeStickList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT IdGradeStick, NamaGradeStick FROM dbo.MstGradeStick";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        int idGradeStick = rs.getInt("IdGradeStick");
-                        String namaGradeStick = rs.getString("NamaGradeStick");
-
-                        GradeStick gradeStick = new GradeStick(idGradeStick, namaGradeStick);
-                        gradeStickList.add(gradeStick);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Gagal terhubung ke database.");
-            }
-            return gradeStickList;
-        }
-
-        @Override
-        protected void onPostExecute(List<GradeStick> gradeStickList) {
-            if (!gradeStickList.isEmpty()) {
-                ArrayAdapter<GradeStick> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, gradeStickList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 SpinGrade.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Tidak ada grade ditemukan");
-            }
-        }
-    }
 
-    private class LoadLokasiTask extends AsyncTask<Void, Void, List<Lokasi>> {
-        @Override
-        protected List<Lokasi> doInBackground(Void... voids) {
-            List<Lokasi> lokasiList = new ArrayList<>();
-            Connection con = ConnectionClass();
-
-            if (con != null) {
-                try {
-                    String query = "SELECT IdLokasi, Description FROM dbo.MstLokasi WHERE Enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idLokasi = rs.getString("IdLokasi");
-                        String namaLokasi = rs.getString("Description");
-
-                        Lokasi lokasi = new Lokasi(idLokasi, namaLokasi);
-                        lokasiList.add(lokasi);
+                // Set default selection
+                if (selectedIdGrade == 0) {
+                    SpinGrade.setSelection(0);
+                } else {
+                    for (int i = 0; i < gradeStickList.size(); i++) {
+                        if (gradeStickList.get(i).getIdGradeStick() == selectedIdGrade) {
+                            SpinGrade.setSelection(i);
+                            break;
+                        }
                     }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", e.getMessage());
                 }
-            } else {
-                Log.e("Connection Error", "Gagal terhubung ke database.");
-            }
-            return lokasiList;
-        }
 
-        @Override
-        protected void onPostExecute(List<Lokasi> lokasiList) {
-            if (!lokasiList.isEmpty()) {
-                ArrayAdapter<Lokasi> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, lokasiList);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                SpinLokasi.setAdapter(adapter);
-            } else {
-                Log.e("Error", "Tidak ada grade ditemukan");
-            }
-        }
+                if (onDone != null) onDone.run();
+            });
+        });
     }
 
-    private class LoadTellyTask extends AsyncTask<Void, Void, List<Telly>> {
-        @Override
-        protected List<Telly> doInBackground(Void... voids) {
-            List<Telly> tellyList = new ArrayList<>();
+    // Overload tanpa callback
+    private void loadGradeStickSpinner(int selectedIdGrade) {
+        loadGradeStickSpinner(selectedIdGrade, null);
+    }
 
+
+
+
+    // Versi baru dengan callback
+    private void loadSusunSpinner(@Nullable Runnable onDone, String... params) {
+        executorService.execute(() -> {
+            String selectedDate;
+            if (params != null && params.length > 0) {
+                selectedDate = params[0];
+            } else {
+                selectedDate = TglStickBundel.getText().toString();
+            }
+
+            // Ambil data susun dari MasterApi
+            List<MstSusunData> susunList = MasterApi.getSusunList(selectedDate);
+
+            runOnUiThread(() -> {
+                if (!susunList.isEmpty()) {
+                    ArrayAdapter<MstSusunData> adapter = new ArrayAdapter<>(
+                            this,
+                            android.R.layout.simple_spinner_item,
+                            susunList
+                    );
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                    SpinBongkarSusun.setAdapter(adapter);
+                } else {
+                    Log.e("Error", "Failed to load susun data.");
+                    SpinBongkarSusun.setAdapter(null);
+                    TableOutput.removeAllViews();
+                }
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil
+    private void loadSusunSpinner(String... params) {
+        loadSusunSpinner(null, params);
+    }
+
+
+
+    // Versi baru dengan callback
+    private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            List<MstSpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new MstSpkData("PILIH")); // Tambahkan default item
+
+            runOnUiThread(() -> {
+                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        spkList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinSPK.setAdapter(adapter);
+
+                // Set default selection
+                if (selectedNoSPK == null || selectedNoSPK.isEmpty() || selectedNoSPK.equals("PILIH")) {
+                    SpinSPK.setSelection(0);
+                } else {
+                    for (int i = 0; i < spkList.size(); i++) {
+                        if (spkList.get(i).getNoSPK().equals(selectedNoSPK)) {
+                            SpinSPK.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil tanpa callback
+    private void loadSPKSpinner(String selectedNoSPK) {
+        loadSPKSpinner(selectedNoSPK, null);
+    }
+
+
+    // Versi baru dengan callback
+    private void loadTellySpinner(String selectedIdTelly, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            // ambil username dari SharedPreferences
             SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-            username = prefs.getString("username", "");
+            String username = prefs.getString("username", "");
 
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query =  "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
-                            "FROM MstOrgTelly A " +
-                            "INNER JOIN ( " +
-                            "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
-                            "    FROM MstUsername " +
-                            "    WHERE Username = ? " +
-                            ") B ON B.NamaTelly = A.NamaOrgTelly " +
-                            "WHERE A.Enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
+            List<TellyData> tellyList = MasterApi.getTellyList(username);
 
-                    ps.setString(1, username);
+            runOnUiThread(() -> {
+                ArrayAdapter<TellyData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        tellyList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinTelly.setAdapter(adapter);
 
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idOrgTelly = rs.getString("IdOrgTelly");
-                        String namaOrgTelly = rs.getString("NamaOrgTelly");
-
-                        Telly telly = new Telly(idOrgTelly, namaOrgTelly);
-                        tellyList.add(telly);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (Exception e) {
-                    Log.e("Database Error", e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Failed to connect to the database.");
-            }
-
-            return tellyList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Telly> tellyList) {
-
-
-            // Buat adapter dengan data yang dimodifikasi
-            ArrayAdapter<Telly> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, tellyList);
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-
-            // Set adapter ke spinner
-            SpinTelly.setAdapter(adapter);
-
-            // Nonaktifkan spinner agar tidak bisa dipilih
-            SpinTelly.setEnabled(false); // Spinner tidak bisa diklik
-            SpinTelly.setClickable(false); // Spinner tidak bisa diinteraksi
-
-        }
-    }
-
-    private class LoadStickByTask extends AsyncTask<Void, Void, List<StickBy>> {
-        @Override
-        protected List<StickBy> doInBackground(Void... voids) {
-            List<StickBy> stickByList = new ArrayList<>();
-            Connection con = ConnectionClass();
-            if (con != null) {
-                try {
-                    String query = "SELECT IdStickBy, NamaStickBy FROM dbo.MstStickBy WHERE Enable = 1";
-                    PreparedStatement ps = con.prepareStatement(query);
-                    ResultSet rs = ps.executeQuery();
-
-                    while (rs.next()) {
-                        String idStickBy = rs.getString("IdStickBy");
-                        String namaStickBy = rs.getString("NamaStickBy");
-
-                        StickBy stickBy = new StickBy(idStickBy, namaStickBy);
-                        stickByList.add(stickBy);
-                    }
-
-                    rs.close();
-                    ps.close();
-                    con.close();
-                } catch (SQLException e) {
-                    Log.e("Database Error", "SQL Error: " + e.getMessage());
-                } catch (Exception e) {
-                    Log.e("Database Error", "Error: " + e.getMessage());
-                }
-            } else {
-                Log.e("Connection Error", "Gagal terhubung dengan database.");
-            }
-            return stickByList;
-        }
-
-        @Override
-        protected void onPostExecute(List<StickBy> stickByList) {
-            // Tambahkan elemen dummy di awal
-            StickBy dummyStickBy = new StickBy("", "PILIH");
-            stickByList.add(0, dummyStickBy);
-
-            // Buat adapter dengan data yang dimodifikasi
-            ArrayAdapter<StickBy> adapter = new ArrayAdapter<>(SawnTimber.this, android.R.layout.simple_spinner_item, stickByList);
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-
-            // Set adapter ke spinner
-            SpinStickBy.setAdapter(adapter);
-
-            // Atur spinner untuk menampilkan elemen pertama ("Pilih") secara default
-            SpinStickBy.setSelection(0);
-        }
-    }
-
-    private class UpdateDataTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-            String noST = params[0];
-            String noKayuBulat = params[1];
-            String jenisKayu = params[2];
-            String noSPK = params[3];
-            String telly = params[4];
-            String stickBy = params[5];
-            String dateCreate = params[6];
-            String isVacuum = params[7];
-            String remark = params[8];
-            int isSLP = Integer.parseInt(params[9]);
-            int isSticked = Integer.parseInt(params[10]);
-            int isKering = Integer.parseInt(params[11]);
-            int isBagusKulit = Integer.parseInt(params[12]);
-
-            int isUpah = (labelVersion == 2) ? 1 : 0;
-
-            Log.d("UpdateDataTask", "Tanggal dateCreate: " + dateCreate);
-
-
-
-            // Default values for UOM columns
-            int idUOMTblLebar = 0;
-            int idUOMPanjang = 0;
-
-            // Check which checkbox is checked and set values accordingly
-            if (radioInch.isChecked()) {
-                idUOMTblLebar = 3;
-            } else if (radioMillimeter.isChecked()) {
-                idUOMTblLebar = 1;
-            }
-
-            if (radioFeet.isChecked()) {
-                idUOMPanjang = 4;
-            }
-
-            noKayuBulat = (noKayuBulat == null || noKayuBulat.trim().isEmpty()) ? null : noKayuBulat;
-
-            Connection con = null;
-            String message = "";
-
-            try {
-                con = ConnectionClass();
-                if (con != null) {
-
-                    String query = "INSERT INTO ST_h (NoST, NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, IdStickBy, IsUpah, IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, Remark, IsSLP, IsSticked, StartKering, IsBagusKulit, IdLokasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                    PreparedStatement ps = con.prepareStatement(query);
-
-                    ps.setString(1, noST);
-                    ps.setString(2, noKayuBulat);
-                    ps.setString(3, jenisKayu);
-                    ps.setString(4, noSPK);
-                    ps.setString(5, telly);
-                    ps.setString(6, stickBy);
-                    ps.setInt(7, isUpah);
-                    ps.setInt(8, idUOMTblLebar);
-                    ps.setInt(9, idUOMPanjang);
-                    ps.setString(10, dateCreate);
-                    ps.setString(11, isVacuum);
-                    ps.setString(12, remark);
-                    ps.setInt(13, isSLP);
-                    ps.setInt(14, isSticked);
-                    ps.setInt(15, isKering);
-                    ps.setInt(16, isBagusKulit);
-
-                    if (isKering == 0) {
-                        ps.setString(17, "L01");
-                    } else {
-                        ps.setNull(17, java.sql.Types.VARCHAR);
-                    }
-
-
-                    int rowsAffected = ps.executeUpdate();
-                    if (rowsAffected > 0) {
-                        message = "Data berhasil disimpan!";
-                    } else {
-                        message = "Gagal memperbarui data";
-                    }
-
-                    ps.close();
-                    con.close();
+                // Set default selection
+                if (selectedIdTelly == null || selectedIdTelly.equals("0")) {
+                    SpinTelly.setSelection(0);
                 } else {
-                    message = "Gagal terhubung ke database.";
-                }
-            } catch (SQLException e) {
-                Log.e("Database Error", "SQL Error: " + e.getMessage());
-                message = "Gagal memperbarui data: " + e.getMessage();
-            } catch (Exception e) {
-                Log.e("Database Error", "General Error: " + e.getMessage());
-                message = "Terjadi kesalahan saat memperbarui data: " + e.getMessage();
-            } finally {
-                if (con != null) {
-                    try {
-                        con.close();
-                    } catch (SQLException e) {
-                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
-                    }
-                }
-            }
-
-            return message;
-        }
-
-        @Override
-        protected void onPostExecute(String message) {
-            onClickDateOutput(rawDate);
-            Toast.makeText(SawnTimber.this, message, Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void savePenerimaanSTPembelian(String noPenerimaanST, String noST) {
-        // Tampilkan progress dialog
-        new Thread(() -> {
-            Connection connection = null;
-            try {
-                connection = ConnectionClass(); // Buat koneksi ke database
-                if (connection != null) {
-                    // Query untuk menyimpan data ke tabel
-                    String queryInsert = "INSERT INTO PenerimaanSTPembelian_d (NoPenerimaanST, NoST) VALUES (?, ?)";
-
-                    // Menggunakan try-with-resources untuk PreparedStatement
-                    try (PreparedStatement stmt = connection.prepareStatement(queryInsert)) {
-                        // Set parameter untuk query
-                        stmt.setString(1, noPenerimaanST);
-                        stmt.setString(2, noST);
-
-                        // Eksekusi query
-                        int rowsInserted = stmt.executeUpdate();
-
-                        // Cek apakah data berhasil disimpan
-                        if (rowsInserted > 0) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(getApplicationContext(),
-                                        "Data berhasil disimpan",
-                                        Toast.LENGTH_SHORT).show();
-                            });
-                        } else {
-                            runOnUiThread(() -> {
-                                Toast.makeText(getApplicationContext(),
-                                        "Gagal menyimpan data",
-                                        Toast.LENGTH_SHORT).show();
-                            });
+                    for (int i = 0; i < tellyList.size(); i++) {
+                        if (tellyList.get(i).getIdOrgTelly().equals(selectedIdTelly)) {
+                            SpinTelly.setSelection(i);
+                            break;
                         }
                     }
-                } else {
-                    runOnUiThread(() -> {
-                        Toast.makeText(getApplicationContext(),
-                                "Koneksi database gagal",
-                                Toast.LENGTH_SHORT).show();
-                    });
                 }
-            } catch (SQLException e) {
-                final String errorMessage = e.getMessage();
-                runOnUiThread(() -> {
-                    Toast.makeText(getApplicationContext(),
-                            "Error: " + errorMessage,
-                            Toast.LENGTH_LONG).show();
-                    Log.e("Database Error", "Error executing query: " + errorMessage);
-                });
-            } finally {
-                if (connection != null) {
-                    try {
-                        connection.close(); // Tutup koneksi
-                    } catch (SQLException e) {
-                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
-                    }
-                }
-            }
-        }).start();
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
     }
 
-    private void savePenerimaanSTUpah(String noPenerimaanST, String noST) {
-        // Tampilkan progress dialog
-        new Thread(() -> {
-            Connection connection = null;
-            try {
-                connection = ConnectionClass(); // Buat koneksi ke database
-                if (connection != null) {
-                    // Query untuk menyimpan data ke tabel
-                    String queryInsert = "INSERT INTO PenerimaanSTUpah_d (NoPenerimaanST, NoST) VALUES (?, ?)";
+    // Overload versi lama tetap bisa dipanggil
+    private void loadTellySpinner(String selectedIdTelly) {
+        loadTellySpinner(selectedIdTelly, null);
+    }
 
-                    // Menggunakan try-with-resources untuk PreparedStatement
-                    try (PreparedStatement stmt = connection.prepareStatement(queryInsert)) {
-                        // Set parameter untuk query
-                        stmt.setString(1, noPenerimaanST);
-                        stmt.setString(2, noST);
 
-                        // Eksekusi query
-                        int rowsInserted = stmt.executeUpdate();
+    // Versi baru dengan callback
+    private void loadJenisKayuSpinner(int selectedIdJenisKayu, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            List<MstJenisKayuData> jenisKayuList = MasterApi.getJenisKayuSTList();
+            jenisKayuList.add(0, new MstJenisKayuData(0, "PILIH", 0));
 
-                        // Cek apakah data berhasil disimpan
-                        if (rowsInserted > 0) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(getApplicationContext(),
-                                        "Data berhasil disimpan",
-                                        Toast.LENGTH_SHORT).show();
-                            });
-                        } else {
-                            runOnUiThread(() -> {
-                                Toast.makeText(getApplicationContext(),
-                                        "Gagal menyimpan data",
-                                        Toast.LENGTH_SHORT).show();
-                            });
+            runOnUiThread(() -> {
+                ArrayAdapter<MstJenisKayuData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, jenisKayuList);
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinKayu.setAdapter(adapter);
+
+                if (selectedIdJenisKayu == 0) {
+                    SpinKayu.setSelection(0);
+                } else {
+                    for (int i = 0; i < jenisKayuList.size(); i++) {
+                        if (jenisKayuList.get(i).getIdJenisKayu() == selectedIdJenisKayu) {
+                            SpinKayu.setSelection(i);
+                            break;
                         }
                     }
-                } else {
-                    runOnUiThread(() -> {
-                        Toast.makeText(getApplicationContext(),
-                                "Koneksi database gagal",
-                                Toast.LENGTH_SHORT).show();
-                    });
                 }
-            } catch (SQLException e) {
-                final String errorMessage = e.getMessage();
-                runOnUiThread(() -> {
-                    Toast.makeText(getApplicationContext(),
-                            "Error: " + errorMessage,
-                            Toast.LENGTH_LONG).show();
-                    Log.e("Database Error", "Error executing query: " + errorMessage);
-                });
-            } finally {
-                if (connection != null) {
-                    try {
-                        connection.close(); // Tutup koneksi
-                    } catch (SQLException e) {
-                        Log.e("Database Error", "Error closing connection: " + e.getMessage());
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil tanpa callback
+    private void loadJenisKayuSpinner(int selectedIdJenisKayu) {
+        loadJenisKayuSpinner(selectedIdJenisKayu, null);
+    }
+
+
+
+    // Versi baru dengan callback
+    private void loadLokasiSpinner(String selectedIdLokasi, String selectedLokasiName, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            // Ambil data lokasi dari DB
+            List<LokasiData> lokasiList = MasterApi.getLokasiList();
+
+            // Tambahkan item default di posisi pertama
+            lokasiList.add(0, new LokasiData("PILIH", "PILIH LOKASI", true, ""));
+
+            runOnUiThread(() -> {
+                ArrayAdapter<LokasiData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        lokasiList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinLokasi.setAdapter(adapter);
+
+                // Set default selection
+                if (selectedIdLokasi == null || selectedIdLokasi.equals("0")) {
+                    SpinLokasi.setSelection(0);
+                } else {
+                    for (int i = 0; i < lokasiList.size(); i++) {
+                        if (lokasiList.get(i).getIdLokasi().equals(selectedIdLokasi)) {
+                            SpinLokasi.setSelection(i);
+                            break;
+                        }
                     }
                 }
-            }
-        }).start();
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil tanpa callback
+    private void loadLokasiSpinner(String selectedIdLokasi, String selectedLokasiName) {
+        loadLokasiSpinner(selectedIdLokasi, selectedLokasiName, null);
     }
 
 
-    public class Susun {
-        private String nomorBongkarSusun;
+    // Versi baru dengan callback
+    private void loadStickBySpinner(String selectedIdStickBy, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            // Ambil data stick by dari DB
+            List<MstStickData> stickByList = SawnTimberApi.getStickByList();
 
-        public Susun(String nomorBongkarSusun) {
-            this.nomorBongkarSusun = nomorBongkarSusun;
-        }
+            runOnUiThread(() -> {
+                ArrayAdapter<MstStickData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        stickByList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinStickBy.setAdapter(adapter);
 
-        public String getNoBongkarSusun() {
-            return nomorBongkarSusun;
-        }
+                // Set default selection berdasarkan selectedIdStickBy
+                if (selectedIdStickBy == null || selectedIdStickBy.isEmpty()) {
+                    SpinStickBy.setSelection(0); // pilih dummy "PILIH"
+                } else {
+                    for (int i = 0; i < stickByList.size(); i++) {
+                        if (stickByList.get(i).getIdStickBy().equals(selectedIdStickBy)) {
+                            SpinStickBy.setSelection(i);
+                            break;
+                        }
+                    }
+                }
 
-        public void setNoBongkarSusun(String nomorBongkarSusun) {
-            this.nomorBongkarSusun = nomorBongkarSusun;
-        }
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
 
-        @Override
-        public String toString() {
-            return nomorBongkarSusun;
-        }
+    // Overload versi lama tetap bisa dipanggil tanpa callback
+    private void loadStickBySpinner(String selectedIdStickBy) {
+        loadStickBySpinner(selectedIdStickBy, null);
     }
 
 
-    public class SPK {
-        private String noSPK;
-        private String buyer;
-
-        public SPK(String noSPK, String buyer) {
-            this.noSPK = noSPK;
-            this.buyer = buyer;
-        }
-
-        // Constructor untuk dummy/placeholder
-        public SPK(String noSPK) {
-            this.noSPK = noSPK;
-            this.buyer = "";
-        }
-
-        public String getNoSPK() {
-            return noSPK;
-        }
-
-        public String getBuyer() {
-            return buyer;
-        }
-
-        // Override toString untuk tampilan di spinner
-        @Override
-        public String toString() {
-            if (buyer.isEmpty()) {
-                return noSPK;
-            }
-            return noSPK + " - " + buyer;
-        }
-    }
-
-    public class Telly {
-        private String idOrgTelly;
-        private String namaTelly;
-
-        public Telly(String idOrgTelly, String namaTelly) {
-            this.idOrgTelly = idOrgTelly;
-            this.namaTelly = namaTelly;
-        }
-
-        public String getIdOrgTelly() {
-            return idOrgTelly;
-        }
-
-        public String getNamaTelly() {
-            return namaTelly;
-        }
-
-        @Override
-        public String toString() {
-            return namaTelly;
-        }
-    }
-
-
-    public class StickBy {
-        private String idStickBy;
-        private String namaStickBy;
-
-        public StickBy(String idStickBy, String namaStickBy) {
-            this.idStickBy = idStickBy;
-            this.namaStickBy = namaStickBy;
-        }
-
-        public String getIdStickBy() {
-            return idStickBy;
-        }
-
-        public String getNamaStickBy() {
-            return namaStickBy;
-        }
-
-        @Override
-        public String toString() {
-            return namaStickBy;
-        }
-    }
-
-    public class JenisKayu {
-        private String idJenisKayu;
-        private String namaJenisKayu;
-        private int isUpah;
-
-        public JenisKayu(String idJenisKayu, String namaJenisKayu, int isUpah) {
-            this.idJenisKayu = idJenisKayu;
-            this.namaJenisKayu = namaJenisKayu;
-            this.isUpah = isUpah;
-        }
-
-        public String getIdJenisKayu() {
-            return idJenisKayu;
-        }
-
-        public String getNamaJenisKayu() {
-            return namaJenisKayu;
-        }
-
-        public int getIsUpah() {
-            return isUpah;
-        }
-
-        @Override
-        public String toString() {
-            return namaJenisKayu;
-        }
-    }
-
-
-    public class GradeStick {
-        private int idGradeStick;
-        private String namaGradeStick;
-
-        public GradeStick(int idGradeStick, String namaGradeStick) {
-            this.idGradeStick = idGradeStick;
-            this.namaGradeStick = namaGradeStick;
-        }
-
-        public int getIdGradeStick() {
-            return idGradeStick;
-        }
-
-        public String getNamaGradeStick() {
-            return namaGradeStick;
-        }
-
-        @Override
-        public String toString() {
-            return namaGradeStick;
-        }
-    }
-
-    public class Lokasi {
-        private String idLokasi;
-        private String namaLokasi;
-
-        public Lokasi(String idLokasi, String namaLokasi) {
-            this.idLokasi = idLokasi;
-            this.namaLokasi = namaLokasi;
-        }
-
-        public String getIdLokasi() {
-            return idLokasi;
-        }
-
-        public String getNamaLokasi() {
-            return namaLokasi;
-        }
-
-        @Override
-        public String toString() {
-            return namaLokasi;
-        }
-    }
 
     //Koneksi Database
     @SuppressLint("NewApi")

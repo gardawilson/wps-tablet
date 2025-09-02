@@ -1,7 +1,7 @@
 package com.example.myapplication;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
-import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -527,7 +527,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 String shift = spinShift.getSelectedItem().toString();
                 String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
                 int idMesin = ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin();
-                int idOperator = ((OperatorData) spinOperator.getSelectedItem()).getIdOperator();
+                int idOperator = ((MstOperatorData) spinOperator.getSelectedItem()).getIdOperator();
                 String jamKerja = editJamKerja.getText().toString().trim();
                 int jumlahAnggota = Integer.parseInt(editJlhAnggota.getText().toString().trim());
                 double hourMeter = Double.parseDouble(editHourMeter.getText().toString().trim());
@@ -635,11 +635,11 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
-            List<OperatorData> operatorList = ProsesProduksiApi.getAllOperatorData(1);
+            List<MstOperatorData> operatorList = ProsesProduksiApi.getAllOperatorData(1);
 
             // Cek apakah selectedIdOperator ada dalam list
             boolean found = false;
-            for (OperatorData operator : operatorList) {
+            for (MstOperatorData operator : operatorList) {
                 if (operator.getIdOperator() == selectedIdOperator) {
                     found = true;
                     break;
@@ -648,12 +648,12 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Jika tidak ditemukan, tambahkan operator dummy dengan id dan nama yang sama
             if (!found && selectedIdOperator != 0) {
-                OperatorData newOperator = new OperatorData(selectedIdOperator, selectedOperatorName);
+                MstOperatorData newOperator = new MstOperatorData(selectedIdOperator, selectedOperatorName);
                 operatorList.add(0, newOperator); // bisa ditaruh di awal agar langsung muncul
             }
 
             runOnUiThread(() -> {
-                ArrayAdapter<OperatorData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorList);
+                ArrayAdapter<MstOperatorData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, operatorList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinner.setAdapter(adapter);
 

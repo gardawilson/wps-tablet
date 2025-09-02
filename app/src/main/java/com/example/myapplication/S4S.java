@@ -91,7 +91,6 @@ import java.util.Date;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.util.Locale;
-import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -100,19 +99,20 @@ import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.S4sApi;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LabelDetailData;
-import com.example.myapplication.model.FisikData;
-import com.example.myapplication.model.GradeData;
-import com.example.myapplication.model.JenisKayuData;
+import com.example.myapplication.model.MstFisikData;
+import com.example.myapplication.model.MstGradeData;
+import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.LokasiData;
-import com.example.myapplication.model.MesinData;
-import com.example.myapplication.model.ProfileData;
+import com.example.myapplication.model.MstMesinData;
+import com.example.myapplication.model.MstProfileData;
 import com.example.myapplication.model.S4sData;
-import com.example.myapplication.model.SpkData;
-import com.example.myapplication.model.SusunData;
+import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
-import com.example.myapplication.model.WarnaData;
+import com.example.myapplication.model.MstWarnaData;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
 import com.example.myapplication.utils.TooltipUtils;
@@ -164,8 +164,6 @@ public class S4S extends AppCompatActivity {
     private Spinner SpinGrade;
     private Spinner SpinMesin;
     private Spinner SpinSusun;
-    private Spinner spinWarna;
-    private Spinner spinLokasi;
     private Calendar calendar;
     private RadioGroup radioGroup;
     private RadioButton radioButtonMesin;
@@ -177,10 +175,10 @@ public class S4S extends AppCompatActivity {
     private CheckBox CBAfkir;
     private CheckBox CBLembur;
     private Button BtnInputDetail;
-    private AutoCompleteTextView DetailLebarS4S;
-    private AutoCompleteTextView DetailTebalS4S;
-    private AutoCompleteTextView DetailPanjangS4S;
-    private EditText DetailPcsS4S;
+    private AutoCompleteTextView DetailLebar;
+    private AutoCompleteTextView DetailTebal;
+    private AutoCompleteTextView DetailPanjang;
+    private EditText DetailPcs;
     private Button BtnPrint;
     private TextView M3;
     private TextView JumlahPcs;
@@ -204,6 +202,8 @@ public class S4S extends AppCompatActivity {
     private List<String> userPermissions;
     private EditText mesinView;
     private EditText susunView;
+    private Spinner spinWarna;
+    private Spinner spinLokasi;
 
 
 
@@ -238,10 +238,10 @@ public class S4S extends AppCompatActivity {
         CBLembur = findViewById(R.id.CBLembur);
         CBAfkir = findViewById(R.id.CBAfkir);
         BtnInputDetail = findViewById(R.id.BtnInputDetail);
-        DetailPcsS4S = findViewById(R.id.DetailPcsS4S);
-        DetailTebalS4S = findViewById(R.id.DetailTebalS4S);
-        DetailPanjangS4S = findViewById(R.id.DetailPanjangS4S);
-        DetailLebarS4S = findViewById(R.id.DetailLebarS4S);
+        DetailPcs = findViewById(R.id.DetailPcs);
+        DetailTebal = findViewById(R.id.DetailTebal);
+        DetailPanjang = findViewById(R.id.DetailPanjang);
+        DetailLebar = findViewById(R.id.DetailLebar);
         BtnPrint = findViewById(R.id.BtnPrint);
         M3 = findViewById(R.id.M3);
         JumlahPcs = findViewById(R.id.JumlahPcs);
@@ -258,67 +258,69 @@ public class S4S extends AppCompatActivity {
         susunView = findViewById(R.id.susunView);
 
         // Set imeOptions untuk memungkinkan pindah fokus
-        DetailTebalS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
-        DetailLebarS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
-        DetailPanjangS4S.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailTebal.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailLebar.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        DetailPanjang.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
 
         BtnExpandView.setOnClickListener(v -> showListDialogOnDemand());
 
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnUpdate, "label_s4s:update");
+
 
 
         // Menangani aksi 'Enter' pada keyboard
-        DetailTebalS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        DetailTebal.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
+                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebar
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    // Pastikan DetailLebarS4S bisa menerima fokus
-                    DetailLebarS4S.requestFocus();
+                    // Pastikan DetailLebar bisa menerima fokus
+                    DetailLebar.requestFocus();
                     return true; // Menunjukkan bahwa aksi sudah ditangani
                 }
                 return false;
             }
         });
 
-        DetailLebarS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        DetailLebar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    DetailPanjangS4S.requestFocus();
+                    DetailPanjang.requestFocus();
                     return true;
                 }
                 return false;
             }
         });
 
-        DetailPanjangS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        DetailPanjang.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    DetailPcsS4S.requestFocus();
+                    DetailPcs.requestFocus();
                     return true;
                 }
                 return false;
             }
         });
 
-        DetailPcsS4S.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        DetailPcs.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
                     // Ambil input dari AutoCompleteTextView
                     String noS4S = NoS4S.getText().toString();
-                    String tebal = DetailTebalS4S.getText().toString().trim();
-                    String lebar = DetailLebarS4S.getText().toString().trim();
-                    String panjang = DetailPanjangS4S.getText().toString().trim();
+                    String tebal = DetailTebal.getText().toString().trim();
+                    String lebar = DetailLebar.getText().toString().trim();
+                    String panjang = DetailPanjang.getText().toString().trim();
 
                     // Ambil data SpkData, Jenis Kayu, dan GradeData dari Spinner
-                    SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
-                    GradeData selectedGrade = (GradeData) SpinGrade.getSelectedItem();
-                    JenisKayuData selectedJenisKayu = (JenisKayuData) SpinKayu.getSelectedItem();
+                    MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+                    MstGradeData selectedGrade = (MstGradeData) SpinGrade.getSelectedItem();
+                    MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
 
                     int idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
                     String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
@@ -380,12 +382,6 @@ public class S4S extends AppCompatActivity {
                 if (!isCreateMode) {
                     String newText = s.toString();
 
-                    if (!newText.startsWith("R.")) {
-                        NoS4S.setText("R." + newText);
-                        NoS4S.setSelection(NoS4S.getText().length()); // cursor di akhir
-
-                    }
-
                     if(!newText.isEmpty()) {
                         if (userPermissions.contains("label_s4s:update")) {
                             enableForm();
@@ -412,8 +408,8 @@ public class S4S extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (radioButtonMesin.isChecked()) {
                     Object selectedItem = parent.getItemAtPosition(position);
-                    if (selectedItem instanceof MesinData) {
-                        MesinData selectedMesin = (MesinData) selectedItem;
+                    if (selectedItem instanceof MstMesinData) {
+                        MstMesinData selectedMesin = (MstMesinData) selectedItem;
                         String noProduksi = selectedMesin.getNoProduksi();
                         loadOutputByMesinSusun(noProduksi, true);
                     } else {
@@ -435,8 +431,8 @@ public class S4S extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (radioButtonBSusun.isChecked()) {
                     Object selectedItem = parent.getItemAtPosition(position);
-                    if (selectedItem instanceof SusunData) {
-                        SusunData selectedSusun = (SusunData) selectedItem;
+                    if (selectedItem instanceof MstSusunData) {
+                        MstSusunData selectedSusun = (MstSusunData) selectedItem;
                         String noBongkarSusun = selectedSusun.getNoBongkarSusun();
                         loadOutputByMesinSusun(noBongkarSusun, false);
                     } else {
@@ -457,8 +453,8 @@ public class S4S extends AppCompatActivity {
                 SpinMesin.setEnabled(true);
                 SpinSusun.setEnabled(false);
 
-                MesinData selectedMesin = (MesinData) SpinMesin.getSelectedItem();
-                if (selectedMesin != null) {
+                MstMesinData selectedMesin = (MstMesinData) SpinMesin.getSelectedItem();
+                if (selectedMesin != null && isCreateMode) {
                     String noProduksi = selectedMesin.getNoProduksi();
                     loadOutputByMesinSusun(noProduksi, true);
                 }
@@ -473,8 +469,8 @@ public class S4S extends AppCompatActivity {
                 SpinMesin.setEnabled(false);
                 SpinSusun.setEnabled(true);
 
-                SusunData selectedSusun = (SusunData) SpinSusun.getSelectedItem();
-                if (selectedSusun != null) {
+                MstSusunData selectedSusun = (MstSusunData) SpinSusun.getSelectedItem();
+                if (selectedSusun != null && isCreateMode) {
                     String noBongkarSusun = selectedSusun.getNoBongkarSusun();
                     loadOutputByMesinSusun(noBongkarSusun, false);
                 }
@@ -550,15 +546,15 @@ public class S4S extends AppCompatActivity {
             String remark = remarkLabel.getText().toString();
 
             TellyData selectedTelly = (TellyData) SpinTelly.getSelectedItem();
-            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
-            SpkData selectedSPKasal = (SpkData) SpinSPKAsal.getSelectedItem();
-            ProfileData selectedProfile = (ProfileData) SpinProfile.getSelectedItem();
-            FisikData selectedFisik = (FisikData) SpinFisik.getSelectedItem();
-            GradeData selectedGrade = (GradeData) SpinGrade.getSelectedItem();
-            JenisKayuData selectedJenisKayu = (JenisKayuData) SpinKayu.getSelectedItem();
-            MesinData selectedMesin = (MesinData) SpinMesin.getSelectedItem();
-            SusunData selectedSusun = (SusunData) SpinSusun.getSelectedItem();
-            WarnaData selectedWarna = (WarnaData) spinWarna.getSelectedItem();
+            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+            MstSpkData selectedSPKasal = (MstSpkData) SpinSPKAsal.getSelectedItem();
+            MstProfileData selectedProfile = (MstProfileData) SpinProfile.getSelectedItem();
+            MstFisikData selectedFisik = (MstFisikData) SpinFisik.getSelectedItem();
+            MstGradeData selectedGrade = (MstGradeData) SpinGrade.getSelectedItem();
+            MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
+            MstMesinData selectedMesin = (MstMesinData) SpinMesin.getSelectedItem();
+            MstSusunData selectedSusun = (MstSusunData) SpinSusun.getSelectedItem();
+            MstWarnaData selectedWarna = (MstWarnaData) spinWarna.getSelectedItem();
             LokasiData selectedLokasi = (LokasiData) spinLokasi.getSelectedItem();
 
             RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
@@ -598,7 +594,7 @@ public class S4S extends AppCompatActivity {
             }
 
             CountDownLatch latch = new CountDownLatch(1);
-            setAndSaveNoS4S(latch);
+            setAndSaveNewNumber(latch);
             try {
                 latch.await();
             } catch (InterruptedException e) {
@@ -688,13 +684,13 @@ public class S4S extends AppCompatActivity {
             String remark = remarkLabel.getText().toString();
 
             TellyData selectedTelly = (TellyData) SpinTelly.getSelectedItem();
-            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
-            SpkData selectedSPKasal = (SpkData) SpinSPKAsal.getSelectedItem();
-            ProfileData selectedProfile = (ProfileData) SpinProfile.getSelectedItem();
-            FisikData selectedFisik = (FisikData) SpinFisik.getSelectedItem();
-            GradeData selectedGrade = (GradeData) SpinGrade.getSelectedItem();
-            JenisKayuData selectedJenisKayu = (JenisKayuData) SpinKayu.getSelectedItem();
-            WarnaData selectedWarna = (WarnaData) spinWarna.getSelectedItem();
+            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+            MstSpkData selectedSPKasal = (MstSpkData) SpinSPKAsal.getSelectedItem();
+            MstProfileData selectedProfile = (MstProfileData) SpinProfile.getSelectedItem();
+            MstFisikData selectedFisik = (MstFisikData) SpinFisik.getSelectedItem();
+            MstGradeData selectedGrade = (MstGradeData) SpinGrade.getSelectedItem();
+            MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
+            MstWarnaData selectedWarna = (MstWarnaData) spinWarna.getSelectedItem();
             LokasiData selectedLokasi = (LokasiData) spinLokasi.getSelectedItem();
 
             RadioGroup radioGroupUOMTblLebar = findViewById(R.id.radioGroupUOMTblLebar);
@@ -818,7 +814,7 @@ public class S4S extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // Hanya jalankan jika dalam mode create
                 if (isCreateMode) {
-                    JenisKayuData selectedJenisKayu = (JenisKayuData) parent.getItemAtPosition(position);
+                    MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) parent.getItemAtPosition(position);
                     int idJenisKayu = selectedJenisKayu.getIdJenisKayu();
                     loadGradeSpinner(idJenisKayu, "S4S", "");
 
@@ -893,14 +889,14 @@ public class S4S extends AppCompatActivity {
                             );
 
                             // Set adapter untuk masing-masing AutoCompleteTextView
-                            DetailTebalS4S.setAdapter(tebalAdapter);
-                            DetailLebarS4S.setAdapter(lebarAdapter);
-                            DetailPanjangS4S.setAdapter(panjangAdapter);
+                            DetailTebal.setAdapter(tebalAdapter);
+                            DetailLebar.setAdapter(lebarAdapter);
+                            DetailPanjang.setAdapter(panjangAdapter);
 
                             // Set threshold untuk semua AutoCompleteTextView
-                            DetailTebalS4S.setThreshold(0);
-                            DetailLebarS4S.setThreshold(0);
-                            DetailPanjangS4S.setThreshold(0);
+                            DetailTebal.setThreshold(0);
+                            DetailLebar.setThreshold(0);
+                            DetailPanjang.setThreshold(0);
 
                             // Tampilkan status lock
                             if (isLocked) {
@@ -912,12 +908,12 @@ public class S4S extends AppCompatActivity {
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                DetailTebalS4S.setText("");
-                DetailPanjangS4S.setText("");
-                DetailLebarS4S.setText("");
-                DetailTebalS4S.setAdapter(null);
-                DetailPanjangS4S.setAdapter(null);
-                DetailLebarS4S.setAdapter(null);
+                DetailTebal.setText("");
+                DetailPanjang.setText("");
+                DetailLebar.setText("");
+                DetailTebal.setAdapter(null);
+                DetailPanjang.setAdapter(null);
+                DetailLebar.setAdapter(null);
             }
         });
 
@@ -929,14 +925,14 @@ public class S4S extends AppCompatActivity {
         BtnInputDetail.setOnClickListener(v -> {
             // Ambil input dari AutoCompleteTextView
             String noS4S = NoS4S.getText().toString();
-            String tebal = DetailTebalS4S.getText().toString().trim();
-            String lebar = DetailLebarS4S.getText().toString().trim();
-            String panjang = DetailPanjangS4S.getText().toString().trim();
+            String tebal = DetailTebal.getText().toString().trim();
+            String lebar = DetailLebar.getText().toString().trim();
+            String panjang = DetailPanjang.getText().toString().trim();
 
             // Ambil data SpkData, Jenis Kayu, dan GradeData dari Spinner
-            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
-            GradeData selectedGrade = (GradeData) SpinGrade.getSelectedItem();
-            JenisKayuData selectedJenisKayu = (JenisKayuData) SpinKayu.getSelectedItem();
+            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+            MstGradeData selectedGrade = (MstGradeData) SpinGrade.getSelectedItem();
+            MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
 
             int idGrade = selectedGrade != null ? selectedGrade.getIdGrade() : null;
             String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
@@ -1015,9 +1011,9 @@ public class S4S extends AppCompatActivity {
                             String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
 
                             if (radioButtonMesin.isChecked()) {
-                                mesinSusun = SpinMesin.getSelectedItem() != null ? SpinMesin.getSelectedItem().toString().trim() : mesinView.getText().toString();
+                                mesinSusun = SpinMesin.getSelectedItem() != null && isCreateMode ? SpinMesin.getSelectedItem().toString().trim() : mesinView.getText().toString();
                             } else {
-                                mesinSusun = SpinSusun.getSelectedItem() != null ? SpinSusun.getSelectedItem().toString().trim() : susunView.getText().toString();
+                                mesinSusun = SpinSusun.getSelectedItem() != null && isCreateMode ? SpinSusun.getSelectedItem().toString().trim() : susunView.getText().toString();
                             }
 
                             // Buat PDF dengan parameter printCount
@@ -1131,15 +1127,15 @@ public class S4S extends AppCompatActivity {
     // === Method untuk hitung ulang IdLokasi ===
     private void handleLokasiCalculation() {
         // Ambil grade
-        GradeData selectedGrade = (GradeData) SpinGrade.getSelectedItem();
+        MstGradeData selectedGrade = (MstGradeData) SpinGrade.getSelectedItem();
         int idGradeTerpilih = (selectedGrade != null) ? selectedGrade.getIdGrade() : 0;
 
         // Ambil warna
-        WarnaData selectedWarna = (WarnaData) spinWarna.getSelectedItem();
+        MstWarnaData selectedWarna = (MstWarnaData) spinWarna.getSelectedItem();
         int idWarnaTerpilih = (selectedWarna != null) ? selectedWarna.getIdWarna() : 0;
 
         // Ambil jenis kayu
-        JenisKayuData selectedJenisKayu = (JenisKayuData) SpinKayu.getSelectedItem();
+        MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
         int idJenisKayuTerpilih = (selectedJenisKayu != null) ? selectedJenisKayu.getIdJenisKayu() : 0;
 
         executorService.execute(() -> {
@@ -1158,7 +1154,7 @@ public class S4S extends AppCompatActivity {
     //LABEL LIST
     private void showListDialogOnDemand() {
         LayoutInflater inflater = LayoutInflater.from(this);
-        View dialogView = inflater.inflate(R.layout.dialog_list_items, null);
+        View dialogView = inflater.inflate(R.layout.dialog_list_item_s4s, null);
 
         TableLayout tableLayout = dialogView.findViewById(R.id.tableHeaderLabel);
         ProgressBar loadingIndicator = dialogView.findViewById(R.id.listLabelLoadingIndicator);
@@ -1443,7 +1439,7 @@ public class S4S extends AppCompatActivity {
                 selectedData[0] = data;
 
                 // Call click handler
-                onRowClickS4S(data);
+                onRowClick(data);
             });
 
             tableLayout.addView(row);
@@ -1451,9 +1447,7 @@ public class S4S extends AppCompatActivity {
         }
     }
 
-    private void onRowClickS4S(S4sData data) {
-        // Misal ini buat log/debug
-        Toast.makeText(this, "Dipilih: " + data.getNoS4S(), Toast.LENGTH_SHORT).show();
+    private void onRowClick(S4sData data) {
 
         noS4S = data.getNoS4S();
 
@@ -1726,6 +1720,7 @@ public class S4S extends AppCompatActivity {
                 ResultSet rs = stmt.executeQuery();
 
                 boolean matchFound = false;
+
                 while (rs.next()) {
                     // Bandingkan setiap kolom tebal, lebar, panjang, dan idJenisKayu
                     if (Double.parseDouble(tebal) == rs.getDouble("Tebal") &&
@@ -1899,10 +1894,10 @@ public class S4S extends AppCompatActivity {
         SpinGrade.setEnabled(true);
         NoSTAsal.setEnabled(false);
         SpinProfile.setEnabled(true);
-        DetailTebalS4S.setEnabled(true);
-        DetailLebarS4S.setEnabled(true);
-        DetailPanjangS4S.setEnabled(true);
-        DetailPcsS4S.setEnabled(true);
+        DetailTebal.setEnabled(true);
+        DetailLebar.setEnabled(true);
+        DetailPanjang.setEnabled(true);
+        DetailPcs.setEnabled(true);
         BtnHapusDetail.setEnabled(true);
         BtnInputDetail.setEnabled(true);
         CBLembur.setEnabled(true);
@@ -1925,10 +1920,10 @@ public class S4S extends AppCompatActivity {
         SpinGrade.setEnabled(false);
         NoSTAsal.setEnabled(false);
         SpinProfile.setEnabled(false);
-        DetailTebalS4S.setEnabled(false);
-        DetailLebarS4S.setEnabled(false);
-        DetailPanjangS4S.setEnabled(false);
-        DetailPcsS4S.setEnabled(false);
+        DetailTebal.setEnabled(false);
+        DetailLebar.setEnabled(false);
+        DetailPanjang.setEnabled(false);
+        DetailPcs.setEnabled(false);
         BtnHapusDetail.setEnabled(false);
         BtnInputDetail.setEnabled(false);
         BtnSimpan.setEnabled(false);
@@ -1942,15 +1937,23 @@ public class S4S extends AppCompatActivity {
         spinLokasi.setEnabled(false);
 
 
-        // Disable semua tombol hapus yang ada di tabel
+        // Loop semua row di tabel
         for (int i = 0; i < Tabel.getChildCount(); i++) {
-            View row = Tabel.getChildAt(i);
-            if (row instanceof TableRow) {
-                TableRow tableRow = (TableRow) row;
-                for (int j = 0; j < tableRow.getChildCount(); j++) {
-                    View view = tableRow.getChildAt(j);
-                    if (view instanceof Button) {
-                        view.setEnabled(false);
+            View rowView = Tabel.getChildAt(i);
+            if (rowView instanceof TableRow) {
+                TableRow row = (TableRow) rowView;
+                // Loop semua child di row
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof LinearLayout) {
+                        LinearLayout actionLayout = (LinearLayout) child;
+                        for (int k = 0; k < actionLayout.getChildCount(); k++) {
+                            View actionChild = actionLayout.getChildAt(k);
+                            if (actionChild instanceof ImageButton) {
+                                actionChild.setEnabled(false); // disable tombol edit & delete
+                                actionChild.setAlpha(0.5f); // opsional: kasih efek transparan biar keliatan disable
+                            }
+                        }
                     }
                 }
             }
@@ -2028,6 +2031,10 @@ public class S4S extends AppCompatActivity {
                             updateTableFromTemporaryData();
                             m3();
                             jumlahpcs();
+
+                            Toast.makeText(getApplicationContext(),
+                                    "Data berhasil dimuat",
+                                    Toast.LENGTH_SHORT).show();
                         } catch (Exception e) {
                             loadingDialogHelper.hide();
                             Log.e("UI Update Error", "Error updating UI: " + e.getMessage(), e);
@@ -2113,11 +2120,13 @@ public class S4S extends AppCompatActivity {
             radioGroup.check(R.id.radioButtonMesin);
             mesinView.setText(headerData.getNamaMesin() + " - " + headerData.getNoProduksi());
             susunView.setText("-");
+            loadOutputByMesinSusun(headerData.getNoProduksi(), true);
         }
         if (headerData.getNoBongkarSusun() != null){
             radioGroup.check(R.id.radioButtonBSusun);
             susunView.setText(headerData.getNoBongkarSusun());
             mesinView.setText("-");
+            loadOutputByMesinSusun(headerData.getNoBongkarSusun(), false);
         }
     }
 
@@ -2379,10 +2388,10 @@ public class S4S extends AppCompatActivity {
 
 
     private void addDataDetail(String noS4S) {
-        String tebal = DetailTebalS4S.getText().toString();
-        String panjang = DetailPanjangS4S.getText().toString();
-        String lebar = DetailLebarS4S.getText().toString();
-        String pcs = DetailPcsS4S.getText().toString();
+        String tebal = DetailTebal.getText().toString();
+        String panjang = DetailPanjang.getText().toString();
+        String lebar = DetailLebar.getText().toString();
+        String pcs = DetailPcs.getText().toString();
 
         if (tebal.isEmpty() || panjang.isEmpty() || lebar.isEmpty() || pcs.isEmpty()) {
             Toast.makeText(this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
@@ -2428,50 +2437,46 @@ public class S4S extends AppCompatActivity {
             LinearLayout actionLayout = new LinearLayout(this);
             actionLayout.setOrientation(LinearLayout.HORIZONTAL);
 
-            // ✅ Cek permission edit
-            if (userPermissions.contains("label_s4s:update")) {
-                ImageButton editButton = new ImageButton(this);
-                editButton.setImageResource(R.drawable.ic_edit);
-                editButton.setBackgroundColor(Color.TRANSPARENT);
-                editButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                editButton.setPadding(5, 5, 5, 5);
+            ImageButton editButton = new ImageButton(this);
+            editButton.setImageResource(R.drawable.ic_edit);
+            editButton.setBackgroundColor(Color.TRANSPARENT);
+            editButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            editButton.setPadding(5, 5, 5, 5);
 
-                LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                editParams.setMargins(0, 0, 10, 0);
-                editButton.setLayoutParams(editParams);
+            LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            editParams.setMargins(0, 0, 10, 0);
+            editButton.setLayoutParams(editParams);
 
-                editButton.setOnClickListener(v -> showEditDetailDialog(newDataRow));
-                actionLayout.addView(editButton);
-            }
+            editButton.setOnClickListener(v -> showEditDetailDialog(newDataRow));
+            actionLayout.addView(editButton);
 
-            // ✅ Cek permission delete
-            if (userPermissions.contains("label_s4s:delete")) {
-                ImageButton deleteButton = new ImageButton(this);
-                deleteButton.setImageResource(R.drawable.ic_delete);
-                deleteButton.setBackgroundColor(Color.TRANSPARENT);
-                deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                deleteButton.setPadding(15, 5, 5, 5);
 
-                LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                deleteParams.setMargins(10, 0, 0, 0);
-                deleteButton.setLayoutParams(deleteParams);
+            ImageButton deleteButton = new ImageButton(this);
+            deleteButton.setImageResource(R.drawable.ic_delete);
+            deleteButton.setBackgroundColor(Color.TRANSPARENT);
+            deleteButton.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            deleteButton.setPadding(15, 5, 5, 5);
 
-                deleteButton.setOnClickListener(v -> {
-                    Tabel.removeView(newRow);
-                    temporaryDataListDetail.remove(newDataRow);
-                    updateRowNumbers();
-                    jumlahpcs();
-                    m3();
-                });
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            deleteParams.setMargins(10, 0, 0, 0);
+            deleteButton.setLayoutParams(deleteParams);
 
-                actionLayout.addView(deleteButton);
-            }
+            deleteButton.setOnClickListener(v -> {
+                Tabel.removeView(newRow);
+                temporaryDataListDetail.remove(newDataRow);
+                updateRowNumbers();
+                jumlahpcs();
+                m3();
+            });
+
+            actionLayout.addView(deleteButton);
+
 
             if (actionLayout.getChildCount() > 0) {
                 newRow.addView(actionLayout);
@@ -2480,10 +2485,10 @@ public class S4S extends AppCompatActivity {
             Tabel.addView(newRow);
 
             // Bersihkan field input
-            DetailTebalS4S.setText("");
-            DetailPanjangS4S.setText("");
-            DetailLebarS4S.setText("");
-            DetailPcsS4S.setText("");
+            DetailTebal.setText("");
+            DetailPanjang.setText("");
+            DetailLebar.setText("");
+            DetailPcs.setText("");
 
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Format angka tidak valid", Toast.LENGTH_SHORT).show();
@@ -2532,22 +2537,19 @@ public class S4S extends AppCompatActivity {
         }
 
         // Reset input fields
-        if (DetailTebalS4S != null) {
-            DetailTebalS4S.setText("");
+        if (DetailTebal != null) {
+            DetailTebal.setText("");
         }
-        if (DetailLebarS4S != null) {
-            DetailLebarS4S.setText("");
+        if (DetailLebar != null) {
+            DetailLebar.setText("");
         }
-        if (DetailPanjangS4S != null) {
-            DetailPanjangS4S.setText("");
+        if (DetailPanjang != null) {
+            DetailPanjang.setText("");
         }
-        if (DetailPcsS4S != null) {
-            DetailPcsS4S.setText("");
+        if (DetailPcs != null) {
+            DetailPcs.setText("");
         }
     }
-
-
-
 
 
     private void clearData() {
@@ -3112,19 +3114,16 @@ public class S4S extends AppCompatActivity {
     }
 
 
-
-
     //SAVE METHOD
-    private void setAndSaveNoS4S(final CountDownLatch latch) {
+    private void setAndSaveNewNumber(final CountDownLatch latch) {
         executorService.execute(() -> {
-            String newNoS4S = S4sApi.generateNewNoS4S();
+            String newNumber = S4sApi.generateNewNumber();
 
             runOnUiThread(() -> {
-                if (newNoS4S != null) {
-                    noS4S = newNoS4S;
+                if (newNumber != null) {
+                    noS4S = newNumber;
 
-                    NoS4S.setText(newNoS4S);
-
+                    NoS4S.setText(newNumber);
 
                     // Toast.makeText(S4S.this, "NoS4S berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
                 } else {
@@ -3144,17 +3143,17 @@ public class S4S extends AppCompatActivity {
     private void loadGradeSpinner(int idJenisKayu, String category, String selectedIdGrade, @Nullable Runnable onDone) {
         executorService.execute(() -> {
             // Ambil data dari DB via MasterApi
-            List<GradeData> gradeList = MasterApi.getGradeList(idJenisKayu, category);
+            List<MstGradeData> gradeList = MasterApi.getGradeList(idJenisKayu, category);
 
             // Tambahkan item default
             if (!gradeList.isEmpty()) {
-                gradeList.add(0, new GradeData(0, "PILIH"));
+                gradeList.add(0, new MstGradeData(0, "PILIH"));
             } else {
-                gradeList.add(new GradeData(0, "GRADE TIDAK TERSEDIA"));
+                gradeList.add(new MstGradeData(0, "GRADE TIDAK TERSEDIA"));
             }
 
             runOnUiThread(() -> {
-                ArrayAdapter<GradeData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, gradeList);
+                ArrayAdapter<MstGradeData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, gradeList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinGrade.setAdapter(adapter);
 
@@ -3193,13 +3192,13 @@ public class S4S extends AppCompatActivity {
     private void loadWarnaSpinner(int selectedIdWarna, String selectedWarnaName, @Nullable Runnable onDone) {
         executorService.execute(() -> {
             // Ambil data warna dari DB
-            List<WarnaData> warnaList = MasterApi.getWarnaList();
+            List<MstWarnaData> warnaList = MasterApi.getWarnaList();
 
             // Tambahkan item default di posisi pertama
-            warnaList.add(0, new WarnaData(0, "TIDAK ADA WARNA"));
+            warnaList.add(0, new MstWarnaData(0, "TIDAK ADA WARNA"));
 
             runOnUiThread(() -> {
-                ArrayAdapter<WarnaData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<MstWarnaData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         warnaList
@@ -3278,11 +3277,11 @@ public class S4S extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<SpkData> spkList = MasterApi.getSPKList();
-            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
+            List<MstSpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new MstSpkData("PILIH")); // Tambahkan default item
 
             runOnUiThread(() -> {
-                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkList
@@ -3318,11 +3317,11 @@ public class S4S extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadSPKAsalSpinner(String selectedNoSPKAsal, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<SpkData> spkAsalList = MasterApi.getSPKList();
-            spkAsalList.add(0, new SpkData("PILIH"));
+            List<MstSpkData> spkAsalList = MasterApi.getSPKList();
+            spkAsalList.add(0, new MstSpkData("PILIH"));
 
             runOnUiThread(() -> {
-                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkAsalList
@@ -3398,14 +3397,13 @@ public class S4S extends AppCompatActivity {
 
 
     // Versi baru dengan callback
-// Versi baru dengan callback
     private void loadJenisKayuSpinner(int selectedIdJenisKayu, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<JenisKayuData> jenisKayuList = MasterApi.getJenisKayuList();
-            jenisKayuList.add(0, new JenisKayuData(0, "PILIH"));
+            List<MstJenisKayuData> jenisKayuList = MasterApi.getJenisKayuList();
+            jenisKayuList.add(0, new MstJenisKayuData(0, "PILIH"));
 
             runOnUiThread(() -> {
-                ArrayAdapter<JenisKayuData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, jenisKayuList);
+                ArrayAdapter<MstJenisKayuData> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, jenisKayuList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 SpinKayu.setAdapter(adapter);
 
@@ -3433,18 +3431,17 @@ public class S4S extends AppCompatActivity {
 
 
 
-
     // Versi baru dengan callback
     private void loadProfileSpinner(String selectedIdFJProfile, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<ProfileData> profileList = MasterApi.getProfileList();
+            List<MstProfileData> profileList = MasterApi.getProfileList();
 
             runOnUiThread(() -> {
                 if (profileList != null && !profileList.isEmpty()) {
                     // Tambah dummy di index 0
-                    profileList.add(0, new ProfileData("PILIH", ""));
+                    profileList.add(0, new MstProfileData("PILIH", ""));
 
-                    ArrayAdapter<ProfileData> adapter = new ArrayAdapter<>(
+                    ArrayAdapter<MstProfileData> adapter = new ArrayAdapter<>(
                             this,
                             android.R.layout.simple_spinner_item,
                             profileList
@@ -3484,11 +3481,11 @@ public class S4S extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadFisikSpinner(@Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<FisikData> fisikList = MasterApi.getFisikList(4);
+            List<MstFisikData> fisikList = MasterApi.getFisikList(4);
 
             runOnUiThread(() -> {
                 if (!fisikList.isEmpty()) {
-                    ArrayAdapter<FisikData> adapter = new ArrayAdapter<>(
+                    ArrayAdapter<MstFisikData> adapter = new ArrayAdapter<>(
                             this,
                             android.R.layout.simple_spinner_item,
                             fisikList
@@ -3523,11 +3520,11 @@ public class S4S extends AppCompatActivity {
             }
 
             // Ambil data mesin dari MasterApi
-            List<MesinData> mesinList = S4sApi.getMesinList(selectedDate);
+            List<MstMesinData> mesinList = S4sApi.getMesinList(selectedDate);
 
             runOnUiThread(() -> {
                 if (!mesinList.isEmpty()) {
-                    ArrayAdapter<MesinData> adapter = new ArrayAdapter<>(this,
+                    ArrayAdapter<MstMesinData> adapter = new ArrayAdapter<>(this,
                             android.R.layout.simple_spinner_item, mesinList);
                     adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                     SpinMesin.setAdapter(adapter);
@@ -3561,11 +3558,11 @@ public class S4S extends AppCompatActivity {
             }
 
             // Ambil data susun dari MasterApi
-            List<SusunData> susunList = MasterApi.getSusunList(selectedDate);
+            List<MstSusunData> susunList = MasterApi.getSusunList(selectedDate);
 
             runOnUiThread(() -> {
                 if (!susunList.isEmpty()) {
-                    ArrayAdapter<SusunData> adapter = new ArrayAdapter<>(
+                    ArrayAdapter<MstSusunData> adapter = new ArrayAdapter<>(
                             this,
                             android.R.layout.simple_spinner_item,
                             susunList

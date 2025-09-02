@@ -4,7 +4,6 @@ import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_E
 import static com.example.myapplication.utils.DateTimeUtils.formatDate;
 import static com.example.myapplication.utils.DateTimeUtils.formatTimeToHHmmss;
 
-import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
@@ -15,7 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
-import android.text.method.DigitsKeyListener;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -47,14 +45,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.myapplication.api.SawmillApi;
 import com.example.myapplication.model.GradeKBData;
-import com.example.myapplication.model.MejaData;
-import com.example.myapplication.model.OperatorData;
+import com.example.myapplication.model.MstMejaData;
+import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.SawmillDetailData;
 import com.example.myapplication.model.SawmillDetailInputData;
 import com.example.myapplication.model.SpecialConditionData;
 import com.example.myapplication.model.KayuBulatData;
-import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
@@ -82,8 +79,6 @@ import java.util.function.Supplier;
 
 import android.text.TextWatcher;
 import android.text.Editable;
-
-import org.w3c.dom.Text;
 
 
 public class Sawmill extends AppCompatActivity {
@@ -347,13 +342,13 @@ public class Sawmill extends AppCompatActivity {
         // Setup time picker untuk jam mulai dan jam berhenti
         setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
                 () -> {
-                    MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                    MstMejaData selected = (MstMejaData) spinMeja.getSelectedItem();
                     return selected != null ? selected.getNoMeja() : "";
                 }, existingData.getNoSTSawmill());
 
         setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal,
                 () -> {
-                    MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                    MstMejaData selected = (MstMejaData) spinMeja.getSelectedItem();
                     return selected != null ? selected.getNoMeja() : "";
                 }, existingData.getNoSTSawmill());
 
@@ -448,8 +443,8 @@ public class Sawmill extends AppCompatActivity {
             loadingDialogHelper.show(view.getContext());
 
             SpecialConditionData selectedSpecialCondition = (SpecialConditionData) spinSpecialCondition.getSelectedItem();
-            OperatorData selectedOperator1 = (OperatorData) spinOperator1.getSelectedItem();
-            OperatorData selectedOperator2 = (OperatorData) spinOperator2.getSelectedItem();
+            MstOperatorData selectedOperator1 = (MstOperatorData) spinOperator1.getSelectedItem();
+            MstOperatorData selectedOperator2 = (MstOperatorData) spinOperator2.getSelectedItem();
             String selectedShiftStr = (String) spinShift.getSelectedItem();
 
             final int idSpecialConditionVal = (selectedSpecialCondition != null && selectedSpecialCondition.getIdSawmillSpecialCondition() != null) ? selectedSpecialCondition.getIdSawmillSpecialCondition() : -1;
@@ -462,7 +457,7 @@ public class Sawmill extends AppCompatActivity {
             String remarkVal = remark.getText().toString();
             String inputJlhBalokTerpakai = jlhBalokTerpakai.getText().toString().trim();
             int jlhBalokTerpakaiVal = inputJlhBalokTerpakai.isEmpty() ? 0 : Integer.parseInt(inputJlhBalokTerpakai);
-            MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+            MstMejaData selectedMeja = (MstMejaData) spinMeja.getSelectedItem();
             String noMejaVal = selectedMeja != null ? selectedMeja.getNoMeja() : "";
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
@@ -582,6 +577,7 @@ public class Sawmill extends AppCompatActivity {
                     }
                 });
             } else {
+                loadingDialogHelper.hide();
                 Toast.makeText(Sawmill.this, "Data belum lengkap!", Toast.LENGTH_SHORT).show();
             }
         });
@@ -749,22 +745,22 @@ public class Sawmill extends AppCompatActivity {
 
 
     private void loadOperatorToSpinner(final Spinner spinOperator, @Nullable Integer selectedId) {
-        final List<OperatorData> operatorList = new ArrayList<>();
-        operatorList.add(new OperatorData(null, "PILIH"));
+        final List<MstOperatorData> operatorList = new ArrayList<>();
+        operatorList.add(new MstOperatorData(null, "PILIH"));
 
         executorService.execute(() -> {
-            List<OperatorData> data = SawmillApi.getOperatorList();
+            List<MstOperatorData> data = SawmillApi.getOperatorList();
             operatorList.addAll(data);
 
             runOnUiThread(() -> {
-                ArrayAdapter<OperatorData> adapter = new ArrayAdapter<>(Sawmill.this, android.R.layout.simple_spinner_item, operatorList);
+                ArrayAdapter<MstOperatorData> adapter = new ArrayAdapter<>(Sawmill.this, android.R.layout.simple_spinner_item, operatorList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinOperator.setAdapter(adapter);
 
                 // Setelah spinner terisi, pilih item berdasarkan selectedId
                 if (selectedId != null) {
                     for (int i = 0; i < adapter.getCount(); i++) {
-                        OperatorData item = adapter.getItem(i);
+                        MstOperatorData item = adapter.getItem(i);
                         if (item != null && selectedId.equals(item.getIdOperator())) {
                             spinOperator.setSelection(i);
                             break;
@@ -777,7 +773,7 @@ public class Sawmill extends AppCompatActivity {
         spinOperator.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                OperatorData selectedOperator = (OperatorData) spinOperator.getSelectedItem();
+                MstOperatorData selectedOperator = (MstOperatorData) spinOperator.getSelectedItem();
                 if (selectedOperator != null && selectedOperator.getIdOperator() != null) {
                     spinOperator.setBackgroundResource(R.drawable.border_input);
                 }
@@ -1013,14 +1009,14 @@ public class Sawmill extends AppCompatActivity {
 
         setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
                 () -> {
-                    MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+                    MstMejaData selectedMeja = (MstMejaData) spinMeja.getSelectedItem();
                     return (selectedMeja != null) ? selectedMeja.getNoMeja() : "";
                 },
                 "");
 
         setupTimePicker(jamBerhenti, jamMulai, jamBerhenti, totalJamKerja, tanggal,
                 () -> {
-                    MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+                    MstMejaData selectedMeja = (MstMejaData) spinMeja.getSelectedItem();
                     return (selectedMeja != null) ? selectedMeja.getNoMeja() : "";
                 },
                 "");
@@ -1087,15 +1083,15 @@ public class Sawmill extends AppCompatActivity {
                                    EditText tanggal, EditText jamBerhenti, EditText jamMulai,
                                    TextView totalJamKerja, boolean isEdit) {
 
-        final List<MejaData> mejaList = new ArrayList<>();
-        mejaList.add(new MejaData(null, "PILIH"));
+        final List<MstMejaData> mejaList = new ArrayList<>();
+        mejaList.add(new MstMejaData(null, "PILIH"));
 
         executorService.execute(() -> {
-            List<MejaData> result = SawmillApi.getAllMeja();
+            List<MstMejaData> result = SawmillApi.getAllMeja();
             mejaList.addAll(result);
 
             runOnUiThread(() -> {
-                ArrayAdapter<MejaData> adapter = new ArrayAdapter<>(Sawmill.this,
+                ArrayAdapter<MstMejaData> adapter = new ArrayAdapter<>(Sawmill.this,
                         android.R.layout.simple_spinner_item, mejaList);
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                 spinMeja.setAdapter(adapter);
@@ -1103,7 +1099,7 @@ public class Sawmill extends AppCompatActivity {
                 // Pilih default jika sudah ada yang dipilih sebelumnya
                 if (selectedNoMeja != null) {
                     for (int i = 0; i < adapter.getCount(); i++) {
-                        MejaData item = adapter.getItem(i);
+                        MstMejaData item = adapter.getItem(i);
                         if (item != null && selectedNoMeja.equals(item.getNoMeja())) {
                             spinMeja.setSelection(i);
                             break;
@@ -1116,7 +1112,7 @@ public class Sawmill extends AppCompatActivity {
         spinMeja.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                MejaData selected = (MejaData) spinMeja.getSelectedItem();
+                MstMejaData selected = (MstMejaData) spinMeja.getSelectedItem();
                 if (selected != null && selected.getNoMeja() != null) {
                     final String noMeja = selected.getNoMeja();
 
@@ -1442,8 +1438,8 @@ public class Sawmill extends AppCompatActivity {
 
             // Ambil data dari EditText dan Spinner
             SpecialConditionData selectedSpecialCondition = (SpecialConditionData) spinSpecialCondition.getSelectedItem();
-            OperatorData selectedOperator1 = (OperatorData) spinOperator1.getSelectedItem();
-            OperatorData selectedOperator2 = (OperatorData) spinOperator2.getSelectedItem();
+            MstOperatorData selectedOperator1 = (MstOperatorData) spinOperator1.getSelectedItem();
+            MstOperatorData selectedOperator2 = (MstOperatorData) spinOperator2.getSelectedItem();
             String selectedShiftStr = (String) spinShift.getSelectedItem();
 
             final int idSpecialConditionVal = (selectedSpecialCondition != null && selectedSpecialCondition.getIdSawmillSpecialCondition() != null) ? selectedSpecialCondition.getIdSawmillSpecialCondition() : -1;
@@ -1456,7 +1452,7 @@ public class Sawmill extends AppCompatActivity {
             String remarkVal = remark.getText().toString();
             String inputJlhBalokTerpakai = jlhBalokTerpakai.getText().toString().trim();
             int jlhBalokTerpakaiVal = inputJlhBalokTerpakai.isEmpty() ? 0 : Integer.parseInt(inputJlhBalokTerpakai);
-            MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+            MstMejaData selectedMeja = (MstMejaData) spinMeja.getSelectedItem();
             String noMejaVal = selectedMeja != null ? selectedMeja.getNoMeja() : "";
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
@@ -1517,7 +1513,7 @@ public class Sawmill extends AppCompatActivity {
         }
 
         // ✅ Validasi Spinner Meja
-        MejaData selectedMeja = (MejaData) spinMeja.getSelectedItem();
+        MstMejaData selectedMeja = (MstMejaData) spinMeja.getSelectedItem();
         if (selectedMeja == null || selectedMeja.getNoMeja() == null || selectedMeja.getNoMeja().isEmpty()) {
             spinMeja.setBackgroundResource(R.drawable.spinner_error);
             valid = false;
