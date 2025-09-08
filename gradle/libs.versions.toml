@@ -23,6 +23,8 @@ paging = "3.1.0"  # Versi terbaru Paging 3
 recyclerview = "1.2.1"  # Versi terbaru RecyclerView
 java_websocket = "1.5.2"
 swiperefresh = "1.1.0"
+viewpager2 = "1.0.0"
+cardview = "1.0.0"
 
 
 
@@ -57,7 +59,8 @@ paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pag
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java_websocket" }
 swiperefresh = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefresh" }
-
+viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+cardview  = { group = "androidx.cardview",  name = "cardview",   version.ref = "cardview" }
 
 
 

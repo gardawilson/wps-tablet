@@ -32,6 +32,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".PenjualanBJ"
+            android:exported="false" />
+        <activity
+            android:name=".PenjualanStSnd"
+            android:exported="false" />
+        <activity
+            android:name=".Penjualan"
+            android:exported="false" />
+        <activity
             android:name=".PenerimaanStDariSawmill"
             android:exported="false" />
         <activity

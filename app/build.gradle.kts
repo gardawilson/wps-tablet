@@ -114,6 +114,10 @@ dependencies {
 
     implementation(libs.swiperefresh)
 
+    implementation(libs.viewpager2)
+    implementation(libs.cardview)
+
+
 
 
 

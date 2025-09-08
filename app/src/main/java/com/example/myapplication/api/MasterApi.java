@@ -1,11 +1,13 @@
 package com.example.myapplication.api;
 
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.model.MstBuyerData;
 import com.example.myapplication.model.MstFisikData;
 import com.example.myapplication.model.MstGradeData;
 import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.LokasiData;
 import com.example.myapplication.model.MstBjData;
+import com.example.myapplication.model.MstJenisKendaraanData;
 import com.example.myapplication.model.MstProfileData;
 import com.example.myapplication.model.MstSpkData;
 import com.example.myapplication.model.MstSusunData;
@@ -79,7 +81,7 @@ public class MasterApi {
         String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                 "FROM MstGrade a " +
                 "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
+                "WHERE a.Enable = 1 OR b.IdJenisKayu = ? AND b.Category = ? " +
                 "ORDER BY a.NamaGrade ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -242,8 +244,12 @@ public class MasterApi {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
+        System.out.println("[DEBUG] isPeriodValid() dipanggil. Input dateToCheck = " + dateToCheck);
+
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
             Date inputDate = sdf.parse(dateToCheck);
+            System.out.println("[DEBUG] Parsed inputDate = " + inputDate);
+
 
             // Cek bulanan
             try (PreparedStatement ps1 = con.prepareStatement(query1);
@@ -388,6 +394,71 @@ public class MasterApi {
         }
 
         return bjList;
+    }
+
+
+    public static List<MstBuyerData> getBuyerList() {
+        List<MstBuyerData> buyers = new ArrayList<>();
+
+        String query = "SELECT TOP 100 IdBuyer, Buyer, IsExport " +
+                "FROM dbo.MstBuyer " +
+                "ORDER BY Buyer ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int idBuyer = rs.getInt("IdBuyer");
+                String buyer = rs.getString("Buyer");
+
+                // SQL Server BIT -> boolean
+                boolean isExport = rs.getBoolean("IsExport");
+                if (rs.wasNull()) {
+                    // jika kolom bisa NULL, fallback ke false (atau sesuaikan kebutuhan)
+                    isExport = false;
+                }
+
+                buyers.add(new MstBuyerData(idBuyer, buyer, isExport));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data buyer:");
+            e.printStackTrace();
+        }
+
+        return buyers;
+    }
+
+
+    public static List<MstJenisKendaraanData> getJenisKendaraanList() {
+        List<MstJenisKendaraanData> list = new ArrayList<>();
+
+        String query = "SELECT TOP 1000 " +
+                "IdJenisKendaraan, [Type], [Model], [Enable] " +
+                "FROM dbo.MstJenisKendaraan " +
+                "WHERE [Enable] = 1 " +
+                "ORDER BY [Type] ASC, [Model] ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("IdJenisKendaraan");
+                String type = rs.getString("Type");
+                String model = rs.getString("Model");
+                boolean enable = rs.getBoolean("Enable"); // BIT -> boolean
+
+                list.add(new MstJenisKendaraanData(id, type, model, enable));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data MstJenisKendaraan (enabled):");
+            e.printStackTrace();
+        }
+
+        return list;
     }
 
 
