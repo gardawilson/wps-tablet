@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:elevation="8dp">
+
+    <!-- Bubble Background -->
+    <LinearLayout
+        android:id="@+id/tooltipContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/tooltip_background"
+        android:elevation="4dp">
+
+        <Button
+            android:id="@+id/btnActivateDeactivate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aktifkan"
+            android:textColor="@color/black"
+            android:drawableLeft="@drawable/ic_done_all"
+            android:background="?attr/selectableItemBackground"
+            android:textAlignment="textStart" />
+
+
+    </LinearLayout>
+
+    <!-- Triangle Pointer -->
+    <!--    <ImageView-->
+    <!--        android:id="@+id/trianglePointer"-->
+    <!--        android:layout_width="16dp"-->
+    <!--        android:layout_height="16dp"-->
+    <!--        android:src="@drawable/triangle_pointer"-->
+    <!--        android:layout_gravity="center"-->
+    <!--        android:layout_marginTop="-2dp"-->
+    <!--        android:elevation="10dp"-->
+    <!--        android:rotation="90"/>-->
+</LinearLayout>

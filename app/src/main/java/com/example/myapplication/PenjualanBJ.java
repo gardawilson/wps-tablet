@@ -3,10 +3,8 @@ package com.example.myapplication;
 import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.PenjualanApi;
 import com.example.myapplication.api.ProsesProduksiApi;
-import com.example.myapplication.model.MstBuyerData;
-import com.example.myapplication.model.MstJenisKendaraanData;
 import com.example.myapplication.model.BJJualData;
-import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -425,11 +423,11 @@ public class PenjualanBJ extends AppCompatActivity {
 
     private void loadSPKSpinner(Spinner spinSPK, String selectedNoSPK, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<MstSpkData> spkList = MasterApi.getSPKList();
-            spkList.add(0, new MstSpkData("PILIH")); // Tambahkan default item
+            List<SpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
 
             runOnUiThread(() -> {
-                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkList
@@ -509,7 +507,7 @@ public class PenjualanBJ extends AppCompatActivity {
             String keterangan = editKeterangan.getText().toString().trim();
 
             // Ambil ID dari spinner
-            MstSpkData spk = (MstSpkData) spinSPK.getSelectedItem();
+            SpkData spk = (SpkData) spinSPK.getSelectedItem();
             String noSPK = (spk != null) ? spk.getNoSPK() : "-";
 
             executorService.execute(() -> {
@@ -586,7 +584,7 @@ public class PenjualanBJ extends AppCompatActivity {
 
             String tanggalBaru    = editTanggal.getText().toString().trim();
             String keteranganBaru = editKeterangan.getText().toString().trim();
-            MstSpkData spk = (MstSpkData) spinSPK.getSelectedItem();
+            SpkData spk = (SpkData) spinSPK.getSelectedItem();
             String noSPKBaru = (spk != null) ? spk.getNoSPK() : "-";
 
             executorService.execute(() -> {

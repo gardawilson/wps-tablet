@@ -1,5 +1,7 @@
 package com.example.myapplication.model;
 
+import com.example.myapplication.utils.DateTimeUtils;
+
 public class PenerimaanSTSawmillData {
     private String noPenerimaanST;
     private String tglLaporan;
@@ -7,7 +9,7 @@ public class PenerimaanSTSawmillData {
 
     public PenerimaanSTSawmillData(String noPenerimaanST, String tglLaporan, String noKayuBulat) {
         this.noPenerimaanST = noPenerimaanST;
-        this.tglLaporan = tglLaporan;
+        this.tglLaporan = DateTimeUtils.formatDate(tglLaporan);
         this.noKayuBulat = noKayuBulat;
     }
 

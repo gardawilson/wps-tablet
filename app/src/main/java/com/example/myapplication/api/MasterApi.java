@@ -9,7 +9,7 @@ import com.example.myapplication.model.LokasiData;
 import com.example.myapplication.model.MstBjData;
 import com.example.myapplication.model.MstJenisKendaraanData;
 import com.example.myapplication.model.MstProfileData;
-import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
 import com.example.myapplication.model.MstWarnaData;
@@ -183,8 +183,8 @@ public class MasterApi {
 
 
 
-    public static List<MstSpkData> getSPKList() {
-        List<MstSpkData> spkList = new ArrayList<>();
+    public static List<SpkData> getSPKList() {
+        List<SpkData> spkList = new ArrayList<>();
         String query = "SELECT s.NoSPK, b.Buyer " +
                 "FROM MstSPK_h s " +
                 "INNER JOIN MstBuyer b ON s.IdBuyer = b.IdBuyer " +
@@ -198,7 +198,7 @@ public class MasterApi {
                 String noSPK = rs.getString("NoSPK");
                 String buyer = rs.getString("Buyer");
 
-                spkList.add(new MstSpkData(noSPK, buyer));
+                spkList.add(new SpkData(noSPK, buyer));
             }
 
         } catch (SQLException e) {

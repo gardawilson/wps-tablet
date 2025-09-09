@@ -75,7 +75,7 @@ import com.example.myapplication.model.MstMesinData;
 import com.example.myapplication.model.MstBjData;
 import com.example.myapplication.model.MstProfileData;
 import com.example.myapplication.model.BjData;
-import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -136,7 +136,6 @@ import com.itextpdf.kernel.geom.Rectangle;
 
 
 import java.io.File;
-import java.text.ParseException;
 
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -322,7 +321,7 @@ public class Packing extends AppCompatActivity {
                     String panjang = DetailPanjang.getText().toString().trim();
 
                     // Ambil data SpkData, Jenis Kayu, dan GradeData dari Spinner
-                    MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+                    SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
                     MstBjData selectedBj = (MstBjData) SpinBarangJadi.getSelectedItem();
                     MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
 
@@ -545,8 +544,8 @@ public class Packing extends AppCompatActivity {
             String remark = remarkLabel.getText().toString();
 
             TellyData selectedTelly = (TellyData) SpinTelly.getSelectedItem();
-            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
-            MstSpkData selectedSPKasal = (MstSpkData) SpinSPKAsal.getSelectedItem();
+            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
+            SpkData selectedSPKasal = (SpkData) SpinSPKAsal.getSelectedItem();
             MstProfileData selectedProfile = (MstProfileData) SpinProfile.getSelectedItem();
             MstBjData selectedBj = (MstBjData) SpinBarangJadi.getSelectedItem();
             MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
@@ -677,8 +676,8 @@ public class Packing extends AppCompatActivity {
             String remark = remarkLabel.getText().toString();
 
             TellyData selectedTelly = (TellyData) SpinTelly.getSelectedItem();
-            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
-            MstSpkData selectedSPKasal = (MstSpkData) SpinSPKAsal.getSelectedItem();
+            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
+            SpkData selectedSPKasal = (SpkData) SpinSPKAsal.getSelectedItem();
             MstProfileData selectedProfile = (MstProfileData) SpinProfile.getSelectedItem();
             MstBjData selectedBj = (MstBjData) SpinBarangJadi.getSelectedItem();
             MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
@@ -875,7 +874,7 @@ public class Packing extends AppCompatActivity {
             String panjang = DetailPanjang.getText().toString().trim();
 
             // Ambil data SpkData, Jenis Kayu, dan GradeData dari Spinner
-            MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+            SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
             MstBjData selectedBj = (MstBjData) SpinBarangJadi.getSelectedItem();
             MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
 
@@ -3551,11 +3550,11 @@ public class Packing extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<MstSpkData> spkList = MasterApi.getSPKList();
-            spkList.add(0, new MstSpkData("PILIH")); // Tambahkan default item
+            List<SpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
 
             runOnUiThread(() -> {
-                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkList
@@ -3591,11 +3590,11 @@ public class Packing extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadSPKAsalSpinner(String selectedNoSPKAsal, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<MstSpkData> spkAsalList = MasterApi.getSPKList();
-            spkAsalList.add(0, new MstSpkData("PILIH"));
+            List<SpkData> spkAsalList = MasterApi.getSPKList();
+            spkAsalList.add(0, new SpkData("PILIH"));
 
             runOnUiThread(() -> {
-                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkAsalList

@@ -1786,11 +1786,6 @@ public class Sawmill extends AppCompatActivity {
         });
     }
 
-
-
-
-
-
     private void populateTable(List<SawmillData> dataList) {
         mainTable.removeAllViews();
 

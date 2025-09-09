@@ -53,7 +53,7 @@ import com.example.myapplication.model.LabelDetailData;
 import com.example.myapplication.model.LokasiData;
 import com.example.myapplication.model.MstGradeStickData;
 import com.example.myapplication.model.MstJenisKayuData;
-import com.example.myapplication.model.MstSpkData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.MstStickData;
 import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.OutputDataST;
@@ -677,7 +677,7 @@ public class SawnTimber extends AppCompatActivity {
                 MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
                 int jenisKayu = selectedJenisKayu.getIdJenisKayu();
                 String namaJenisKayu = selectedJenisKayu.getJenis();
-                MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+                SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
                 String noSPK = selectedSPK.getNoSPK();
                 MstSusunData selectedSusun = (MstSusunData) SpinBongkarSusun.getSelectedItem();
                 String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
@@ -789,7 +789,7 @@ public class SawnTimber extends AppCompatActivity {
                 MstJenisKayuData selectedJenisKayu = (MstJenisKayuData) SpinKayu.getSelectedItem();
                 int jenisKayu = selectedJenisKayu.getIdJenisKayu();
                 String namaJenisKayu = selectedJenisKayu.getJenis();
-                MstSpkData selectedSPK = (MstSpkData) SpinSPK.getSelectedItem();
+                SpkData selectedSPK = (SpkData) SpinSPK.getSelectedItem();
                 String noSPK = selectedSPK.getNoSPK();
                 MstSusunData selectedSusun = (MstSusunData) SpinBongkarSusun.getSelectedItem();
                 String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
@@ -3752,11 +3752,11 @@ public class SawnTimber extends AppCompatActivity {
     // Versi baru dengan callback
     private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            List<MstSpkData> spkList = MasterApi.getSPKList();
-            spkList.add(0, new MstSpkData("PILIH")); // Tambahkan default item
+            List<SpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
 
             runOnUiThread(() -> {
-                ArrayAdapter<MstSpkData> adapter = new ArrayAdapter<>(
+                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
                         spkList
