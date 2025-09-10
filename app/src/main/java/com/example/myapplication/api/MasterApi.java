@@ -3,6 +3,7 @@ package com.example.myapplication.api;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.MstBuyerData;
 import com.example.myapplication.model.MstFisikData;
+import com.example.myapplication.model.MstGradeABCData;
 import com.example.myapplication.model.MstGradeData;
 import com.example.myapplication.model.MstJenisKayuData;
 import com.example.myapplication.model.LokasiData;
@@ -455,6 +456,32 @@ public class MasterApi {
 
         } catch (SQLException e) {
             System.err.println("[DB_ERROR] Gagal ambil data MstJenisKendaraan (enabled):");
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public static List<MstGradeABCData> getGradeABCList() {
+        List<MstGradeABCData> list = new ArrayList<>();
+
+        String query = "SELECT TOP 1000 IdGradeABC, NamaGrade " +
+                "FROM dbo.MstGradeABC " +
+                "ORDER BY NamaGrade ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("IdGradeABC");
+                String nama = rs.getString("NamaGrade");
+
+                list.add(new MstGradeABCData(id, nama));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data MstGradeABC:");
             e.printStackTrace();
         }
 

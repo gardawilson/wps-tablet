@@ -665,7 +665,7 @@ public class QcSawmill extends AppCompatActivity {
     // Method untuk menampilkan popup di koordinat touch
     private void showRowPopupDetailAtTouch(View anchorView, QcSawmillDetailData data, String noQcSawmill, float touchX, float touchY) {
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.popup_menu_row_sawmill_detail, null);
+        View popupView = inflater.inflate(R.layout.popup_menu_edit_delete, null);
 
         PopupWindow popupWindow = new PopupWindow(
                 popupView,

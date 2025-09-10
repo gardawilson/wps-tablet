@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:paddingRight="8dp"
+    android:paddingLeft="8dp"
+    android:paddingBottom="8dp"
+    android:background="@color/primary_dark">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="3"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:cardUseCompatPadding="false"
+        app:cardPreventCornerOverlap="false">
+
+        <!-- Satu container vertikal: TAB di atas, konten di bawah -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- ===== TAB BAR (menempel ke tepi atas Card) ===== -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:tabMode="fixed"
+                app:tabGravity="fill"
+                app:tabIndicatorHeight="0dp"
+                app:tabBackground="@drawable/bg_chrome_tab"
+                app:tabTextColor="@color/chrome_tab_text"
+                app:tabRippleColor="?attr/colorControlHighlight"
+                app:tabPaddingStart="50dp"
+                app:tabPaddingEnd="50dp"
+                app:tabInlineLabel="true" />
+
+
+            <!-- Garis tipis pemisah (opsional, bisa dihapus kalau mau benar-benar menyatu) -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:alpha="0.5" />
+
+
+            <!-- ===== KONTEN MENGISI SISA RUANG ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Planning Mesin"
+                    android:textStyle="bold"
+                    android:textSize="30sp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <Button
+                        android:id="@+id/btnCreate"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="8dp"
+                        android:text="Data Baru" />
+
+                    <Button
+                        android:id="@+id/btnEdit"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="8dp"
+                        android:text="Ubah" />
+
+                    <Button
+                        android:id="@+id/btnDelete"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="Hapus" />
+                </LinearLayout>
+
+                <!-- Header tabel -->
+                <TableLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF"
+                    android:stretchColumns="0">
+                    <!-- Membuat kolom proporsional -->
+
+                    <TableRow
+                        android:background="@color/hijau">
+
+                        <!-- Kolom No. Produksi -->
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Tanggal"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <!-- Kolom Shift -->
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Nama Mesin"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                        <View
+                            android:layout_width="1px"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
+
+                        <!-- Kolom Tanggal -->
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Planning"
+                            android:padding="8dp"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:textColor="@color/white"/>
+
+                    </TableRow>
+
+                </TableLayout>
+
+                <!-- Isi tabel scrollable -->
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
+
+                    <TableLayout
+                        android:id="@+id/mainTable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <ProgressBar
+                            android:id="@+id/mainLoadingIndicator"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:visibility="gone" />
+                        <!-- baris dinamis -->
+                    </TableLayout>
+                </ScrollView>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+</LinearLayout>
