@@ -13,7 +13,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="3"
-        app:cardCornerRadius="8dp"
+        app:cardCornerRadius="12dp"
         app:cardElevation="4dp"
         app:cardUseCompatPadding="false"
         app:cardPreventCornerOverlap="false">
@@ -33,11 +33,12 @@
                 app:tabGravity="fill"
                 app:tabIndicatorHeight="0dp"
                 app:tabBackground="@drawable/bg_chrome_tab"
-                app:tabTextColor="@color/chrome_tab_text"
+                app:tabTextColor="@drawable/chrome_tab_text"
                 app:tabRippleColor="?attr/colorControlHighlight"
                 app:tabPaddingStart="50dp"
                 app:tabPaddingEnd="50dp"
                 app:tabInlineLabel="true" />
+
 
 
             <!-- Garis tipis pemisah (opsional, bisa dihapus kalau mau benar-benar menyatu) -->
@@ -45,7 +46,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:alpha="0.5" />
-
 
             <!-- ===== KONTEN MENGISI SISA RUANG ===== -->
             <LinearLayout
@@ -155,25 +155,28 @@
                 </TableLayout>
 
                 <!-- Isi tabel scrollable -->
-                <ScrollView
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1">
 
-                    <TableLayout
-                        android:id="@+id/mainTable"
+                    <ScrollView
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
+                        android:layout_height="match_parent">
 
-                        <ProgressBar
-                            android:id="@+id/mainLoadingIndicator"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:visibility="gone" />
-                        <!-- baris dinamis -->
-                    </TableLayout>
-                </ScrollView>
+                        <TableLayout
+                            android:id="@+id/mainTable"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+                    </ScrollView>
+
+                    <ProgressBar
+                        android:id="@+id/mainLoadingIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:visibility="gone"/>
+                </FrameLayout>
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>

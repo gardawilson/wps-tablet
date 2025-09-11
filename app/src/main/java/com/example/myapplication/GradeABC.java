@@ -825,12 +825,6 @@ public class GradeABC extends AppCompatActivity {
         dialog.show();
     }
 
-
-
-
-
-
-
     private void onRowClick(GradeABCData data) {
         executorService.execute(() -> {
             noGradeABC = data.getNoGradeABC();

@@ -4,17 +4,14 @@
     <!-- Selected -->
     <item android:state_selected="true">
         <shape android:shape="rectangle">
-            <!-- rounded top, flat bottom -->
             <corners
                 android:topLeftRadius="12dp"
                 android:topRightRadius="12dp"
                 android:bottomLeftRadius="0dp"
                 android:bottomRightRadius="0dp" />
-            <!-- isi pakai surface supaya “nyatu” dengan Card -->
-            <solid android:color="?attr/colorSurface" />
-            <!-- garis halus keliling (Chrome-ish) -->
-            <stroke android:width="1dp" android:color="?attr/colorOutline" />
-            <!-- sedikit padding biar tab “bernapas” -->
+            <!-- background pakai primary -->
+            <solid android:color="@color/white" />
+            <stroke android:width="1dp" android:color="@color/background_cream" />
             <padding android:left="8dp" android:top="6dp"
                 android:right="8dp" android:bottom="6dp"/>
         </shape>
@@ -28,9 +25,9 @@
                 android:topRightRadius="12dp"
                 android:bottomLeftRadius="0dp"
                 android:bottomRightRadius="0dp" />
-            <!-- permukaan sedikit berbeda agar kontras tipis -->
-            <solid android:color="?attr/colorSurfaceVariant" />
-            <stroke android:width="1dp" android:color="?attr/colorOutlineVariant" />
+            <!-- default putih -->
+            <solid android:color="@color/primary" />
+            <stroke android:width="1dp" android:color="@color/white" />
             <padding android:left="8dp" android:top="6dp"
                 android:right="8dp" android:bottom="6dp"/>
         </shape>
