@@ -365,12 +365,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private boolean validateLogin(String username, String password) {
         boolean isValid = false;
         Connection con = ConnectionClass();
 
         if (con != null) {
-            String query = "SELECT DISTINCT MUGM.IdUGroup, MUGP.NoPermission " +
+            String query = "SELECT DISTINCT MU.IdUsername, MUGM.IdUGroup, MUGP.NoPermission " +
                     "FROM dbo.MstUsername MU " +
                     "JOIN dbo.MstUserGroupMember MUGM ON MU.IdUsername = MUGM.IdUsername " +
                     "JOIN dbo.MstUserGroupPermission MUGP ON MUGM.IdUGroup = MUGP.IdUGroup " +
@@ -384,8 +385,13 @@ public class MainActivity extends AppCompatActivity {
                 try (ResultSet rs = ps.executeQuery()) {
                     Set<String> roleSet = new HashSet<>();
                     Set<String> permissionSet = new HashSet<>();
+                    String idUsername = null;
 
                     while (rs.next()) {
+                        if (idUsername == null) {
+                            idUsername = rs.getString("IdUsername");
+                        }
+
                         String groupId = rs.getString("IdUGroup");
                         String noPermission = rs.getString("NoPermission");
 
@@ -393,11 +399,14 @@ public class MainActivity extends AppCompatActivity {
                         permissionSet.add(noPermission);
 
                         // Logcat output
-                        Log.d("LoginPermission", "Group: " + groupId + " | Permission: " + noPermission);
+                        Log.d("LoginPermission", "User: " + idUsername +
+                                " | Group: " + groupId +
+                                " | Permission: " + noPermission);
                     }
 
-                    if (!roleSet.isEmpty()) {
+                    if (!roleSet.isEmpty() && idUsername != null) {
                         SharedPrefUtils.saveUsername(this, username);
+                        SharedPrefUtils.saveIdUsername(this, idUsername);   // <-- simpan IdUsername
                         SharedPrefUtils.saveRoles(this, new ArrayList<>(roleSet));
                         SharedPrefUtils.savePermissions(this, new ArrayList<>(permissionSet));
                         isValid = true;

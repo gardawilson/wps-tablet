@@ -35,6 +35,8 @@ import com.example.myapplication.model.GradeABCDetailData;
 import com.example.myapplication.model.MstGradeABCData;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -63,6 +65,8 @@ public class GradeABC extends AppCompatActivity {
     private Button btnDelete;
     private FloatingActionButton fabAddDetail;
     private float touchXDetail, touchYDetail;
+    private List<String> userPermissions;
+
 
 
 
@@ -81,6 +85,13 @@ public class GradeABC extends AppCompatActivity {
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
         fabAddDetail = findViewById(R.id.fabAddDetail);
+
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnCreate, "grade_abc:create");
+        PermissionUtils.permissionCheck(this, fabAddDetail, "grade_abc:create");
+        PermissionUtils.permissionCheck(this, btnEdit, "grade_abc:update");
+        PermissionUtils.permissionCheck(this, btnDelete, "grade_abc:delete");
 
         loadDataAndDisplayTable();
 
@@ -565,16 +576,21 @@ public class GradeABC extends AppCompatActivity {
         View root = getWindow().getDecorView();
         popupWindow.showAtLocation(root, Gravity.TOP | Gravity.START, desiredX, desiredY);
 
+
         // ---- wiring tombol ----
-        Button btnEdit = popupView.findViewById(R.id.btnEdit);
-        btnEdit.setOnClickListener(v -> {
+        Button btnEditDetail = popupView.findViewById(R.id.btnEdit);
+        PermissionUtils.permissionCheck(this, btnEditDetail, "grade_abc:update");
+
+        btnEditDetail.setOnClickListener(v -> {
             popupWindow.dismiss();
             showEditGradeABCDetailDialog(data);
         });
 
 
-        Button btnDelete = popupView.findViewById(R.id.btnDelete);
-        btnDelete.setOnClickListener(v -> {
+        Button btnDeleteDetail = popupView.findViewById(R.id.btnDelete);
+        PermissionUtils.permissionCheck(this, btnDeleteDetail, "grade_abc:delete");
+
+        btnDeleteDetail.setOnClickListener(v -> {
             popupWindow.dismiss();
 
             new AlertDialog.Builder(this)

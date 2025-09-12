@@ -64,6 +64,7 @@ public class SPK extends AppCompatActivity {
     // di class Activity kamu
     private float touchX = 0f, touchY = 0f;
     private PopupWindow currentPopup; // simpan biar bisa dismiss saat pindah
+    private List<String> userPermissions;
 
 
     @Override

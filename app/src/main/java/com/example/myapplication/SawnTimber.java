@@ -128,6 +128,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SawnTimber extends AppCompatActivity {
 
+    private String idUsername;
     private String username;
     private String noST;
     private Button BtnSimpanST;
@@ -304,6 +305,9 @@ public class SawnTimber extends AppCompatActivity {
         disableForm();
 
         BtnExpandView.setOnClickListener(v -> showListDialogOnDemand());
+
+        //GET USERNAME
+        idUsername = SharedPrefUtils.getIdUsername(this);
 
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
@@ -543,7 +547,7 @@ public class SawnTimber extends AppCompatActivity {
             // ====== panggil semua loader async dgn callback ======
             // Pastikan setiap fungsi loader punya overload (param terakhir Runnable onDone)
             loadSPKSpinner("", checkAllDone);
-            loadTellySpinner("", checkAllDone);
+            loadTellyByIdUsernameSpinner(idUsername, checkAllDone);
             loadStickBySpinner("", checkAllDone);
             loadJenisKayuSpinner(0, checkAllDone);
             loadGradeStickSpinner(0, checkAllDone);
@@ -3787,15 +3791,49 @@ public class SawnTimber extends AppCompatActivity {
         loadSPKSpinner(selectedNoSPK, null);
     }
 
+    // Versi baru dengan callback
+    private void loadTellyByIdUsernameSpinner(String selectedIdTelly, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            List<TellyData> tellyList = MasterApi.getTellyByIdUsername(idUsername);
+
+            runOnUiThread(() -> {
+                ArrayAdapter<TellyData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        tellyList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                SpinTelly.setAdapter(adapter);
+
+                // Set default selection
+                if (selectedIdTelly == null || selectedIdTelly.equals("0")) {
+                    SpinTelly.setSelection(0);
+                } else {
+                    for (int i = 0; i < tellyList.size(); i++) {
+                        if (tellyList.get(i).getIdOrgTelly().equals(selectedIdTelly)) {
+                            SpinTelly.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil
+    private void loadTellyByIdUsernameSpinner(String selectedIdTelly) {
+        loadTellySpinner(selectedIdTelly, null);
+    }
+
+
 
     // Versi baru dengan callback
     private void loadTellySpinner(String selectedIdTelly, @Nullable Runnable onDone) {
         executorService.execute(() -> {
-            // ambil username dari SharedPreferences
-            SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-            String username = prefs.getString("username", "");
-
-            List<TellyData> tellyList = MasterApi.getTellyList(username);
+            List<TellyData> tellyList = MasterApi.getTellyList();
 
             runOnUiThread(() -> {
                 ArrayAdapter<TellyData> adapter = new ArrayAdapter<>(

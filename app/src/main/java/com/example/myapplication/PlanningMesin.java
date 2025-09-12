@@ -32,6 +32,8 @@ import com.example.myapplication.model.MstMejaData;
 import com.example.myapplication.model.PlanningMesinData;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
@@ -56,6 +58,7 @@ public class PlanningMesin extends AppCompatActivity {
     // Tambahan guard agar hasil fetch lama tidak menimpa hasil terbaru
     private final java.util.concurrent.atomic.AtomicInteger requestSeq = new java.util.concurrent.atomic.AtomicInteger(0);
     private String currentJenis = "S4S"; // default tab
+    private List<String> userPermissions;
 
 
     @Override
@@ -68,6 +71,13 @@ public class PlanningMesin extends AppCompatActivity {
         btnCreate = findViewById(R.id.btnCreate);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
+
+        //PERMISSION CHECK
+        userPermissions = SharedPrefUtils.getPermissions(this);
+        PermissionUtils.permissionCheck(this, btnCreate, "planning_mesin:create");
+        PermissionUtils.permissionCheck(this, btnEdit, "planning_mesin:update");
+        PermissionUtils.permissionCheck(this, btnDelete, "planning_mesin:create");
+
 
         // Setup tabs
         TabLayout tabs = findViewById(R.id.tabs);

@@ -82,7 +82,7 @@ public class MasterApi {
         String query = "SELECT DISTINCT a.IdGrade, a.NamaGrade " +
                 "FROM MstGrade a " +
                 "INNER JOIN MstGrade_d b ON a.IdGrade = b.IdGrade " +
-                "WHERE a.Enable = 1 OR b.IdJenisKayu = ? AND b.Category = ? " +
+                "WHERE a.Enable = 1 AND b.IdJenisKayu = ? AND b.Category = ? " +
                 "ORDER BY a.NamaGrade ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -289,7 +289,8 @@ public class MasterApi {
         return true; // kalau lolos semua -> masih valid
     }
 
-    public static List<TellyData> getTellyList(String username) {
+
+    public static List<TellyData> getTellyByIdUsername(String idUsername) {
         List<TellyData> tellyList = new ArrayList<>();
 
         String query = "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
@@ -297,14 +298,47 @@ public class MasterApi {
                 "INNER JOIN ( " +
                 "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
                 "    FROM MstUsername " +
-                "    WHERE Username = ? " +
+                "    WHERE IdUsername = ? " +
                 ") B ON B.NamaTelly = A.NamaOrgTelly " +
                 "WHERE A.Enable = 1";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement ps = con.prepareStatement(query)) {
 
-            ps.setString(1, username);
+            ps.setString(1, idUsername);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String idOrgTelly = rs.getString("IdOrgTelly");
+                    String namaOrgTelly = rs.getString("NamaOrgTelly");
+
+                    tellyList.add(new TellyData(idOrgTelly, namaOrgTelly));
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[DB_ERROR] Gagal ambil data Telly:");
+            e.printStackTrace();
+        }
+
+        return tellyList;
+    }
+
+
+
+    public static List<TellyData> getTellyList() {
+        List<TellyData> tellyList = new ArrayList<>();
+
+        String query = "SELECT A.IdOrgTelly, A.NamaOrgTelly " +
+                "FROM MstOrgTelly A " +
+                "INNER JOIN ( " +
+                "    SELECT Username, FName + ' ' + LName AS NamaTelly " +
+                "    FROM MstUsername " +
+                ") B ON B.NamaTelly = A.NamaOrgTelly " +
+                "WHERE A.Enable = 1";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(query)) {
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String idOrgTelly = rs.getString("IdOrgTelly");

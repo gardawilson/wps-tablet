@@ -15,10 +15,24 @@ public class SharedPrefUtils {
     // Key untuk menyimpan username
     private static final String KEY_USERNAME = "username";
 
+    private static final String KEY_ID_USERNAME = "id_username";
+
     private static final String KEY_ROLE_LIST = "user_roles";
 
     private static final String KEY_PERMISSION_LIST = "user_permissions";
 
+
+    public static void saveIdUsername(Context context, String idUsername) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_ID_USERNAME, idUsername);
+        editor.apply();
+    }
+
+    public static String getIdUsername(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_ID_USERNAME, "");
+    }
 
 
     // Method untuk menyimpan username

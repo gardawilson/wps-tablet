@@ -29,7 +29,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Grade ABC"
+                android:text="GRADE ABC"
                 android:textSize="30sp"
                 android:textColor="#000000"
                 android:textStyle="bold" />
@@ -198,7 +198,6 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginEnd="4dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
             android:background="#FFFFFF">
