@@ -32,6 +32,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".StockOpnameMenu"
+            android:exported="false" />
+        <activity
+            android:name=".StockOpnameAscend"
+            android:exported="false" />
+        <activity
+            android:name=".stock_opname_ascend"
+            android:exported="false" />
+        <activity
             android:name=".PlanningMesin"
             android:exported="false" />
         <activity

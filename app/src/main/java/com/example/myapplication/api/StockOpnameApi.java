@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LokasiBlok;
+import com.example.myapplication.model.StockOpnameAscendData;
+import com.example.myapplication.model.StockOpnameAscendFamilyData;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
@@ -14,30 +16,38 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class StockOpnameApi {
 
-    public static List<StockOpnameData> getStockOpnameData() {
+    public static List<StockOpnameData> getStockOpnameData(boolean isAscend) {
         List<StockOpnameData> stockOpnames = new ArrayList<>();
 
-        // Query untuk mengambil seluruh data tanpa OFFSET dan LIMIT
-        String query = "SELECT [NoSO], [Tgl] " +
-                        "FROM [dbo].[StockOpname_h] " +
-                        "WHERE [Tgl] > (SELECT MAX(PeriodHarian) FROM [dbo].[MstTutupTransaksiHarian]) " +
-                        "ORDER BY [NoSO] DESC";
+        StringBuilder query = new StringBuilder();
+        query.append("SELECT [NoSO], [Tgl] ")
+                .append("FROM [dbo].[StockOpname_h] ")
+                .append("WHERE [Tgl] > (SELECT MAX(PeriodHarian) FROM [dbo].[MstTutupTransaksiHarian]) ");
+
+        // tambahkan kondisi hanya kalau isAscend = true
+        if (isAscend) {
+            query.append("AND IsAscend = 1 ");
+        } else {
+            query.append("AND IsAscend != 1 ");
+        }
+
+        query.append("ORDER BY [NoSO] DESC");
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement stmt = con.prepareStatement(query)) {
+             PreparedStatement stmt = con.prepareStatement(query.toString())) {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String noSO = rs.getString("NoSO");
                     String tgl = rs.getString("Tgl");
 
-                    // Debugging
                     Log.d("Database Data", "NoSO: " + noSO + ", Tgl: " + tgl);
 
                     stockOpnames.add(new StockOpnameData(noSO, tgl));
@@ -50,6 +60,7 @@ public class StockOpnameApi {
 
         return stockOpnames;
     }
+
 
 
     public static List<StockOpnameDataByNoSO> getStockOpnameDataByNoSO(
@@ -1273,6 +1284,221 @@ public class StockOpnameApi {
 
         return count;
     }
+
+
+
+
+    //CONNECT TO ASCEND RU DB
+
+    public static List<StockOpnameAscendFamilyData> getStockOpnameAscendFamilyData(String noSO) {
+        List<StockOpnameAscendFamilyData> familyList = new ArrayList<>();
+
+        String query =
+                "SELECT f.NoSO, f.CategoryID, f.FamilyID, " +
+                        "       ISNULL(sf.FamilyName, '') AS FamilyName, " +
+                        "       COUNT(s.ItemID) AS TotalItem, " +
+                        "       COUNT(DISTINCT sh.ItemID) AS CompleteItem " +
+                        "FROM [dbo].[StockOpnameAscend_dFamily] f " +
+                        "LEFT JOIN [AS_RU_2022].[dbo].[IC_StockFamily] sf " +
+                        "       ON f.FamilyID = sf.FamilyID " +
+                        "LEFT JOIN [dbo].[StockOpnameAscend] s " +
+                        "       ON f.NoSO = s.NoSO " +
+                        "      AND f.CategoryID = s.CategoryID " +
+                        "      AND f.FamilyID = s.FamilyID " +
+                        "LEFT JOIN [dbo].[StockOpnameAscendHasil] sh " +
+                        "       ON s.NoSO = sh.NoSO " +
+                        "      AND s.ItemID = sh.ItemID " +
+                        "WHERE f.NoSO = ? " +
+                        "GROUP BY f.NoSO, f.CategoryID, f.FamilyID, sf.FamilyName " +
+                        "ORDER BY f.FamilyID ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noSO);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String categoryID = rs.getString("CategoryID");
+                    String familyID = rs.getString("FamilyID");
+                    String familyName = rs.getString("FamilyName");
+                    int totalItem = rs.getInt("TotalItem");
+                    int completeItem = rs.getInt("CompleteItem");
+
+                    familyList.add(new StockOpnameAscendFamilyData(
+                            noSO, categoryID, familyID, familyName, totalItem, completeItem
+                    ));
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error fetching StockOpnameAscendFamilyData: " + e.getMessage());
+        }
+
+        return familyList;
+    }
+
+
+
+    public static List<StockOpnameAscendData> getStockOpnameAscendData(String noSO, String tglSO, String familyID, String keyword) {
+        List<StockOpnameAscendData> dataList = new ArrayList<>();
+
+        String query = "SELECT so.NoSO, so.ItemID, it.ItemCode, it.ItemName, so.Pcs, " +
+                "       sh.QtyFisik, " +
+                "       sh.QtyUsage, " +
+                "       sh.UsageRemark, " +
+                "       sh.IsUpdateUsage " +
+                "FROM [dbo].[StockOpnameAscend] so " +
+                "LEFT JOIN [AS_RU_2022].[dbo].[IC_Items] it " +
+                "       ON so.ItemID = it.ItemID " +
+                "LEFT JOIN [dbo].[StockOpnameAscendHasil] sh " +
+                "       ON so.NoSO = sh.NoSO AND so.ItemID = sh.ItemID " +
+                "WHERE so.NoSO = ? AND so.FamilyID = ? " +
+                "  AND (so.ItemID LIKE ? OR it.ItemName LIKE ?) " +
+                "ORDER BY it.ItemName ASC";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noSO);
+            stmt.setString(2, familyID);
+            stmt.setString(3, "%" + keyword + "%");
+            stmt.setString(4, "%" + keyword + "%");
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String itemID = rs.getString("ItemID");
+                    String itemName = rs.getString("ItemName");
+                    String itemCode = rs.getString("ItemCode");
+                    double pcs = rs.getDouble("Pcs");
+
+                    // QtyFisik → nullable
+                    Double qtyFisik = rs.getObject("QtyFisik") != null ? rs.getDouble("QtyFisik") : null;
+
+                    // QtyUsage → tetap primitive (default 0 kalau null)
+                    double qtyUsage = rs.getObject("QtyUsage") != null ? rs.getDouble("QtyUsage") : -1.0;
+
+                    // Remark → default kosong kalau null
+                    String usageRemark = rs.getString("UsageRemark");
+                    if (usageRemark == null) usageRemark = "";
+
+                    // Boolean → default false kalau null
+                    boolean isUpdateUsage = rs.getObject("IsUpdateUsage") != null && rs.getBoolean("IsUpdateUsage");
+
+                    dataList.add(new StockOpnameAscendData(
+                            noSO,
+                            itemID,
+                            itemCode,
+                            itemName,
+                            pcs,
+                            qtyFisik,     // bisa null
+                            qtyUsage,     // selalu ada (0 default)
+                            usageRemark,
+                            isUpdateUsage // primitive
+                    ));
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error fetching StockOpnameAscend data: " + e.getMessage());
+        }
+
+        return dataList;
+    }
+
+
+    public static double fetchQtyUsage(String itemID, String tglSO) {
+        double qtyUsage = 0.0;
+
+        String query = "SELECT ISNULL(SUM(d.Quantity), 0) AS TotalUsage " +
+                "FROM [AS_RU_2022].[dbo].[IC_UsageDetails] d " +
+                "INNER JOIN [AS_RU_2022].[dbo].[IC_Usages] u " +
+                "    ON d.UsageID = u.UsageID " +
+                "WHERE u.UsageDate >= ? AND Approved = 1 " +
+                "  AND d.ItemID = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, tglSO);
+            stmt.setString(2, itemID);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    qtyUsage = rs.getDouble("TotalUsage");
+                }
+            }
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error fetching qtyUsage: " + e.getMessage());
+        }
+
+        return qtyUsage;
+    }
+
+
+    public static boolean saveStockOpnameAscendHasil(List<StockOpnameAscendData> dataList, String noSO) {
+        String query = "MERGE [dbo].[StockOpnameAscendHasil] AS target " +
+                "USING (SELECT ? AS NoSO, ? AS ItemID, " +
+                "CAST(? AS DECIMAL(18,6)) AS QtyFisik, " +
+                "CAST(? AS DECIMAL(18,6)) AS QtyUsage, " +
+                "? AS UsageRemark, ? AS IsUpdateUsage) AS source " +
+                "ON (target.NoSO = source.NoSO AND target.ItemID = source.ItemID) " +
+                "WHEN MATCHED THEN " +
+                "   UPDATE SET QtyFisik = source.QtyFisik, " +
+                "              QtyUsage = source.QtyUsage, " +
+                "              UsageRemark = source.UsageRemark, " +
+                "              IsUpdateUsage = source.IsUpdateUsage " +
+                "WHEN NOT MATCHED THEN " +
+                "   INSERT (NoSO, ItemID, QtyFisik, QtyUsage, UsageRemark, IsUpdateUsage) " +
+                "   VALUES (source.NoSO, source.ItemID, source.QtyFisik, source.QtyUsage, source.UsageRemark, source.IsUpdateUsage);";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            for (StockOpnameAscendData data : dataList) {
+                if (data.getQtyFound() == null) continue; // skip kalau kosong (null)
+
+                stmt.setString(1, noSO);                   // NoSO dari spinner
+                stmt.setString(2, data.getItemID());       // ItemID
+                stmt.setDouble(3, data.getQtyFound());     // QtyFisik (double/decimal)
+                stmt.setDouble(4, data.getQtyUsage());     // QtyUsage (double/decimal)
+                stmt.setString(5, data.getUsageRemark());  // UsageRemark
+                stmt.setBoolean(6, true);  // IsUpdateUsage
+
+                stmt.addBatch();
+            }
+
+            stmt.executeBatch(); // eksekusi batch
+            return true;
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error upserting StockOpnameAscendHasil", e);
+            return false;
+        }
+    }
+
+
+    public static boolean deleteAscendHasil(String noSO, String itemID) {
+        String query = "DELETE FROM [WPS_Test].[dbo].[StockOpnameAscendHasil] " +
+                "WHERE NoSO = ? AND ItemID = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, noSO);
+            stmt.setString(2, itemID);
+
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0; // ✅ true kalau ada data terhapus
+
+        } catch (SQLException e) {
+            Log.e("Database Error", "Error deleting AscendHasil: " + e.getMessage());
+            return false;
+        }
+    }
+
+
 
 
 

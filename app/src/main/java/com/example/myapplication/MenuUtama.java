@@ -53,13 +53,13 @@ public class MenuUtama extends AppCompatActivity {
         List<MenuItem> menus = new ArrayList<>();
         menus.add(new MenuItem("Input Label",       R.drawable.label,             null,                   v -> startActivity(new Intent(this, InputLabel.class))));
         menus.add(new MenuItem("Proses Produksi",   R.drawable.proses,            null,                   v -> startActivity(new Intent(this, ProsesProduksi.class))));
-        menus.add(new MenuItem("Stock Opname",      R.drawable.ic_stock_opname,   "stock_opname:read",    v -> startActivity(new Intent(this, StockOpname.class))));
+        menus.add(new MenuItem("Stock Opname",      R.drawable.ic_stock_opname,   "stock_opname:read",    v -> startActivity(new Intent(this, StockOpnameMenu.class))));
         menus.add(new MenuItem("Proses Sawmill",    R.drawable.sawmill,           "proses_sawmill:read",  v -> startActivity(new Intent(this, ProsesSawmill.class))));
         menus.add(new MenuItem("Laporan",           R.drawable.ic_report,         "laporan:read",         v -> startActivity(new Intent(this, LaporanKategori.class))));
         menus.add(new MenuItem("Penjualan",         R.drawable.ic_sales,          null,                   v -> startActivity(new Intent(this, Penjualan.class))));
         menus.add(new MenuItem("SPK",               R.drawable.ic_spk,         "spk:read",                   v -> startActivity(new Intent(this, SPK.class))));
-        menus.add(new MenuItem("Grade ABC",               R.drawable.ic_grade,         "grade_abc:read",                   v -> startActivity(new Intent(this, GradeABC.class))));
-        menus.add(new MenuItem("Planning Mesin",               R.drawable.ic_schedule,         "planning_mesin:read",                   v -> startActivity(new Intent(this, PlanningMesin.class))));
+        menus.add(new MenuItem("Grade ABC",         R.drawable.ic_grade,         "grade_abc:read",                   v -> startActivity(new Intent(this, GradeABC.class))));
+        menus.add(new MenuItem("Planning Mesin",    R.drawable.ic_schedule,         "planning_mesin:read",                   v -> startActivity(new Intent(this, PlanningMesin.class))));
 
         // ===== Adapter 6 item per halaman (2 kolom × 3 baris) =====
         MenuPagerAdapter adapter = new MenuPagerAdapter(menus, this);

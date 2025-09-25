@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:elevation="8dp">
+
+    <!-- Bubble Background -->
+    <LinearLayout
+        android:id="@+id/tooltipContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/tooltip_background"
+        android:elevation="4dp">
+
+        <Button
+            android:id="@+id/btnInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Info"
+            android:textColor="@color/black"
+            android:drawableLeft="@drawable/ic_info"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Tandai selesai" />
+
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Clear"
+            android:textColor="@color/black"
+            android:drawableLeft="@drawable/ic_clear"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Tandai selesai" />
+
+    </LinearLayout>
+
+</LinearLayout>

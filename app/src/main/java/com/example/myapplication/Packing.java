@@ -535,7 +535,7 @@ public class Packing extends AppCompatActivity {
             setCurrentDateTime(); // synchronous → langsung dipanggil
             isCreateMode = true;  // synchronous → langsung dipanggil
             loadJenisKayuSpinner(0, checkAllDone);
-            loadTellySpinner(idUsername, checkAllDone);
+            loadTellyByIdUsernameSpinner(idUsername, checkAllDone);
             loadSPKSpinner("0", checkAllDone);
             loadSPKAsalSpinner("0", checkAllDone);
             loadProfileSpinner("", checkAllDone);

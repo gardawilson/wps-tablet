@@ -21,7 +21,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.79"
+        versionName = "1.0.87"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -116,10 +116,5 @@ dependencies {
 
     implementation(libs.viewpager2)
     implementation(libs.cardview)
-
-
-
-
-
 
 }

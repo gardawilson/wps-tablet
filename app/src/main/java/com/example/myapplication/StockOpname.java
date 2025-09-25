@@ -578,7 +578,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private void setupNoSOSpinner() {
         // Jalankan operasi pengambilan data di background thread menggunakan ExecutorService
         executorService.execute(() -> {
-            List<StockOpnameData> noSOList = StockOpnameApi.getStockOpnameData();
+            List<StockOpnameData> noSOList = StockOpnameApi.getStockOpnameData(false);
 
             // Update UI di thread utama setelah data diambil
             runOnUiThread(() -> {
@@ -1233,13 +1233,12 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     }
 
 
-
     private void loadMoreData() {
         isLoading = true;
         showLoadingIndicator(true);
 
         executorService.execute(() -> {
-            List<StockOpnameData> newStockOpnames = StockOpnameApi.getStockOpnameData();
+            List<StockOpnameData> newStockOpnames = StockOpnameApi.getStockOpnameData(false);
             runOnUiThread(() -> {
                 if (newStockOpnames != null && !newStockOpnames.isEmpty()) {
                     stockOpnames.addAll(newStockOpnames);
@@ -1286,8 +1285,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         // Cek apakah item pertama (index 0) terlihat
         return firstVisibleItemPosition == 0;
     }
-
-
 
 
     private void showLoadingIndicator(boolean isVisible) {
@@ -1422,7 +1419,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     }
 
 
-
     private void scrollToTop(RecyclerView recyclerView) {
         // Ambil LayoutManager dari RecyclerView
         LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
@@ -1458,7 +1454,6 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
             updateLabelCount(selectedNoSO, selectedTglSO, selectedBlok, selectedIdLokasi, selectedLabels, selectedUserID);
         }
     }
-
 
 
     @Override
