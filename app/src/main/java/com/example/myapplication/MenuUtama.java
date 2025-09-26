@@ -60,6 +60,7 @@ public class MenuUtama extends AppCompatActivity {
         menus.add(new MenuItem("SPK",               R.drawable.ic_spk,         "spk:read",                   v -> startActivity(new Intent(this, SPK.class))));
         menus.add(new MenuItem("Grade ABC",         R.drawable.ic_grade,         "grade_abc:read",                   v -> startActivity(new Intent(this, GradeABC.class))));
         menus.add(new MenuItem("Planning Mesin",    R.drawable.ic_schedule,         "planning_mesin:read",                   v -> startActivity(new Intent(this, PlanningMesin.class))));
+        menus.add(new MenuItem("Nyangkut",    R.drawable.ic_pending,         "planning_mesin:read",                   v -> startActivity(new Intent(this, Nyangkut.class))));
 
         // ===== Adapter 6 item per halaman (2 kolom × 3 baris) =====
         MenuPagerAdapter adapter = new MenuPagerAdapter(menus, this);
