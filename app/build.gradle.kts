@@ -82,6 +82,10 @@ dependencies {
 
     // Tambahkan multidex
     implementation("androidx.multidex:multidex:2.0.1")
+    implementation(libs.lifecycle.livedata.ktx)
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

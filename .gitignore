@@ -1,0 +1,23 @@
+# SDK & Config Lokal
+local.properties
+.gradle/
+
+# Build output
+build/
+**/build/
+
+# IDE & metadata
+.idea/
+*.iml
+
+# Keystore atau file sensitif
+*.jks
+*.keystore
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Misc
+*.log

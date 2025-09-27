@@ -19,6 +19,8 @@ public class LaporanKategori extends AppCompatActivity {
     private CardView ccReport;
     private CardView sndReport;
     private CardView bjReport;
+    private CardView managementReport;
+    private CardView verifReport;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +37,9 @@ public class LaporanKategori extends AppCompatActivity {
         ccReport = findViewById(R.id.ccReport);
         sndReport = findViewById(R.id.sndReport);
         bjReport = findViewById(R.id.bjReport);
+        managementReport = findViewById(R.id.managementReport);
+        verifReport = findViewById(R.id.verifReport);
+
 
         kbReport.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,6 +117,22 @@ public class LaporanKategori extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent( LaporanKategori.this, LaporanBJ.class);
+                startActivity(intent);
+            }
+        });
+
+        managementReport.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( LaporanKategori.this, LaporanManajemen.class);
+                startActivity(intent);
+            }
+        });
+
+        verifReport.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent( LaporanKategori.this, LaporanVerifikasi.class);
                 startActivity(intent);
             }
         });

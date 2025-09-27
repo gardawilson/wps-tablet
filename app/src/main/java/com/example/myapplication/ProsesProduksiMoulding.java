@@ -7,12 +7,14 @@ import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
 
 import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPeriodClosed;
+import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -167,8 +169,11 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
     private Button btnInputManual;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private Button btnEdit;
+    private Button btnPrint;
     private final String mainTable = "MouldingProduksi_h";
     private List<String> userPermissions;
+    private String username;
+
 
 
     @Override
@@ -225,7 +230,9 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
         btnInputManual = findViewById(R.id.btnInputManual);
         btnEdit = findViewById(R.id.btnEdit);
+        btnPrint = findViewById(R.id.btnPrint);
 
+        username = SharedPrefUtils.getUsername(this);
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -268,6 +275,29 @@ public class ProsesProduksiMoulding extends AppCompatActivity {
                 } else {
                     Toast.makeText(ProsesProduksiMoulding.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        btnPrint.setOnClickListener(v -> {
+            if (selectedProductionData != null) {
+
+                String reportName = "CrProduksiMoulding";
+
+                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                        + "?NoProduksi=" + noProduksi
+                        + "&Username=" + username
+                        + "&reportName=" + reportName;
+
+                loadingDialogHelper.show(this);
+                PdfUtils.downloadAndOpenPDF(
+                        this,
+                        url,
+                        "ProsesProduksiS4S_" + noProduksi + ".pdf",
+                        executorService,
+                        loadingDialogHelper
+                );
+            } else {
+                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
             }
         });
 

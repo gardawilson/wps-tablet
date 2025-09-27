@@ -247,8 +247,8 @@ public class Nyangkut extends AppCompatActivity {
 
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
-//        PermissionUtils.permissionCheck(this, btnEdit, "bongkar_susun:update");
-//        PermissionUtils.permissionCheck(this, btnCreate, "bongkar_susun:create");
+        PermissionUtils.permissionCheck(this, btnEdit, "nyangkut:update");
+        PermissionUtils.permissionCheck(this, btnCreate, "nyangkut:create");
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -951,7 +951,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1038,7 +1038,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1123,7 +1123,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1207,7 +1207,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1291,7 +1291,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1375,7 +1375,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1456,7 +1456,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }
@@ -1535,7 +1535,7 @@ public class Nyangkut extends AppCompatActivity {
             });
 
             row.setOnLongClickListener(v -> {
-                if (!userPermissions.contains("bongkar_susun:delete")) {
+                if (!userPermissions.contains("nyangkut:delete")) {
                     Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
                     return true; // event dianggap sudah di-handle
                 }

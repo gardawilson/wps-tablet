@@ -2,10 +2,12 @@ package com.example.myapplication;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.MstOperatorData;
+import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
@@ -15,6 +17,7 @@ import com.example.myapplication.utils.TableConfigUtils;
 
 
 import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPeriodClosed;
+import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 
 import android.content.Context;
@@ -160,9 +163,11 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private LinearLayout textScanQR;
     private Button btnInputManual;
     private Button btnEdit;
+    private Button btnPrint;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private final String mainTable = "S4SProduksi_h";
     private List<String> userPermissions;
+    private String username;
 
 
 
@@ -216,6 +221,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         btnInputManual = findViewById(R.id.btnInputManual);
         textScanQR = findViewById(R.id.textScanQR);
         btnEdit = findViewById(R.id.btnEdit);
+        btnPrint = findViewById(R.id.btnPrint);
+
+        username = SharedPrefUtils.getUsername(this);
+
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -263,6 +272,29 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 } else {
                     Toast.makeText(ProsesProduksiS4S.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        btnPrint.setOnClickListener(v -> {
+            if (selectedProductionData != null) {
+
+                String reportName = "CrProduksiS4S";
+
+                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                        + "?NoProduksi=" + noProduksi
+                        + "&Username=" + username
+                        + "&reportName=" + reportName;
+
+                loadingDialogHelper.show(this);
+                PdfUtils.downloadAndOpenPDF(
+                        this,
+                        url,
+                        "ProsesProduksiS4S_" + noProduksi + ".pdf",
+                        executorService,
+                        loadingDialogHelper
+                );
+            } else {
+                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
             }
         });
 

@@ -178,8 +178,16 @@
                     android:id="@+id/btnHistorySave"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
+                    android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:text="Riwayat" />
+
+                <Button
+                    android:id="@+id/btnPrint"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:text="Cetak" />
 
 
                 <!-- Search Bar -->

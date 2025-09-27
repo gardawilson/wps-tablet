@@ -699,7 +699,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="0.3"
-                        android:text="No. B.Susun"
+                        android:text="No. Nyangkut"
                         android:padding="8dp"
                         android:gravity="center"
                         android:textStyle="bold"
