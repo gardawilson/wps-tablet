@@ -187,7 +187,7 @@
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/laporan_flow_produksi"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/laporan_produksi_semua_mesin2">
+            app:layout_constraintEnd_toStartOf="@id/laporan_produksi_mesin_lembur_nonlembur">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -214,7 +214,7 @@
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:id="@+id/laporan_produksi_semua_mesin2"
+            android:id="@+id/laporan_produksi_mesin_lembur_nonlembur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -222,8 +222,7 @@
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/laporan_produksi_semua_mesin"
             app:layout_constraintStart_toEndOf="@id/laporan_label_perhari"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:visibility="invisible">
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -242,7 +241,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Laporan Produksi Semua Mesin"
+                    android:text="Laporan Produksi Mesin Lembur Dan NonLembur"
                     android:textAlignment="center"
                     android:textColor="@color/text_brown"
                     android:textSize="20sp" />

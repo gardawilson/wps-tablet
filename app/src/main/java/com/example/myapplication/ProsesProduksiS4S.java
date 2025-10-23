@@ -1,8 +1,10 @@
 package com.example.myapplication;
+import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.MstOperatorData;
 import com.example.myapplication.model.SawmillData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
@@ -58,6 +60,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -72,6 +75,7 @@ import com.example.myapplication.utils.TooltipUtils;
 import com.example.myapplication.utils.ViewUtils;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -168,6 +172,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private final String mainTable = "S4SProduksi_h";
     private List<String> userPermissions;
     private String username;
+    private Spinner spinSPK;
+    private MaterialSwitch switchSPK;
 
 
 
@@ -222,11 +228,15 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         textScanQR = findViewById(R.id.textScanQR);
         btnEdit = findViewById(R.id.btnEdit);
         btnPrint = findViewById(R.id.btnPrint);
+        spinSPK = findViewById(R.id.spinSPK);
+        switchSPK = findViewById(R.id.switchSPK);
 
         username = SharedPrefUtils.getUsername(this);
 
-
         loadingIndicator.setVisibility(View.VISIBLE);
+        spinSPK.setVisibility(View.GONE);
+        switchSPK.setVisibility(View.GONE);
+
 
         // Inisialisasi View scanner overlay
         scannerOverlay = findViewById(R.id.scannerOverlay);
@@ -244,6 +254,42 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
         PermissionUtils.permissionCheck(this, btnEdit, "proses_s4s:update");
+
+
+        // 🔹 Set listener untuk perubahan ON/OFF
+        switchSPK.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                Log.d("SPK_SWITCH", "SPK diaktifkan");
+
+                // Pastikan spinner terlihat tapi transparan di awal
+                spinSPK.setVisibility(View.VISIBLE);
+                spinSPK.setAlpha(0f);
+                spinSPK.setTranslationY(30f); // turun 30px untuk efek "slide up"
+
+                // Animasi muncul (fade in + slide up)
+                spinSPK.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(200)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+
+            } else {
+                Log.d("SPK_SWITCH", "SPK dimatikan");
+
+                // Animasi hilang (fade out + slide down)
+                spinSPK.animate()
+                        .alpha(0f)
+                        .translationY(30f)
+                        .setDuration(150)
+                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                        .withEndAction(() -> spinSPK.setVisibility(View.GONE))
+                        .start();
+
+                loadSPKSpinner(null, null);
+            }
+        });
+
 
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
@@ -701,9 +747,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     }
 
 
-
-
-
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------METHOD UNTUK PENANGANAN KAMERA DENGAN SCAN QR-----------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -714,7 +757,20 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         updateButtonText(); // Set teks awal tombol
         btnCameraControl.setOnClickListener(v -> {
             if (isCameraActive) {
-                deactivateCamera();
+                // 🔹 Animasi smooth hide (fade out + slide up)
+                switchSPK.animate()
+                        .alpha(0f)                // memudar
+                        .translationY(-30f)       // geser ke atas 30px
+                        .setDuration(300)         // durasi animasi (ms)
+                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                        .withEndAction(() -> {
+                            switchSPK.setChecked(false);   // reset state switch
+                            switchSPK.setVisibility(View.GONE);
+                            deactivateCamera();            // panggil setelah animasi selesai
+                        })
+                        .start();
+
+
             } else {
                 String noProduksi = noProduksiView.getText().toString();
 
@@ -738,6 +794,20 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
                             // Jika valid, minta permission kamera
                             requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+                            loadSPKSpinner(null, null);
+
+                            // 🔹 Tampilkan switch dengan animasi smooth dari atas ke bawah
+                            switchSPK.setAlpha(0f);
+                            switchSPK.setTranslationY(-40f); // mulai sedikit di atas posisi normal
+                            switchSPK.setVisibility(View.VISIBLE);
+
+                            switchSPK.animate()
+                                    .alpha(1f)
+                                    .translationY(0f) // turun ke posisi normal
+                                    .setDuration(350)
+                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                    .start();
+
                         });
                     });
                 } else {
@@ -1600,6 +1670,11 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
         String savedUsername = SharedPrefUtils.getUsername(this);
 
+        //AMBIL DATA DARI SPINNER SPK
+        SpkData selectedSPK = (SpkData) spinSPK.getSelectedItem();
+        String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
@@ -1624,7 +1699,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoST = ProsesProduksiApi.getNoSTByNoProduksi(noProduksi);
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved);
+                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved, noSPK);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1692,6 +1767,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 }
             });
 
+            loadSPKSpinner(null,null);
             Log.d("SaveScannedResults", "Proses penyimpanan hasil scan selesai");
         });
     }
@@ -2132,6 +2208,45 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         });
     }
 
+
+
+    // Versi baru dengan callback
+    private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
+        executorService.execute(() -> {
+            List<SpkData> spkList = MasterApi.getSPKList();
+            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
+
+            runOnUiThread(() -> {
+                ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        spkList
+                );
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                spinSPK.setAdapter(adapter);
+
+                // Set default selection
+                if (selectedNoSPK == null || selectedNoSPK.isEmpty() || selectedNoSPK.equals("PILIH")) {
+                    spinSPK.setSelection(0);
+                } else {
+                    for (int i = 0; i < spkList.size(); i++) {
+                        if (spkList.get(i).getNoSPK().equals(selectedNoSPK)) {
+                            spinSPK.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+
+                // 🔑 Jalankan callback setelah spinner selesai diisi
+                if (onDone != null) onDone.run();
+            });
+        });
+    }
+
+    // Overload versi lama tetap bisa dipanggil tanpa callback
+    private void loadSPKSpinner(String selectedNoSPK) {
+        loadSPKSpinner(selectedNoSPK, null);
+    }
 
 
 

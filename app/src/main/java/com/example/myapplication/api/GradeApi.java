@@ -79,9 +79,11 @@ public class GradeApi {
     // -- Helper: generate nomor GG.xxxxxx yang aman di dalam transaksi
     private static String generateNewNoGradeABC(Connection con) throws SQLException {
         final String sql =
-                "SELECT ISNULL(MAX(TRY_CONVERT(INT, RIGHT(NoGradeABC, 6))), 0) AS MaxNum " +
+                "SELECT ISNULL(MAX(CONVERT(INT, RIGHT(NoGradeABC, 6))), 0) AS MaxNum " +
                         "FROM dbo.GradeABC_h WITH (UPDLOCK, HOLDLOCK) " +
-                        "WHERE NoGradeABC LIKE 'GG.%' AND LEN(NoGradeABC) = 9"; // "GG." + 6 digit
+                        "WHERE NoGradeABC LIKE 'GG.%' " +
+                        "  AND LEN(NoGradeABC) = 9 " +
+                        "  AND ISNUMERIC(RIGHT(NoGradeABC, 6)) = 1"; // pastikan 6 digit terakhir numeric
 
         try (PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

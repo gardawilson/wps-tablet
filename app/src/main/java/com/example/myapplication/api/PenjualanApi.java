@@ -721,7 +721,8 @@ public class PenjualanApi {
     // -- Helper: generate nomor J.xxxxxx yang aman di dalam transaksi
     private static String generateNewNoBJJual(Connection con) throws SQLException {
         final String sql =
-                "SELECT ISNULL(MAX(TRY_CONVERT(INT, RIGHT(NoBJJual, 6))), 0) AS MaxNum " +
+                "SELECT ISNULL(MAX(CASE WHEN ISNUMERIC(RIGHT(NoBJJual, 6)) = 1 " +
+                        "THEN CONVERT(INT, RIGHT(NoBJJual, 6)) ELSE 0 END), 0) AS MaxNum " +
                         "FROM dbo.BJJual_h WITH (UPDLOCK, HOLDLOCK) " +
                         "WHERE NoBJJual LIKE 'J.%' AND LEN(NoBJJual) = 8";
 

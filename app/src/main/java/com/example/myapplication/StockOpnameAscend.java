@@ -377,7 +377,7 @@
                 // Kolom PCS (dari DB, pasti ada)
                 TextView col4 = TableUtils.createTextView(this, String.valueOf(data.getPcs()), 0.3f);
 
-                String usageText = data.getQtyUsage() < 0 ? "?" : String.valueOf(data.getQtyUsage());
+                String usageText = !data.isUpdateUsage() ? "?" : String.valueOf(data.getQtyUsage());
                 TextView col5 = TableUtils.createTextView(this, usageText, 0.3f);
 
                 // Kolom Qty Found → kosong kalau null

@@ -523,39 +523,63 @@ public class ProsesProduksiApi {
     }
 
 
-    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved) {
+    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String noSPK) {
         if (noSTList == null || noSTList.isEmpty()) {
             Log.e("SaveError", "List NoST kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO S4SProduksiInputST (NoProduksi, NoST, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE ST_h SET DateUsage = ? WHERE NoST = ?")) {
+        // Normalisasi nilai noSPK agar aman untuk pengecekan
+        boolean isNoSPKEmpty = (noSPK == null || noSPK.trim().isEmpty() || noSPK.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputST
-            for (String noST : noSTList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noST);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // === 1️⃣ Insert ke tabel S4SProduksiInputST ===
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO S4SProduksiInputST (NoProduksi, NoST, DateTimeSaved) VALUES (?, ?, ?)")) {
+
+                for (String noST : noSTList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noST);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di S4S_h
-            for (String noST : noSTList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noST);
-                updateStmt.addBatch();
+            // === 2️⃣ Update ke tabel ST_h ===
+            if (isNoSPKEmpty) {
+                // Hanya update DateUsage
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE ST_h SET DateUsage = ? WHERE NoST = ?")) {
+                    for (String noST : noSTList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noST);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                // Update DateUsage dan NoSPK
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE ST_h SET DateUsage = ?, NoSPK = ? WHERE NoST = ?")) {
+                    for (String noST : noSTList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPK);
+                        updateStmt.setString(3, noST);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoST berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoST berhasil disimpan dan DateUsage/NoSPK diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoST: " + e.getMessage());
         }
     }
+
 
 
     public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName) {
@@ -1490,6 +1514,47 @@ public class ProsesProduksiApi {
         }
         return false; // Default jika tidak valid
     }
+
+
+    public static boolean existsInBongkarSusunOutput(String noBongkarSusun, String label) {
+        if (noBongkarSusun == null || label == null) return false;
+        noBongkarSusun = noBongkarSusun.trim();
+        label = label.trim();
+        if (noBongkarSusun.isEmpty() || label.isEmpty()) return false;
+
+        final String prefix = label.substring(0, 1).toUpperCase();
+
+        final String tableName;
+        final String numberColumn;
+        switch (prefix) {
+            case "E": tableName = "BongkarSusunOutputST";         numberColumn = "NoST";        break;
+            case "R": tableName = "BongkarSusunOutputS4S";        numberColumn = "NoS4S";       break;
+            case "S": tableName = "BongkarSusunOutputFJ";         numberColumn = "NoFJ";        break;
+            case "T": tableName = "BongkarSusunOutputMoulding";   numberColumn = "NoMoulding";  break;
+            case "U": tableName = "BongkarSusunOutputLaminating"; numberColumn = "NoLaminating";break;
+            case "V": tableName = "BongkarSusunOutputCCAkhir";    numberColumn = "NoCCAkhir";   break;
+            case "W": tableName = "BongkarSusunOutputSanding";    numberColumn = "NoSanding";   break;
+            case "I": tableName = "BongkarSusunOutputBarangJadi"; numberColumn = "NoBJ";        break;
+            default: return false; // prefix tak dikenal → anggap tidak ada
+        }
+
+        final String sql = "SELECT 1 FROM [dbo]." + tableName +
+                " WHERE NoBongkarSusun = ? AND " + numberColumn + " = ?";
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, noBongkarSusun);
+            ps.setString(2, label);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next(); // ADA → true
+            }
+        } catch (SQLException e) {
+            Log.e("Precondition", "SQL error: " + e.getMessage());
+            return false; // fail-safe konservatif
+        }
+    }
+
+
 
     public static boolean isDateValid(String noProduksi, String tableProduksi, String result, String tableNameH, String columnName) {
         String queryH = "SELECT DateCreate FROM " + tableNameH + " WHERE " + columnName + " = ?";

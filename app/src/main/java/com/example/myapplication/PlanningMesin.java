@@ -118,7 +118,6 @@ public class PlanningMesin extends AppCompatActivity {
         btnCreate.setOnClickListener(v -> {
             int jenisId = getJenisId(currentJenis);   // S4S=1, FJ=2, ...
             showCreatePlanningDialog(jenisId);
-            showCreatePlanningDialog(jenisId);
         });
 
         btnEdit.setOnClickListener(v -> {

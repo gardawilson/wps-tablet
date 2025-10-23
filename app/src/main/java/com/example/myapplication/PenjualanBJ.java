@@ -226,12 +226,26 @@ public class PenjualanBJ extends AppCompatActivity {
         btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                // Periksa periode transaksi
                 String noProduksi = noPenjualanView.getText().toString();
-                if (!noProduksi.isEmpty()) {
-                    showEditPenjualanDialog(selectedBongkarSusunData);
-                } else {
+                if (noProduksi.isEmpty()) {
                     Toast.makeText(PenjualanBJ.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
+                    return;
                 }
+
+                // Jalankan cek periode di background
+                executorService.execute(() -> {
+                    boolean isClosed = MasterApi.isPeriodValid(DateTimeUtils.formatToDatabaseDate(tgl));
+
+                    runOnUiThread(() -> {
+                        if (!isClosed) {
+                            Toast.makeText(PenjualanBJ.this, "Periode transaksi sudah ditutup!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            showEditPenjualanDialog(selectedBongkarSusunData);
+                        }
+                    });
+                });
             }
         });
 
@@ -536,10 +550,7 @@ public class PenjualanBJ extends AppCompatActivity {
                     }
                 });
             });
-
-
         });
-
         dialog.show();
     }
 

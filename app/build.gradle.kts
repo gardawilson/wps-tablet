@@ -21,7 +21,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.87"
+        versionName = "1.0.99"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -31,7 +31,6 @@ android {
         buildConfigField("String", "DB_USER", "\"${localProperties["DB_USER"]}\"")
         buildConfigField("String", "DB_PASS", "\"${localProperties["DB_PASS"]}\"")
         buildConfigField("String", "DB_NAME", "\"${localProperties["DB_NAME"]}\"")
-
     }
 
     buildFeatures {

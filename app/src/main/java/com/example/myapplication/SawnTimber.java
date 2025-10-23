@@ -687,7 +687,7 @@ public class SawnTimber extends AppCompatActivity {
                 String noBongkarSusun = selectedSusun != null ? selectedSusun.getNoBongkarSusun() : null;
                 String telly = ((TellyData) SpinTelly.getSelectedItem()).getIdOrgTelly();
                 String stickBy = ((MstStickData) SpinStickBy.getSelectedItem()).getIdStickBy();
-                String dateCreate = TglStickBundel.getText().toString().trim();
+                String dateCreate = DateTimeUtils.formatToDatabaseDate(TglStickBundel.getText().toString().trim());
                 String dateVacuum = rawDateVacuum;
                 String remark = remarkLabel.getText().toString();
                 int isSLP = cbSLP.isChecked() ? 1 : 0;

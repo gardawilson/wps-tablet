@@ -848,7 +848,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
                 }
 
                 // Tandai baris yang baru dipilih
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
                 setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
                 selectedRow = row;
 

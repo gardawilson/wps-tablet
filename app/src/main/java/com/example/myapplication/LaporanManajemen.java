@@ -27,6 +27,7 @@ public class LaporanManajemen extends AppCompatActivity {
     private CardView laporan_flow_produksi;
     private CardView laporan_produksi_semua_mesin;
     private CardView laporan_label_perhari;
+    private CardView laporan_produksi_mesin_lembur_nonlembur;
     private String username;
 
     @Override
@@ -39,6 +40,7 @@ public class LaporanManajemen extends AppCompatActivity {
         laporan_flow_produksi = findViewById(R.id.laporan_flow_produksi);
         laporan_produksi_semua_mesin = findViewById(R.id.laporan_produksi_semua_mesin);
         laporan_label_perhari = findViewById(R.id.laporan_label_perhari);
+        laporan_produksi_mesin_lembur_nonlembur = findViewById(R.id.laporan_produksi_mesin_lembur_nonlembur);
 
         username = SharedPrefUtils.getUsername(this);
 
@@ -48,6 +50,7 @@ public class LaporanManajemen extends AppCompatActivity {
         laporan_flow_produksi.setOnClickListener(view -> showLaporanFlowProduksi());
         laporan_produksi_semua_mesin.setOnClickListener(view -> showLaporanProduksiSemuaMesin());
         laporan_label_perhari.setOnClickListener(view -> showLaporanLabelPerHari());
+        laporan_produksi_mesin_lembur_nonlembur.setOnClickListener(view -> showLaporanMesinLemburNonLembur());
     }
 
     private void showLaporanStockOnHand() {
@@ -163,6 +166,29 @@ public class LaporanManajemen extends AppCompatActivity {
             );
         });
     }
+
+    private void showLaporanMesinLemburNonLembur() {
+        DateRangeDialogHelper.show(this, DateRangeDialogHelper.DefaultTanggalMode.BULAN_LALU, (tglAwal, tglAkhir) -> {
+            String reportName = "CrLapLemburPerMesin";
+
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?reportName=" + reportName
+                    + "&StartDate=" + tglAwal
+                    + "&EndDate=" + tglAkhir
+                    + "&Username=" + username;
+
+            loadingDialogHelper.show(this);
+
+            PdfUtils.downloadAndOpenPDF(
+                    this,
+                    url,
+                    "Mesin Lembur dan NonLembur (" + tglAwal + " sampai " + tglAkhir + ").pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        });
+    }
+
 
 
 }

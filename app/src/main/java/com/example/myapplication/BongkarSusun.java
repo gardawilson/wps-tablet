@@ -1684,7 +1684,11 @@ public class BongkarSusun extends AppCompatActivity {
 
                     if (ProsesProduksiApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
                         if (ProsesProduksiApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
-                            handleValidData(result, config);
+                            if (ProsesProduksiApi.existsInBongkarSusunOutput(noBongkarSusun, result)) {
+                                displayErrorState("Label tidak boleh berasal dari Output BongkarSusun yang sama!", R.raw.denied_data);
+                            } else {
+                                handleValidData(result, config);
+                            }
                         } else {
                             handleDuplicateOrInvalidUsage(result, config);
                         }

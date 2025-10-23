@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.PlanningMesinData;
+import com.example.myapplication.utils.DateTimeUtils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -251,7 +252,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             stmt.setInt(3, planningJamKerja);
 
             int rows = stmt.executeUpdate();
@@ -270,7 +271,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);          // pastikan format sesuai SQL Server (yyyy-MM-dd atau datetime penuh)
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             stmt.setInt(3, planningJamKerja);
 
             int rows = stmt.executeUpdate();
@@ -289,7 +290,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);          // format: yyyy-MM-dd (atau datetime penuh sesuai DB)
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             stmt.setInt(3, planningJamKerja);
 
             int rows = stmt.executeUpdate();
@@ -309,7 +310,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);  // format yyyy-MM-dd atau datetime sesuai DB
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             stmt.setInt(3, planningJamKerja);
 
             int rows = stmt.executeUpdate();
@@ -329,7 +330,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);  // format yyyy-MM-dd atau datetime sesuai DB
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             stmt.setInt(3, planningJamKerja);
 
             int rows = stmt.executeUpdate();
@@ -348,7 +349,7 @@ public class PlanningMesinApi {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, idMesin);
-            ps.setString(2, tanggal);          // format yyyy-MM-dd atau sesuai kolom (DATE/DATETIME)
+            ps.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));          // format yyyy-MM-dd atau sesuai kolom (DATE/DATETIME)
             ps.setInt(3, planningJamKerja);
 
             return ps.executeUpdate() > 0;
@@ -365,7 +366,7 @@ public class PlanningMesinApi {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, idMesin);
-            ps.setString(2, tanggal);
+            ps.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             ps.setInt(3, planningJamKerja);
 
             return ps.executeUpdate() > 0;
@@ -383,7 +384,7 @@ public class PlanningMesinApi {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, idMesinNoMeja);
-            ps.setString(2, tanggal);
+            ps.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
             ps.setInt(3, planningJamKerja);
 
             return ps.executeUpdate() > 0;
@@ -408,12 +409,12 @@ public class PlanningMesinApi {
 
             // nilai baru
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             // nilai lama (untuk WHERE)
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -435,11 +436,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -461,11 +462,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -487,11 +488,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -513,11 +514,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -539,11 +540,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -565,11 +566,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newIdMesin);
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldIdMesin);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -590,11 +591,11 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, newNoMeja); // di SLP pakai NoMeja
-            stmt.setString(2, newTanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(newTanggal));
             stmt.setInt(3, newPlanningJamKerja);
 
             stmt.setString(4, oldNoMeja);
-            stmt.setString(5, oldTanggal);
+            stmt.setString(5, DateTimeUtils.formatToDatabaseDate(oldTanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -611,7 +612,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -627,7 +628,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -644,7 +645,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -660,7 +661,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -676,7 +677,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -692,7 +693,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -708,7 +709,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, idMesin);
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -724,7 +725,7 @@ public class PlanningMesinApi {
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, noMeja); // di SLP IdMesin = NoMeja
-            stmt.setString(2, tanggal);
+            stmt.setString(2, DateTimeUtils.formatToDatabaseDate(tanggal));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
