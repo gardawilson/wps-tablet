@@ -38,54 +38,24 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="8dp"
-                android:visibility="gone">
-
-                <Button
-                    android:id="@+id/btnDataBaru"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
-                    android:text="Data Baru"
-                    android:drawableTint="@color/white" />
-
-                <Button
-                    android:id="@+id/btnInputManual"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
-                    android:text="Ubah"
-                    android:enabled="false"/>
-
-                <Button
-                    android:id="@+id/btnSimpan"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
-                    android:text="Hapus"
-                    android:enabled="false"/>
-
+                android:layout_marginTop="8dp">
 
                 <!-- Search Bar -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/textLayoutSearchMainTable"
+                <androidx.appcompat.widget.SearchView
+                    android:id="@+id/searchData"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:visibility="gone">
+                    android:layout_weight="1.5"
+                    android:background="@drawable/searchview_background"
+                    android:queryHint="Cari SPK, Buyer, Tujuan..."
+                    android:padding="8dp"
+                    app:iconifiedByDefault="false"
+                    app:queryBackground="@android:color/transparent"
+                    app:searchHintIcon="@null"
+                    app:closeIcon="@drawable/ic_close"
+                    app:defaultQueryHint="Cari SPK / Buyer / Tujuan..."
+                    android:layout_marginEnd="16dp"/>
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/searchMainTable"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Cari data produksi..."
-                        android:imeOptions="actionDone"
-                        android:inputType="text" />
-
-                </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
 
@@ -197,6 +167,7 @@
             </TableLayout>
 
             <ScrollView
+                android:id="@+id/scrollView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
                 <TableLayout

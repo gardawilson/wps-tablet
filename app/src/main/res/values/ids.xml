@@ -1,0 +1,4 @@
+<!-- res/values/ids.xml -->
+<resources>
+    <item name="footer_loading_row" type="id"/>
+</resources>

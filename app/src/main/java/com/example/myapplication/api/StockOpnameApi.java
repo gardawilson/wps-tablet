@@ -1343,7 +1343,7 @@ public class StockOpnameApi {
     public static List<StockOpnameAscendData> getStockOpnameAscendData(String noSO, String tglSO, String familyID, String keyword) {
         List<StockOpnameAscendData> dataList = new ArrayList<>();
 
-        String query = "SELECT so.NoSO, so.ItemID, it.ItemCode, it.ItemName, so.Pcs, " +
+        String query = "SELECT so.NoSO, so.ItemID, sc.Codes, it.ItemCode, it.ItemName, so.Pcs, uom.UOMCode, " +
                 "       sh.QtyFisik, " +
                 "       sh.QtyUsage, " +
                 "       sh.UsageRemark, " +
@@ -1351,8 +1351,12 @@ public class StockOpnameApi {
                 "FROM [dbo].[StockOpnameAscend] so " +
                 "LEFT JOIN [AS_RU_2022].[dbo].[IC_Items] it " +
                 "       ON so.ItemID = it.ItemID " +
+                "LEFT JOIN [AS_RU_2022].[dbo].[IC_ItemShelf] sc " +
+                "       ON so.ItemID = sc.ItemID " +
                 "LEFT JOIN [dbo].[StockOpnameAscendHasil] sh " +
                 "       ON so.NoSO = sh.NoSO AND so.ItemID = sh.ItemID " +
+                "LEFT JOIN [AS_RU_2022].[dbo].[IC_UOM] uom " +
+                "       ON uom.UOMID = it.UOMID1 " +
                 "WHERE so.NoSO = ? AND so.FamilyID = ? " +
                 "  AND (so.ItemID LIKE ? OR it.ItemName LIKE ?) " +
                 "ORDER BY it.ItemName ASC";
@@ -1368,9 +1372,11 @@ public class StockOpnameApi {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String itemID = rs.getString("ItemID");
+                    String shelfCode = rs.getString("Codes");
                     String itemName = rs.getString("ItemName");
                     String itemCode = rs.getString("ItemCode");
                     double pcs = rs.getDouble("Pcs");
+                    String uomID = rs.getString("UOMCode");
 
                     // QtyFisik → nullable
                     Double qtyFisik = rs.getObject("QtyFisik") != null ? rs.getDouble("QtyFisik") : null;
@@ -1388,9 +1394,11 @@ public class StockOpnameApi {
                     dataList.add(new StockOpnameAscendData(
                             noSO,
                             itemID,
+                            shelfCode,
                             itemCode,
                             itemName,
                             pcs,
+                            uomID,
                             qtyFisik,     // bisa null
                             qtyUsage,     // selalu ada (0 default)
                             usageRemark,

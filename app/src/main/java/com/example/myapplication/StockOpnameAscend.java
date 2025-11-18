@@ -19,6 +19,7 @@
     import android.widget.Button;
     import android.widget.EditText;
     import android.widget.ImageButton;
+    import android.widget.LinearLayout;
     import android.widget.PopupWindow;
     import android.widget.ProgressBar;
     import android.widget.Spinner;
@@ -48,6 +49,8 @@
     import com.example.myapplication.utils.TableUtils;
     import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+    import java.util.ArrayList;
+    import java.util.Collections;
     import java.util.List;
     import java.util.concurrent.ExecutorService;
     import java.util.concurrent.Executors;
@@ -66,7 +69,6 @@
         private String noSO;
         private String tglSO;
         private String familyID;
-        private List<StockOpnameAscendData> dataList; // Data asli yang tidak difilter
         private List<StockOpnameAscendFamilyData> familyDataList; // Data asli yang tidak difilter
         private ProgressBar mainLoadingIndicator;
         private ProgressBar familyLoadingIndicator;
@@ -77,6 +79,29 @@
         private SearchView searchData;
         private TextView tvFamilyTable;
         private TextView tvDataTable;
+
+
+        // Pagination
+        private static final int PAGE_SIZE = 20;
+        private static final int MAX_VISIBLE_PAGES = 10;
+
+        private int currentPage = 0;
+        private int totalPages = 0;
+
+        private boolean isFetchingData = false;   // ⬅️ tambahin ini
+
+        private List<StockOpnameAscendData> allDataList = new ArrayList<>();
+
+        private LinearLayout paginationBar;
+        private LinearLayout pageNumbersContainer;
+        private ImageButton btnPrevPage, btnNextPage;
+
+        // Debounce untuk search
+        private static final long SEARCH_DEBOUNCE_MS = 400L;
+        private android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        private Runnable searchRunnable;
+        private String lastSearchQuery = "";
+
 
 
 
@@ -95,6 +120,22 @@
             tvFamilyTable = findViewById(R.id.tvFamilyTable);
             tvDataTable = findViewById(R.id.tvDataTable);
 
+            paginationBar        = findViewById(R.id.paginationBar);
+            pageNumbersContainer = findViewById(R.id.pageNumbersContainer);
+            btnPrevPage          = findViewById(R.id.btnPrevPage);
+            btnNextPage          = findViewById(R.id.btnNextPage);
+
+            // Listener Prev
+            btnPrevPage.setOnClickListener(v -> {
+                goToPage(currentPage - 1);
+            });
+
+            // Listener Next
+            btnNextPage.setOnClickListener(v -> {
+                goToPage(currentPage + 1);
+            });
+
+
             //PERMISSION CHECK
             userPermissions = SharedPrefUtils.getPermissions(this);
 
@@ -112,6 +153,7 @@
                         familyID = null;
                         mainTable.removeAllViews();
 
+                        paginationBar.setVisibility(View.GONE);
                         loadFamilyDataAndDisplayTable(selected.getNoSO());
                     } else {
                         mainTable.removeAllViews(); // kosongkan tabel kalau pilih "PILIH"
@@ -125,16 +167,43 @@
             searchData.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
                 public boolean onQueryTextSubmit(String query) {
-                    loadDataAndDisplayTable(noSO, familyID, query); // panggil ulang query dengan filter
+                    // kalau user tekan enter / search di keyboard → langsung jalanin
+                    lastSearchQuery = query != null ? query.trim() : "";
+
+                    // cancel debounce yang lagi jalan
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+
+                    if (noSO != null && !noSO.isEmpty()) {
+                        loadDataAndDisplayTable(noSO, familyID, lastSearchQuery);
+                    }
                     return true;
                 }
 
                 @Override
                 public boolean onQueryTextChange(String newText) {
-                    loadDataAndDisplayTable(noSO, familyID, newText); // panggil ulang query dengan filter
+                    lastSearchQuery = newText != null ? newText.trim() : "";
+
+                    // setiap ketik baru → cancel timer sebelumnya
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+
+                    // set runnable baru
+                    searchRunnable = () -> {
+                        if (noSO != null && !noSO.isEmpty()) {
+                            loadDataAndDisplayTable(noSO, familyID, lastSearchQuery);
+                        }
+                    };
+
+                    // jalankan setelah delay (debounce)
+                    searchHandler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_MS);
+
                     return true;
                 }
             });
+
 
             btnSave.setOnClickListener(v -> {
                 StockOpnameData selectedSO = (StockOpnameData) spinNoSO.getSelectedItem();
@@ -180,21 +249,148 @@
                 loadingDialogHelper.show(this);
 
                 executorService.execute(() -> {
-                    boolean success = StockOpnameApi.saveStockOpnameAscendHasil(dataList, selectedSO.getNoSO());
+                    boolean success = StockOpnameApi.saveStockOpnameAscendHasil(allDataList, selectedSO.getNoSO());
 
                     runOnUiThread(() -> {
                         loadingDialogHelper.hide();
                         if (success) {
                             loadFamilyDataAndDisplayTable(noSO);
-                            loadDataAndDisplayTable(noSO, familyID);
+
+                            // ambil keyword yang sedang aktif di SearchView (kalau mau filter tetap kepakai)
+                            String currentKeyword = "";
+                            if (searchData != null && searchData.getQuery() != null) {
+                                currentKeyword = searchData.getQuery().toString();
+                            }
+
+                            // reload data tapi TETAP di page yang sama
+                            loadDataAndDisplayTable(noSO, familyID, currentKeyword, true);
+
                             Toast.makeText(this, "Data berhasil disimpan", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(this, "Gagal menyimpan data", Toast.LENGTH_SHORT).show();
                         }
+
                     });
                 });
             });
+
         }
+
+
+        private void addPageButton(int pageIndex) {
+            TextView tv = new TextView(this);
+            tv.setText(String.valueOf(pageIndex + 1));
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            lp.setMargins(8, 0, 8, 0);
+            tv.setLayoutParams(lp);
+
+            tv.setTextSize(14);
+            tv.setGravity(Gravity.CENTER);
+            tv.setMinWidth(dpToPx(32));
+            tv.setMinHeight(dpToPx(32));
+
+            boolean isCurrent  = (pageIndex == currentPage);
+            boolean isComplete = isPageComplete(pageIndex);
+
+            if (isCurrent) {
+                tv.setBackgroundResource(R.drawable.bg_page_number_active);
+                tv.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+            } else if (isComplete) {
+                tv.setBackgroundResource(R.drawable.bg_page_number_complete);
+                tv.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+            } else {
+                tv.setBackgroundResource(R.drawable.bg_page_number);
+                tv.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+            }
+
+            // SELALU pasang listener, tapi cek isFetchingData DI DALAM listener
+            tv.setOnClickListener(v -> {
+                if (isFetchingData) return;   // lagi fetch, abaikan klik
+                if (pageIndex == currentPage) return;
+                goToPage(pageIndex);
+            });
+
+            tv.setClickable(true);
+            tv.setFocusable(true);
+
+            pageNumbersContainer.addView(tv);
+        }
+
+
+        private boolean isPageComplete(int pageIndex) {
+            if (allDataList == null || allDataList.isEmpty()) return false;
+
+            int fromIndex = pageIndex * PAGE_SIZE;
+            int toIndex   = Math.min(fromIndex + PAGE_SIZE, allDataList.size());
+
+            if (fromIndex >= toIndex) return false; // tidak ada data di page itu
+
+            for (int i = fromIndex; i < toIndex; i++) {
+                StockOpnameAscendData d = allDataList.get(i);
+                if (d == null) return false;
+
+                Double q = d.getQtyFound();
+                // aturan lengkap: wajib terisi dan > 0 (atau terserah kamu)
+                if (q == null) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
+        private int dpToPx(int dp) {
+            float density = getResources().getDisplayMetrics().density;
+            return (int) (dp * density + 0.5f);
+        }
+
+
+        private void addEllipsis() {
+            TextView dot = new TextView(this);
+            dot.setText("...");
+            dot.setPadding(8, 12, 8, 12);
+            dot.setTextSize(14);
+            dot.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
+
+            pageNumbersContainer.addView(dot);
+        }
+
+
+        private void goToPage(int pageIndex) {
+            if (isFetchingData) return;               // lagi fetch API, abaikan klik
+            if (totalPages == 0) return;
+            if (pageIndex < 0 || pageIndex >= totalPages) return;
+            if (pageIndex == currentPage) return;
+
+            // anggap ini juga semacam “fetching lokal”
+            isFetchingData = true;
+            setPaginationEnabled(false);
+
+            currentPage = pageIndex;
+            renderPageNumbers();
+
+            mainTable.removeAllViews();
+            mainTable.setVisibility(View.INVISIBLE);
+            tvDataTable.setVisibility(View.GONE);
+            mainLoadingIndicator.setVisibility(View.VISIBLE);
+
+            mainTable.post(() -> {
+                showCurrentPage();                       // pakai data di allDataList
+                mainLoadingIndicator.setVisibility(View.GONE);
+                mainTable.setVisibility(View.VISIBLE);
+
+                // selesai “loading” lokal
+                isFetchingData = false;
+                setPaginationEnabled(true);
+                renderPageNumbers(); // refresh state warna/enable
+            });
+        }
+
+
 
 
         private void loadStockOpnameSpinner(@Nullable String selectedNoSO, @Nullable Runnable onDone) {
@@ -328,25 +524,177 @@
 
 
 
-        private void loadDataAndDisplayTable(String noSO, String familyID, String keyword) {
+        // CORE method (punya flag keepCurrentPage)
+        // CORE method (punya flag keepCurrentPage)
+        private void loadDataAndDisplayTable(String noSO,
+                                             String familyID,
+                                             String keyword,
+                                             boolean keepCurrentPage) {
+
+            isFetchingData = true;                          // ⬅️ lagi fetch
             mainLoadingIndicator.setVisibility(View.VISIBLE);
+            setPaginationEnabled(false);                   // ⬅️ matikan pagination sementara
+
+            final int pageBefore = currentPage;
 
             executorService.execute(() -> {
-                dataList = StockOpnameApi.getStockOpnameAscendData(noSO, tglSO, familyID, keyword);
+                List<StockOpnameAscendData> result =
+                        StockOpnameApi.getStockOpnameAscendData(noSO, tglSO, familyID, keyword);
 
                 runOnUiThread(() -> {
-                    populateTable(dataList);
-                    mainLoadingIndicator.setVisibility(View.GONE);
+                    try {
+                        allDataList = result != null ? result : new ArrayList<>();
+
+                        if (allDataList.isEmpty()) {
+                            currentPage = 0;
+                            totalPages = 0;
+
+                            // kosongkan tabel & pagination
+                            populateTable(Collections.emptyList(), 0);
+                            paginationBar.setVisibility(View.GONE);
+                            pageNumbersContainer.removeAllViews();
+
+                        } else {
+                            totalPages = (int) Math.ceil(allDataList.size() / (double) PAGE_SIZE);
+
+                            if (keepCurrentPage) {
+                                int page = pageBefore;
+                                if (page < 0) page = 0;
+                                if (page > totalPages - 1) page = totalPages - 1;
+                                currentPage = page;
+                            } else {
+                                currentPage = 0;
+                            }
+
+                            // render tabel + angka pagination
+                            showCurrentPage();
+                            renderPageNumbers();
+                        }
+                    } finally {
+                        // ✅ apapun hasilnya, pastikan flag & UI balik normal
+                        isFetchingData = false;
+                        mainLoadingIndicator.setVisibility(View.GONE);
+                        setPaginationEnabled(true);
+                    }
                 });
             });
         }
+
+        // dipakai oleh search & klik family (mulai dari page 1)
+        private void loadDataAndDisplayTable(String noSO, String familyID, String keyword) {
+            loadDataAndDisplayTable(noSO, familyID, keyword, false);
+        }
+
         private void loadDataAndDisplayTable(String noSO, String familyID) {
-            loadDataAndDisplayTable(noSO, familyID, "");
+            loadDataAndDisplayTable(noSO, familyID, "", false);
         }
 
 
-        private void populateTable(List<StockOpnameAscendData> dataList) {
+        private void setPaginationEnabled(boolean enabled) {
+            // prev/next
+            btnPrevPage.setEnabled(enabled && currentPage > 0);
+            btnNextPage.setEnabled(enabled && currentPage < totalPages - 1);
 
+            float alpha = enabled ? 1.0f : 0.4f;
+            btnPrevPage.setAlpha(alpha);
+            btnNextPage.setAlpha(alpha);
+
+            // nomor halaman yang sudah ter-render saat ini
+            for (int i = 0; i < pageNumbersContainer.getChildCount(); i++) {
+                View child = pageNumbersContainer.getChildAt(i);
+                child.setEnabled(enabled);
+                child.setAlpha(alpha);
+            }
+        }
+
+
+        private void showCurrentPage() {
+            if (allDataList == null || allDataList.isEmpty()) {
+                populateTable(Collections.emptyList(), 0);
+                paginationBar.setVisibility(View.GONE);
+                return;
+            }
+
+            int fromIndex = currentPage * PAGE_SIZE;
+            int toIndex   = Math.min(fromIndex + PAGE_SIZE, allDataList.size());
+
+            List<StockOpnameAscendData> pageList = allDataList.subList(fromIndex, toIndex);
+
+            // render isi tabel
+            populateTable(pageList, fromIndex);
+
+            paginationBar.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
+            // ❌ JANGAN panggil renderPageNumbers() di sini lagi
+        }
+
+
+
+
+        private void renderPageNumbers() {
+            pageNumbersContainer.removeAllViews();
+
+            if (totalPages <= 1) {
+                btnPrevPage.setEnabled(false);
+                btnNextPage.setEnabled(false);
+                setPaginationEnabled(!isFetchingData);  // sync prev/next juga
+                return;
+            }
+
+            // Prev / Next state dasar
+            btnPrevPage.setEnabled(currentPage > 0);
+            btnNextPage.setEnabled(currentPage < totalPages - 1);
+
+            int firstPage = 0;
+            int lastPage  = totalPages - 1;
+
+            if (totalPages <= MAX_VISIBLE_PAGES) {
+                // Kasus sedikit halaman → tampilkan semua
+                for (int i = 0; i < totalPages; i++) {
+                    addPageButton(i);
+                }
+            } else {
+                // Kasus halaman banyak → window + ellipsis
+                int windowSize = MAX_VISIBLE_PAGES - 2;  // sisakan slot untuk first & last
+                int windowStart = currentPage - windowSize / 2;
+                int windowEnd   = currentPage + windowSize / 2;
+
+                if (windowStart < 1) {
+                    windowStart = 1;
+                    windowEnd = windowStart + windowSize - 1;
+                }
+                if (windowEnd > lastPage - 1) {
+                    windowEnd = lastPage - 1;
+                    windowStart = windowEnd - windowSize + 1;
+                }
+
+                // pertama
+                addPageButton(firstPage);
+
+                if (windowStart > 1) {
+                    addEllipsis();
+                }
+
+                for (int i = windowStart; i <= windowEnd; i++) {
+                    addPageButton(i);
+                }
+
+                if (windowEnd < lastPage - 1) {
+                    addEllipsis();
+                }
+
+                // terakhir
+                addPageButton(lastPage);
+            }
+
+            // ⬅️ SELALU sync enable/alpha pagination di akhir
+            setPaginationEnabled(!isFetchingData);
+        }
+
+
+
+
+
+        private void populateTable(List<StockOpnameAscendData> dataList, int startOffset) {
             mainTable.removeAllViews();
             tvDataTable.setVisibility(View.GONE);
 
@@ -365,22 +713,29 @@
                 TableRow row = new TableRow(this);
                 row.setTag(data); // simpan object, bukan index
 
-                // 🔹 Kolom Nomor Urut
-                TextView col1 = TableUtils.createTextView(this, String.valueOf(rowIndex + 1), 0.2f);
+                // 🔹 Kolom Nomor Urut (pakai offset)
+                int rowNumber = startOffset + rowIndex + 1;
+                TextView col1 = TableUtils.createTextView(this, String.valueOf(rowNumber), 0.2f);
 
                 TextView col2 = TableUtils.createTextView(this, data.getItemCode(), 0.5f);
+
+                // Kolom ShelfCode
+                TextView colShelfCode = TableUtils.createTextView(this, data.getShelfCode(), 0.5f);
 
                 // Kolom ItemName
                 TextView col3 = TableUtils.createTextView(this, data.getItemName(), 1.0f);
                 col3.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
 
-                // Kolom PCS (dari DB, pasti ada)
+                // Kolom PCS
                 TextView col4 = TableUtils.createTextView(this, String.valueOf(data.getPcs()), 0.3f);
+
+                // Kolom UOM
+                TextView colUOM = TableUtils.createTextView(this, data.getUomID(), 0.3f);
 
                 String usageText = !data.isUpdateUsage() ? "?" : String.valueOf(data.getQtyUsage());
                 TextView col5 = TableUtils.createTextView(this, usageText, 0.3f);
 
-                // Kolom Qty Found → kosong kalau null
+                // Kolom Qty Found
                 EditText col6 = TableUtils.createEditTextNumber(
                         this,
                         data.getQtyFound() != null ? String.valueOf(data.getQtyFound()) : "",
@@ -388,13 +743,10 @@
                 );
                 col6.setTag("qtyFound");
 
-                // Flag untuk tahu apakah sudah fetch sekali
                 final boolean[] alreadyFetched = {false};
 
-
-                // ✅ Trigger long press untuk tampilkan popup
+                // long press → popup
                 col5.setOnLongClickListener(v -> {
-                    // Ambil koordinat sentuhan terakhir (fallback kalau mau)
                     v.post(() -> {
                         int[] location = new int[2];
                         v.getLocationOnScreen(location);
@@ -408,35 +760,26 @@
                 });
 
                 col6.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                    @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                         if (!alreadyFetched[0]) {
                             if (s.length() > 0) {
                                 alreadyFetched[0] = true;
 
-                                // 🔹 Fetch QtyUsage sekali saja
                                 new Thread(() -> {
                                     double newUsage = StockOpnameApi.fetchQtyUsage(data.getItemID(), tglSO);
                                     data.setQtyUsage(newUsage);
 
-                                    runOnUiThread(() -> {
-                                        col5.setText(String.valueOf(newUsage));
-                                    });
+                                    runOnUiThread(() -> col5.setText(String.valueOf(newUsage)));
                                 }).start();
                             }
                         }
                     }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
+                    @Override public void afterTextChanged(Editable s) {
                         if (s.length() == 0 && !data.isUpdateUsage()) {
-                            // reset kalau kosong lagi
                             data.setQtyUsage(-1);
                             col5.setText("?");
-                            alreadyFetched[0] = false; // biar bisa fetch lagi kalau isi ulang
+                            alreadyFetched[0] = false;
                         }
                     }
                 });
@@ -456,13 +799,13 @@
                     }
                 });
 
-
                 // Kolom Remark
-                EditText col7 = TableUtils.createEditTextText(this,
+                EditText col7 = TableUtils.createEditTextText(
+                        this,
                         data.getUsageRemark() != null ? data.getUsageRemark() : "",
-                        1.0f);
+                        1.0f
+                );
                 col7.setTag("remark");
-
                 col7.setOnFocusChangeListener((v, hasFocus) -> {
                     if (!hasFocus) {
                         data.setUsageRemark(col7.getText().toString());
@@ -476,7 +819,13 @@
                 row.addView(col2);
                 row.addView(TableUtils.createDivider(this));
 
+                row.addView(colShelfCode);
+                row.addView(TableUtils.createDivider(this));
+
                 row.addView(col3);
+                row.addView(TableUtils.createDivider(this));
+
+                row.addView(colUOM);
                 row.addView(TableUtils.createDivider(this));
 
                 row.addView(col4);
@@ -490,8 +839,7 @@
 
                 row.addView(col7);
 
-
-                // Warna baris selang-seling
+                // Warna baris selang-seling (pakai index di halaman saja, boleh)
                 if (rowIndex % 2 == 0) {
                     row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
                 } else {
@@ -502,6 +850,7 @@
                 rowIndex++;
             }
         }
+
 
 
         private void showQtyUsagePopup(View anchorView,
@@ -579,10 +928,14 @@
 
 
 
-
         @Override
         protected void onDestroy() {
             super.onDestroy();
             executorService.shutdown();
+
+            if (searchRunnable != null) {
+                searchHandler.removeCallbacks(searchRunnable);
+            }
         }
+
     }

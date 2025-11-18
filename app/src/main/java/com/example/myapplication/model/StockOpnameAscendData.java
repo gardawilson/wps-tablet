@@ -3,22 +3,26 @@ package com.example.myapplication.model;
 public class StockOpnameAscendData {
     private String noSO;
     private String itemID;
+    private String shelfCode;
     private String itemCode;
     private String itemName;
     private double pcs;         // tetap primitive (selalu ada nilai dari master)
+    private String uomID;
     private Double qtyFound;    // pakai wrapper Double → bisa null
     private double qtyUsage;    // tetap primitive
     private String usageRemark;
     private boolean isUpdateUsage; // tetap primitive
 
-    public StockOpnameAscendData(String noSO, String itemID, String itemCode, String itemName,
-                                 double pcs, Double qtyFound, double qtyUsage,
+    public StockOpnameAscendData(String noSO, String itemID, String shelfCode, String itemCode, String itemName,
+                                 double pcs, String uomID, Double qtyFound, double qtyUsage,
                                  String usageRemark, boolean isUpdateUsage) {
         this.noSO = noSO;
         this.itemID = itemID;
+        this.shelfCode = shelfCode;
         this.itemCode = itemCode;
         this.itemName = itemName;
         this.pcs = pcs;
+        this.uomID = uomID;
         this.qtyFound = qtyFound;
         this.qtyUsage = qtyUsage;
         this.usageRemark = usageRemark;
@@ -26,9 +30,9 @@ public class StockOpnameAscendData {
     }
 
     // Overload constructor kalau belum ada hasil opname
-    public StockOpnameAscendData(String noSO, String itemID, String itemCode, String itemName,
-                                 double pcs) {
-        this(noSO, itemID, itemCode, itemName, pcs, null, 0.0, "", false);
+    public StockOpnameAscendData(String noSO, String itemID, String shelfCode, String itemCode, String itemName,
+                                 double pcs, String uomID) {
+        this(noSO, itemID, "-", itemCode, itemName, pcs, "-", null, 0.0, "", false);
     }
 
     public String getNoSO() {
@@ -38,6 +42,8 @@ public class StockOpnameAscendData {
     public String getItemID() {
         return itemID;
     }
+
+    public String getShelfCode() { return shelfCode; }
 
     public String getItemCode() {
         return itemCode;
@@ -50,6 +56,8 @@ public class StockOpnameAscendData {
     public double getPcs() {
         return pcs;
     }
+
+    public String getUomID() { return uomID;}
 
     public Double getQtyFound() {
         return qtyFound;

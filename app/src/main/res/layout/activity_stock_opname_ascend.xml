@@ -35,10 +35,9 @@
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="STOCK OPNAME ASCEND"
+                    android:text="STOCK OPNAME SPAREPART"
                     android:textSize="32sp"
                     android:textStyle="bold"
-                    android:padding="8dp"
                     android:layout_marginEnd="16dp"/>
 
 
@@ -99,8 +98,7 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.3"
-                    android:layout_marginEnd="16dp"
+                    android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <!--                    <TextView-->
@@ -155,11 +153,6 @@
 
                         </ScrollView>
 
-                        <View
-                            android:layout_width="1px"
-                            android:layout_height="match_parent"
-                            android:background="@color/gray"
-                            android:layout_gravity="end"/>
 
                         <TextView
                             android:id="@+id/tvFamilyTable"
@@ -183,6 +176,11 @@
 
                 </LinearLayout>
 
+                <View
+                    android:layout_width="4px"
+                    android:layout_height="match_parent"
+                    android:background="@color/gray" />
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
@@ -197,9 +195,14 @@
                         <!-- Membuat kolom proporsional -->
 
                         <TableRow
-                            android:background="@color/hijau">
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@color/hijau"
+                            android:gravity="center_vertical"
+                            android:baselineAligned="false">
 
-                            <!-- Kolom No. Produksi -->
+
+                        <!-- Kolom No. Produksi -->
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
@@ -237,8 +240,42 @@
                             <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_weight="0.5"
+                                android:text="Shelf Code"
+                                android:paddingBottom="8dp"
+                                android:paddingTop="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Shift -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="Item Name"
+                                android:paddingBottom="8dp"
+                                android:paddingTop="8dp"
+                                android:gravity="center"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"/>
+
+                            <View
+                                android:layout_width="1px"
+                                android:layout_height="match_parent"
+                                android:background="@color/gray" />
+
+                            <!-- Kolom Tanggal -->
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.3"
+                                android:text="UOM"
                                 android:paddingBottom="8dp"
                                 android:paddingTop="8dp"
                                 android:gravity="center"
@@ -321,19 +358,71 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <!-- Scroll + Table -->
-                        <ScrollView
+                        <!-- Konten utama: table + pagination, disusun vertikal -->
+                        <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent">
+                            android:layout_height="match_parent"
+                            android:orientation="vertical">
 
-                            <TableLayout
-                                android:id="@+id/mainTable"
+                            <!-- Scroll + Table -->
+                            <ScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="0dp"
+                                android:layout_weight="1">
+
+                                <TableLayout
+                                    android:id="@+id/mainTable"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:background="#EFEFEF"
+                                    android:stretchColumns="0" />
+                            </ScrollView>
+
+                            <!-- Pagination angka, posisinya DI BAWAH tabel -->
+                            <LinearLayout
+                                android:id="@+id/paginationBar"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:stretchColumns="0"
-                                android:background="#EFEFEF" />
-                        </ScrollView>
+                                android:orientation="horizontal"
+                                android:gravity="center"
+                                android:background="#FFFFFF"
+                                android:visibility="gone">
 
+                                <!-- Container untuk angka halaman -->
+                                <!-- Prev -->
+                                <ImageButton
+                                    android:id="@+id/btnPrevPage"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:padding="8dp"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:src="@drawable/ic_skip_previous"
+                                    app:tint="@color/primary"
+                                    android:contentDescription="Previous page" />
+
+                                <!-- Container angka halaman -->
+                                <LinearLayout
+                                    android:id="@+id/pageNumbersContainer"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingStart="8dp"
+                                    android:paddingEnd="8dp" />
+
+                                <!-- Next -->
+                                <ImageButton
+                                    android:id="@+id/btnNextPage"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:padding="8dp"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:src="@drawable/ic_skip_next"
+                                    app:tint="@color/primary"
+                                    android:contentDescription="Next page" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Overlay info di atas konten -->
                         <TextView
                             android:id="@+id/tvDataTable"
                             android:layout_width="match_parent"
@@ -349,9 +438,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
-                            android:visibility="gone"/>
-                    </FrameLayout>
+                            android:visibility="gone" />
 
+                    </FrameLayout>
 
                 </LinearLayout>
 

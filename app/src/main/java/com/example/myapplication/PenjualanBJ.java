@@ -139,7 +139,7 @@ public class PenjualanBJ extends AppCompatActivity {
     private LinearLayout textScanQR;
     private Button btnInputManual;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
-    private final String mainTable = "Penjualan_h";
+    private final String mainTable = "BJJual_h";
     private Button btnEdit;
     private Button btnCreate;
     private List<String> userPermissions;
@@ -1080,7 +1080,7 @@ public class PenjualanBJ extends AppCompatActivity {
     }
 
     private void handleValidData(String result, TableConfig config) {
-        if (PenjualanApi.isDateValidInPenjualan(noJual, mainTable, result, config.tableNameH, config.columnName)) {
+        if (PenjualanApi.isDateValidInPenjualanBJ(noJual, mainTable, result, config.tableNameH, config.columnName)) {
             runOnUiThread(() -> {
                 TableLayout targetTableLayout = findViewById(config.tableLayoutId);
                 TextView targetSumLabel = findViewById(config.sumLabelId);
@@ -1169,9 +1169,7 @@ public class PenjualanBJ extends AppCompatActivity {
         executorService.execute(() -> {
             Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
 
-            final int totalItems =
-                    noSTList.size() + noS4SList.size() + noMouldingList.size() +
-                            noLaminatingList.size() + noFJList.size() + noCCList.size() + noSandingList.size();
+            final int totalItems = noPackingList.size();
 
             if (totalItems == 0) {
                 runOnUiThread(() -> {
@@ -1203,23 +1201,23 @@ public class PenjualanBJ extends AppCompatActivity {
             try {
                 // === Sanding ===
                 try {
-                    if (!noSandingList.isEmpty()) {
-                        List<String> existing = PenjualanApi.getNoSandingByNoJual(noJual, "PenjualanSanding");
-                        List<String> toSave = new ArrayList<>(noSandingList);
+                    if (!noPackingList.isEmpty()) {
+                        List<String> existing = PenjualanApi.getNoPackingByBJJual(noJual);
+                        List<String> toSave = new ArrayList<>(noPackingList);
                         toSave.removeAll(existing);
                         if (!toSave.isEmpty()) {
-                            PenjualanApi.saveNoSandingInPenjualan(noJual, tgl, toSave, "PenjualanSanding");
+                            PenjualanApi.saveNoBJJualInBJJual(noJual, tgl, toSave);
                             savedItems += toSave.size();
                             updateStatus.accept((savedItems * 100) / totalItems);
                         }
                     }
-                } catch (Exception e) { errorCount++; Log.e("SaveScannedResults","Gagal simpan Sanding", e); }
+                } catch (Exception e) { errorCount++; Log.e("SaveScannedResults","Gagal simpan Packing", e); }
 
                 // Riwayat (non-blocking)
                 try {
                     ProsesProduksiApi.saveRiwayat(
                             savedUsername, dateTimeSaved,
-                            "Mengubah Data " + noJual + " Pada Bongkar Susun (Mobile)"
+                            "Mengubah Data " + noJual + " Pada BJJual_h (Mobile)"
                     );
                 } catch (Exception e) {
                     Log.e("SaveScannedResults", "Gagal simpan riwayat", e);

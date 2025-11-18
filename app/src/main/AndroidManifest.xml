@@ -30,12 +30,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true"
+        tools:ignore="LockedOrientationActivity"
         tools:targetApi="31">
-        <activity
-            android:name=".MainActivity2"
-            android:exported="false"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
+
         <activity
             android:name=".LaporanVerifikasi"
             android:exported="false" />
@@ -50,9 +47,7 @@
             android:exported="false" />
         <activity
             android:name=".StockOpnameAscend"
-            android:exported="false" />
-        <activity
-            android:name=".stock_opname_ascend"
+            android:screenOrientation="landscape"
             android:exported="false" />
         <activity
             android:name=".PlanningMesin"

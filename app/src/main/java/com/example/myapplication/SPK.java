@@ -1,57 +1,39 @@
 package com.example.myapplication;
 
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
-import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
-import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.Spinner;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.api.SpkApi;
-import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.MstSPKData;
-import com.example.myapplication.model.MstSPKData;
-import com.example.myapplication.model.MstSPKData;
-import com.example.myapplication.model.SawmillData;
-import com.example.myapplication.model.TooltipData;
-import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.TableUtils;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
 
 public class SPK extends AppCompatActivity {
 
@@ -59,13 +41,21 @@ public class SPK extends AppCompatActivity {
     private TableRow selectedRow;
     private MstSPKData selectedSPK;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private String noSPK;
-    private List<MstSPKData> dataList; // Data asli yang tidak difilter
-    // di class Activity kamu
+    private List<MstSPKData> dataList = new ArrayList<>();
     private float touchX = 0f, touchY = 0f;
-    private PopupWindow currentPopup; // simpan biar bisa dismiss saat pindah
-    private List<String> userPermissions;
 
+    private int currentPage = 1;
+    private final int pageSize = 50;
+    private boolean isLoading = false;
+    private boolean isLastPage = false;
+
+    private ScrollView scrollView;
+    private ProgressBar mainLoadingIndicator;
+    private SearchView searchData;   // 🔍 Search bar
+    private String searchQuery = ""; // current search text
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,26 +63,97 @@ public class SPK extends AppCompatActivity {
         setContentView(R.layout.activity_spk);
 
         mainTable = findViewById(R.id.mainTable);
+        scrollView = findViewById(R.id.scrollView);
+        mainLoadingIndicator = findViewById(R.id.mainLoadingIndicator);
+        searchData = findViewById(R.id.searchData);
 
-        loadDataAndDisplayTable();
+        // 🧠 SearchView listener
+        searchData.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // When user presses “search” on keyboard
+                searchQuery = query.trim();
+                currentPage = 1;
+                isLastPage = false;
+                loadDataAndDisplayTable(false);
+                return true;
+            }
 
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchQuery = newText.trim();
+
+                // Cancel any pending search
+                handler.removeCallbacks(searchRunnable);
+
+                // Post new delayed search
+                searchRunnable = () -> {
+                    currentPage = 1;
+                    isLastPage = false;
+                    loadDataAndDisplayTable(false);
+                };
+
+                handler.postDelayed(searchRunnable, 600); // ⏱ wait 600ms after last keystroke
+                return true;
+            }
+        });
+
+
+        // Initial load
+        loadDataAndDisplayTable(false);
+
+        // Infinite scroll detection
+        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
+            int diff = view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY());
+            if (diff <= 150 && !isLoading && !isLastPage) {
+                loadDataAndDisplayTable(true);
+            }
+        });
     }
 
-    private void loadDataAndDisplayTable() {
-        // Menjalankan operasi di background thread
-        executorService.execute(() -> {
-            dataList = SpkApi.getMstSPKData();
+    // -------------------------------------
+    // 🔹 Load data (with pagination + search)
+    // -------------------------------------
+    private void loadDataAndDisplayTable(boolean append) {
+        if (isLoading || isLastPage) return;
 
-            // Menampilkan data di UI thread setelah selesai mengambil data
+        isLoading = true;
+        if (!append)
+            mainLoadingIndicator.setVisibility(View.VISIBLE);
+        else
+            showLoadingFooter();
+
+        executorService.execute(() -> {
+            // ✅ now using searchQuery
+            List<MstSPKData> newData = SpkApi.getMstSPKData(currentPage, pageSize, searchQuery);
+
             runOnUiThread(() -> {
-                populateTable(dataList);  // Memperbarui tampilan tabel dengan data terbaru
-                // Sembunyikan loading indicator jika ada
-                // loadingIndicator.setVisibility(View.GONE);
+                removeLoadingFooter();
+                mainLoadingIndicator.setVisibility(View.GONE);
+
+                if (newData == null || newData.isEmpty()) {
+                    if (!append) {
+                        dataList.clear();
+                        populateTable(dataList);
+                    }
+                    isLastPage = true;
+                } else {
+                    if (append) dataList.addAll(newData);
+                    else dataList = newData;
+
+                    populateTable(dataList);
+                    currentPage++;
+                }
+
+                isLoading = false;
             });
         });
     }
 
-
+    // -------------------------------------
+    // 🔹 Populate table
+    // -------------------------------------
     private void populateTable(List<MstSPKData> dataList) {
         mainTable.removeAllViews();
 
@@ -130,18 +191,16 @@ public class SPK extends AppCompatActivity {
             row.addView(TableUtils.createDivider(this));
             row.addView(col6);
 
-            // zebra background
-            if (rowIndex % 2 == 0) {
+            // zebra color
+            if (rowIndex % 2 == 0)
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-            } else {
+            else
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-            }
 
-            // Klik biasa (pakai milikmu)
+            // click handler
             row.setOnClickListener(v -> {
                 if (selectedRow != null && selectedRow != row) {
                     int prevIndex = mainTable.indexOfChild(selectedRow);
-                    // kembalikan zebra row sebelumnya
                     int prevColor = (prevIndex % 2 == 0)
                             ? ContextCompat.getColor(this, R.color.background_cream)
                             : ContextCompat.getColor(this, R.color.white);
@@ -152,36 +211,20 @@ public class SPK extends AppCompatActivity {
                 row.setBackgroundResource(R.drawable.row_selector);
                 TableUtils.setTextColor(this, row, R.color.white);
                 selectedRow = row;
-
                 selectedSPK = data;
-                onRowClick(data);
             });
 
-            // Tangkap koordinat sentuhan
+            // track touch
             row.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     touchX = event.getRawX();
                     touchY = event.getRawY();
                 }
-                return false; // biarkan event lanjut ke click/longClick
+                return false;
             });
 
-            // Long click → tampilkan popup di koordinat sentuhan
+            // long click popup
             row.setOnLongClickListener(v -> {
-                // highlight row saat long-press
-                if (selectedRow != null && selectedRow != row) {
-                    int prevIndex = mainTable.indexOfChild(selectedRow);
-                    int prevColor = (prevIndex % 2 == 0)
-                            ? ContextCompat.getColor(this, R.color.background_cream)
-                            : ContextCompat.getColor(this, R.color.white);
-                    selectedRow.setBackgroundColor(prevColor);
-                    TableUtils.resetTextColor(this, selectedRow);
-                }
-                row.setBackgroundResource(R.drawable.row_selector);
-                TableUtils.setTextColor(this, row, R.color.white);
-                selectedRow = row;
-
-                // tampilkan popup
                 showRowPopup(v, data, touchX, touchY);
                 return true;
             });
@@ -191,14 +234,49 @@ public class SPK extends AppCompatActivity {
         }
     }
 
+    // -------------------------------------
+    // 🔹 Footer: show / remove loading row
+    // -------------------------------------
+    private void showLoadingFooter() {
+        if (findViewById(R.id.footer_loading_row) != null) return;
 
+        TableRow footer = new TableRow(this);
+        footer.setId(R.id.footer_loading_row);
+        footer.setTag("loading_footer");
 
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setGravity(Gravity.CENTER);
+        layout.setPadding(16, 16, 16, 16);
+
+        ProgressBar pb = new ProgressBar(this);
+        pb.setIndeterminate(true);
+        pb.setPadding(8, 0, 16, 0);
+
+        TextView tv = new TextView(this);
+        tv.setText("Loading more data...");
+        tv.setTextColor(Color.DKGRAY);
+        tv.setTextSize(14);
+
+        layout.addView(pb);
+        layout.addView(tv);
+        footer.addView(layout);
+
+        mainTable.addView(footer);
+    }
+
+    private void removeLoadingFooter() {
+        View footer = findViewById(R.id.footer_loading_row);
+        if (footer != null) mainTable.removeView(footer);
+    }
+
+    // -------------------------------------
+    // 🔹 Popup (unchanged)
+    // -------------------------------------
     private void showRowPopup(View anchorView, MstSPKData data, float x, float y) {
-        // Inflate popup layout
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         View popupView = inflater.inflate(R.layout.popup_menu_row_spk, null);
 
-        // Buat popup window
         PopupWindow popupWindow = new PopupWindow(
                 popupView,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -206,22 +284,15 @@ public class SPK extends AppCompatActivity {
                 true
         );
 
-        // Atur background agar bisa dismiss ketika klik di luar
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popupWindow.setOutsideTouchable(true);
-        popupWindow.setTouchable(true);
         popupWindow.setElevation(16f);
 
-        // Tombol pada popup
-        Button btnActivateDeactivate = popupView.findViewById(R.id.btnActivateDeactivate);
+        Button btnToggle = popupView.findViewById(R.id.btnActivateDeactivate);
+        updateToggleButtonText(btnToggle, data.isEnabled());
 
-        // Set label awal sesuai status
-        updateToggleButtonText(btnActivateDeactivate, data.isEnabled());
-
-        // Klik toggle
-        btnActivateDeactivate.setOnClickListener(v -> {
+        btnToggle.setOnClickListener(v -> {
             popupWindow.dismiss();
-
             final int target = data.isEnabled() ? 0 : 1;
             final String actionText = (target == 1) ? "Aktifkan" : "Nonaktifkan";
 
@@ -230,19 +301,17 @@ public class SPK extends AppCompatActivity {
                     .setMessage(actionText + " SPK " + data.getNoSPK() + "?")
                     .setPositiveButton("Ya", (d, w) -> {
                         executorService.execute(() -> {
-                            boolean ok = SpkApi.setMstSPKEnable(data.getNoSPK(), target); // <-- hanya kolom Enable
+                            boolean ok = SpkApi.setMstSPKEnable(data.getNoSPK(), target);
                             runOnUiThread(() -> {
                                 if (!ok) {
                                     Toast.makeText(this, "Gagal memperbarui status.", Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                // Update model & UI baris
                                 data.setEnable(target);
                                 if (anchorView instanceof TableRow) {
                                     TableRow row = (TableRow) anchorView;
-                                    // col6 ada di index 10 (6 kolom + 5 divider)
                                     TextView col6 = (TextView) row.getChildAt(10);
-                                    col6.setText(data.getEnableLabel()); // "AKTIF"/"NONAKTIF"
+                                    col6.setText(data.getEnableLabel());
                                 }
                                 Toast.makeText(this, "Status: " + data.getEnableLabel(), Toast.LENGTH_SHORT).show();
                             });
@@ -252,61 +321,36 @@ public class SPK extends AppCompatActivity {
                     .show();
         });
 
-
-        // Ukur ukuran popup
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int popupWidth  = popupView.getMeasuredWidth();
+        int popupWidth = popupView.getMeasuredWidth();
         int popupHeight = popupView.getMeasuredHeight();
 
-        // Dapatkan ukuran layar
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
-        int screenWidth  = dm.widthPixels;
+        int screenWidth = dm.widthPixels;
         int screenHeight = dm.heightPixels;
 
-        // Hitung posisi popup (di atas titik sentuh)
         int popupX = (int) x - (popupWidth / 2);
         int popupY = (int) y - popupHeight - 50;
 
-        // Clamp agar tidak keluar layar
         if (popupX < 10) popupX = 10;
-        if (popupX + popupWidth > screenWidth - 10) popupX = screenWidth - popupWidth - 10;
-        if (popupY < 10) popupY = (int) y + 50; // kalau tidak muat di atas, tampilkan di bawah
+        if (popupX + popupWidth > screenWidth - 10)
+            popupX = screenWidth - popupWidth - 10;
+        if (popupY < 10) popupY = (int) y + 50;
 
-        // Tampilkan popup di koordinat yang dihitung
         popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, popupX, popupY);
     }
 
     private void updateToggleButtonText(Button btn, boolean enabled) {
         btn.setText(enabled ? "Nonaktifkan" : "Aktifkan");
-        // opsional ubah ikon:
-         btn.setCompoundDrawablesWithIntrinsicBounds(
-             enabled ? R.drawable.ic_undone : R.drawable.ic_done_all, 0, 0, 0);
+        btn.setCompoundDrawablesWithIntrinsicBounds(
+                enabled ? R.drawable.ic_undone : R.drawable.ic_done_all, 0, 0, 0);
     }
-
-
-
-
-
-
-
-    private void onRowClick(MstSPKData data) {
-
-        executorService.execute(() -> {
-            // Ambil data latar belakang
-
-            // Perbarui UI di thread utama
-            runOnUiThread(() -> {
-
-            });
-        });
-    }
-
-
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
         executorService.shutdown();
     }
 }

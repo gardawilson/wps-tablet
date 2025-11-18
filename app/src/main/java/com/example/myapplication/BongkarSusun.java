@@ -1584,7 +1584,7 @@ public class BongkarSusun extends AppCompatActivity {
             rowIndex++;
         }
     }
-    
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //-------------------------------------------METHOD ADD DATA KE TABLE LIST DENGAN PRE-CONDITION---------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -1684,11 +1684,7 @@ public class BongkarSusun extends AppCompatActivity {
 
                     if (ProsesProduksiApi.isDataExists(result, config.tableNameH, config.tableNameD, config.columnName)) {
                         if (ProsesProduksiApi.isDateUsageNull(result, config.tableNameH, config.columnName)) {
-                            if (ProsesProduksiApi.existsInBongkarSusunOutput(noBongkarSusun, result)) {
-                                displayErrorState("Label tidak boleh berasal dari Output BongkarSusun yang sama!", R.raw.denied_data);
-                            } else {
-                                handleValidData(result, config);
-                            }
+                            handleValidData(result, config);
                         } else {
                             handleDuplicateOrInvalidUsage(result, config);
                         }
@@ -1917,7 +1913,7 @@ public class BongkarSusun extends AppCompatActivity {
     private void showHistoryDialog(String noBongkarSusun) {
         executorService.execute(() -> {
             String filterQuery =
-                            "SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM BongkarSusunInputST WHERE NoBongkarSusun = ? " +
+                    "SELECT 'ST' AS Label, NoST AS KodeLabel, DateTimeSaved FROM BongkarSusunInputST WHERE NoBongkarSusun = ? " +
                             "UNION ALL " +
                             "SELECT 'S4S' AS Label, NoS4S AS KodeLabel, DateTimeSaved FROM BongkarSusunInputS4S WHERE NoBongkarSusun = ? " +
                             "UNION ALL " +

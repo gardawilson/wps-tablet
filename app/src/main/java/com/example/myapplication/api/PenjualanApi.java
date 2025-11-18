@@ -106,6 +106,92 @@ public class PenjualanApi {
     }
 
 
+
+    public static boolean isDateValidInPenjualanBJ(
+            String noJual,
+            String mainTable,
+            String result,
+            String tableNameH,
+            String columnName
+    ) {
+        // --- DEBUG PARAM ---
+        Log.d("PenjualanBJCheck", "== isDateValidInPenjualanBJ CALLED ==");
+        Log.d("PenjualanBJCheck", "noJual      : " + noJual);
+        Log.d("PenjualanBJCheck", "mainTable   : " + mainTable);
+        Log.d("PenjualanBJCheck", "result      : " + result);
+        Log.d("PenjualanBJCheck", "tableNameH  : " + tableNameH);
+        Log.d("PenjualanBJCheck", "columnName  : " + columnName);
+
+        String queryH = "SELECT DateCreate FROM " + tableNameH + " WHERE " + columnName + " = ?";
+        String queryProduksi = "SELECT TglJual FROM " + mainTable + " WHERE NoBJJual = ?";
+
+        Log.d("PenjualanBJCheck", "queryH        : " + queryH);
+        Log.d("PenjualanBJCheck", "queryProduksi : " + queryProduksi);
+
+        java.sql.Date dateCreated = null;
+        java.sql.Date produksiInputDate = null;
+
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // --- STEP 1: AMBIL DateCreate DARI tableNameH ---
+            try (PreparedStatement pstmtH = con.prepareStatement(queryH)) {
+                pstmtH.setString(1, result);
+                Log.d("PenjualanBJCheck", "Executing queryH with param[1]=" + result);
+
+                try (ResultSet rsH = pstmtH.executeQuery()) {
+                    if (rsH.next()) {
+                        dateCreated = rsH.getDate("DateCreate");
+                        Log.d("PenjualanBJCheck", "dateCreated (DateCreate) = " + dateCreated);
+                    } else {
+                        Log.w("PenjualanBJCheck", "Tidak ada row untuk queryH (tableNameH). " +
+                                "tableNameH=" + tableNameH + ", " +
+                                columnName + "=" + result);
+                    }
+                }
+            }
+
+            // --- STEP 2: AMBIL TglJual DARI mainTable ---
+            try (PreparedStatement pstmtProduksi = con.prepareStatement(queryProduksi)) {
+                pstmtProduksi.setString(1, noJual);
+                Log.d("PenjualanBJCheck", "Executing queryProduksi with param[1]=" + noJual);
+
+                try (ResultSet rsProduksi = pstmtProduksi.executeQuery()) {
+                    if (rsProduksi.next()) {
+                        produksiInputDate = rsProduksi.getDate("TglJual");
+                        Log.d("PenjualanBJCheck", "produksiInputDate (TglJual) = " + produksiInputDate);
+                    } else {
+                        Log.w("PenjualanBJCheck", "Tidak ada row untuk queryProduksi (mainTable). " +
+                                "mainTable=" + mainTable + ", NoJual=" + noJual);
+                    }
+                }
+            }
+
+            // --- STEP 3: BANDINGKAN TANGGAL ---
+            if (dateCreated != null && produksiInputDate != null) {
+                int cmp = produksiInputDate.compareTo(dateCreated);
+                Log.d("PenjualanBJCheck", "compareTo result = " + cmp +
+                        " (>=0 berarti valid)");
+                Log.d("PenjualanBJCheck", "produksiInputDate >= dateCreated ? " + (cmp >= 0));
+
+                return (cmp >= 0);
+            } else {
+                Log.w("PenjualanBJCheck", "Salah satu tanggal null. " +
+                        "dateCreated=" + dateCreated +
+                        ", produksiInputDate=" + produksiInputDate +
+                        " → otomatis dianggap tidak valid (return false).");
+            }
+
+        } catch (SQLException e) {
+            Log.e("PenjualanBJCheck",
+                    "Error comparing dates: " + e.getMessage(), e);
+        }
+
+        Log.d("PenjualanBJCheck", "Fallback return: false");
+        return false; // Default jika tidak valid / ada masalah data
+    }
+
+
+
     public static List<String> getNoSTByNoJual(String noJual, String tableName) {
         List<String> noSTList = new ArrayList<>();
 
@@ -900,6 +986,80 @@ public class PenjualanApi {
         }
     }
 
+
+
+    public static void saveNoBJJualInBJJual(
+            String noBJJual,
+            String tglJual,
+            List<String> noBJList) throws SQLException {
+
+        Log.d("BJJualInsert", "== saveNoBJJualInBJJual CALLED ==");
+        Log.d("BJJualInsert", "noBJJual        : " + noBJJual);
+        Log.d("BJJualInsert", "tglJual         : " + tglJual);
+        Log.d("BJJualInsert", "total to insert : " + (noBJList != null ? noBJList.size() : 0));
+
+        if (noBJList == null || noBJList.isEmpty()) {
+            Log.w("BJJualInsert", "noBJList kosong, tidak ada data untuk insert. Abort.");
+            return;
+        }
+
+        String insertSql = "INSERT INTO BJJual_d (NoBJJual, NoBJ) VALUES (?, ?)";
+
+        // kita akan pakai manual commit biar atomic
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // Matikan auto-commit supaya bisa rollback kalau ada gagal di tengah batch
+            boolean oldAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = con.prepareStatement(insertSql)) {
+
+                for (String noBJ : noBJList) {
+                    Log.d("BJJualInsert", "Queue insert: NoBJJual=" + noBJJual + ", NoBJ=" + noBJ);
+
+                    pstmt.setString(1, noBJJual); // kolom NoBJJual
+                    pstmt.setString(2, noBJ);     // kolom NoBJ
+                    pstmt.addBatch();
+                }
+
+                int[] results = pstmt.executeBatch();
+                con.commit(); // commit semua batch sekaligus
+
+                // Logging hasil eksekusi batch
+                int successCount = 0;
+                for (int r : results) {
+                    // JDBC spec: r bisa 1 (sukses 1 row), atau Statement.SUCCESS_NO_INFO (-2),
+                    // atau Statement.EXECUTE_FAILED (-3)
+                    if (r >= 0 || r == java.sql.Statement.SUCCESS_NO_INFO) {
+                        successCount++;
+                    }
+                }
+                Log.d("BJJualInsert", "Batch insert selesai. Sukses: " + successCount + " / " + results.length);
+
+            } catch (SQLException e) {
+                // kalau error, rollback semua biar tidak setengah masuk
+                try {
+                    con.rollback();
+                    Log.e("BJJualInsert", "Insert gagal. Melakukan rollback. Error: " + e.getMessage(), e);
+                } catch (SQLException rbEx) {
+                    Log.e("BJJualInsert", "Rollback juga gagal: " + rbEx.getMessage(), rbEx);
+                }
+                // lempar lagi biar caller bisa hitung errorCount
+                throw e;
+            } finally {
+                // balikin autocommit seperti semula
+                try {
+                    con.setAutoCommit(oldAutoCommit);
+                } catch (SQLException acEx) {
+                    Log.e("BJJualInsert", "Gagal restore autoCommit: " + acEx.getMessage(), acEx);
+                }
+            }
+
+        } catch (SQLException outer) {
+            Log.e("BJJualInsert", "Koneksi/insert error utama: " + outer.getMessage(), outer);
+            throw outer; // kita lempar supaya caller (saveScannedResultsToDatabase) bisa increment errorCount
+        }
+    }
 
 
 
