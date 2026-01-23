@@ -120,6 +120,10 @@ public class Sawmill extends AppCompatActivity {
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private String username;
 
+    // ✅ TAMBAHKAN INI untuk prevent race condition
+    private volatile boolean isDetailDataLoaded = false;
+    private final Object detailDataLock = new Object();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -2216,12 +2220,12 @@ public class Sawmill extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_edit_detail_sawmill, null);
 
-        EditText editTebal = dialogView.findViewById(R.id.editTebal);
-        EditText editLebar = dialogView.findViewById(R.id.editLebar);
+        EditText editTebal   = dialogView.findViewById(R.id.editTebal);
+        EditText editLebar   = dialogView.findViewById(R.id.editLebar);
         EditText editPanjang = dialogView.findViewById(R.id.editPanjang);
-        EditText editJumlah = dialogView.findViewById(R.id.editJumlah);
+        EditText editJumlah  = dialogView.findViewById(R.id.editJumlah);
 
-        // Pre-fill data
+        // Pre-fill data (pakai koma sesuai decimalFormat kamu)
         editTebal.setText(decimalFormat.format(data.getTebal()));
         editLebar.setText(decimalFormat.format(data.getLebar()));
         editPanjang.setText(decimalFormat.format(data.getPanjang()));
@@ -2239,18 +2243,57 @@ public class Sawmill extends AppCompatActivity {
             radioKulit.setChecked(true);
         }
 
-        loadGradeKBToSpinner(spinGradeDetail, radioBagus, radioKulit, jenisKayu, data.getIdGradeKB(), data.getIsBagusKulit());
-
+        loadGradeKBToSpinner(
+                spinGradeDetail,
+                radioBagus,
+                radioKulit,
+                jenisKayu,
+                data.getIdGradeKB(),
+                data.getIsBagusKulit()
+        );
 
         new AlertDialog.Builder(this)
                 .setTitle("Edit Detail")
                 .setView(dialogView)
                 .setPositiveButton("Simpan", (dialog, which) -> {
-                    // Ambil nilai baru dari input EditText
-                    float tebal = Float.parseFloat(editTebal.getText().toString());
-                    float lebar = Float.parseFloat(editLebar.getText().toString());
-                    float panjang = Float.parseFloat(editPanjang.getText().toString());
-                    int jumlah = Integer.parseInt(editJumlah.getText().toString());
+
+                    // --- Ambil & validasi input sebagai String dulu ---
+                    String tebalStr   = editTebal.getText().toString().trim();
+                    String lebarStr   = editLebar.getText().toString().trim();
+                    String panjangStr = editPanjang.getText().toString().trim();
+                    String jumlahStr  = editJumlah.getText().toString().trim();
+
+                    if (tebalStr.isEmpty() || lebarStr.isEmpty() ||
+                            panjangStr.isEmpty() || jumlahStr.isEmpty()) {
+                        Toast.makeText(this,
+                                "Tebal, lebar, panjang, dan jumlah tidak boleh kosong",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    float tebal, lebar, panjang;
+                    int jumlah;
+
+                    try {
+                        // Pakai DecimalFormat yang sama dengan tampilan
+                        Number nTebal   = decimalFormat.parse(tebalStr);
+                        Number nLebar   = decimalFormat.parse(lebarStr);
+                        Number nPanjang = decimalFormat.parse(panjangStr);
+
+                        tebal   = nTebal.floatValue();
+                        lebar   = nLebar.floatValue();
+                        panjang = nPanjang.floatValue();
+
+                        // jumlah biasanya bilangan bulat
+                        jumlah = Integer.parseInt(jumlahStr);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(this,
+                                "Format angka tidak valid. Contoh: 2,5",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
                     // Ambil nilai dari Spinner dan Radio
                     GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
@@ -2259,10 +2302,10 @@ public class Sawmill extends AppCompatActivity {
                             : -1;
 
                     int isBagusKulitUpdated = 0;
-                    if (radioBagus.isChecked()) isBagusKulitUpdated = 1;
+                    if (radioBagus.isChecked())      isBagusKulitUpdated = 1;
                     else if (radioKulit.isChecked()) isBagusKulitUpdated = 2;
 
-                    // Update objek data
+                    // Update objek data (di memori)
                     data.setTebal(tebal);
                     data.setLebar(lebar);
                     data.setPanjang(panjang);
@@ -2282,7 +2325,6 @@ public class Sawmill extends AppCompatActivity {
                         }
 
                         detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
-
 
                         runOnUiThread(() -> {
                             if (success) {
@@ -2307,10 +2349,10 @@ public class Sawmill extends AppCompatActivity {
                         });
                     });
                 })
-
                 .setNegativeButton("Batal", null)
                 .show();
     }
+
 
 
 
@@ -2647,8 +2689,13 @@ public class Sawmill extends AppCompatActivity {
             return false;
         });
 
-
         inputList.clear();
+
+        // ✅ Tambahkan indicator wajib untuk Rambung
+        boolean isRambung = jenisKayu != null && jenisKayu.toLowerCase().contains("rambung");
+        if (isRambung) {
+            spinGradeDetail.setPrompt("Grade (Wajib untuk Rambung)");
+        }
 
         loadGradeKBToSpinner(spinGradeDetail, radioBagus, radioKulit, jenisKayu, -1, 1);
 
@@ -2660,28 +2707,32 @@ public class Sawmill extends AppCompatActivity {
         // Initially hide add row button until acuan is set
         addRowButton.setVisibility(View.GONE);
 
+        // ✅ DISABLE tombol Save dulu sampai data keload
+        btnSaveDetail.setEnabled(false);
+        btnSaveDetail.setText("Loading...");
+
         // btnSubmit untuk set acuan dan munculkan row pertama
-        // Kode btnSubmit.setOnClickListener yang sudah direfactor
         btnSubmit.setOnClickListener(v -> {
             String acuanTebal = inputTebal.getText().toString().trim();
             String acuanLebar = inputLebar.getText().toString().trim();
             String acuanPanjang = inputPanjang.getText().toString().trim();
             String acuanPcsStr = inputPcs.getText().toString().trim();
 
-            // Ambil idGradeKB langsung dari spinner saat dibutuhkan
-            GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
-            int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null) ? selectedGrade.getIdGradeKB() : -1;
-
-            // Validasi input acuan
+            // ✅ Validasi input acuan
             if (acuanTebal.isEmpty() || acuanLebar.isEmpty() || acuanPanjang.isEmpty() || acuanPcsStr.isEmpty()) {
                 Toast.makeText(this, "Harap isi semua field acuan terlebih dahulu", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-//            if (idGradeKB == -1) {
-//                Toast.makeText(this, "Harap pilih grade terlebih dahulu!", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
+            // ✅ VALIDASI GRADE UNTUK RAMBUNG (WAJIB!)
+            if (!validateGradeForRambung(jenisKayu, spinGradeDetail)) {
+                return; // Stop jika grade tidak valid
+            }
+
+            // Ambil grade setelah validasi
+            GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
+            int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
+                    ? selectedGrade.getIdGradeKB() : -1;
 
             float tebal = Float.parseFloat(acuanTebal);
             float lebar = Float.parseFloat(acuanLebar);
@@ -2693,20 +2744,17 @@ public class Sawmill extends AppCompatActivity {
                         .setMessage("Detail ini sudah ditambahkan sebelumnya, yakin ingin menambahkan lagi?")
                         .setPositiveButton("Ya", (dialogDuplicate, which) -> {
                             Toast.makeText(this, "Detail berhasil ditambahkan.", Toast.LENGTH_SHORT).show();
-
-                            // Panggil method terpisah untuk setup acuan
                             setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
                                     textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
                                     inputTebal, inputLebar, inputPanjang, inputPcs);
-
                             Log.d("SetAcuan", "IdGradeKB saat submit: " + idGradeKB);
                         })
                         .setNegativeButton("Batal", null)
                         .show();
-                return; // Tunggu respon dialog
+                return;
             }
 
-            // Panggil method terpisah untuk setup acuan (untuk kasus non-duplikat)
+            // Lanjut setup acuan
             setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
                     textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
                     inputTebal, inputLebar, inputPanjang, inputPcs);
@@ -2738,7 +2786,6 @@ public class Sawmill extends AppCompatActivity {
             updateSisaPcs(textSisaPCS);
 
             tablePjgPcs.removeAllViews();
-
         });
 
         // addRowButton untuk update data row saat ini dan buat row baru
@@ -2766,11 +2813,11 @@ public class Sawmill extends AppCompatActivity {
 
                         // Validasi input tidak kosong
                         if (panjangValue.isEmpty() || pcsValue.isEmpty()) {
-                            if (panjangET.isEnabled()) { // Hanya validasi yang masih enabled
+                            if (panjangET.isEnabled()) {
                                 Toast.makeText(this, "Harap isi Panjang dan PCS pada baris yang aktif", Toast.LENGTH_SHORT).show();
                                 return;
                             }
-                        } else if (panjangET.isEnabled()) { // Hanya proses yang masih enabled
+                        } else if (panjangET.isEnabled()) {
                             // Validasi PCS tidak melebihi sisa
                             if (!isValidPcsInput(pcsValue)) {
                                 int sisaSekarang = totalPcsAcuan - hitungTotalPcsDariList();
@@ -2783,7 +2830,7 @@ public class Sawmill extends AppCompatActivity {
                                 float panjangAcuan = Float.parseFloat(acuanPanjang);
                                 float panjangInput = Float.parseFloat(panjangValue);
 
-                                // Cek duplikat data terlebih dahulu (prioritas utama)
+                                // Cek duplikat data terlebih dahulu
                                 if (isDuplicateData(acuanTebal, acuanLebar, panjangValue, acuanPanjang, acuanTebal, acuanLebar)) {
                                     Toast.makeText(this, "Data dengan Tebal, Lebar, dan Panjang yang sama sudah ada!", Toast.LENGTH_SHORT).show();
                                     hasDuplicate = true;
@@ -2796,24 +2843,18 @@ public class Sawmill extends AppCompatActivity {
                                             .setTitle("Panjang Melebihi Default")
                                             .setMessage("Panjang melebihi panjang Default (" + panjangAcuan + "), yakin ingin menambahkan?")
                                             .setPositiveButton("Ya", (dialogInputPjg, which) -> {
-                                                // Lanjutkan proses meskipun panjang melebihi acuan
                                                 Toast.makeText(this, "Data berhasil ditambahkan meskipun melebihi panjang acuan.", Toast.LENGTH_SHORT).show();
-
-                                                // Proses data langsung tanpa pengecekan duplikat lagi
                                                 processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,
                                                         panjangValue, radioBagus, radioKulit, radioMillimeter, radioFeet,
                                                         radioMeter, spinGradeDetail);
-
-                                                // Lanjutkan proses add row
                                                 continueAddRowProcess(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
                                             })
                                             .setNegativeButton("Batal", (dialogValidatePjg, which) -> {
-                                                // Fokus kembali ke input panjang untuk koreksi
                                                 panjangET.requestFocus();
                                                 panjangET.selectAll();
                                             })
                                             .show();
-                                    return; // Tunggu response dialog
+                                    return;
                                 }
 
                                 // Jika panjang tidak melebihi acuan dan tidak duplikat, proses data normal
@@ -2833,7 +2874,7 @@ public class Sawmill extends AppCompatActivity {
             }
 
             if (hasDuplicate) {
-                return; // Stop jika ada duplikat
+                return;
             }
 
             if (!hasValidData) {
@@ -2844,7 +2885,7 @@ public class Sawmill extends AppCompatActivity {
             // Update sisa PCS
             updateSisaPcs(textSisaPCS);
 
-            // Enable kembali semua tombol delete karena data sudah di-submit
+            // Enable kembali semua tombol delete
             enableAllDeleteButtons(tablePjgPcs);
 
             // Jika masih ada sisa PCS dan sisa > 0, buat row baru
@@ -2852,7 +2893,7 @@ public class Sawmill extends AppCompatActivity {
                 TableRow newRow = createNewRow(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
                 tablePjgPcs.addView(newRow);
 
-                // Fokus ke EditText panjang setelah UI benar-benar siap
+                // Fokus ke EditText panjang
                 EditText firstPanjangEditText = (EditText) newRow.getChildAt(0);
                 firstPanjangEditText.post(() -> {
                     firstPanjangEditText.requestFocus();
@@ -2871,24 +2912,56 @@ public class Sawmill extends AppCompatActivity {
         if (isTutupTransaksi(tgl, tglTutupTransaksi)) {
             btnSaveDetail.setText("Transaksi Ditutup");
             btnSaveDetail.setEnabled(false);
-            btnSaveDetail.setAlpha(0.5f); // opsional
+            btnSaveDetail.setAlpha(0.5f);
         } else {
             btnSaveDetail.setText("Simpan");
-            btnSaveDetail.setEnabled(true);
-            btnSaveDetail.setAlpha(1.0f); // pastikan aktif
+            btnSaveDetail.setAlpha(1.0f);
+            // Button akan dienable setelah data loaded
         }
 
         btnSaveDetail.setOnClickListener(view -> {
-            // Baca ulang status RadioButton dan Spinner saat akan menyimpan
+            // ✅ PREVENT DOUBLE CLICK
+            if (!btnSaveDetail.isEnabled()) {
+                return;
+            }
+            btnSaveDetail.setEnabled(false);
+
+            // ✅ VALIDASI: Data lama sudah keload?
+            synchronized (detailDataLock) {
+                if (!isDetailDataLoaded) {
+                    Toast.makeText(this, "⚠️ Data masih loading, tunggu sebentar...", Toast.LENGTH_SHORT).show();
+                    btnSaveDetail.setEnabled(true);
+                    return;
+                }
+            }
+
+            // ✅ VALIDASI GRADE UNTUK RAMBUNG
+            if (!validateGradeForRambung(jenisKayu, spinGradeDetail)) {
+                btnSaveDetail.setEnabled(true);
+                return;
+            }
+
+            // Baca ulang status RadioButton dan Spinner
             boolean currentIsLocal = radioBagus.isChecked() || radioKulit.isChecked();
             int currentIsBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
 
             // Ambil idGradeKB langsung dari spinner
             GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
-            int currentIdGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null) ? selectedGrade.getIdGradeKB() : -1;
-            String currentNameGradeKB = (selectedGrade != null && selectedGrade.getNamaGrade() != null) ? selectedGrade.getNamaGrade() : "-";
+            int currentIdGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
+                    ? selectedGrade.getIdGradeKB() : -1;
+            String currentNameGradeKB = (selectedGrade != null && selectedGrade.getNamaGrade() != null)
+                    ? selectedGrade.getNamaGrade() : "-";
 
-            // Update UOM berdasarkan status RadioButton terkini
+            // ✅ Validasi Bagus/Kulit untuk Kayu Lat
+            if (currentNameGradeKB != null && currentNameGradeKB.toLowerCase().contains("kayu lat")) {
+                if (!radioBagus.isChecked() && !radioKulit.isChecked()) {
+                    Toast.makeText(this, "❌ Pilih Bagus atau Kulit untuk grade Kayu Lat!", Toast.LENGTH_LONG).show();
+                    btnSaveDetail.setEnabled(true);
+                    return;
+                }
+            }
+
+            // Update UOM
             int currentIdUOMTblLebar = radioMillimeter.isChecked() ? 1 : 4;
             int currentIdUOMPanjang;
             if (radioFeet.isChecked()) {
@@ -2899,149 +2972,182 @@ public class Sawmill extends AppCompatActivity {
                 currentIdUOMPanjang = 1;
             }
 
-            // Update data terakhir (jika ada yang belum ter-disable)
-            for (int i = 0; i < tablePjgPcs.getChildCount(); i++) {
-                View child = tablePjgPcs.getChildAt(i);
-                if (child instanceof TableRow) {
-                    TableRow row = (TableRow) child;
-                    SawmillDetailInputData inputData = (SawmillDetailInputData) row.getTag();
+            // ✅ Lock untuk prevent race condition
+            synchronized (detailDataLock) {
+                // Buat list baru untuk semua data
+                List<SawmillDetailData> allDetailData = new ArrayList<>();
 
-                    if (row.getChildCount() >= 2 && inputData != null) {
-                        EditText panjangET = (EditText) row.getChildAt(0);
-                        EditText pcsET = (EditText) row.getChildAt(1);
-
-                        if (panjangET.isEnabled()) {
-                            inputData.setPanjang(panjangET.getText().toString());
-                            inputData.setPcs(pcsET.getText().toString());
-                        }
-                    }
+                // Copy data lama
+                if (detailDataList != null && !detailDataList.isEmpty()) {
+                    allDetailData.addAll(detailDataList);
+                    Log.d("SaveDetail", "✅ Existing data loaded: " + detailDataList.size() + " rows");
+                } else {
+                    Log.w("SaveDetail", "⚠️ No existing data found");
                 }
-            }
 
-            // Buat list baru untuk menyimpan semua data (existing + new)
-            List<SawmillDetailData> allDetailData = new ArrayList<>(detailDataList);
+                // ✅ VALIDASI: Jangan save kalau tidak ada data sama sekali
+                if (inputList.isEmpty() && (acuanData[0] == null || sisaPcs <= 0) && detailDataList.isEmpty()) {
+                    Toast.makeText(this, "❌ Tidak ada data untuk disimpan!", Toast.LENGTH_LONG).show();
+                    btnSaveDetail.setEnabled(true);
+                    return;
+                }
 
-            // Jangan cek duplikat, langsung insert semua
-            for (SawmillDetailInputData inputData : inputList) {
-                float tebal = Float.parseFloat(inputData.getTebal());
-                float lebar = Float.parseFloat(inputData.getLebar());
-                float panjang = Float.parseFloat(inputData.getPanjang());
-                int pcs = Integer.parseInt(inputData.getPcs());
+                // Tambah data baru dari inputList
+                int startingNoUrut = allDetailData.size() + 1;
+                for (SawmillDetailInputData inputData : inputList) {
+                    float tebal = Float.parseFloat(inputData.getTebal());
+                    float lebar = Float.parseFloat(inputData.getLebar());
+                    float panjang = Float.parseFloat(inputData.getPanjang());
+                    int pcs = Integer.parseInt(inputData.getPcs());
 
-                int noUrut = allDetailData.size() + 1;
-                SawmillDetailData detailData = new SawmillDetailData(
-                        noUrut, tebal, lebar, panjang, pcs,
-                        currentIsLocal,
-                        currentIdUOMTblLebar,
-                        currentIdUOMPanjang,
-                        currentIsBagusKulit,
-                        currentIdGradeKB,
-                        currentNameGradeKB
-                );
-                allDetailData.add(detailData);
-            }
+                    SawmillDetailData detailData = new SawmillDetailData(
+                            startingNoUrut++, tebal, lebar, panjang, pcs,
+                            currentIsLocal,
+                            currentIdUOMTblLebar,
+                            currentIdUOMPanjang,
+                            currentIsBagusKulit,
+                            currentIdGradeKB,
+                            currentNameGradeKB
+                    );
+                    allDetailData.add(detailData);
+                }
 
-            // Proses data acuan jika ada sisa PCS
-            if (acuanData[0] != null && sisaPcs > 0) {
-                float tebal = Float.parseFloat(acuanData[0]);
-                float lebar = Float.parseFloat(acuanData[1]);
-                float panjang = Float.parseFloat(acuanData[2]);
-                int pcs = sisaPcs;
+                // Proses data acuan jika ada sisa
+                if (acuanData[0] != null && sisaPcs > 0) {
+                    float tebal = Float.parseFloat(acuanData[0]);
+                    float lebar = Float.parseFloat(acuanData[1]);
+                    float panjang = Float.parseFloat(acuanData[2]);
+                    int pcs = sisaPcs;
 
-                int noUrut = allDetailData.size() + 1;
-                SawmillDetailData acuanDetailData = new SawmillDetailData(
-                        noUrut, tebal, lebar, panjang, pcs,
-                        currentIsLocal,
-                        currentIdUOMTblLebar,
-                        currentIdUOMPanjang,
-                        currentIsBagusKulit,
-                        currentIdGradeKB,
-                        currentNameGradeKB
-                );
-                allDetailData.add(acuanDetailData);
-            }
+                    SawmillDetailData acuanDetailData = new SawmillDetailData(
+                            startingNoUrut, tebal, lebar, panjang, pcs,
+                            currentIsLocal,
+                            currentIdUOMTblLebar,
+                            currentIdUOMPanjang,
+                            currentIsBagusKulit,
+                            currentIdGradeKB,
+                            currentNameGradeKB
+                    );
+                    allDetailData.add(acuanDetailData);
+                }
 
+                // ✅ VALIDASI FINAL
+                if (allDetailData.isEmpty()) {
+                    Log.e("SaveDetail", "❌ CRITICAL: allDetailData is EMPTY after processing!");
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "❌ Error: Data kosong setelah diproses!", Toast.LENGTH_LONG).show();
+                        btnSaveDetail.setEnabled(true);
+                    });
+                    return;
+                }
 
-            // Cetak semua data untuk debugging
-            for (SawmillDetailData data : allDetailData) {
-                Log.d("FinalSubmit", "Baris ke-" + data.getNoUrut()
-                        + ": Tebal = " + data.getTebal()
-                        + ", Lebar = " + data.getLebar()
-                        + ", Panjang = " + data.getPanjang()
-                        + ", Pcs = " + data.getPcs()
-                        + ", isLocal = " + data.isLocal()
-                        + ", IdUOMTblLebar = " + data.getIdUOMTblLebar()
-                        + ", IdUOMPanjang = " + data.getIdUOMPanjang()
-                        + ", IsBagusKulit = " + data.getIsBagusKulit() + " (" + data.getIsBagusKulitLabel() + ")"
-                        + ", IdGradeKB = " + data.getIdGradeKB());
-            }
+                // Log untuk debugging
+                Log.i("SaveDetail", "=== PREPARE TO SAVE ===");
+                Log.i("SaveDetail", "NoSTSawmill: " + noSTSawmill);
+                Log.i("SaveDetail", "JenisKayu: " + jenisKayu);
+                Log.i("SaveDetail", "Existing data: " + detailDataList.size());
+                Log.i("SaveDetail", "New data: " + inputList.size());
+                Log.i("SaveDetail", "Acuan sisa: " + sisaPcs);
+                Log.i("SaveDetail", "Total to save: " + allDetailData.size());
+                Log.i("SaveDetail", "Grade: " + currentNameGradeKB + " (ID: " + currentIdGradeKB + ")");
 
+                for (SawmillDetailData data : allDetailData) {
+                    Log.d("FinalSubmit", "Row " + data.getNoUrut()
+                            + ": " + data.getTebal() + "x" + data.getLebar() + "x" + data.getPanjang()
+                            + " = " + data.getPcs() + " pcs"
+                            + ", Grade=" + data.getNamaGrade() + " (ID=" + data.getIdGradeKB() + ")"
+                            + ", BagusKulit=" + data.getIsBagusKulitLabel());
+                }
 
-            // Simpan ke database menggunakan background thread
-            executorService.execute(() -> {
-                boolean success = SawmillApi.replaceAllSawmillDetailData(noSTSawmill, allDetailData, jenisKayu);
+                // Simpan ke database
+                executorService.execute(() -> {
+                    Log.i("SaveDetail", "Starting database save...");
+                    boolean success = SawmillApi.replaceAllSawmillDetailData(noSTSawmill, allDetailData, jenisKayu);
+                    Log.i("SaveDetail", success ? "✅ Save SUCCESS" : "❌ Save FAILED");
 
-                runOnUiThread(() -> {
-                    if (success) {
-                        Toast.makeText(Sawmill.this, "Data Detail berhasil diperbaharui!", Toast.LENGTH_SHORT).show();
+                    runOnUiThread(() -> {
+                        if (success) {
+                            Toast.makeText(Sawmill.this, "✅ Data berhasil disimpan! (" + allDetailData.size() + " baris)", Toast.LENGTH_SHORT).show();
 
-                        inputTebal.setText("");
-                        inputLebar.setText("");
-                        inputPanjang.setText("4");
-                        inputPcs.setText("");
+                            // Reset form
+                            inputTebal.setText("");
+                            inputLebar.setText("");
+                            inputPanjang.setText("4");
+                            inputPcs.setText("");
 
-                        inputTebal.setEnabled(true);
-                        inputLebar.setEnabled(true);
-                        inputPanjang.setEnabled(true);
-                        inputPcs.setEnabled(true);
+                            inputTebal.setEnabled(true);
+                            inputLebar.setEnabled(true);
+                            inputPanjang.setEnabled(true);
+                            inputPcs.setEnabled(true);
 
-                        addRowButton.setVisibility(View.INVISIBLE);
-                        btnSubmit.setEnabled(true);
+                            addRowButton.setVisibility(View.INVISIBLE);
+                            btnSubmit.setEnabled(true);
 
-                        inputList.clear();
-                        detailDataList.clear();
+                            inputList.clear();
 
-                        loadGradeKBToSpinner(spinGradeDetail, radioBagus, radioKulit, jenisKayu, currentIdGradeKB, currentIsBagusKulit);
+                            loadGradeKBToSpinner(spinGradeDetail, radioBagus, radioKulit, jenisKayu, currentIdGradeKB, currentIsBagusKulit);
 
-                        totalPcsAcuan = 0;
+                            totalPcsAcuan = 0;
+                            updateSisaPcs(textSisaPCS);
+                            tablePjgPcs.removeAllViews();
 
-                        updateSisaPcs(textSisaPCS);
+                            // Reset state
+                            synchronized (detailDataLock) {
+                                detailDataList.clear();
+                                isDetailDataLoaded = false;
+                            }
 
-                        tablePjgPcs.removeAllViews();
+                            // Disable save button dulu
+                            btnSaveDetail.setEnabled(false);
+                            btnSaveDetail.setText("Loading...");
 
-                        // Refresh tampilan tabel
-                        executorService.execute(() -> {
-                            detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
-                            float totalTon = calculateTotalTon(detailDataList);
-
-                            runOnUiThread(() -> {
-                                int totalPcs = 0;
-                                for (SawmillDetailData data : allDetailData) {
-                                    totalPcs += data.getPcs();
+                            // Refresh tampilan
+                            executorService.execute(() -> {
+                                synchronized (detailDataLock) {
+                                    detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
+                                    isDetailDataLoaded = true;
                                 }
 
-                                populateDetailTable(detailSawmillTableLayout, detailDataList, noSTSawmill, jenisKayu);
-                                textJumlah.setText("Jumlah Batang : " + totalPcs);
-                                textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
+                                float totalTon = calculateTotalTon(detailDataList);
 
-                                if (totalPcs == 0) {
-                                    textJumlah.setVisibility(View.GONE);
-                                    textTon.setVisibility(View.GONE);
-                                } else {
-                                    textJumlah.setVisibility(View.VISIBLE);
-                                    textTon.setVisibility(View.VISIBLE);
-                                }
+                                runOnUiThread(() -> {
+                                    int totalPcs = 0;
+                                    for (SawmillDetailData data : detailDataList) {
+                                        totalPcs += data.getPcs();
+                                    }
+
+                                    populateDetailTable(detailSawmillTableLayout, detailDataList, noSTSawmill, jenisKayu);
+                                    textJumlah.setText("Jumlah Batang : " + totalPcs);
+                                    textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
+
+                                    textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+                                    textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+
+                                    // Enable save button kembali
+                                    if (!isTutupTransaksi(tgl, tglTutupTransaksi)) {
+                                        btnSaveDetail.setEnabled(true);
+                                        btnSaveDetail.setText("Simpan");
+                                    }
+                                });
                             });
-                        });
-                    } else {
-                        Toast.makeText(Sawmill.this, "Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
-                    }
+
+                        } else {
+                            Toast.makeText(Sawmill.this, "❌ Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
+                            btnSaveDetail.setEnabled(true);
+                        }
+                    });
                 });
-            });
+            }
         });
 
+        // ✅ Load data dengan lock dan loading indicator
         executorService.execute(() -> {
-            detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
+            synchronized (detailDataLock) {
+                detailDataList.clear();
+                detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
+                isDetailDataLoaded = true;
+            }
+
             float totalTon = calculateTotalTon(detailDataList);
 
             runOnUiThread(() -> {
@@ -3054,11 +3160,26 @@ public class Sawmill extends AppCompatActivity {
                 textJumlah.setText("Jumlah Batang : " + totalPcs);
                 textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
 
-                if (totalPcs == 0) {
-                    textJumlah.setVisibility(View.GONE);
-                    textTon.setVisibility(View.GONE);
+                textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+                textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
+
+                // ✅ ENABLE tombol Save setelah data loaded
+                if (!isTutupTransaksi(tgl, tglTutupTransaksi)) {
+                    btnSaveDetail.setEnabled(true);
+                    btnSaveDetail.setText("Simpan");
                 }
             });
+        });
+
+        // ✅ Reset state saat dialog ditutup
+        dialog.setOnDismissListener(d -> {
+            synchronized (detailDataLock) {
+                isDetailDataLoaded = false;
+                detailDataList.clear();
+            }
+            inputList.clear();
+            totalPcsAcuan = 0;
+            sisaPcs = 0;
         });
 
         dialog.setCanceledOnTouchOutside(false);
@@ -3072,7 +3193,6 @@ public class Sawmill extends AppCompatActivity {
             );
         }
     }
-
 
     // Method terpisah untuk melanjutkan proses add row setelah data diproses
     private void continueAddRowProcess(String acuanTebal, String acuanLebar, TableLayout tablePjgPcs,
@@ -3216,6 +3336,30 @@ public class Sawmill extends AppCompatActivity {
         return false;
     }
 
+    // Tambahkan method baru di class Sawmill
+    private boolean validateGradeForRambung(String jenisKayu, Spinner spinGradeDetail) {
+        boolean isRambung = jenisKayu != null && jenisKayu.toLowerCase().contains("rambung");
+
+        if (!isRambung) {
+            return true; // Non-Rambung tidak perlu validasi grade
+        }
+
+        GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
+        int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
+                ? selectedGrade.getIdGradeKB() : -1;
+        String namaGrade = (selectedGrade != null && selectedGrade.getNamaGrade() != null)
+                ? selectedGrade.getNamaGrade() : "PILIH";
+
+        if (idGradeKB <= 0 || "PILIH".equalsIgnoreCase(namaGrade)) {
+            spinGradeDetail.setBackgroundResource(R.drawable.spinner_error);
+            spinGradeDetail.requestFocus();
+            Toast.makeText(this, "❌ Grade harus dipilih untuk jenis kayu Rambung!", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        return true;
+    }
+
 
     private void onRowClick(SawmillData data) {
         executorService.execute(() -> {
@@ -3284,6 +3428,21 @@ public class Sawmill extends AppCompatActivity {
             if (child instanceof TextView) {
                 ((TextView) child).setTextColor(ContextCompat.getColor(this, R.color.black)); // Kembalikan ke hitam
             }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // ✅ Clean up handler untuk prevent memory leak
+        if (searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
+
+        // ✅ Shutdown executor
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
         }
     }
 }

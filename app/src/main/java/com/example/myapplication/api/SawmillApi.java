@@ -1246,6 +1246,17 @@ public class SawmillApi {
 
     public static boolean replaceAllSawmillDetailData(String noSTSawmill, List<SawmillDetailData> detailDataList, String jenisKayu) {
         final String TAG = "SawmillDB";
+
+        // ✅ FIX 1: Validasi input dulu!
+        if (detailDataList == null || detailDataList.isEmpty()) {
+            Log.e(TAG, "⚠️ CRITICAL: detailDataList is null or empty! Aborting to prevent data loss.");
+            Log.e(TAG, "NoSTSawmill: " + noSTSawmill + ", JenisKayu: " + jenisKayu);
+            return false; // Jangan DELETE kalau tidak ada data baru!
+        }
+
+        Log.i(TAG, "Starting replaceAllSawmillDetailData for NoSTSawmill: " + noSTSawmill);
+        Log.i(TAG, "Data count to save: " + detailDataList.size());
+
         boolean isRambung = jenisKayu.toLowerCase().contains("rambung");
 
         // Sort the data before inserting
@@ -1282,11 +1293,7 @@ public class SawmillApi {
                 return Float.compare(a.getPanjang(), b.getPanjang());
             }
 
-
             private int getIsBagusKulitPriority(int isBagusKulit) {
-                // 0 = Kulit → 0 (paling atas)
-                // 1 = Bagus → 1
-                // Other → 2 (paling bawah)
                 if (isBagusKulit == 0) return 0;
                 if (isBagusKulit == 1) return 1;
                 return 2;
@@ -1305,9 +1312,17 @@ public class SawmillApi {
             }
         });
 
+        Connection con = null;
+        PreparedStatement deleteGradeStmt = null;
+        PreparedStatement deleteDetailStmt = null;
+        PreparedStatement insertDetailStmt = null;
+        PreparedStatement insertGradeStmt = null;
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
-            Log.d(TAG, "Koneksi database berhasil");
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            Log.d(TAG, "✅ Database connection successful");
+
+            // ✅ FIX 2: Set auto-commit false untuk transaction
             con.setAutoCommit(false);
 
             // 1. DELETE data lama
@@ -1315,18 +1330,16 @@ public class SawmillApi {
             String deleteDetailQuery = "DELETE FROM STSawmill_d WHERE NoSTSawmill = ?";
 
             if (isRambung) {
-                try (PreparedStatement deleteGradeStmt = con.prepareStatement(deleteGradeQuery)) {
-                    deleteGradeStmt.setString(1, noSTSawmill);
-                    int deletedGradeRows = deleteGradeStmt.executeUpdate();
-                    Log.d(TAG, "Deleted " + deletedGradeRows + " rows from STSawmillKG_d");
-                }
+                deleteGradeStmt = con.prepareStatement(deleteGradeQuery);
+                deleteGradeStmt.setString(1, noSTSawmill);
+                int deletedGradeRows = deleteGradeStmt.executeUpdate();
+                Log.d(TAG, "Deleted " + deletedGradeRows + " rows from STSawmillKG_d");
             }
 
-            try (PreparedStatement deleteDetailStmt = con.prepareStatement(deleteDetailQuery)) {
-                deleteDetailStmt.setString(1, noSTSawmill);
-                int deletedDetailRows = deleteDetailStmt.executeUpdate();
-                Log.d(TAG, "Deleted " + deletedDetailRows + " rows from STSawmill_d");
-            }
+            deleteDetailStmt = con.prepareStatement(deleteDetailQuery);
+            deleteDetailStmt.setString(1, noSTSawmill);
+            int deletedDetailRows = deleteDetailStmt.executeUpdate();
+            Log.d(TAG, "Deleted " + deletedDetailRows + " rows from STSawmill_d");
 
             // 2. INSERT data baru (already sorted)
             String insertDetailQuery = "INSERT INTO STSawmill_d (" +
@@ -1338,59 +1351,127 @@ public class SawmillApi {
                     "NoSTSawmill, NoUrut, IdGradeKB" +
                     ") VALUES (?, ?, ?)";
 
-            try (PreparedStatement insertDetailStmt = con.prepareStatement(insertDetailQuery);
-                 PreparedStatement insertGradeStmt = isRambung ? con.prepareStatement(insertGradeQuery) : null) {
+            insertDetailStmt = con.prepareStatement(insertDetailQuery);
 
-                // Update NoUrut based on sorted order
-                int sequence = 1;
-                for (SawmillDetailData data : detailDataList) {
-                    // Insert ke STSawmill_d
-                    insertDetailStmt.setString(1, noSTSawmill);
-                    insertDetailStmt.setInt(2, sequence); // Use the new sequence number
-                    insertDetailStmt.setFloat(3, data.getTebal());
-                    insertDetailStmt.setFloat(4, data.getLebar());
-                    insertDetailStmt.setFloat(5, data.getPanjang());
-                    insertDetailStmt.setInt(6, data.getPcs());
-                    insertDetailStmt.setBoolean(7, data.getIsBagusKulit() != 0);
-                    insertDetailStmt.setInt(8, data.getIdUOMTblLebar());
-                    insertDetailStmt.setInt(9, data.getIdUOMPanjang());
-                    insertDetailStmt.setInt(10, data.getIsBagusKulit());
-                    insertDetailStmt.addBatch();
+            if (isRambung) {
+                insertGradeStmt = con.prepareStatement(insertGradeQuery);
+            }
 
-                    if (isRambung && insertGradeStmt != null) {
-                        insertGradeStmt.setString(1, noSTSawmill);
-                        insertGradeStmt.setInt(2, sequence); // Use the new sequence number
-                        insertGradeStmt.setInt(3, data.getIdGradeKB());
-                        insertGradeStmt.addBatch();
-                    }
-
-                    Log.v(TAG, "Memproses data NoUrut=" + sequence +
-                            ", Grade=" + data.getNamaGrade() +
-                            ", BagusKulit=" + data.getIsBagusKulitLabel() +
-                            ", Tebal=" + data.getTebal());
-
-                    sequence++;
-                }
-
-                int[] detailResults = insertDetailStmt.executeBatch();
-                Log.d(TAG, "Berhasil insert " + detailResults.length + " records ke STSawmill_d");
+            // Update NoUrut based on sorted order
+            int sequence = 1;
+            for (SawmillDetailData data : detailDataList) {
+                // Insert ke STSawmill_d
+                insertDetailStmt.setString(1, noSTSawmill);
+                insertDetailStmt.setInt(2, sequence);
+                insertDetailStmt.setFloat(3, data.getTebal());
+                insertDetailStmt.setFloat(4, data.getLebar());
+                insertDetailStmt.setFloat(5, data.getPanjang());
+                insertDetailStmt.setInt(6, data.getPcs());
+                insertDetailStmt.setBoolean(7, data.getIsBagusKulit() != 0);
+                insertDetailStmt.setInt(8, data.getIdUOMTblLebar());
+                insertDetailStmt.setInt(9, data.getIdUOMPanjang());
+                insertDetailStmt.setInt(10, data.getIsBagusKulit());
+                insertDetailStmt.addBatch();
 
                 if (isRambung && insertGradeStmt != null) {
-                    int[] gradeResults = insertGradeStmt.executeBatch();
-                    Log.d(TAG, "Berhasil insert " + gradeResults.length + " records ke STSawmillKG_d");
+                    insertGradeStmt.setString(1, noSTSawmill);
+                    insertGradeStmt.setInt(2, sequence);
+                    insertGradeStmt.setInt(3, data.getIdGradeKB());
+                    insertGradeStmt.addBatch();
+                }
+
+                Log.v(TAG, "Preparing data NoUrut=" + sequence +
+                        ", Grade=" + data.getNamaGrade() +
+                        ", BagusKulit=" + data.getIsBagusKulitLabel() +
+                        ", Tebal=" + data.getTebal() +
+                        ", Lebar=" + data.getLebar() +
+                        ", Panjang=" + data.getPanjang() +
+                        ", Pcs=" + data.getPcs());
+
+                sequence++;
+            }
+
+            // Execute batch untuk detail
+            int[] detailResults = insertDetailStmt.executeBatch();
+            Log.d(TAG, "✅ Successfully inserted " + detailResults.length + " records to STSawmill_d");
+
+            // ✅ FIX 3: Validasi hasil batch
+            int successCount = 0;
+            int failCount = 0;
+            for (int i = 0; i < detailResults.length; i++) {
+                if (detailResults[i] == PreparedStatement.EXECUTE_FAILED) {
+                    failCount++;
+                    Log.e(TAG, "❌ Failed to insert row " + (i + 1) + " to STSawmill_d");
+                } else if (detailResults[i] >= 0) {
+                    successCount++;
                 }
             }
 
+            if (failCount > 0) {
+                throw new SQLException("Batch insert failed for " + failCount + " rows in STSawmill_d");
+            }
+
+            // Execute batch untuk grade (jika rambung)
+            if (isRambung && insertGradeStmt != null) {
+                int[] gradeResults = insertGradeStmt.executeBatch();
+                Log.d(TAG, "✅ Successfully inserted " + gradeResults.length + " records to STSawmillKG_d");
+
+                // ✅ Validasi hasil batch grade
+                int gradeSuccessCount = 0;
+                int gradeFailCount = 0;
+                for (int i = 0; i < gradeResults.length; i++) {
+                    if (gradeResults[i] == PreparedStatement.EXECUTE_FAILED) {
+                        gradeFailCount++;
+                        Log.e(TAG, "❌ Failed to insert row " + (i + 1) + " to STSawmillKG_d");
+                    } else if (gradeResults[i] >= 0) {
+                        gradeSuccessCount++;
+                    }
+                }
+
+                if (gradeFailCount > 0) {
+                    throw new SQLException("Batch insert failed for " + gradeFailCount + " rows in STSawmillKG_d");
+                }
+            }
+
+            // ✅ FIX 4: Commit transaction jika semua sukses
             con.commit();
-            Log.i(TAG, "Transaksi sukses untuk NoSTSawmill: " + noSTSawmill);
+            Log.i(TAG, "✅✅✅ Transaction committed successfully for NoSTSawmill: " + noSTSawmill);
+            Log.i(TAG, "Total rows saved: " + detailDataList.size());
             return true;
 
         } catch (SQLException e) {
-            Log.e(TAG, "SQL Error:", e);
+            Log.e(TAG, "❌❌❌ SQL Error occurred:", e);
+            Log.e(TAG, "Error details - NoSTSawmill: " + noSTSawmill + ", JenisKayu: " + jenisKayu);
+            Log.e(TAG, "Data count attempted: " + detailDataList.size());
+
+            // ✅ FIX 5: ROLLBACK transaction jika error!
+            if (con != null) {
+                try {
+                    con.rollback();
+                    Log.w(TAG, "⚠️ Transaction rolled back successfully");
+                } catch (SQLException rollbackEx) {
+                    Log.e(TAG, "❌ CRITICAL: Failed to rollback transaction!", rollbackEx);
+                }
+            }
+
             return false;
+
+        } finally {
+            // ✅ FIX 6: Close resources dengan benar
+            try {
+                if (deleteGradeStmt != null) deleteGradeStmt.close();
+                if (deleteDetailStmt != null) deleteDetailStmt.close();
+                if (insertDetailStmt != null) insertDetailStmt.close();
+                if (insertGradeStmt != null) insertGradeStmt.close();
+                if (con != null) {
+                    con.setAutoCommit(true); // Reset auto-commit
+                    con.close();
+                }
+            } catch (SQLException closeEx) {
+                Log.e(TAG, "Error closing database resources", closeEx);
+            }
         }
     }
-
 
     public static String insertPenerimaanSTSawmillWithDetail(String noKayuBulat) {
         String checkExisting = "SELECT TglLaporan FROM PenerimaanSTSawmill_h WHERE NoKayuBulat = ?";
@@ -1479,8 +1560,6 @@ public class SawmillApi {
             return null;
         }
     }
-
-
 
 
 

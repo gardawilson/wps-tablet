@@ -2832,15 +2832,37 @@ public class SawnTimber extends AppCompatActivity {
         int totalPcs = 0;
 
         for (int i = 0; i < childCount; i++) {
-            TableRow row = (TableRow) table.getChildAt(i);
-            TextView pcsTextView = (TextView) row.getChildAt(4); // Indeks pcs
+            View v = table.getChildAt(i);
+            if (!(v instanceof TableRow)) continue;
 
-            String pcsString = pcsTextView.getText().toString().replace(",", "");
-            int pcs = Integer.parseInt(pcsString);
+            TableRow row = (TableRow) v;
+
+            // pastikan kolom ke-5 ada
+            if (row.getChildCount() <= 4) continue;
+
+            TextView pcsTextView = (TextView) row.getChildAt(4);
+
+            String raw = pcsTextView.getText() != null ? pcsTextView.getText().toString() : "";
+            raw = raw.trim();
+
+            // hapus pemisah ribuan umum: titik, koma, spasi
+            String cleaned = raw.replace(".", "").replace(",", "").replace(" ", "");
+
+            int pcs = 0;
+            if (!cleaned.isEmpty()) {
+                try {
+                    pcs = Integer.parseInt(cleaned);
+                } catch (NumberFormatException e) {
+                    pcs = 0; // atau log kalau mau
+                }
+            }
+
             totalPcs += pcs;
         }
+
         JumlahPcsST.setText(String.valueOf(totalPcs));
     }
+
 
     private void setCurrentDateTime() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
@@ -3372,6 +3394,20 @@ public class SawnTimber extends AppCompatActivity {
                 document.add(qrCodeIDbottomLeft);
                 document.add(textBulanTahunBold);
 
+                if (isSLP == 1) {
+                    Rectangle ps = pdfDocument.getLastPage().getPageSize();
+
+                    Paragraph p = new Paragraph("SLP")
+                            .setFont(timesNewRomanBold)
+                            .setFontSize(25);
+
+                    // contoh taruh di kanan-bawah (atur x/y sesuai kebutuhan)
+                    float x = ps.getWidth() - 120;  // makin kecil = makin ke kiri
+                    float y = 150;                  // makin besar = makin ke atas
+
+                    document.showTextAligned(p, x, y, TextAlignment.RIGHT);
+                }
+
                 if (!remark.isEmpty() && !remark.equals("-")) {
                     document.add(remarkText);
                 }
@@ -3380,9 +3416,7 @@ public class SawnTimber extends AppCompatActivity {
                 document.add(qrCodeBottomImageRight);
                 document.add(qrCodeIDbottomRight);
 
-                if (isSLP == 1) {
-                    document.add(slpText);
-                }
+
 
 
                 document.close();

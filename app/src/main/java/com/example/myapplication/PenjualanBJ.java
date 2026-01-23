@@ -1,5 +1,7 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
+
 import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.PenjualanApi;
 import com.example.myapplication.api.ProsesProduksiApi;
@@ -9,6 +11,7 @@ import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
@@ -142,7 +145,9 @@ public class PenjualanBJ extends AppCompatActivity {
     private final String mainTable = "BJJual_h";
     private Button btnEdit;
     private Button btnCreate;
+    private Button btnPrint;
     private List<String> userPermissions;
+    private String username;
 
 
     @Override
@@ -180,6 +185,9 @@ public class PenjualanBJ extends AppCompatActivity {
         textScanQR = findViewById(R.id.textScanQR);
         btnEdit = findViewById(R.id.btnEdit);
         btnCreate = findViewById(R.id.btnCreate);
+        btnPrint = findViewById(R.id.btnPrint);
+        username = SharedPrefUtils.getUsername(this);
+
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -213,6 +221,31 @@ public class PenjualanBJ extends AppCompatActivity {
                 }
             }
         });
+
+
+        btnPrint.setOnClickListener(v -> {
+            if (selectedBongkarSusunData != null) {
+
+                String reportName = "CrPenjualanBarangJadi";
+
+                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                        + "?NoJual=" + noJual
+                        + "&Username=" + username
+                        + "&reportName=" + reportName;
+
+                loadingDialogHelper.show(this);
+                PdfUtils.downloadAndOpenPDF(
+                        this,
+                        url,
+                        "PenjualanBarangJadi_" + noJual + ".pdf",
+                        executorService,
+                        loadingDialogHelper
+                );
+            } else {
+                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            }
+        });
+
 
 
         btnCreate.setOnClickListener(new View.OnClickListener() {

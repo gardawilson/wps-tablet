@@ -188,8 +188,16 @@
                     android:id="@+id/btnEdit"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
+                    android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:text="Ubah" />
+
+                <Button
+                    android:id="@+id/btnPrint"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:text="Cetak" />
 
                 <!-- Search Bar -->
                 <com.google.android.material.textfield.TextInputLayout

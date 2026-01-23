@@ -1552,7 +1552,7 @@ public class StockOpnameApi {
 
 
     public static boolean deleteAscendHasil(String noSO, String itemID) {
-        String query = "DELETE FROM [WPS_Test].[dbo].[StockOpnameAscendHasil] " +
+        String query = "DELETE FROM [WPS].[dbo].[StockOpnameAscendHasil] " +
                 "WHERE NoSO = ? AND ItemID = ?";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
