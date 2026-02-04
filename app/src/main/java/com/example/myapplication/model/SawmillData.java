@@ -16,6 +16,7 @@ public class SawmillData {
     private String namaJenisKayu;
     private int stokTersedia;
     private double beratBalokTim;
+    private double beratBalok;
     private String hourStart;
     private String hourEnd;
     private Integer idOperator1;
@@ -25,7 +26,7 @@ public class SawmillData {
 
     public SawmillData(String noSTSawmill, String shift, String tglSawmill, String noKayuBulat, String noMeja, String operator,
                        int idSawmillSpecialCondition, String balokTerpakai, String jamKerja, int jlhBatangRajang,
-                       String hourMeter, String remark, String namaJenisKayu, int stokTersedia, double beratBalokTim,
+                       String hourMeter, String remark, String namaJenisKayu, int stokTersedia, double beratBalokTim, double beratBalok,
                        String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2, String namaMeja) {
         this.noSTSawmill = noSTSawmill;
         this.shift = shift;
@@ -42,6 +43,7 @@ public class SawmillData {
         this.namaJenisKayu = namaJenisKayu;
         this.stokTersedia = stokTersedia;
         this.beratBalokTim = beratBalokTim;
+        this.beratBalok = beratBalok;
         this.hourStart = hourStart;
         this.hourEnd = hourEnd;
         this.idOperator1 = idOperator1;
@@ -94,9 +96,15 @@ public class SawmillData {
     public double getBeratBalokTim() {
         return beratBalokTim;
     }
-
     public void setBeratBalokTim(double beratBalokTim) {
         this.beratBalokTim = beratBalokTim;
+    }
+
+    public double getBeratBalok() {
+        return beratBalok;
+    }
+    public void setBeratBalok(double beratBalok) {
+        this.beratBalok = beratBalok;
     }
 
     public String getHourStart() { return hourStart; }

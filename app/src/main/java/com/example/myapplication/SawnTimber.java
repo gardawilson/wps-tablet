@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -90,7 +91,10 @@ import java.util.Locale;
 import java.util.Collections;
 
 
+import com.example.myapplication.utils.InputFilterMinDecimalNoLeadingZero;
+import com.example.myapplication.utils.InputFilterMinIntNoLeadingZero;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PanjangStandarUtils;
 import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
@@ -302,6 +306,29 @@ public class SawnTimber extends AppCompatActivity {
         inner_card_detail.setVisibility(View.GONE);
         inner_card_top_right.setVisibility(View.GONE);
 
+
+        DetailTebalST.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        DetailLebarST.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        DetailPanjangST.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        DetailPcsST.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+
+
         disableForm();
 
         BtnExpandView.setOnClickListener(v -> showListDialogOnDemand());
@@ -381,67 +408,95 @@ public class SawnTimber extends AppCompatActivity {
         });
 
         // Menangani aksi 'Enter' pada keyboard
-        DetailTebalST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                // Jika tombol 'Enter' ditekan, pindahkan fokus ke DetailLebarS4S
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    // Pastikan DetailLebarS4S bisa menerima fokus
-                    DetailLebarST.requestFocus();
-                    return true; // Menunjukkan bahwa aksi sudah ditangani
+        // Tebal -> Lebar
+        DetailTebalST.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                String tebal = DetailTebalST.getText().toString().trim();
+                if (!isMinOne(tebal, "Tebal")) {
+                    DetailTebalST.requestFocus();
+                    return true;
                 }
-                return false;
+                DetailLebarST.requestFocus();
+                return true;
             }
+            return false;
         });
 
-        DetailLebarST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+        // Lebar -> Panjang
+        DetailLebarST.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                String lebar = DetailLebarST.getText().toString().trim();
+                if (!isMinOne(lebar, "Lebar")) {
+                    DetailLebarST.requestFocus();
+                    return true;
+                }
+                DetailPanjangST.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        // Panjang -> Pcs
+        DetailPanjangST.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                String panjang = DetailPanjangST.getText().toString().trim();
+                if (!isMinOne(panjang, "Panjang")) {
                     DetailPanjangST.requestFocus();
                     return true;
                 }
-                return false;
+                DetailPcsST.requestFocus();
+                return true;
             }
-        });
-
-        DetailPanjangST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    DetailPcsST.requestFocus();
-                    return true;
-                }
-                return false;
-            }
+            return false;
         });
 
         DetailPcsST.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {  // Mengubah ke IME_ACTION_DONE
-                    // Ambil input dari AutoCompleteTextView
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+
                     String tebal = DetailTebalST.getText().toString().trim();
                     String lebar = DetailLebarST.getText().toString().trim();
                     String panjang = DetailPanjangST.getText().toString().trim();
                     String pcs = DetailPcsST.getText().toString().trim();
 
-                    // Validasi input kosong
-                    if (tebal.isEmpty() || lebar.isEmpty() || panjang.isEmpty()) {
-                        Toast.makeText(SawnTimber.this, "Semua field harus diisi", Toast.LENGTH_SHORT).show();
+                    // ✅ Validasi >= 1
+                    if (!isMinOne(tebal, "Tebal")) { DetailTebalST.requestFocus(); return true; }
+                    if (!isMinOne(lebar, "Lebar")) { DetailLebarST.requestFocus(); return true; }
+                    if (!isMinOne(panjang, "Panjang")) { DetailPanjangST.requestFocus(); return true; }
+                    if (!isMinOne(pcs, "Pcs")) { DetailPcsST.requestFocus(); return true; }
+
+                    double pjgVal;
+                    try {
+                        pjgVal = Double.parseDouble(panjang);
+                    } catch (Exception e) {
+                        Toast.makeText(SawnTimber.this, "Panjang tidak valid", Toast.LENGTH_SHORT).show();
+                        DetailPanjangST.requestFocus();
                         return true;
                     }
 
-                    addDataDetail(tebal, lebar, panjang, pcs);
-                    jumlahPcsST();
-                    m3();
-                    ton();
+                    // aksi kalau user setuju lanjut
+                    Runnable doAdd = () -> {
+                        addDataDetail(tebal, lebar, panjang, pcs);
+                        jumlahPcsST();
+                        m3();
+                        ton();
+                    };
 
+                    // ✅ jika panjang tidak standar -> dialog dulu, stop di sini
+                    boolean dialogShown = PanjangStandarUtils.confirmIfNotStandard(
+                            SawnTimber.this, pjgVal, panjang, doAdd
+                    );
+                    if (dialogShown) return true;
+
+                    // ✅ standar -> langsung add
+                    doAdd.run();
                     return true;
                 }
                 return false;
             }
         });
+
 
 
         NoST.addTextChangedListener(new TextWatcher() {
@@ -557,15 +612,41 @@ public class SawnTimber extends AppCompatActivity {
 
 
         BtnInputDetailST.setOnClickListener(view -> {
-            String tebal = DetailTebalST.getText().toString();
-            String lebar = DetailLebarST.getText().toString();
-            String panjang = DetailPanjangST.getText().toString();
-            String pcs = DetailPcsST.getText().toString();
+            String tebal = DetailTebalST.getText().toString().trim();
+            String lebar = DetailLebarST.getText().toString().trim();
+            String panjang = DetailPanjangST.getText().toString().trim();
+            String pcs = DetailPcsST.getText().toString().trim();
 
-            addDataDetail(tebal, lebar, panjang, pcs);
-            jumlahPcsST();
-            m3();
-            ton();
+            // Validasi: semua harus >= 1
+            if (!isMinOne(tebal, "Tebal")) { DetailTebalST.requestFocus(); return; }
+            if (!isMinOne(lebar, "Lebar")) { DetailLebarST.requestFocus(); return; }
+            if (!isMinOne(panjang, "Panjang")) { DetailPanjangST.requestFocus(); return; }
+            if (!isMinOne(pcs, "Pcs")) { DetailPcsST.requestFocus(); return; }
+
+            double pjgVal;
+            try {
+                pjgVal = Double.parseDouble(panjang);
+            } catch (Exception e) {
+                Toast.makeText(SawnTimber.this, "Panjang tidak valid", Toast.LENGTH_SHORT).show();
+                DetailPanjangST.requestFocus();
+                return;
+            }
+
+            Runnable doAdd = () -> {
+                addDataDetail(tebal, lebar, panjang, pcs);
+                jumlahPcsST();
+                m3();
+                ton();
+            };
+
+            // ✅ jika panjang tidak standar -> dialog dulu
+            boolean dialogShown = PanjangStandarUtils.confirmIfNotStandard(
+                    SawnTimber.this, pjgVal, panjang, doAdd
+            );
+            if (dialogShown) return;
+
+            // ✅ standar -> langsung add
+            doAdd.run();
         });
 
         fabAddDetailData.setOnClickListener(view -> {
@@ -674,7 +755,6 @@ public class SawnTimber extends AppCompatActivity {
         BtnSimpanST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loadingDialogHelper.show(SawnTimber.this);
 
                 String noKayuBulat = NoKayuBulat.getText().toString().trim();
                 String noPenST = noPenerimaanST.getText().toString().trim();
@@ -697,12 +777,33 @@ public class SawnTimber extends AppCompatActivity {
                 int isUpah = CBUpah.isChecked() ? 1 : 0;
                 int idUOMTblLebar = radioMillimeter.isChecked() ? 1 : 3;
 
-                // Validasi input
+                // 1) Validasi input form
                 if (!validateInputs(noKayuBulat, namaJenisKayu, jenisKayu, stickBy, noSPK)) {
                     Toast.makeText(SawnTimber.this, "Silahkan lengkapi data!", Toast.LENGTH_SHORT).show();
-                    loadingDialogHelper.hide();
                     return;
                 }
+
+                // 2) Validasi detail list (WAJIB ADA)
+                if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
+                    Toast.makeText(SawnTimber.this, "Detail masih kosong. Tambahkan minimal 1 item detail!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (temporaryDataListGrade == null || temporaryDataListGrade.isEmpty()) {
+                    Toast.makeText(SawnTimber.this, "Grade masih kosong. Tambahkan minimal 1 grade!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Kalau perlu lebih ketat: pastikan item detail tidak ada yang null
+                // for (LabelDetailData d : temporaryDataListDetail) {
+                //     if (d == null) {
+                //         Toast.makeText(SawnTimber.this, "Ada detail yang tidak valid (null).", Toast.LENGTH_SHORT).show();
+                //         return;
+                //     }
+                // }
+
+                // Baru tampilkan loading setelah semua validasi lolos
+                loadingDialogHelper.show(SawnTimber.this);
 
                 // Check kayu bulat exists
                 checkKayuBulatExists(noKayuBulat, namaJenisKayu, exists -> {
@@ -712,10 +813,8 @@ public class SawnTimber extends AppCompatActivity {
                         return;
                     }
 
-                    // Process save in background thread
                     executorService.execute(() -> {
                         try {
-                            // Prepare grade list untuk kayu non-lat
                             List<GradeDetailData> gradeListToSave = null;
                             if (!selectedJenisKayu.getJenis().toLowerCase().contains("kayu lat")) {
                                 gradeListToSave = temporaryDataListGrade;
@@ -726,7 +825,6 @@ public class SawnTimber extends AppCompatActivity {
                                 isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
                             }
 
-                            // Call transaction method - return String NoST yang di-generate
                             String generatedNoST = SawnTimberApi.saveSawnTimberTransaction(
                                     noKayuBulat, String.valueOf(jenisKayu), noSPK, telly, stickBy,
                                     dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
@@ -736,10 +834,10 @@ public class SawnTimber extends AppCompatActivity {
                             );
 
                             runOnUiThread(() -> {
+                                loadingDialogHelper.hide();
                                 if (generatedNoST != null) {
-                                    // Update UI dengan NoST yang baru di-generate
                                     NoST.setText(generatedNoST);
-                                    noST = generatedNoST; // Update variable global juga
+                                    noST = generatedNoST;
 
                                     BtnDataBaruST.setVisibility(View.VISIBLE);
                                     BtnSimpanST.setVisibility(View.GONE);
@@ -748,28 +846,17 @@ public class SawnTimber extends AppCompatActivity {
                                     disableForm();
                                     onClickDateOutput(dateCreate);
 
-                                    loadingDialogHelper.hide();
-
-                                    Toast.makeText(SawnTimber.this,
-                                            "Data berhasil disimpan",
-                                            Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(SawnTimber.this, "Data berhasil disimpan", Toast.LENGTH_SHORT).show();
                                 } else {
-                                    loadingDialogHelper.hide();
-                                    Toast.makeText(SawnTimber.this,
-                                            "Gagal menyimpan data. Silakan coba lagi.",
-                                            Toast.LENGTH_LONG).show();
+                                    Toast.makeText(SawnTimber.this, "Gagal menyimpan data. Silakan coba lagi.", Toast.LENGTH_LONG).show();
                                 }
                             });
 
                         } catch (Exception e) {
                             runOnUiThread(() -> {
                                 loadingDialogHelper.hide();
-
-                                Toast.makeText(SawnTimber.this,
-                                        "Error: " + e.getMessage(),
-                                        Toast.LENGTH_LONG).show();
+                                Toast.makeText(SawnTimber.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                             });
-
                         }
                     });
                 });
@@ -1559,8 +1646,14 @@ public class SawnTimber extends AppCompatActivity {
         panjangEditText.setHint("Pjg");
         panjangEditText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
 
-        // Mengatur layout params untuk EditText dan memberikan weight
-        TableRow.LayoutParams panjangParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 1f berarti 1 bagian dari total weight
+        // ✅ FILTER: panjang minimal 1
+        panjangEditText.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        TableRow.LayoutParams panjangParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
         panjangEditText.setLayoutParams(panjangParams);
 
         // Membuat EditText untuk "Pcs"
@@ -1569,48 +1662,74 @@ public class SawnTimber extends AppCompatActivity {
         pcsEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         pcsEditText.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
-        // Mengatur layout params untuk EditText dan memberikan weight
-        TableRow.LayoutParams pcsParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f); // 1f berarti 1 bagian dari total weight
-        pcsEditText.setLayoutParams(pcsParams);
-
-        panjangEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                // Cek apakah tombol Enter ditekan
-                if (actionId == EditorInfo.IME_ACTION_NEXT ||
-                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    pcsEditText.requestFocus(); // Pindahkan fokus ke EditText pcs
-                    return true; // Tindakan sudah ditangani
-                }
-                return false;
-            }
+        // ✅ FILTER: pcs minimal 1
+        pcsEditText.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
         });
 
-        pcsEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                // Tangani enter atau tombol "Done" di keyboard
-                if (actionId == EditorInfo.IME_ACTION_DONE ||
-                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    String panjang = panjangEditText.getText().toString().trim();
-                    String pcs = pcsEditText.getText().toString().trim();
+        TableRow.LayoutParams pcsParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+        pcsEditText.setLayoutParams(pcsParams);
 
-                    submitDetailInput(panjang, pcs);
-
-                    return true;
-                }
-                return false;
+        panjangEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                            && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                pcsEditText.requestFocus();
+                return true;
             }
+            return false;
+        });
+
+        // ✅ helper validasi min 1 sebelum submit
+        Runnable trySubmit = () -> {
+            String panjang = panjangEditText.getText().toString().trim();
+            String pcs = pcsEditText.getText().toString().trim();
+
+            if (!isMinOne(panjang, "Panjang")) { panjangEditText.requestFocus(); return; }
+            if (!isMinOne(pcs, "Pcs")) { pcsEditText.requestFocus(); return; }
+
+            double pjgVal;
+            try {
+                pjgVal = Double.parseDouble(panjang);
+            } catch (Exception e) {
+                Toast.makeText(this, "Panjang tidak valid", Toast.LENGTH_SHORT).show();
+                panjangEditText.requestFocus();
+                return;
+            }
+
+            Runnable doSubmit = () -> submitDetailInput(panjang, pcs);
+
+            // ✅ kalau tidak standar -> muncul dialog, stop dulu
+            boolean dialogShown = PanjangStandarUtils.confirmIfNotStandard(
+                    this, pjgVal, panjang, doSubmit
+            );
+            if (dialogShown) return;
+
+            // ✅ standar -> langsung submit
+            doSubmit.run();
+        };
+
+
+        pcsEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                            && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                trySubmit.run();
+                return true;
+            }
+            return false;
         });
 
         // Membuat ImageButton "Delete"
         ImageButton deleteButton = new ImageButton(this);
         deleteButton.setImageResource(R.drawable.ic_close);
-        deleteButton.setContentDescription("Delete Button"); // Deskripsi konten untuk aksesibilitas (opsional)
-        deleteButton.setBackgroundColor(Color.TRANSPARENT);  // Membuat latar belakang transparan
+        deleteButton.setContentDescription("Delete Button");
+        deleteButton.setBackgroundColor(Color.TRANSPARENT);
 
-        // Mengatur layout params untuk ImageButton dan memberikan weight
-        TableRow.LayoutParams deleteButtonParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 0.5f); // 1f berarti 1 bagian dari total weight
+        TableRow.LayoutParams deleteButtonParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 0.5f);
         deleteButton.setLayoutParams(deleteButtonParams);
 
         // Set OnClickListener untuk tombol delete
@@ -1665,28 +1784,37 @@ public class SawnTimber extends AppCompatActivity {
             }
         });
 
+        // ✅ tombol add juga pakai validasi min 1
+        addRowButton.setOnClickListener(v -> trySubmit.run());
 
-        // Set OnClickListener untuk tombol add
-        addRowButton.setOnClickListener(v -> {
-            String panjang = panjangEditText.getText().toString().trim();
-            String pcs = pcsEditText.getText().toString().trim();
-            submitDetailInput(panjang, pcs);
-
-
-        });
-
-
-        // Menambahkan EditText dan Button ke dalam TableRow
         newRow.addView(panjangEditText);
         newRow.addView(pcsEditText);
         newRow.addView(deleteButton);
         deleteButton.setEnabled(false);
 
-        // Menambahkan baris baru ke TableLayout
         TabelInputPjgPcs.addView(newRow);
         panjangEditText.requestFocus();
-
     }
+
+    /** ✅ validasi string angka harus >= 1 */
+    private boolean isMinOne(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            Toast.makeText(this, fieldName + " wajib diisi (min 1)", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        try {
+            double v = Double.parseDouble(value);
+            if (v < 1) {
+                Toast.makeText(this, fieldName + " tidak boleh < 1", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, fieldName + " tidak valid", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
 
     private void submitDetailInput(String panjang, String pcs) {
         String tebal = DetailTebalST.getText().toString();

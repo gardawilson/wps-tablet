@@ -3,6 +3,7 @@ package com.example.myapplication;
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 import static com.example.myapplication.utils.DateTimeUtils.formatDate;
 import static com.example.myapplication.utils.DateTimeUtils.formatTimeToHHmmss;
+import static com.example.myapplication.utils.PanjangStandarUtils.confirmIfNotStandard;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -13,6 +14,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -52,6 +54,8 @@ import com.example.myapplication.model.SawmillDetailData;
 import com.example.myapplication.model.SawmillDetailInputData;
 import com.example.myapplication.model.SpecialConditionData;
 import com.example.myapplication.model.KayuBulatData;
+import com.example.myapplication.utils.InputFilterMinDecimalNoLeadingZero;
+import com.example.myapplication.utils.InputFilterMinIntNoLeadingZero;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
@@ -277,7 +281,6 @@ public class Sawmill extends AppCompatActivity {
         }
     }
 
-
     private void filterDataByNoKayuBulat(String keyword) {
         if (dataList == null) return;
 
@@ -333,6 +336,7 @@ public class Sawmill extends AppCompatActivity {
         final EditText hourMeter = view.findViewById(R.id.editHourMeter);
         final EditText jlhBalokTerpakai = view.findViewById(R.id.editJlhBalokTerpakai);
         final EditText beratBalokTim = view.findViewById(R.id.editBeratBalokTim);
+        final EditText beratBalok = view.findViewById(R.id.editBeratBalok);
         final EditText remark = view.findViewById(R.id.editRemark);
         final EditText noTruk = view.findViewById(R.id.editNoTruk);
         final EditText noPlat = view.findViewById(R.id.editNoPlat);
@@ -384,6 +388,7 @@ public class Sawmill extends AppCompatActivity {
         hourMeter.setText(existingData.getHourMeter());
         jlhBalokTerpakai.setText(String.valueOf(existingData.getBalokTerpakai()));
         beratBalokTim.setText(decimalFormat.format(existingData.getBeratBalokTim()));
+        beratBalok.setText(decimalFormat.format(existingData.getBeratBalok()));
         remark.setText(existingData.getRemark());
         jlhBatang.setText(String.valueOf(existingData.getJlhBatangRajang()));
 
@@ -466,6 +471,7 @@ public class Sawmill extends AppCompatActivity {
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
             String beratBalokTimVal = beratBalokTim.getText().toString();
+            String beratBalokVal = beratBalok.getText().toString();
             String jenisKayuVal = jenisKayu.getText().toString();
             String jamMulaiVal = jamMulai.getText().toString();
             String jamBerhentiVal = jamBerhenti.getText().toString();
@@ -495,16 +501,15 @@ public class Sawmill extends AppCompatActivity {
                 valid = false;
             }
 
-            if (beratBalokTimVal.isEmpty()) {
-                beratBalokTim.setError("Berat Balok Tim harus diisi");
-                valid = false;
-            }
+//            if (beratBalokVal.isEmpty()) {
+//                beratBalok.setError("Berat Balok harus diisi");
+//                valid = false;
+//            }
 
             if (selectedMeja == null || selectedMeja.getNoMeja() == null || selectedMeja.getNoMeja().isEmpty()) {
                 spinMeja.setBackgroundResource(R.drawable.spinner_error);
                 valid = false;
             }
-
 
             if (!isValidNoKB) {
                 valid = false;
@@ -530,6 +535,7 @@ public class Sawmill extends AppCompatActivity {
                                 idOperator2Val,
                                 remarkVal,
                                 beratBalokTimVal,
+                                beratBalokVal,
                                 jenisKayuVal,
                                 jamMulaiVal,
                                 jamBerhentiVal,
@@ -1001,6 +1007,7 @@ public class Sawmill extends AppCompatActivity {
         final EditText hourMeter = view.findViewById(R.id.editHourMeter);
         final EditText jlhBalokTerpakai = view.findViewById(R.id.editJlhBalokTerpakai);
         final EditText beratBalokTim = view.findViewById(R.id.editBeratBalokTim);
+        final EditText beratBalok = view.findViewById(R.id.editBeratBalok);
         final EditText remark = view.findViewById(R.id.editRemark);
         final EditText noTruk = view.findViewById(R.id.editNoTruk);
         final EditText noPlat = view.findViewById(R.id.editNoPlat);
@@ -1024,7 +1031,6 @@ public class Sawmill extends AppCompatActivity {
                     return (selectedMeja != null) ? selectedMeja.getNoMeja() : "";
                 },
                 "");
-
 
         // Set default jam 08:00 ke jamMulai
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -1069,7 +1075,7 @@ public class Sawmill extends AppCompatActivity {
 
         // Setup tombol simpan
         setupSaveButton(view, dialog, noKB, tanggal, jenisKayu, spinMeja, spinShift, jamMulai, jamBerhenti,
-                totalJamKerja, hourMeter, jlhBalokTerpakai, beratBalokTim, remark, jlhBatang,
+                totalJamKerja, hourMeter, jlhBalokTerpakai, beratBalokTim, beratBalok, remark, jlhBatang,
                 spinSpecialCondition, spinOperator1, spinOperator2);
 
         // Menampilkan Dialog
@@ -1431,7 +1437,7 @@ public class Sawmill extends AppCompatActivity {
     private void setupSaveButton(View view, AlertDialog dialog, AutoCompleteTextView noKB, EditText tanggal,
                                  EditText jenisKayu, Spinner spinMeja, Spinner spinShift,
                                  EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja,
-                                 EditText hourMeter, EditText jlhBalokTerpakai, EditText beratBalokTim,
+                                 EditText hourMeter, EditText jlhBalokTerpakai, EditText beratBalokTim, EditText beratBalok,
                                  EditText remark, EditText jlhBatang, Spinner spinSpecialCondition,
                                  Spinner spinOperator1, Spinner spinOperator2) {
 
@@ -1461,6 +1467,7 @@ public class Sawmill extends AppCompatActivity {
             String hourMeterVal = hourMeter.getText().toString();
             String jlhBatangVal = jlhBatang.getText().toString();
             String beratBalokTimVal = beratBalokTim.getText().toString();
+            String beratBalokVal = beratBalok.getText().toString();
             String jenisKayuVal = jenisKayu.getText().toString();
             String jamMulaiVal = jamMulai.getText().toString();
             String jamBerhentiVal = jamBerhenti.getText().toString();
@@ -1468,13 +1475,13 @@ public class Sawmill extends AppCompatActivity {
 
             // Validasi
             if (validateInputs(spinSpecialCondition, spinOperator1, spinShift, jlhBalokTerpakai,
-                    spinMeja, beratBalokTim, idSpecialConditionVal, idOperator1Val,
-                    shiftVal, noMejaVal, beratBalokTimVal, noKB, jamMulai, jamMulaiVal)) {
+                    spinMeja, beratBalokTim, beratBalok, idSpecialConditionVal, idOperator1Val,
+                    shiftVal, noMejaVal, beratBalokTimVal, beratBalokVal, noKB, jamMulai, jamMulaiVal)) {
 
                 // Simpan data
                 saveData(dialog, shiftVal, tanggalVal, noKBVal, noMejaVal, idSpecialConditionVal,
                         jlhBalokTerpakaiVal, jlhBatangVal, hourMeterVal, idOperator1Val, idOperator2Val,
-                        remarkVal, beratBalokTimVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal,
+                        remarkVal, beratBalokTimVal, beratBalokVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal,
                         btnSave, loadingDialogHelper);
             } else {
                 loadingDialogHelper.hide();
@@ -1486,9 +1493,9 @@ public class Sawmill extends AppCompatActivity {
 
     // Method untuk validasi input
     private boolean validateInputs(Spinner spinSpecialCondition, Spinner spinOperator1, Spinner spinShift,
-                                   EditText jlhBalokTerpakai, Spinner spinMeja, EditText beratBalokTim,
+                                   EditText jlhBalokTerpakai, Spinner spinMeja, EditText beratBalokTim, EditText beratBalok,
                                    int idSpecialConditionVal, int idOperator1Val, int shiftVal,
-                                   String noMejaVal, String beratBalokTimVal, AutoCompleteTextView noKB, EditText jamMulai, String jamMulaiVal) {
+                                   String noMejaVal, String beratBalokTimVal, String beratBalokVal, AutoCompleteTextView noKB, EditText jamMulai, String jamMulaiVal) {
         boolean valid = true;
 
         if (idSpecialConditionVal == -1) {
@@ -1536,7 +1543,7 @@ public class Sawmill extends AppCompatActivity {
     private void saveData(AlertDialog dialog, int shiftVal, String tanggalVal, String noKBVal,
                           String noMejaVal, int idSpecialConditionVal, int jlhBalokTerpakaiVal,
                           String jlhBatangVal, String hourMeterVal, int idOperator1Val, int idOperator2Val,
-                          String remarkVal, String beratBalokTimVal, String jenisKayuVal,
+                          String remarkVal, String beratBalokTimVal, String beratBalokVal, String jenisKayuVal,
                           String jamMulaiVal, String jamBerhentiVal, String totalJamKerjaVal,
                           Button btnSave, LoadingDialogHelper loadingDialogHelper) {
 
@@ -1548,7 +1555,7 @@ public class Sawmill extends AppCompatActivity {
                     SawmillApi.insertSawmillData(
                             newNoTellySawmill, shiftVal, tanggalVal, noKBVal, noMejaVal,
                             idSpecialConditionVal, jlhBalokTerpakaiVal, jlhBatangVal, hourMeterVal,
-                            idOperator1Val, idOperator2Val, remarkVal, beratBalokTimVal, jenisKayuVal,
+                            idOperator1Val, idOperator2Val, remarkVal, beratBalokTimVal, beratBalokVal, jenisKayuVal,
                             jamMulaiVal, jamBerhentiVal, totalJamKerjaVal
                     );
 
@@ -2521,7 +2528,9 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
-    private TableRow createNewRow(String acuanTebal, String acuanLebar, TableLayout tablePjgPcs, TextView textSisaPCS, Button addRowButton) {
+    private TableRow createNewRow(String acuanTebal, String acuanLebar,
+                                  TableLayout tablePjgPcs, TextView textSisaPCS, Button addRowButton) {
+
         // 1. Disable EditText pada row terakhir
         int rowCount = tablePjgPcs.getChildCount();
         if (rowCount > 0) {
@@ -2532,45 +2541,60 @@ public class Sawmill extends AppCompatActivity {
         // 2. Enable semua tombol delete agar row sebelumnya bisa dihapus
         enableAllDeleteButtons(tablePjgPcs);
 
-        // 3. Buat TableRow baru dan set background putih
+        // 3. Buat TableRow baru
         TableRow newRow = new TableRow(this);
-        newRow.setBackgroundColor(Color.WHITE); // ← background putih
+        newRow.setBackgroundColor(Color.WHITE);
 
-        // Buat objek model untuk menyimpan input user
+        // Model
         SawmillDetailInputData inputData = new SawmillDetailInputData();
         inputData.setTebal(acuanTebal);
         inputData.setLebar(acuanLebar);
 
-        // Kolom Panjang (Pjg)
+        // Kolom Panjang (decimal)
         EditText panjangEditText = new EditText(this);
         panjangEditText.setHint("Pjg");
         panjangEditText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        TableRow.LayoutParams panjangParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
-        panjangEditText.setLayoutParams(panjangParams);
-        // Jangan set background EditText agar tetap pakai gaya bawaan
 
-        // Kolom Pcs
+        // ✅ FILTER panjang: min 1, no leading zero, no "0"
+        panjangEditText.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        TableRow.LayoutParams panjangParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+        panjangEditText.setLayoutParams(panjangParams);
+
+        // Kolom Pcs (integer)
         EditText pcsEditText = new EditText(this);
         pcsEditText.setHint("Pcs");
         pcsEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         pcsEditText.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        TableRow.LayoutParams pcsParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+
+        // ✅ FILTER pcs: min 1, no leading zero, no "0"
+        pcsEditText.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        TableRow.LayoutParams pcsParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
         pcsEditText.setLayoutParams(pcsParams);
-        // Jangan set background EditText agar tetap pakai gaya bawaan
 
         // Kolom Delete
         ImageButton deleteButton = new ImageButton(this);
         deleteButton.setImageResource(R.drawable.ic_close);
         deleteButton.setContentDescription("Delete Button");
         deleteButton.setBackgroundColor(Color.TRANSPARENT);
-        TableRow.LayoutParams deleteButtonParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 0.5f);
+
+        TableRow.LayoutParams deleteButtonParams =
+                new TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 0.5f);
         deleteButton.setLayoutParams(deleteButtonParams);
 
-        // Tombol delete DISABLED untuk row baru ini
         deleteButton.setEnabled(false);
-        deleteButton.setAlpha(0.5f); // Efek visual agar terlihat disabled
+        deleteButton.setAlpha(0.5f);
 
-        // 1. Atur Panjang agar saat tekan "Next" langsung pindah ke PCS
+        // Routing IME
         panjangEditText.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         panjangEditText.setSingleLine(true);
         panjangEditText.setOnEditorActionListener((v, actionId, event) -> {
@@ -2581,23 +2605,16 @@ public class Sawmill extends AppCompatActivity {
             return false;
         });
 
-        // 2. Atur PCS agar saat tekan "Done"
+        // PCS tekan Next -> trigger addRowButton
         pcsEditText.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         pcsEditText.setSingleLine(true);
         pcsEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-
-                // Jalankan aksi AddRow agar buat row baru
                 addRowButton.performClick();
-
-                // Jangan sembunyikan keyboard
                 return true;
             }
             return false;
         });
-
-
-
 
         deleteButton.setOnClickListener(view -> {
             tablePjgPcs.removeView(newRow);
@@ -2605,12 +2622,10 @@ public class Sawmill extends AppCompatActivity {
             updateSisaPcs(textSisaPCS);
         });
 
-        // Tambahkan ke TableRow
         newRow.addView(panjangEditText);
         newRow.addView(pcsEditText);
         newRow.addView(deleteButton);
 
-        // Store reference ke inputData di tag
         newRow.setTag(inputData);
 
         return newRow;
@@ -2652,6 +2667,27 @@ public class Sawmill extends AppCompatActivity {
         btnCloseDialogInputDetail.setOnClickListener(v -> {
             dialog.dismiss();
         });
+
+        inputTebal.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        inputLebar.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        inputPcs.setFilters(new InputFilter[]{
+                new InputFilterMinIntNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
+        inputPanjang.setFilters(new InputFilter[]{
+                new InputFilterMinDecimalNoLeadingZero(1),
+                new InputFilter.LengthFilter(10)
+        });
+
 
         inputPanjang.setText("4");
 
@@ -2718,49 +2754,65 @@ public class Sawmill extends AppCompatActivity {
             String acuanPanjang = inputPanjang.getText().toString().trim();
             String acuanPcsStr = inputPcs.getText().toString().trim();
 
-            // ✅ Validasi input acuan
+            // Validasi kosong (punyamu sudah)
             if (acuanTebal.isEmpty() || acuanLebar.isEmpty() || acuanPanjang.isEmpty() || acuanPcsStr.isEmpty()) {
                 Toast.makeText(this, "Harap isi semua field acuan terlebih dahulu", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // ✅ VALIDASI GRADE UNTUK RAMBUNG (WAJIB!)
-            if (!validateGradeForRambung(jenisKayu, spinGradeDetail)) {
-                return; // Stop jika grade tidak valid
-            }
+            // VALIDASI GRADE RAMBUNG (punyamu sudah)
+            if (!validateGradeForRambung(jenisKayu, spinGradeDetail)) return;
 
-            // Ambil grade setelah validasi
-            GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
-            int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
-                    ? selectedGrade.getIdGradeKB() : -1;
-
-            float tebal = Float.parseFloat(acuanTebal);
-            float lebar = Float.parseFloat(acuanLebar);
-            float panjang = Float.parseFloat(acuanPanjang);
-
-            if (isDuplicateDetail(tebal, lebar, panjang, idGradeKB)) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Duplikat Data")
-                        .setMessage("Detail ini sudah ditambahkan sebelumnya, yakin ingin menambahkan lagi?")
-                        .setPositiveButton("Ya", (dialogDuplicate, which) -> {
-                            Toast.makeText(this, "Detail berhasil ditambahkan.", Toast.LENGTH_SHORT).show();
-                            setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
-                                    textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
-                                    inputTebal, inputLebar, inputPanjang, inputPcs);
-                            Log.d("SetAcuan", "IdGradeKB saat submit: " + idGradeKB);
-                        })
-                        .setNegativeButton("Batal", null)
-                        .show();
+            // ✅ Parse panjang acuan untuk cek standar
+            double pjgAcuanVal;
+            try {
+                pjgAcuanVal = Double.parseDouble(acuanPanjang);
+            } catch (Exception e) {
+                Toast.makeText(this, "Format panjang acuan tidak valid", Toast.LENGTH_SHORT).show();
+                inputPanjang.requestFocus();
                 return;
             }
 
-            // Lanjut setup acuan
-            setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
-                    textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
-                    inputTebal, inputLebar, inputPanjang, inputPcs);
+            // ✅ Bungkus logic lanjut dalam Runnable
+            Runnable continueSubmit = () -> {
+                GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
+                int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
+                        ? selectedGrade.getIdGradeKB() : -1;
 
-            Log.d("SetAcuan", "IdGradeKB saat submit: " + idGradeKB);
+                float tebal = Float.parseFloat(acuanTebal);
+                float lebar = Float.parseFloat(acuanLebar);
+                float panjang = Float.parseFloat(acuanPanjang);
+
+                if (isDuplicateDetail(tebal, lebar, panjang, idGradeKB)) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Duplikat Data")
+                            .setMessage("Detail ini sudah ditambahkan sebelumnya, yakin ingin menambahkan lagi?")
+                            .setPositiveButton("Ya", (dialogDuplicate, which) -> {
+                                Toast.makeText(this, "Detail berhasil ditambahkan.", Toast.LENGTH_SHORT).show();
+                                setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
+                                        textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
+                                        inputTebal, inputLebar, inputPanjang, inputPcs);
+                            })
+                            .setNegativeButton("Batal", null)
+                            .show();
+                    return;
+                }
+
+                setupAcuan(acuanTebal, acuanLebar, acuanPanjang, acuanPcsStr, acuanData,
+                        textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
+                        inputTebal, inputLebar, inputPanjang, inputPcs);
+            };
+
+            // ✅ Kalau panjang acuan tidak standar -> dialog dulu
+            boolean dialogShown = confirmIfNotStandard(
+                    Sawmill.this, pjgAcuanVal, acuanPanjang, continueSubmit
+            );
+            if (dialogShown) return;
+
+            // ✅ standar -> langsung lanjut
+            continueSubmit.run();
         });
+
 
         //BUTTON CLEAR (RESET DETAIL)
         btnClear.setOnClickListener(v -> {
@@ -2838,24 +2890,30 @@ public class Sawmill extends AppCompatActivity {
                                 }
 
                                 // Pengecekan apakah panjang input melebihi panjang acuan
-                                if (panjangInput > panjangAcuan) {
-                                    new AlertDialog.Builder(this)
-                                            .setTitle("Panjang Melebihi Default")
-                                            .setMessage("Panjang melebihi panjang Default (" + panjangAcuan + "), yakin ingin menambahkan?")
-                                            .setPositiveButton("Ya", (dialogInputPjg, which) -> {
-                                                Toast.makeText(this, "Data berhasil ditambahkan meskipun melebihi panjang acuan.", Toast.LENGTH_SHORT).show();
-                                                processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,
-                                                        panjangValue, radioBagus, radioKulit, radioMillimeter, radioFeet,
-                                                        radioMeter, spinGradeDetail);
-                                                continueAddRowProcess(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
-                                            })
-                                            .setNegativeButton("Batal", (dialogValidatePjg, which) -> {
-                                                panjangET.requestFocus();
-                                                panjangET.selectAll();
-                                            })
-                                            .show();
-                                    return;
-                                }
+                                // ✅ GANTI: dari panjangInput > panjangAcuan menjadi cek panjang standar
+                                boolean dialogShown = confirmIfNotStandard(
+                                        Sawmill.this,
+                                        (double) panjangInput,
+                                        panjangValue,
+                                        () -> {
+                                            // User klik "Ya, Lanjutkan"
+                                            Toast.makeText(Sawmill.this,
+                                                    "Data ditambahkan meskipun panjang di luar standar.",
+                                                    Toast.LENGTH_SHORT).show();
+
+                                            processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,
+                                                    panjangValue, radioBagus, radioKulit, radioMillimeter, radioFeet,
+                                                    radioMeter, spinGradeDetail);
+
+                                            continueAddRowProcess(acuanTebal, acuanLebar, tablePjgPcs, textSisaPCS, addRowButton);
+                                        }
+                                );
+
+                                // Kalau dialog muncul → stop dulu (lanjutnya lewat tombol Ya)
+                                if (dialogShown) return;
+
+                                // Kalau panjang standar → lanjut proses normal di bawahnya
+
 
                                 // Jika panjang tidak melebihi acuan dan tidak duplikat, proses data normal
                                 processRowData(row, inputData, panjangValue, pcsValue, acuanTebal, acuanLebar,

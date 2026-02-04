@@ -80,7 +80,8 @@ public class SawmillApi {
                         "         h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, h.JlhBatangRajang, " +
                         "         h.HourMeter, h.Remark, jk.Jenis AS NamaJenisKayu, " +
                         "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
-                        "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim " +
+                        "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
+                        "         h.BeratBalok " +
                         "  FROM STSawmill_h h " +
                         "  LEFT JOIN MstOperator op1 ON h.IdOperator1 = op1.IdOperator " +
                         "  LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
@@ -132,6 +133,7 @@ public class SawmillApi {
                 int idOperator1 = rs.getInt("IdOperator1");
                 int idOperator2 = rs.getInt("IdOperator2");
                 double beratBalokTim = rs.getDouble("BeratBalokTim");
+                double beratBalok = rs.getDouble("BeratBalok");
                 String namaMeja = rs.getString("NamaMeja");
 
                 int stokTersedia;
@@ -145,7 +147,7 @@ public class SawmillApi {
                         noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja, operator,
                         idSpecial, balokTerpakai, jamKerja, jlhBatangRajang,
                         hourMeter, remark, namaJenisKayu, stokTersedia,
-                        beratBalokTim, hourStart, hourEnd, idOperator1, idOperator2, namaMeja
+                        beratBalokTim, beratBalok, hourStart, hourEnd, idOperator1, idOperator2, namaMeja
                 );
 
                 sawmillDataList.add(data);
@@ -330,7 +332,7 @@ public class SawmillApi {
                             rs.getString("NoMeja"),// noMeja
                             null,                  // operator
                             0, null, null, 0, null, null,
-                            null, 0, 0.0,
+                            null, 0, 0.0, 0.0,
                             null, null,
                             idOp1,
                             idOp2,
@@ -454,6 +456,7 @@ public class SawmillApi {
             final int idOperator2,
             final String remark,
             final String beratBalokTim,
+            final String beratBalok,
             final String jenisKayu,
             final String jamMulai,
             final String jamBerhenti,
@@ -469,7 +472,7 @@ public class SawmillApi {
 
             insertSTSawmillHeader(con, noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja,
                     idSawmillSpecialCondition, balokTerpakai, jlhBatangRajang,
-                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja);
+                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok);
 
             insertBalokTimDetail(con, noSTSawmill, beratBalokTim);
 
@@ -665,10 +668,10 @@ public class SawmillApi {
                                              String noSTSawmill, int shift, String tglSawmill,
                                              String noKayuBulat, String noMeja, int idSawmillSpecialCondition,
                                              int balokTerpakai, String jlhBatangRajang, String hourMeter,
-                                             int idOperator1, int idOperator2, String remark, String jamMulai, String jamBerhenti, String totalJamKerja) throws SQLException {
+                                             int idOperator1, int idOperator2, String remark, String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok) throws SQLException {
         String query = "INSERT INTO STSawmill_h " +
-                "(NoSTSawmill, Shift, TglSawmill, NoKayuBulat, NoMeja, IdSawmillSpecialCondition, BalokTerpakai, JlhBatangRajang, HourMeter, IdOperator1, IdOperator2, Remark, HourStart, HourEnd, JamKerja) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(NoSTSawmill, Shift, TglSawmill, NoKayuBulat, NoMeja, IdSawmillSpecialCondition, BalokTerpakai, JlhBatangRajang, HourMeter, IdOperator1, IdOperator2, Remark, HourStart, HourEnd, JamKerja, BeratBalok) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
 
@@ -702,6 +705,8 @@ public class SawmillApi {
             }
 
             stmt.setString(15, totalJamKerja);
+
+            stmt.setString(16, beratBalok);
 
             stmt.executeUpdate();
         }
@@ -871,6 +876,7 @@ public class SawmillApi {
             final int idOperator2,
             final String remark,
             final String beratBalokTim,
+            final String beratBalok,
             final String jenisKayu,
             final String jamMulai,
             final String jamBerhenti,
@@ -884,7 +890,7 @@ public class SawmillApi {
             // 1. Update header table
             updateSTSawmillHeader(con, noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja,
                     idSawmillSpecialCondition, balokTerpakai, jlhBatangRajang,
-                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja);
+                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok);
 
             // 2. Update/Replace BalokTim detail - hapus yang lama, insert yang baru
             deleteBalokTimDetail(con, noSTSawmill);
@@ -926,16 +932,15 @@ public class SawmillApi {
                                              String noKayuBulat, String noMeja, int idSawmillSpecialCondition,
                                              int balokTerpakai, String jlhBatangRajang, String hourMeter,
                                              int idOperator1, int idOperator2, String remark,
-                                             String jamMulai, String jamBerhenti, String totalJamKerja) throws SQLException {
+                                             String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok) throws SQLException {
 
         Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
-
 
         String query = "UPDATE STSawmill_h SET " +
                 "Shift = ?, TglSawmill = ?, NoKayuBulat = ?, NoMeja = ?, " +
                 "IdSawmillSpecialCondition = ?, BalokTerpakai = ?, JlhBatangRajang = ?, " +
                 "HourMeter = ?, IdOperator1 = ?, IdOperator2 = ?, Remark = ?, " +
-                "HourStart = ?, HourEnd = ?, JamKerja = ? " +
+                "HourStart = ?, HourEnd = ?, JamKerja = ?, BeratBalok = ? " +
                 "WHERE NoSTSawmill = ?";
 
         try (PreparedStatement stmt = con.prepareStatement(query)) {
@@ -961,7 +966,8 @@ public class SawmillApi {
             stmt.setString(12, jamMulai);
             stmt.setString(13, jamBerhenti);
             stmt.setString(14, totalJamKerja);
-            stmt.setString(15, noSTSawmill); // WHERE clause
+            stmt.setString(15, beratBalok);
+            stmt.setString(16, noSTSawmill);
 
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected == 0) {

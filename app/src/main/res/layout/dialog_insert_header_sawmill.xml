@@ -363,10 +363,21 @@
                     android:textColor="@color/black"
                     android:gravity="end"/>
 
-
-
                 <EditText
                     android:id="@+id/editBeratBalokTim"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="0.5"
+                    android:padding="6dp"
+                    android:textSize="18sp"
+                    android:background="@drawable/border_input"
+                    android:elevation="1dp"
+                    android:hint="Berat Balok"
+                    android:inputType="number"
+                    android:visibility="gone"/>
+
+                <EditText
+                    android:id="@+id/editBeratBalok"
                     android:layout_width="0dp"
                     android:layout_height="36dp"
                     android:layout_weight="0.5"
