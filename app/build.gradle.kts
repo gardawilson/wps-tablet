@@ -120,4 +120,7 @@ dependencies {
     implementation(libs.viewpager2)
     implementation(libs.cardview)
 
+    implementation(files("libs/ePOS2.jar"))
+
+
 }

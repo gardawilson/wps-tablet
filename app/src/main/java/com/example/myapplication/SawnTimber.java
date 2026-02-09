@@ -984,29 +984,25 @@ public class SawnTimber extends AppCompatActivity {
         BtnPrintST.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Validasi input terlebih dahulu
                 if (NoST.getText() == null || NoST.getText().toString().trim().isEmpty()) {
                     Toast.makeText(SawnTimber.this, "Nomor ST tidak boleh kosong", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Validasi apakah ada data yang akan dicetak
                 if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
                     Toast.makeText(SawnTimber.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Cek status HasBeenPrinted di database
                 String noST = NoST.getText().toString().trim();
                 checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
                     @Override
                     public void onResult(int printCount) {
-
                         if (printCount == -1) {
                             return;
                         }
+
                         try {
-                            // Ambil data dari form dengan validasi null
                             String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
                             String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "";
                             String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
@@ -1022,14 +1018,14 @@ public class SawnTimber extends AppCompatActivity {
                             String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
                             String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
                             String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "";
+
                             SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
                             username = prefs.getString("username", "");
                             int isSLP = cbSLP.isChecked() ? 1 : 0;
-                            // Default values for UOM columns
+
                             String idUOMTblLebar;
                             String idUOMPanjang;
 
-                            // Check which checkbox is checked and set values accordingly
                             if (radioInch.isChecked()) {
                                 idUOMTblLebar = "\"";
                             } else if (radioMillimeter.isChecked()) {
@@ -1044,32 +1040,24 @@ public class SawnTimber extends AppCompatActivity {
                                 idUOMPanjang = "";
                             }
 
-                            // Buat PDF dengan parameter hasBeenPrinted
                             Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
                                     temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
-                                    printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer); // Parameter baru untuk watermark
+                                    printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer);
 
                             if (pdfUri != null) {
-                                Intent intent = new Intent(Intent.ACTION_VIEW);
-                                intent.setDataAndType(pdfUri, "application/pdf");
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                intent.setPackage("com.dynamixsoftware.printershare"); // ← arahkan langsung ke PrinterShare
-
-                                try {
-                                    startActivity(intent);
-                                } catch (ActivityNotFoundException e) {
-                                    Toast.makeText(SawnTimber.this,
-                                            "PrinterShare not installed.",
-                                            Toast.LENGTH_LONG).show();
-                                }
+                                // BUKA PDF VIEWER ACTIVITY
+                                Intent intent = new Intent(SawnTimber.this, PdfViewerActivity.class);
+                                intent.putExtra("PDF_URI", pdfUri.toString());
+                                intent.putExtra("TITLE", "Preview Label - " + noST);
+                                startActivity(intent);
+                            } else {
+                                Toast.makeText(SawnTimber.this, "Gagal membuat PDF", Toast.LENGTH_SHORT).show();
                             }
 
                         } catch (Exception e) {
                             e.printStackTrace();
                             String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
-                            Toast.makeText(SawnTimber.this,
-                                    "Terjadi kesalahan: " + errorMessage,
-                                    Toast.LENGTH_LONG).show();
+                            Toast.makeText(SawnTimber.this, "Terjadi kesalahan: " + errorMessage, Toast.LENGTH_LONG).show();
                         }
                     }
                 });

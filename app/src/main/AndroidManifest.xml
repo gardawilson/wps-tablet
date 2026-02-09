@@ -34,6 +34,12 @@
         tools:targetApi="31">
 
         <activity
+            android:name=".PdfViewerActivity"
+            android:exported="false"
+            android:label="Preview PDF"
+            android:theme="@style/Theme.MyApplication" />
+
+        <activity
             android:name=".LaporanVerifikasi"
             android:exported="false" />
         <activity
