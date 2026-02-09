@@ -184,13 +184,11 @@ public class EpsonPrinterHelper {
             throw e;
         }
     }
-
     private void printPdfPages(Uri pdfUri) throws IOException, Epos2Exception {
         ParcelFileDescriptor fileDescriptor = null;
         PdfRenderer pdfRenderer = null;
 
         try {
-            Log.d(TAG, "Opening PDF: " + pdfUri.toString());
             fileDescriptor = context.getContentResolver().openFileDescriptor(pdfUri, "r");
             if (fileDescriptor == null) {
                 throw new IOException("Failed to open PDF");
@@ -198,85 +196,140 @@ public class EpsonPrinterHelper {
 
             pdfRenderer = new PdfRenderer(fileDescriptor);
             int pageCount = pdfRenderer.getPageCount();
-            Log.d(TAG, "PDF has " + pageCount + " page(s)");
 
             notifyProgress("Memproses " + pageCount + " halaman...");
 
             for (int i = 0; i < pageCount; i++) {
-                Log.d(TAG, "Processing page " + (i + 1) + "/" + pageCount);
                 PdfRenderer.Page page = pdfRenderer.openPage(i);
 
                 int originalWidth = page.getWidth();
                 int originalHeight = page.getHeight();
-                Log.d(TAG, "Original page size: " + originalWidth + "x" + originalHeight);
+                float aspectRatio = (float) originalHeight / originalWidth;
 
-                // TM-U220B: 384 dots width (safer untuk dot matrix)
-                int printWidth = 384;
-                int printHeight = (int) ((float) originalHeight / originalWidth * printWidth);
+                // ✅ TURUNKAN WIDTH - mulai dari 280 (biasanya aman untuk 80mm)
+                // Kalau masih terpotong, turunkan ke 260, 240, dst
+                int targetWidth = 220; // ← COBA: 280, 270, 260, 250, 240
 
-                // Limit height max 800 dots
-                if (printHeight > 800) {
-                    printHeight = 800;
-                    printWidth = (int) ((float) originalWidth / originalHeight * printHeight);
+                // ✅ TAPI render dengan DPI LEBIH TINGGI untuk quality
+                float dpiScale = 1.5f; // Render 1.5x lebih besar, lalu scale down
+
+                int renderWidth = (int) (targetWidth * dpiScale);
+                int renderHeight = (int) (renderWidth * aspectRatio);
+
+                // Limit height
+                if (renderHeight > 2000) {
+                    renderHeight = 2000;
+                    renderWidth = (int) (renderHeight / aspectRatio);
                 }
 
-                Log.d(TAG, "Scaled size for printing: " + printWidth + "x" + printHeight);
+                Log.d(TAG, "Original: " + originalWidth + "x" + originalHeight);
+                Log.d(TAG, "Render: " + renderWidth + "x" + renderHeight + " (DPI scale: " + dpiScale + "x)");
+                Log.d(TAG, "Final print: " + targetWidth + " dots width");
 
-                // Create bitmap dengan white background
-                Bitmap bitmap = Bitmap.createBitmap(printWidth, printHeight, Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
+                // ✅ Render dengan ukuran BESAR (high DPI)
+                Bitmap highResBitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(highResBitmap);
                 canvas.drawColor(Color.WHITE);
+                page.render(highResBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
 
-                // Render PDF
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+                // ✅ Scale down ke target size dengan high quality filter
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(highResBitmap, targetWidth, (int)(targetWidth * aspectRatio), true);
+                highResBitmap.recycle();
 
-                // Convert ke monochrome
-                Bitmap monoBitmap = convertToMonochrome(bitmap);
-                bitmap.recycle();
+                // ✅ Convert dengan dithering
+                Bitmap monoBitmap = convertToMonochrome(scaledBitmap);
+                scaledBitmap.recycle();
 
-                notifyProgress("Mencetak halaman " + (i + 1) + "/" + pageCount + "...");
-                Log.d(TAG, "Adding image to print buffer...");
+                int finalHeight = monoBitmap.getHeight();
 
-                // Add ke printer dengan setting optimal untuk dot matrix
+                notifyProgress("Mencetak " + (i + 1) + "/" + pageCount);
+
+                // ✅ Print dengan ukuran yang PAS di printer
                 printer.addImage(
                         monoBitmap,
-                        0,
-                        0,
-                        printWidth,
-                        printHeight,
+                        0, 0,
+                        targetWidth,
+                        finalHeight,
                         Printer.COLOR_1,
                         Printer.MODE_MONO,
-                        Printer.HALFTONE_THRESHOLD,  // Threshold lebih baik untuk dot matrix
+                        Printer.HALFTONE_DITHER,
                         Printer.PARAM_DEFAULT,
-                        Printer.COMPRESS_NONE        // No compression untuk dot matrix
+                        Printer.COMPRESS_NONE
                 );
 
                 page.close();
                 monoBitmap.recycle();
-                Log.d(TAG, "Page " + (i + 1) + " added to buffer");
 
                 if (i < pageCount - 1) {
-                    printer.addFeedLine(3);
+                    printer.addFeedLine(2);
                 }
             }
 
-            Log.d(TAG, "Adding feed lines");
             printer.addFeedLine(5);
-
-            notifyProgress("Mengirim ke printer...");
-            Log.d(TAG, "Sending data to printer...");
             printer.sendData(Printer.PARAM_DEFAULT);
-            Log.d(TAG, "Data sent successfully, waiting for callback...");
 
         } finally {
-            if (pdfRenderer != null) {
-                pdfRenderer.close();
-            }
-            if (fileDescriptor != null) {
-                fileDescriptor.close();
-            }
+            if (pdfRenderer != null) pdfRenderer.close();
+            if (fileDescriptor != null) fileDescriptor.close();
         }
     }
+    private Bitmap convertToMonochromeWithDithering(Bitmap source) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+
+        int[][] grayPixels = new int[height][width];
+
+        // Convert ke grayscale
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = source.getPixel(x, y);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
+                grayPixels[y][x] = (int)(0.299 * r + 0.587 * g + 0.114 * b);
+            }
+        }
+
+        // Floyd-Steinberg Dithering
+        int threshold = 128;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int oldPixel = grayPixels[y][x];
+                int newPixel = (oldPixel < threshold) ? 0 : 255;
+                grayPixels[y][x] = newPixel;
+
+                int error = oldPixel - newPixel;
+
+                if (x + 1 < width) {
+                    grayPixels[y][x + 1] = clamp(grayPixels[y][x + 1] + error * 7 / 16);
+                }
+                if (y + 1 < height) {
+                    if (x > 0) {
+                        grayPixels[y + 1][x - 1] = clamp(grayPixels[y + 1][x - 1] + error * 3 / 16);
+                    }
+                    grayPixels[y + 1][x] = clamp(grayPixels[y + 1][x] + error * 5 / 16);
+                    if (x + 1 < width) {
+                        grayPixels[y + 1][x + 1] = clamp(grayPixels[y + 1][x + 1] + error * 1 / 16);
+                    }
+                }
+            }
+        }
+
+        Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int color = (grayPixels[y][x] == 0) ? Color.BLACK : Color.WHITE;
+                monoBitmap.setPixel(x, y, color);
+            }
+        }
+
+        return monoBitmap;
+    }
+
+    private int clamp(int value) {
+        return Math.max(0, Math.min(255, value));
+    }
+
 
     // METHOD BARU: Convert ke pure black & white
     private Bitmap convertToMonochrome(Bitmap source) {
@@ -286,7 +339,7 @@ public class EpsonPrinterHelper {
         Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
         // Threshold: 128 = medium (adjust kalau terlalu terang/gelap)
-        int threshold = 128;
+        int threshold = 125;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {

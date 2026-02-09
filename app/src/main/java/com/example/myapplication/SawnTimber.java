@@ -3135,9 +3135,9 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(11)
+                        .setFontSize(9)
                         .setMargin(0)
-                        .setMultipliedLeading(1.2f)
+                        .setMultipliedLeading(1.1f) // Dikurangi dari 1.2f
                         .setTextAlignment(TextAlignment.LEFT));
 
         // Colon Cell
@@ -3145,50 +3145,54 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(11)
+                        .setFontSize(9)
                         .setMargin(0)
-                        .setMultipliedLeading(1.2f)
+                        .setMultipliedLeading(1.1f)
                         .setTextAlignment(TextAlignment.CENTER));
 
         // Value Cell with text wrapping
         Cell valueCell = new Cell()
                 .setBorder(Border.NO_BORDER);
 
-        // Split panjang text jika melebihi batas
+        // ✅ Split panjang text - batas karakter disesuaikan untuk PDF lebih kecil
         String[] words = value.split(" ");
         StringBuilder line = new StringBuilder();
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            if (line.length() + word.length() > 30) { // Batas karakter per baris
+            // ✅ Batas karakter dikurangi dari 30 ke 20 (karena PDF lebih kecil)
+            if (line.length() + word.length() > 20) {
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
             line.append(word).append(" ");
-
         }
         finalText.append(line.toString().trim());
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(11)
+                .setFontSize(9)
                 .setMargin(0)
-                .setMultipliedLeading(1.2f)
+                .setMultipliedLeading(1.1f)
                 .setTextAlignment(TextAlignment.LEFT));
 
         // Set minimum height untuk konsistensi
-        float minHeight = 8f;
+        float minHeight = 7f; // Dikurangi dari 8f
+
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
 
-        float pageWidth = PageSize.A6.getWidth() - 20;
+        // ✅ GANTI pageWidth sesuai PDF baru (210 points)
+        float pdfWidth = 210; // Ukuran PDF baru
+        float pageWidth = pdfWidth - 10; // Margin kiri-kanan
         float tableWidth = table.getWidth().getValue();
 
-        if (tableWidth == pageWidth * 0.4f) { // Kolom kiri
-            valueCell.setWidth(pageWidth * 0.4f - 5);
-        } else if (tableWidth == pageWidth * 0.6f) { // Kolom kanan lebih lebar
-            valueCell.setWidth(pageWidth * 0.6f);
+        // ✅ Sesuaikan width calculation dengan proporsi baru
+        if (tableWidth <= pageWidth * 0.47f) { // Kolom kiri (sesuai createPdf)
+            valueCell.setWidth(pageWidth * 0.35f);
+        } else if (tableWidth <= pageWidth * 0.53f) { // Kolom kanan (sesuai createPdf)
+            valueCell.setWidth(pageWidth * 0.40f);
         }
 
         // Tambahkan semua cell ke tabel
@@ -3196,7 +3200,6 @@ public class SawnTimber extends AppCompatActivity {
         table.addCell(colonCell);
         table.addCell(valueCell);
     }
-
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
             PdfPage page = pdfDocument.getPage(i);
@@ -3296,11 +3299,8 @@ public class SawnTimber extends AppCompatActivity {
         noPenST = (noPenST != null) ? noPenST.trim() : "-";
         customer = (customer != null) ? customer.trim() : "-";
 
-
-
         String[] nama = tellyBy.split(" ");
-        String namaTelly = nama[0]; // namaDepan sekarang berisi "Windiar"
-
+        String namaTelly = nama[0];
 
         Uri pdfUri = null;
         ContentResolver resolver = getContentResolver();
@@ -3308,7 +3308,6 @@ public class SawnTimber extends AppCompatActivity {
         String relativePath = Environment.DIRECTORY_DOWNLOADS;
 
         try {
-            // Hapus file yang sudah ada jika perlu
             Thread.sleep(500);
 
             ContentValues contentValues = new ContentValues();
@@ -3334,20 +3333,25 @@ public class SawnTimber extends AppCompatActivity {
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
-                // Ukuran kertas yang disesuaikan secara manual
-                float baseHeight = 400; // Tinggi dasar untuk elemen non-tabel (header, footer, margin, dll.)
-                float rowHeight = 20; // Tinggi rata-rata per baris data
+                // ✅ UKURAN PDF DIPERKECIL untuk printer 80mm (270 dots)
+                // 1 inch = 72 points, 80mm = 226.77 points
+                // Tapi kita pakai 210 points agar ada margin dan pas dengan 270 dots saat di-render
+                float pdfWidth = 210; // Sekitar 74mm (pas untuk 80mm paper dengan margin)
+
+                // Hitung tinggi dinamis
+                float baseHeight = 320; // Header, footer, dll (dikurangi dari 400)
+                float rowHeight = 16; // Per baris (dikurangi dari 20)
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
-                // Tetapkan ukuran halaman dinamis
-                Rectangle pageSize = new Rectangle( PageSize.A6.getWidth(), totalHeight);
+                // ✅ Tetapkan ukuran halaman custom untuk 80mm printer
+                Rectangle pageSize = new Rectangle(pdfWidth, totalHeight);
                 pdfDocument.setDefaultPageSize(new PageSize(pageSize));
 
                 Document document = new Document(pdfDocument);
-                document.setMargins(0, 5, 0, 5);
+                document.setMargins(0, 3, 0, 3); // Margin lebih kecil
 
-                // Hitung lebar yang tersedia
-                float pageWidth = PageSize.A6.getWidth() - 20;
+                // ✅ Hitung lebar dengan proporsi baru
+                float pageWidth = pdfWidth - 10; // Margin kiri-kanan
                 float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};
 
                 Table mainTable = new Table(mainColumnWidths)
@@ -3355,31 +3359,30 @@ public class SawnTimber extends AppCompatActivity {
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{15, 5, 80};
+                float[] infoColumnWidths = new float[]{12, 3, 60}; // Dikurangi proporsinya
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.453f)
+                        .setWidth(pageWidth * 0.47f)
                         .setBorder(Border.NO_BORDER)
-                        .setTextAlignment(TextAlignment.LEFT);
-                ;
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(9); // ✅ Font size dikurangi
 
                 // Isi kolom kiri
-//                addInfoRow(leftColumn, "No", noST, timesNewRoman);
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
                 addInfoRow(leftColumn, "Plat", platTruk, timesNewRoman);
                 addInfoRow(leftColumn, "SPK", noSPK, timesNewRoman);
 
                 // Buat tabel untuk kolom kanan
                 Table rightColumn = new Table(infoColumnWidths)
-                        .setWidth(pageWidth * 0.6f)
+                        .setWidth(pageWidth * 0.53f)
                         .setBorder(Border.NO_BORDER)
-                        .setTextAlignment(TextAlignment.LEFT);
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(9); // ✅ Font size dikurangi
 
                 // Isi kolom kanan
                 addInfoRow(rightColumn, "Tgl", formattedDateStick, timesNewRoman);
                 addInfoRow(rightColumn, "Telly", namaTelly, timesNewRoman);
-//                addInfoRow(rightColumn, "NoKB", noKayuBulat + "-" + namaSupplier, timesNewRoman);
                 addInfoRow(rightColumn, "Stick", stickBy, timesNewRoman);
 
                 // Tambahkan kolom kiri dan kanan ke tabel utama
@@ -3396,12 +3399,12 @@ public class SawnTimber extends AppCompatActivity {
                 mainTable.addCell(leftCell);
                 mainTable.addCell(rightCell);
 
-                // Tabel data
-                float[] width = {70f, 70f, 70f, 70f};
+                // ✅ Tabel data - proporsi disesuaikan
+                float[] width = {50f, 50f, 50f, 50f}; // Dikurangi dari 70f
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(5)
-                        .setFontSize(13);
+                        .setMarginTop(3)
+                        .setFontSize(10); // Dikurangi dari 13
 
                 // Header tabel
                 String[] headers = {"Tebal", "Lebar", "Panjang", "Pcs"};
@@ -3409,7 +3412,8 @@ public class SawnTimber extends AppCompatActivity {
                     table.addCell(new Cell()
                             .add(new Paragraph(header)
                                     .setTextAlignment(TextAlignment.CENTER)
-                                    .setFont(timesNewRoman)));
+                                    .setFont(timesNewRoman)
+                                    .setFontSize(9))); // ✅ Font size header
                 }
 
                 // Isi tabel
@@ -3421,65 +3425,126 @@ public class SawnTimber extends AppCompatActivity {
                     String panjang = (row.getPanjang() != null) ? df.format(Float.parseFloat(row.getPanjang())) : "-";
                     String pcs = (row.getPcs() != null) ? df.format(Integer.parseInt(row.getPcs())) : "-";
 
-                    table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(panjang + " " + idUOMPanjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
-                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman)));
+                    table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(panjang + " " + idUOMPanjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
                 }
 
-                // Detail Pcs, Ton, M3
-                float[] columnWidths = {30f, 10f, 70f};
+                // ✅ Detail Pcs, Ton, M3 - proporsi disesuaikan
+                float[] columnWidths = {25f, 8f, 55f}; // Dikurangi
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMarginTop(5)
-                        .setFontSize(14)
+                        .setMarginTop(3)
+                        .setFontSize(10) // Dikurangi dari 14
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
 
-                sumTable.addCell(new Cell().add(new Paragraph("Ton").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("Ton").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(15)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(15)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman));
+                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
 
-                Paragraph qrCodeIDbottomLeft = new Paragraph(noST).setTextAlignment(TextAlignment.LEFT).setFontSize(12).setMargins(-15, 0, 0, 35).setFont(timesNewRoman);
-                Paragraph qrCodeIDbottomRight = new Paragraph(noST).setTextAlignment(TextAlignment.CENTER).setFontSize(25).setMargins(-77, 75, 0, 0).setFont(timesNewRoman).setBold();
+                // ✅ QR Code dan text - ukuran disesuaikan
+                Paragraph qrCodeIDbottomLeft = new Paragraph(noST)
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(10) // Dikurangi dari 12
+                        .setMargins(-10, 0, 0, 25) // Adjust margin
+                        .setFont(timesNewRoman);
 
-                BarcodeQRCode qrCode = new BarcodeQRCode(noST);
-                PdfFormXObject qrCodeObject = qrCode.createFormXObject(ColorConstants.BLACK, pdfDocument);
+                Paragraph qrCodeIDbottomRight = new Paragraph(noST)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setFontSize(20) // Dikurangi dari 25
+                        .setMargins(-60, 55, 0, 0) // Adjust margin
+                        .setFont(timesNewRoman)
+                        .setBold();
 
                 BarcodeQRCode qrCodeBottom = new BarcodeQRCode(noST);
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
-                Image qrCodeBottomImageLeft = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.LEFT).setMargins(-70, 0, 0, 0);
-                Image qrCodeBottomImageRight = new Image(qrCodeBottomObject).setWidth(115).setHorizontalAlignment(HorizontalAlignment.RIGHT).setMargins(0, 0, 0, 0);
+
+                Image qrCodeBottomImageLeft = new Image(qrCodeBottomObject)
+                        .setWidth(85) // Dikurangi dari 115
+                        .setHorizontalAlignment(HorizontalAlignment.LEFT)
+                        .setMargins(-55, 0, 0, 0); // Adjust margin
+
+                Image qrCodeBottomImageRight = new Image(qrCodeBottomObject)
+                        .setWidth(85) // Dikurangi dari 115
+                        .setHorizontalAlignment(HorizontalAlignment.RIGHT)
+                        .setMargins(0, 0, 0, 0);
 
                 String formattedDate = DateTimeUtils.formatDateToDdYY(formattedDateStick);
-                Paragraph textBulanTahunBold = new Paragraph(formattedDate).setTextAlignment(TextAlignment.RIGHT).setFontSize(50).setMargins(-60, 0, 0, 15).setFont(timesNewRoman).setBold();
+                Paragraph textBulanTahunBold = new Paragraph(formattedDate)
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setFontSize(30) // Dikurangi dari 50
+                        .setMargins(-35, 0, 0, 10) // Adjust margin
+                        .setFont(timesNewRoman)
+                        .setBold();
 
-                Paragraph kayuBulat = new Paragraph("No. KB : " + noKayuBulat + " - " + namaSupplier + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-                Paragraph pembelianST = new Paragraph("No. Pbl : " + noPenST + " - " + namaSupplier + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-                Paragraph upahST = new Paragraph("No. Upah : " + noPenST + " - " + customer + " - " + noTruk).setTextAlignment(TextAlignment.LEFT).setFontSize(11).setMargins(0, 0, 0, 7).setFont(timesNewRoman);
-                Paragraph textHeader = new Paragraph("LABEL ST").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
-                Paragraph textHeaderPembelian = new Paragraph("LABEL ST (Pbl)").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
-                Paragraph textHeaderUpah = new Paragraph("LABEL ST (Upah)").setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(0, 0, 0, 7).setFont(timesNewRomanBold);
-                Paragraph textHeaderNomor = new Paragraph("NO : " + noST).setUnderline().setTextAlignment(TextAlignment.LEFT).setFontSize(14).setMargins(-21, 0, 0, 145).setFont(timesNewRomanBold);
+                // ✅ Paragraph info - font size disesuaikan
+                Paragraph kayuBulat = new Paragraph("No. KB : " + noKayuBulat + " - " + namaSupplier + " - " + noTruk)
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(9) // Dikurangi dari 11
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRoman);
 
-                Paragraph afkirText = new Paragraph("Reject").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 75, 0, 0).setFont(timesNewRoman);
-                Paragraph lemburTextOutput = new Paragraph("Lembur").setTextAlignment(TextAlignment.RIGHT).setFontSize(14).setMargins(-20, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph remarkText = new Paragraph("Remark : " + remark).setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(-10, 0, 0, 0).setFont(timesNewRoman);
-                Paragraph slpText = new Paragraph("SLP").setTextAlignment(TextAlignment.CENTER).setFontSize(12).setMargins(-175, 0, 0, 0).setFont(timesNewRomanBold).setFontSize(25);
+                Paragraph pembelianST = new Paragraph("No. Pbl : " + noPenST + " - " + namaSupplier + " - " + noTruk)
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(8)
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRoman);
 
-                // Buat DashedLine dengan setting panjang garis dan jarak antar garis
-                DashedLine dashedLine = new DashedLine(3f); // 3f = gap antar putus-putus (default 3pt)
+                Paragraph upahST = new Paragraph("No. Upah : " + noPenST + " - " + customer + " - " + noTruk)
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(8)
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRoman);
+
+                Paragraph textHeader = new Paragraph("LABEL ST")
+                        .setUnderline()
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(11) // Dikurangi dari 14
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRomanBold);
+
+                Paragraph textHeaderPembelian = new Paragraph("LABEL ST (Pbl)")
+                        .setUnderline()
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(11)
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRomanBold);
+
+                Paragraph textHeaderUpah = new Paragraph("LABEL ST (Upah)")
+                        .setUnderline()
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(11)
+                        .setMargins(0, 0, 0, 5)
+                        .setFont(timesNewRomanBold);
+
+                Paragraph textHeaderNomor = new Paragraph("NO : " + noST)
+                        .setUnderline()
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(11)
+                        .setMargins(-17, 0, 0, 110) // Adjust margin
+                        .setFont(timesNewRomanBold);
+
+                Paragraph remarkText = new Paragraph("Remark : " + remark)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setFontSize(9) // Dikurangi dari 12
+                        .setMargins(-8, 0, 0, 0)
+                        .setFont(timesNewRoman);
+
+                // Buat DashedLine
+                DashedLine dashedLine = new DashedLine(3f);
                 dashedLine.setLineWidth(1);
                 LineSeparator dashedSeparator = new LineSeparator(dashedLine);
 
-                // Tambahkan semua elemen ke dokumen
+                // ✅ Tambahkan semua elemen ke dokumen
                 if (labelVersion == 1 || noPenST.startsWith("BA")) {
                     document.add(textHeaderPembelian);
                 } else if (labelVersion == 2 || noPenST.startsWith("O")) {
@@ -3515,11 +3580,10 @@ public class SawnTimber extends AppCompatActivity {
 
                     Paragraph p = new Paragraph("SLP")
                             .setFont(timesNewRomanBold)
-                            .setFontSize(25);
+                            .setFontSize(20); // Dikurangi dari 25
 
-                    // contoh taruh di kanan-bawah (atur x/y sesuai kebutuhan)
-                    float x = ps.getWidth() - 120;  // makin kecil = makin ke kiri
-                    float y = 150;                  // makin besar = makin ke atas
+                    float x = ps.getWidth() - 90; // Adjust posisi
+                    float y = 120; // Adjust posisi
 
                     document.showTextAligned(p, x, y, TextAlignment.RIGHT);
                 }
@@ -3527,18 +3591,16 @@ public class SawnTimber extends AppCompatActivity {
                 if (!remark.isEmpty() && !remark.equals("-")) {
                     document.add(remarkText);
                 }
-                document.add(dashedSeparator);
 
+                document.add(dashedSeparator);
                 document.add(qrCodeBottomImageRight);
                 document.add(qrCodeIDbottomRight);
-
-
-
 
                 document.close();
                 pdfUri = uri;
 
                 Toast.makeText(this, "PDF berhasil dibuat di " + uri.getPath(), Toast.LENGTH_LONG).show();
+
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new IOException("Gagal membuat PDF: " + e.getMessage(), e);

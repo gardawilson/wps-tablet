@@ -135,7 +135,7 @@ public class PdfViewerActivity extends AppCompatActivity {
         int width = currentPage.getWidth();
         int height = currentPage.getHeight();
 
-        int scale = 2;
+        int scale = 4;
         Bitmap bitmap = Bitmap.createBitmap(
                 width * scale,
                 height * scale,
