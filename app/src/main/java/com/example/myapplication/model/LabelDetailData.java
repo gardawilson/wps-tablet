@@ -1,12 +1,17 @@
 package com.example.myapplication.model;
 
-public class LabelDetailData {
+import java.io.Serializable;
+
+public class LabelDetailData implements Serializable {
+    private static final long serialVersionUID = 1L; // Required for Serializable
+
     private String tebal;
     private String lebar;
     private String panjang;
     private String pcs;
     private final int rowId;
 
+    // Static counter untuk rowId (transient karena tidak perlu di-serialize)
     private static int nextId = 1;
 
     public LabelDetailData(String tebal, String lebar, String panjang, String pcs) {

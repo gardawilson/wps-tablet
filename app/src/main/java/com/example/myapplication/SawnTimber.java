@@ -2,9 +2,11 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -49,6 +51,7 @@ import java.io.OutputStream;
 import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.SawnTimberApi;
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.helper.EpsonPrinterHelper;
 import com.example.myapplication.model.GradeDetailData;
 import com.example.myapplication.model.LabelDetailData;
 import com.example.myapplication.model.LokasiData;
@@ -1003,21 +1006,22 @@ public class SawnTimber extends AppCompatActivity {
                         }
 
                         try {
-                            String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
-                            String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "";
-                            String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
-                            String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
-                            String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
-                            String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
-                            String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
-                            String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "";
-                            String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
-                            String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
-                            String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
-                            String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
-                            String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
-                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
-                            String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "";
+                            // Ambil semua data
+                            String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "-";
+                            String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "-";
+                            String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "-";
+                            String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "-";
+                            String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "-";
+                            String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "-";
+                            String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "-";
+                            String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "-";
+                            String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "-";
+                            String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "-";
+                            String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "0";
+                            String m3 = M3.getText() != null ? M3.getText().toString().trim() : "0";
+                            String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "0";
+                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "-";
+                            String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "-";
 
                             SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
                             username = prefs.getString("username", "");
@@ -1040,19 +1044,39 @@ public class SawnTimber extends AppCompatActivity {
                                 idUOMPanjang = "";
                             }
 
-                            Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
-                                    temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
-                                    printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer);
+                            // Format tanggal
+                            String formattedDateStick = DateTimeUtils.formatDate(tglStickBundle);
+                            String[] nama = tellyBy.split(" ");
+                            String namaTelly = nama.length > 0 ? nama[0] : tellyBy;
 
-                            if (pdfUri != null) {
-                                // BUKA PDF VIEWER ACTIVITY
-                                Intent intent = new Intent(SawnTimber.this, PdfViewerActivity.class);
-                                intent.putExtra("PDF_URI", pdfUri.toString());
-                                intent.putExtra("TITLE", "Preview Label - " + noST);
-                                startActivity(intent);
-                            } else {
-                                Toast.makeText(SawnTimber.this, "Gagal membuat PDF", Toast.LENGTH_SHORT).show();
-                            }
+                            // === BUKA TEXT PREVIEW ACTIVITY ===
+                            Intent intent = new Intent(SawnTimber.this, TextPreviewActivity.class);
+                            intent.putExtra("noST", noST);
+                            intent.putExtra("jenisKayu", jenisKayu);
+                            intent.putExtra("tglStickBundle", formattedDateStick);
+                            intent.putExtra("tellyBy", namaTelly);
+                            intent.putExtra("noSPK", noSPK);
+                            intent.putExtra("stickBy", stickBy);
+                            intent.putExtra("platTruk", platTruk);
+                            intent.putExtra("noKayuBulat", noKayuBulat);
+                            intent.putExtra("namaSupplier", namaSupplier);
+                            intent.putExtra("noTruk", noTruk);
+                            intent.putExtra("jumlahPcs", jumlahPcs);
+                            intent.putExtra("m3", m3);
+                            intent.putExtra("ton", ton);
+                            intent.putExtra("remark", remark);
+                            intent.putExtra("customer", customer);
+                            intent.putExtra("noPenST", noPenST);
+                            intent.putExtra("idUOMTblLebar", idUOMTblLebar);
+                            intent.putExtra("idUOMPanjang", idUOMPanjang);
+                            intent.putExtra("printCount", printCount);
+                            intent.putExtra("isSLP", isSLP);
+                            intent.putExtra("labelVersion", labelVersion);
+
+                            // Convert List to ArrayList agar bisa Serializable
+                            intent.putExtra("detailData", new ArrayList<>(temporaryDataListDetail));
+
+                            startActivity(intent);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -1115,6 +1139,220 @@ public class SawnTimber extends AppCompatActivity {
 
 
     //METHOD SAWN TIMBER
+
+
+    // ========== METHOD 1: Preview PDF (EXISTING FLOW) ==========
+    private void processAndPreviewPDF(String noST) {
+        checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
+            @Override
+            public void onResult(int printCount) {
+                if (printCount == -1) {
+                    return;
+                }
+
+                try {
+                    // Ambil semua data
+                    String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
+                    String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "";
+                    String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
+                    String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
+                    String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "";
+                    String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "";
+                    String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "";
+                    String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "";
+                    String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "";
+                    String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "";
+                    String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "";
+                    String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
+                    String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "";
+                    String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
+                    String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "";
+
+                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                    username = prefs.getString("username", "");
+                    int isSLP = cbSLP.isChecked() ? 1 : 0;
+
+                    String idUOMTblLebar;
+                    String idUOMPanjang;
+
+                    if (radioInch.isChecked()) {
+                        idUOMTblLebar = "\"";
+                    } else if (radioMillimeter.isChecked()) {
+                        idUOMTblLebar = "mm";
+                    } else {
+                        idUOMTblLebar = "";
+                    }
+
+                    if (radioFeet.isChecked()) {
+                        idUOMPanjang = "ft";
+                    } else {
+                        idUOMPanjang = "";
+                    }
+
+                    // Create PDF
+                    Uri pdfUri = createPdf(noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
+                            temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
+                            printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer);
+
+                    if (pdfUri != null) {
+                        // Buka PDF Viewer Activity
+                        Intent intent = new Intent(SawnTimber.this, PdfViewerActivity.class);
+                        intent.putExtra("PDF_URI", pdfUri.toString());
+                        intent.putExtra("TITLE", "Preview Label - " + noST);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(SawnTimber.this, "Gagal membuat PDF", Toast.LENGTH_SHORT).show();
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+                    Toast.makeText(SawnTimber.this, "Terjadi kesalahan: " + errorMessage, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    // ========== METHOD 2: Print Direct Text (NEW!) ==========
+    private void processAndPrintDirectText(String noST) {
+        checkHasBeenPrinted(noST, new HasBeenPrintedCallback() {
+            @Override
+            public void onResult(int printCount) {
+                if (printCount == -1) {
+                    return;
+                }
+
+                try {
+                    // Ambil semua data
+                    String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "-";
+                    String tglStickBundle = TglStickBundel.getText() != null ? TglStickBundel.getText().toString().trim() : "-";
+                    String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "-";
+                    String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "-";
+                    String stickBy = SpinStickBy.getSelectedItem() != null ? SpinStickBy.getSelectedItem().toString().trim() : "-";
+                    String platTruk = NoPlatTruk.getText() != null ? NoPlatTruk.getText().toString().trim() : "-";
+                    String noKayuBulat = NoKayuBulat.getText() != null ? NoKayuBulat.getText().toString().trim() : "-";
+                    String noPenST = noPenerimaanST.getText() != null ? noPenerimaanST.getText().toString().trim() : "-";
+                    String namaSupplier = Supplier.getText() != null ? Supplier.getText().toString().trim() : "-";
+                    String noTruk = NoTruk.getText() != null ? NoTruk.getText().toString().trim() : "-";
+                    String jumlahPcs = JumlahPcsST.getText() != null ? JumlahPcsST.getText().toString().trim() : "0";
+                    String m3 = M3.getText() != null ? M3.getText().toString().trim() : "0";
+                    String ton = Ton.getText() != null ? Ton.getText().toString().trim() : "0";
+                    String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "-";
+                    String customer = Customer.getText() != null ? Customer.getText().toString().trim() : "-";
+
+                    SharedPreferences prefs = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+                    username = prefs.getString("username", "");
+                    int isSLP = cbSLP.isChecked() ? 1 : 0;
+
+                    String idUOMTblLebar;
+                    String idUOMPanjang;
+
+                    if (radioInch.isChecked()) {
+                        idUOMTblLebar = "\"";
+                    } else if (radioMillimeter.isChecked()) {
+                        idUOMTblLebar = "mm";
+                    } else {
+                        idUOMTblLebar = "";
+                    }
+
+                    if (radioFeet.isChecked()) {
+                        idUOMPanjang = "ft";
+                    } else {
+                        idUOMPanjang = "";
+                    }
+
+                    String formattedDateStick = DateTimeUtils.formatDate(tglStickBundle);
+                    String[] nama = tellyBy.split(" ");
+                    String namaTelly = nama.length > 0 ? nama[0] : tellyBy;
+
+                    // === DIALOG INPUT IP PRINTER ===
+                    showPrinterIPDialog(
+                            noST, jenisKayu, formattedDateStick, namaTelly, noSPK, stickBy, platTruk,
+                            temporaryDataListDetail, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
+                            printCount, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer
+                    );
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+                    Toast.makeText(SawnTimber.this, "Terjadi kesalahan: " + errorMessage, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    // ========== DIALOG INPUT IP PRINTER ==========
+    private void showPrinterIPDialog(
+            String noST, String jenisKayu, String tglStickBundle,
+            String tellyBy, String noSPK, String stickBy, String platTruk,
+            List<LabelDetailData> detailData, String noKayuBulat, String namaSupplier,
+            String noTruk, String jumlahPcs, String m3, String ton,
+            int printCount, String remark, int isSLP, String idUOMTblLebar,
+            String idUOMPanjang, String noPenST, int labelVersion, String customer
+    ) {
+        AlertDialog.Builder ipDialog = new AlertDialog.Builder(SawnTimber.this);
+        ipDialog.setTitle("Input IP Printer");
+
+        final EditText inputIP = new EditText(SawnTimber.this);
+        inputIP.setHint("Contoh: 192.168.1.100");
+        inputIP.setText("192.168.1.100"); // Default IP
+        inputIP.setInputType(InputType.TYPE_CLASS_TEXT);
+        ipDialog.setView(inputIP);
+
+        ipDialog.setPositiveButton("Print", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String printerIP = inputIP.getText().toString().trim();
+
+                if (printerIP.isEmpty()) {
+                    Toast.makeText(SawnTimber.this, "IP Printer tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String printerTarget = "TCP:" + printerIP;
+
+                // === PROGRESS DIALOG ===
+                ProgressDialog progressDialog = new ProgressDialog(SawnTimber.this);
+                progressDialog.setTitle("Printing");
+                progressDialog.setMessage("Menghubungkan ke printer...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
+
+                // === CALL EPSON HELPER ===
+                EpsonPrinterHelper printerHelper = new EpsonPrinterHelper(SawnTimber.this);
+                printerHelper.printDirectText(
+                        noST, jenisKayu, tglStickBundle, tellyBy, noSPK, stickBy, platTruk,
+                        detailData, noKayuBulat, namaSupplier, noTruk, jumlahPcs, m3, ton,
+                        printCount, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST,
+                        labelVersion, customer, printerTarget,
+                        new EpsonPrinterHelper.PrintCallback() {
+                            @Override
+                            public void onPrintSuccess() {
+                                progressDialog.dismiss();
+                                Toast.makeText(SawnTimber.this, "✅ Print berhasil!", Toast.LENGTH_SHORT).show();
+
+                                // Update print count di database (opsional)
+                                // updatePrintCount(noST);
+                            }
+
+                            @Override
+                            public void onPrintError(String error) {
+                                progressDialog.dismiss();
+                                Toast.makeText(SawnTimber.this, "❌ Print gagal: " + error, Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void onPrintProgress(String message) {
+                                progressDialog.setMessage(message);
+                            }
+                        }
+                );
+            }
+        });
+
+        ipDialog.setNegativeButton("Batal", null);
+        ipDialog.show();
+    }
 
     // Method helper untuk proses update
     private void processUpdateData(String noKayuBulat, int jenisKayu, String noSPK, String telly,
@@ -3135,9 +3373,9 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label)
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(14) // ✅ NAIK dari 9 → 14 (readable)
                         .setMargin(0)
-                        .setMultipliedLeading(1.1f) // Dikurangi dari 1.2f
+                        .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.LEFT));
 
         // Colon Cell
@@ -3145,23 +3383,23 @@ public class SawnTimber extends AppCompatActivity {
                 .setBorder(Border.NO_BORDER)
                 .add(new Paragraph(":")
                         .setFont(font)
-                        .setFontSize(9)
+                        .setFontSize(14) // ✅ NAIK dari 9 → 14
                         .setMargin(0)
-                        .setMultipliedLeading(1.1f)
+                        .setMultipliedLeading(1.2f)
                         .setTextAlignment(TextAlignment.CENTER));
 
         // Value Cell with text wrapping
         Cell valueCell = new Cell()
                 .setBorder(Border.NO_BORDER);
 
-        // ✅ Split panjang text - batas karakter disesuaikan untuk PDF lebih kecil
+        // ✅ Split panjang text - disesuaikan untuk PDF 420 dots
         String[] words = value.split(" ");
         StringBuilder line = new StringBuilder();
         StringBuilder finalText = new StringBuilder();
 
         for (String word : words) {
-            // ✅ Batas karakter dikurangi dari 30 ke 20 (karena PDF lebih kecil)
-            if (line.length() + word.length() > 20) {
+            // ✅ Batas karakter untuk width 420
+            if (line.length() + word.length() > 28) { // NAIK dari 20 → 28
                 finalText.append(line.toString().trim()).append("\n");
                 line = new StringBuilder();
             }
@@ -3171,27 +3409,27 @@ public class SawnTimber extends AppCompatActivity {
 
         valueCell.add(new Paragraph(finalText.toString())
                 .setFont(font)
-                .setFontSize(9)
+                .setFontSize(14) // ✅ NAIK dari 9 → 14
                 .setMargin(0)
-                .setMultipliedLeading(1.1f)
+                .setMultipliedLeading(1.2f)
                 .setTextAlignment(TextAlignment.LEFT));
 
         // Set minimum height untuk konsistensi
-        float minHeight = 7f; // Dikurangi dari 8f
+        float minHeight = 14f; // ✅ NAIK dari 7f → 14f
 
         labelCell.setMinHeight(minHeight);
         colonCell.setMinHeight(minHeight);
         valueCell.setMinHeight(minHeight);
 
-        // ✅ GANTI pageWidth sesuai PDF baru (210 points)
-        float pdfWidth = 210; // Ukuran PDF baru
+        // ✅ GANTI pageWidth sesuai PDF baru (420 points)
+        float pdfWidth = 420; // ✅ TM-U220B @ 76mm = 420 dots
         float pageWidth = pdfWidth - 10; // Margin kiri-kanan
         float tableWidth = table.getWidth().getValue();
 
         // ✅ Sesuaikan width calculation dengan proporsi baru
-        if (tableWidth <= pageWidth * 0.47f) { // Kolom kiri (sesuai createPdf)
+        if (tableWidth <= pageWidth * 0.47f) { // Kolom kiri
             valueCell.setWidth(pageWidth * 0.35f);
-        } else if (tableWidth <= pageWidth * 0.53f) { // Kolom kanan (sesuai createPdf)
+        } else if (tableWidth <= pageWidth * 0.53f) { // Kolom kanan
             valueCell.setWidth(pageWidth * 0.40f);
         }
 
@@ -3200,10 +3438,10 @@ public class SawnTimber extends AppCompatActivity {
         table.addCell(colonCell);
         table.addCell(valueCell);
     }
+
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
             PdfPage page = pdfDocument.getPage(i);
-            // Menggunakan newContentStreamBefore() untuk menempatkan watermark di belakang
             PdfCanvas canvas = new PdfCanvas(
                     page.newContentStreamBefore(),
                     page.getResources(),
@@ -3217,39 +3455,37 @@ public class SawnTimber extends AppCompatActivity {
             canvas.saveState();
 
             String watermarkText = "COPY";
-            float fontSize = 95;
+            float fontSize = 190; // ✅ NAIK dari 95 → 190
             float textWidth = font.getWidth(watermarkText, fontSize);
-            float textHeight = 175;
+            float textHeight = 350; // ✅ NAIK dari 175 → 350
 
             // Posisi watermark di tengah halaman
-            float centerX = width / 2 - 25;
-            float centerY = height / 2 + 100;
+            float centerX = width / 2 - 50; // ✅ ADJUST
+            float centerY = height / 2 + 200; // ✅ ADJUST
 
             // Rotasi derajat
             double angle = Math.toRadians(0);
             float cos = (float) Math.cos(angle);
             float sin = (float) Math.sin(angle);
 
-            // Terapkan matriks transformasi untuk rotasi
             canvas.concatMatrix(cos, sin, -sin, cos, centerX, centerY);
 
-            // Gambar teks watermark
             canvas.setFontAndSize(font, fontSize);
             canvas.setFillColor(ColorConstants.BLACK);
 
-            float textX = (-textWidth / 2) + 25; // Offset teks ke tengah setelah rotasi
-            float textY = (-textHeight / 2) + 50;
+            float textX = (-textWidth / 2) + 50; // ✅ ADJUST
+            float textY = (-textHeight / 2) + 100; // ✅ ADJUST
 
             canvas.beginText();
             canvas.setTextMatrix(textX, textY);
             canvas.showText(watermarkText);
             canvas.endText();
 
-            // Pattern dithering (opsional, jika tetap ingin digunakan)
-            float boxWidth = textWidth + 200;
-            float boxHeight = textHeight + 200;
-            float dotSize = 1.4f;
-            float dotSpacing = 1f;
+            // Pattern dithering
+            float boxWidth = textWidth + 400; // ✅ NAIK
+            float boxHeight = textHeight + 400; // ✅ NAIK
+            float dotSize = 2.8f; // ✅ NAIK dari 1.4f → 2.8f
+            float dotSpacing = 2f; // ✅ NAIK dari 1f → 2f
 
             canvas.setFillColor(ColorConstants.WHITE);
 
@@ -3333,25 +3569,23 @@ public class SawnTimber extends AppCompatActivity {
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDocument = new PdfDocument(writer);
 
-                // ✅ UKURAN PDF DIPERKECIL untuk printer 80mm (270 dots)
-                // 1 inch = 72 points, 80mm = 226.77 points
-                // Tapi kita pakai 210 points agar ada margin dan pas dengan 270 dots saat di-render
-                float pdfWidth = 210; // Sekitar 74mm (pas untuk 80mm paper dengan margin)
+                // ✅ CRITICAL: PDF width = Printer width (TM-U220B @ 76mm = 420 dots)
+                float pdfWidth = 420; // ✅ EXACTLY 420 dots
 
                 // Hitung tinggi dinamis
-                float baseHeight = 320; // Header, footer, dll (dikurangi dari 400)
-                float rowHeight = 16; // Per baris (dikurangi dari 20)
+                float baseHeight = 530; // ✅ NAIK dari 320 → 530
+                float rowHeight = 26; // ✅ NAIK dari 16 → 26
                 float totalHeight = baseHeight + (rowHeight * temporaryDataListDetail.size());
 
-                // ✅ Tetapkan ukuran halaman custom untuk 80mm printer
+                // ✅ Tetapkan ukuran halaman custom
                 Rectangle pageSize = new Rectangle(pdfWidth, totalHeight);
                 pdfDocument.setDefaultPageSize(new PageSize(pageSize));
 
                 Document document = new Document(pdfDocument);
-                document.setMargins(0, 3, 0, 3); // Margin lebih kecil
+                document.setMargins(0, 5, 0, 5); // ✅ Margin proper
 
                 // ✅ Hitung lebar dengan proporsi baru
-                float pageWidth = pdfWidth - 10; // Margin kiri-kanan
+                float pageWidth = pdfWidth - 10; // 410 dots usable
                 float[] mainColumnWidths = new float[]{pageWidth * 0.5f, pageWidth * 0.5f};
 
                 Table mainTable = new Table(mainColumnWidths)
@@ -3359,14 +3593,14 @@ public class SawnTimber extends AppCompatActivity {
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
                         .setBorder(Border.NO_BORDER);
 
-                float[] infoColumnWidths = new float[]{12, 3, 60}; // Dikurangi proporsinya
+                float[] infoColumnWidths = new float[]{24, 6, 120}; // ✅ NAIK dari {12, 3, 60}
 
                 // Buat tabel untuk kolom kiri
                 Table leftColumn = new Table(infoColumnWidths)
                         .setWidth(pageWidth * 0.47f)
                         .setBorder(Border.NO_BORDER)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(9); // ✅ Font size dikurangi
+                        .setFontSize(14); // ✅ NAIK dari 9 → 14
 
                 // Isi kolom kiri
                 addInfoRow(leftColumn, "Jenis", jenisKayu, timesNewRoman);
@@ -3378,7 +3612,7 @@ public class SawnTimber extends AppCompatActivity {
                         .setWidth(pageWidth * 0.53f)
                         .setBorder(Border.NO_BORDER)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(9); // ✅ Font size dikurangi
+                        .setFontSize(14); // ✅ NAIK dari 9 → 14
 
                 // Isi kolom kanan
                 addInfoRow(rightColumn, "Tgl", formattedDateStick, timesNewRoman);
@@ -3400,11 +3634,11 @@ public class SawnTimber extends AppCompatActivity {
                 mainTable.addCell(rightCell);
 
                 // ✅ Tabel data - proporsi disesuaikan
-                float[] width = {50f, 50f, 50f, 50f}; // Dikurangi dari 70f
+                float[] width = {100f, 100f, 100f, 100f}; // ✅ NAIK dari {50f, 50f, 50f, 50f}
                 Table table = new Table(width)
                         .setHorizontalAlignment(HorizontalAlignment.CENTER)
-                        .setMarginTop(3)
-                        .setFontSize(10); // Dikurangi dari 13
+                        .setMarginTop(6) // ✅ NAIK dari 3 → 6
+                        .setFontSize(16); // ✅ NAIK dari 10 → 16
 
                 // Header tabel
                 String[] headers = {"Tebal", "Lebar", "Panjang", "Pcs"};
@@ -3413,7 +3647,7 @@ public class SawnTimber extends AppCompatActivity {
                             .add(new Paragraph(header)
                                     .setTextAlignment(TextAlignment.CENTER)
                                     .setFont(timesNewRoman)
-                                    .setFontSize(9))); // ✅ Font size header
+                                    .setFontSize(14))); // ✅ NAIK dari 9 → 14
                 }
 
                 // Isi tabel
@@ -3425,43 +3659,43 @@ public class SawnTimber extends AppCompatActivity {
                     String panjang = (row.getPanjang() != null) ? df.format(Float.parseFloat(row.getPanjang())) : "-";
                     String pcs = (row.getPcs() != null) ? df.format(Integer.parseInt(row.getPcs())) : "-";
 
-                    table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
-                    table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
-                    table.addCell(new Cell().add(new Paragraph(panjang + " " + idUOMPanjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
-                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(9)));
+                    table.addCell(new Cell().add(new Paragraph(tebal + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(14))); // ✅ NAIK 9 → 14
+                    table.addCell(new Cell().add(new Paragraph(lebar + " " + idUOMTblLebar).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(14))); // ✅ NAIK 9 → 14
+                    table.addCell(new Cell().add(new Paragraph(panjang + " " + idUOMPanjang).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(14))); // ✅ NAIK 9 → 14
+                    table.addCell(new Cell().add(new Paragraph(pcs).setTextAlignment(TextAlignment.CENTER).setFont(timesNewRoman).setFontSize(14))); // ✅ NAIK 9 → 14
                 }
 
                 // ✅ Detail Pcs, Ton, M3 - proporsi disesuaikan
-                float[] columnWidths = {25f, 8f, 55f}; // Dikurangi
+                float[] columnWidths = {50f, 16f, 110f}; // ✅ NAIK dari {25f, 8f, 55f}
                 Table sumTable = new Table(columnWidths)
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
-                        .setMarginTop(3)
-                        .setFontSize(10) // Dikurangi dari 14
+                        .setMarginTop(6) // ✅ NAIK dari 3 → 6
+                        .setFontSize(16) // ✅ NAIK dari 10 → 16
                         .setBorder(Border.NO_BORDER);
 
-                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph("Jumlah").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14)); // ✅ 9→14, leading 12→18
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(jumlahPcs)).setFixedLeading(18)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
 
-                sumTable.addCell(new Cell().add(new Paragraph("Ton").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph("Ton").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(ton)).setFixedLeading(18)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
 
-                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(12)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
-                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(12)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(9));
+                sumTable.addCell(new Cell().add(new Paragraph("m\u00B3").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
+                sumTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(18)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
+                sumTable.addCell(new Cell().add(new Paragraph(String.valueOf(m3)).setFixedLeading(18)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER).setFont(timesNewRoman).setFontSize(14));
 
                 // ✅ QR Code dan text - ukuran disesuaikan
                 Paragraph qrCodeIDbottomLeft = new Paragraph(noST)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(10) // Dikurangi dari 12
-                        .setMargins(-10, 0, 0, 25) // Adjust margin
+                        .setFontSize(16) // ✅ NAIK dari 10 → 16
+                        .setMargins(-16, 0, 0, 50) // ✅ ADJUST
                         .setFont(timesNewRoman);
 
                 Paragraph qrCodeIDbottomRight = new Paragraph(noST)
                         .setTextAlignment(TextAlignment.CENTER)
-                        .setFontSize(20) // Dikurangi dari 25
-                        .setMargins(-60, 55, 0, 0) // Adjust margin
+                        .setFontSize(36) // ✅ NAIK dari 20 → 36
+                        .setMargins(-100, 100, 0, 0) // ✅ ADJUST
                         .setFont(timesNewRoman)
                         .setBold();
 
@@ -3469,79 +3703,79 @@ public class SawnTimber extends AppCompatActivity {
                 PdfFormXObject qrCodeBottomObject = qrCodeBottom.createFormXObject(ColorConstants.BLACK, pdfDocument);
 
                 Image qrCodeBottomImageLeft = new Image(qrCodeBottomObject)
-                        .setWidth(85) // Dikurangi dari 115
+                        .setWidth(160) // ✅ NAIK dari 85 → 160
                         .setHorizontalAlignment(HorizontalAlignment.LEFT)
-                        .setMargins(-55, 0, 0, 0); // Adjust margin
+                        .setMargins(-90, 0, 0, 0); // ✅ ADJUST
 
                 Image qrCodeBottomImageRight = new Image(qrCodeBottomObject)
-                        .setWidth(85) // Dikurangi dari 115
+                        .setWidth(160) // ✅ NAIK dari 85 → 160
                         .setHorizontalAlignment(HorizontalAlignment.RIGHT)
                         .setMargins(0, 0, 0, 0);
 
                 String formattedDate = DateTimeUtils.formatDateToDdYY(formattedDateStick);
                 Paragraph textBulanTahunBold = new Paragraph(formattedDate)
                         .setTextAlignment(TextAlignment.RIGHT)
-                        .setFontSize(30) // Dikurangi dari 50
-                        .setMargins(-35, 0, 0, 10) // Adjust margin
+                        .setFontSize(52) // ✅ NAIK dari 30 → 52
+                        .setMargins(-58, 0, 0, 16) // ✅ ADJUST
                         .setFont(timesNewRoman)
                         .setBold();
 
                 // ✅ Paragraph info - font size disesuaikan
                 Paragraph kayuBulat = new Paragraph("No. KB : " + noKayuBulat + " - " + namaSupplier + " - " + noTruk)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(9) // Dikurangi dari 11
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(14) // ✅ NAIK dari 9 → 14
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRoman);
 
                 Paragraph pembelianST = new Paragraph("No. Pbl : " + noPenST + " - " + namaSupplier + " - " + noTruk)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(8)
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(13) // ✅ NAIK dari 8 → 13
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRoman);
 
                 Paragraph upahST = new Paragraph("No. Upah : " + noPenST + " - " + customer + " - " + noTruk)
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(8)
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(13) // ✅ NAIK dari 8 → 13
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRoman);
 
                 Paragraph textHeader = new Paragraph("LABEL ST")
                         .setUnderline()
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(11) // Dikurangi dari 14
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(18) // ✅ NAIK dari 11 → 18
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRomanBold);
 
                 Paragraph textHeaderPembelian = new Paragraph("LABEL ST (Pbl)")
                         .setUnderline()
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(11)
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(18) // ✅ NAIK dari 11 → 18
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRomanBold);
 
                 Paragraph textHeaderUpah = new Paragraph("LABEL ST (Upah)")
                         .setUnderline()
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(11)
-                        .setMargins(0, 0, 0, 5)
+                        .setFontSize(18) // ✅ NAIK dari 11 → 18
+                        .setMargins(0, 0, 0, 8)
                         .setFont(timesNewRomanBold);
 
                 Paragraph textHeaderNomor = new Paragraph("NO : " + noST)
                         .setUnderline()
                         .setTextAlignment(TextAlignment.LEFT)
-                        .setFontSize(11)
-                        .setMargins(-17, 0, 0, 110) // Adjust margin
+                        .setFontSize(18) // ✅ NAIK dari 11 → 18
+                        .setMargins(-28, 0, 0, 200) // ✅ ADJUST (2x dari 110→200)
                         .setFont(timesNewRomanBold);
 
                 Paragraph remarkText = new Paragraph("Remark : " + remark)
                         .setTextAlignment(TextAlignment.CENTER)
-                        .setFontSize(9) // Dikurangi dari 12
-                        .setMargins(-8, 0, 0, 0)
+                        .setFontSize(14) // ✅ NAIK dari 9 → 14
+                        .setMargins(-13, 0, 0, 0)
                         .setFont(timesNewRoman);
 
                 // Buat DashedLine
-                DashedLine dashedLine = new DashedLine(3f);
-                dashedLine.setLineWidth(1);
+                DashedLine dashedLine = new DashedLine(5f); // ✅ NAIK dari 3f → 5f
+                dashedLine.setLineWidth(2); // ✅ NAIK dari 1 → 2
                 LineSeparator dashedSeparator = new LineSeparator(dashedLine);
 
                 // ✅ Tambahkan semua elemen ke dokumen
@@ -3580,10 +3814,10 @@ public class SawnTimber extends AppCompatActivity {
 
                     Paragraph p = new Paragraph("SLP")
                             .setFont(timesNewRomanBold)
-                            .setFontSize(20); // Dikurangi dari 25
+                            .setFontSize(36); // ✅ NAIK dari 20 → 36
 
-                    float x = ps.getWidth() - 90; // Adjust posisi
-                    float y = 120; // Adjust posisi
+                    float x = ps.getWidth() - 160; // ✅ ADJUST
+                    float y = 200; // ✅ ADJUST
 
                     document.showTextAligned(p, x, y, TextAlignment.RIGHT);
                 }

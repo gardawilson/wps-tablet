@@ -15,8 +15,17 @@ import com.epson.epos2.Epos2Exception;
 import com.epson.epos2.printer.Printer;
 import com.epson.epos2.printer.PrinterStatusInfo;
 import com.epson.epos2.printer.ReceiveListener;
+import com.example.myapplication.model.LabelDetailData;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.itextpdf.barcodes.BarcodeQRCode;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.List;
 
 public class EpsonPrinterHelper {
 
@@ -61,7 +70,197 @@ public class EpsonPrinterHelper {
         }).start();
     }
 
-    // METHOD BARU: Test print text untuk verify printer
+    // ========== PRINT DIRECT TEXT (NEW METHOD) ==========
+    public void printDirectText(
+            String noST, String jenisKayu, String tglStickBundle,
+            String tellyBy, String noSPK, String stickBy, String platTruk,
+            List<LabelDetailData> detailData, String noKayuBulat, String namaSupplier,
+            String noTruk, String jumlahPcs, String m3, String ton,
+            int printCount, String remark, int isSLP, String idUOMTblLebar,
+            String idUOMPanjang, String noPenST, int labelVersion, String customer,
+            String printerTarget, PrintCallback callback
+    ) {
+        this.callback = callback;
+
+        new Thread(() -> {
+            try {
+                Log.d(TAG, "Starting direct text print");
+                initializePrinter();
+                connectPrinter(printerTarget);
+
+                // === HEADER ===
+                String headerLabel = "";
+                if (labelVersion == 1 || noPenST.startsWith("BA")) {
+                    headerLabel = "LABEL ST (Pbl)";
+                } else if (labelVersion == 2 || noPenST.startsWith("O")) {
+                    headerLabel = "LABEL ST (Upah)";
+                } else {
+                    headerLabel = "LABEL ST";
+                }
+
+                printer.addTextAlign(Printer.ALIGN_CENTER);
+                printer.addTextStyle(Printer.FALSE, Printer.TRUE, Printer.FALSE, Printer.COLOR_1); // Bold
+                printer.addTextSize(2, 2);
+                printer.addText(headerLabel + "\n");
+                printer.addTextStyle(Printer.FALSE, Printer.FALSE, Printer.FALSE, Printer.COLOR_1); // Normal
+                printer.addTextSize(1, 1);
+                printer.addFeedLine(1);
+
+                // === NO ST (BOLD, LARGE) ===
+                printer.addTextAlign(Printer.ALIGN_LEFT);
+                printer.addTextStyle(Printer.FALSE, Printer.TRUE, Printer.FALSE, Printer.COLOR_1);
+                printer.addTextSize(2, 2);
+                printer.addText("NO: " + noST + "\n");
+                printer.addTextStyle(Printer.FALSE, Printer.FALSE, Printer.FALSE, Printer.COLOR_1);
+                printer.addTextSize(1, 1);
+                printer.addFeedLine(1);
+
+                // === WATERMARK "COPY" (jika printCount > 0) ===
+                if (printCount > 0) {
+                    printer.addTextAlign(Printer.ALIGN_CENTER);
+                    printer.addTextSize(3, 3);
+                    printer.addTextStyle(Printer.FALSE, Printer.TRUE, Printer.FALSE, Printer.COLOR_1);
+                    printer.addText("*** COPY ***\n");
+                    printer.addTextStyle(Printer.FALSE, Printer.FALSE, Printer.FALSE, Printer.COLOR_1);
+                    printer.addTextSize(1, 1);
+                    printer.addFeedLine(1);
+                }
+
+                // === INFO SECTION (2 KOLOM) ===
+                printer.addTextAlign(Printer.ALIGN_LEFT);
+                printer.addText(String.format("%-18s %-20s\n", "Jenis: " + jenisKayu, "Tgl: " + tglStickBundle));
+                printer.addText(String.format("%-18s %-20s\n", "Plat: " + platTruk, "Telly: " + tellyBy));
+                printer.addText(String.format("%-18s %-20s\n", "SPK: " + noSPK, "Stick: " + stickBy));
+                printer.addFeedLine(1);
+
+                // === INFO TAMBAHAN (Kayu Bulat / Pembelian / Upah) ===
+                if (labelVersion == 1 || noPenST.startsWith("BA")) {
+                    printer.addText("No. Pbl: " + noPenST + "\n");
+                    printer.addText("Supplier: " + namaSupplier + "\n");
+                    printer.addText("No. Truk: " + noTruk + "\n");
+                } else if (labelVersion == 2 || noPenST.startsWith("O")) {
+                    printer.addText("No. Upah: " + noPenST + "\n");
+                    printer.addText("Customer: " + customer + "\n");
+                    printer.addText("No. Truk: " + noTruk + "\n");
+                } else {
+                    printer.addText("No. KB: " + noKayuBulat + "\n");
+                    printer.addText("Supplier: " + namaSupplier + "\n");
+                    printer.addText("No. Truk: " + noTruk + "\n");
+                }
+                printer.addFeedLine(1);
+
+                // === SEPARATOR ===
+                printer.addText("========================================\n");
+
+                // === TABLE HEADER ===
+                printer.addTextAlign(Printer.ALIGN_CENTER);
+                printer.addTextStyle(Printer.FALSE, Printer.TRUE, Printer.FALSE, Printer.COLOR_1);
+                printer.addText(String.format("%-10s %-10s %-10s %-8s\n", "Tebal", "Lebar", "Panjang", "Pcs"));
+                printer.addTextStyle(Printer.FALSE, Printer.FALSE, Printer.FALSE, Printer.COLOR_1);
+                printer.addText("----------------------------------------\n");
+
+                // === TABLE DATA ===
+                DecimalFormat df = new DecimalFormat("#,###.##");
+                for (LabelDetailData row : detailData) {
+                    String tebal = row.getTebal() != null ? df.format(Float.parseFloat(row.getTebal())) : "-";
+                    String lebar = row.getLebar() != null ? df.format(Float.parseFloat(row.getLebar())) : "-";
+                    String panjang = row.getPanjang() != null ? df.format(Float.parseFloat(row.getPanjang())) : "-";
+                    String pcs = row.getPcs() != null ? df.format(Integer.parseInt(row.getPcs())) : "-";
+
+                    String tebalStr = tebal + " " + idUOMTblLebar;
+                    String lebarStr = lebar + " " + idUOMTblLebar;
+                    String panjangStr = panjang + " " + idUOMPanjang;
+
+                    printer.addText(String.format("%-10s %-10s %-10s %-8s\n", tebalStr, lebarStr, panjangStr, pcs));
+                }
+
+                // === SEPARATOR ===
+                printer.addText("========================================\n");
+
+                // === SUMMARY ===
+                printer.addTextAlign(Printer.ALIGN_RIGHT);
+                printer.addText("Jumlah : " + jumlahPcs + "\n");
+                printer.addText("Ton    : " + ton + "\n");
+                printer.addText("m3     : " + m3 + "\n");
+                printer.addFeedLine(2);
+
+                // === REMARK (jika ada) ===
+                if (!remark.isEmpty() && !remark.equals("-")) {
+                    printer.addTextAlign(Printer.ALIGN_CENTER);
+                    printer.addText("Remark: " + remark + "\n");
+                    printer.addFeedLine(1);
+                }
+
+                // === QR CODE ===
+                Bitmap qrBitmap = generateQRCode(noST, 200);
+                if (qrBitmap != null) {
+                    printer.addTextAlign(Printer.ALIGN_CENTER);
+                    printer.addImage(
+                            qrBitmap, 0, 0,
+                            qrBitmap.getWidth(), qrBitmap.getHeight(),
+                            Printer.COLOR_1, Printer.MODE_MONO,
+                            Printer.HALFTONE_DITHER,
+                            Printer.PARAM_DEFAULT,
+                            Printer.COMPRESS_NONE
+                    );
+                    qrBitmap.recycle();
+                }
+
+                printer.addFeedLine(1);
+                printer.addTextAlign(Printer.ALIGN_CENTER);
+                printer.addTextSize(2, 2);
+                printer.addText(noST + "\n");
+                printer.addTextSize(1, 1);
+
+                // === LABEL SLP (jika isSLP == 1) ===
+                if (isSLP == 1) {
+                    printer.addFeedLine(1);
+                    printer.addTextAlign(Printer.ALIGN_RIGHT);
+                    printer.addTextSize(3, 3);
+                    printer.addTextStyle(Printer.FALSE, Printer.TRUE, Printer.FALSE, Printer.COLOR_1);
+                    printer.addText("SLP\n");
+                    printer.addTextStyle(Printer.FALSE, Printer.FALSE, Printer.FALSE, Printer.COLOR_1);
+                    printer.addTextSize(1, 1);
+                }
+
+                // === SEPARATOR AKHIR (Dotted Line) ===
+                printer.addFeedLine(2);
+                printer.addTextAlign(Printer.ALIGN_CENTER);
+                printer.addText("- - - - - - - - - - - - - - - - - - - -\n");
+                printer.addFeedLine(5);
+
+                // === SEND PRINT DATA ===
+                Log.d(TAG, "Sending print data...");
+                printer.sendData(Printer.PARAM_DEFAULT);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                notifyError("Print failed: " + e.getMessage());
+                disconnectPrinter();
+            }
+        }).start();
+    }
+
+    // === HELPER: Generate QR Code Bitmap ===
+    private Bitmap generateQRCode(String text, int size) {
+        try {
+            QRCodeWriter writer = new QRCodeWriter();
+            BitMatrix bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size);
+
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            for (int x = 0; x < size; x++) {
+                for (int y = 0; y < size; y++) {
+                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            return bitmap;
+
+        } catch (WriterException e) {
+            Log.e(TAG, "Failed to generate QR code: " + e.getMessage());
+            return null;
+        }
+    }
+
     public void testPrintText(String printerTarget, PrintCallback callback) {
         this.callback = callback;
 
@@ -71,7 +270,6 @@ public class EpsonPrinterHelper {
                 initializePrinter();
                 connectPrinter(printerTarget);
 
-                // Simple text print untuk test printer
                 printer.addTextAlign(Printer.ALIGN_CENTER);
                 printer.addTextSize(2, 2);
                 printer.addText("=== TEST PRINT ===\n");
@@ -91,6 +289,7 @@ public class EpsonPrinterHelper {
             }
         }).start();
     }
+
 
     private void initializePrinter() throws Epos2Exception {
         if (printer != null) {
@@ -115,13 +314,13 @@ public class EpsonPrinterHelper {
 
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (code == 0) {
-                        Log.d(TAG, "Print success!");
+                        Log.d(TAG, "✅ Print success!");
                         if (callback != null) {
                             callback.onPrintSuccess();
                         }
                     } else {
                         String errorMsg = getErrorMessage(code);
-                        Log.e(TAG, "Print failed: " + errorMsg);
+                        Log.e(TAG, "❌ Print failed: " + errorMsg);
                         if (callback != null) {
                             callback.onPrintError("Print failed: " + errorMsg);
                         }
@@ -139,7 +338,6 @@ public class EpsonPrinterHelper {
         Log.d(TAG, "Connecting to: " + target);
 
         try {
-            // Clear any previous connection state
             if (printer != null) {
                 try {
                     PrinterStatusInfo status = printer.getStatus();
@@ -158,10 +356,8 @@ public class EpsonPrinterHelper {
             Log.d(TAG, "Connected successfully");
             notifyProgress("Terhubung. Mempersiapkan print...");
 
-            // Delay untuk stabilitas
             Thread.sleep(1000);
 
-            // Check printer status
             PrinterStatusInfo status = printer.getStatus();
             logPrinterStatus(status);
 
@@ -169,7 +365,6 @@ public class EpsonPrinterHelper {
                 throw new Epos2Exception(Epos2Exception.ERR_DISCONNECT);
             }
 
-            // Warning jika offline tapi tetap lanjut (beberapa printer report offline padahal ready)
             if (status.getOnline() == Printer.FALSE) {
                 Log.w(TAG, "Warning: Printer reports offline, attempting to continue...");
             }
@@ -184,6 +379,8 @@ public class EpsonPrinterHelper {
             throw e;
         }
     }
+
+    // ✅ UPDATED: Direct 1:1 rendering (NO SCALING)
     private void printPdfPages(Uri pdfUri) throws IOException, Epos2Exception {
         ParcelFileDescriptor fileDescriptor = null;
         PdfRenderer pdfRenderer = null;
@@ -200,97 +397,138 @@ public class EpsonPrinterHelper {
             notifyProgress("Memproses " + pageCount + " halaman...");
 
             for (int i = 0; i < pageCount; i++) {
-                PdfRenderer.Page page = pdfRenderer.openPage(i);
+                PdfRenderer.Page page = null;
+                Bitmap renderedBitmap = null;
+                Bitmap monoBitmap = null;
 
-                int originalWidth = page.getWidth();
-                int originalHeight = page.getHeight();
-                float aspectRatio = (float) originalHeight / originalWidth;
+                try {
+                    page = pdfRenderer.openPage(i);
 
-                // ✅ TURUNKAN WIDTH - mulai dari 280 (biasanya aman untuk 80mm)
-                // Kalau masih terpotong, turunkan ke 260, 240, dst
-                int targetWidth = 220; // ← COBA: 280, 270, 260, 250, 240
+                    // ✅ PDF sekarang 420 points, render DIRECT 1:1
+                    int pdfWidth = page.getWidth();   // 420 from PDF
+                    int pdfHeight = page.getHeight();
 
-                // ✅ TAPI render dengan DPI LEBIH TINGGI untuk quality
-                float dpiScale = 1.5f; // Render 1.5x lebih besar, lalu scale down
+                    Log.d(TAG, "=== Page " + (i + 1) + " ===");
+                    Log.d(TAG, "PDF Size: " + pdfWidth + "x" + pdfHeight);
+                    Log.d(TAG, "Rendering: DIRECT 1:1 (NO SCALING)");
 
-                int renderWidth = (int) (targetWidth * dpiScale);
-                int renderHeight = (int) (renderWidth * aspectRatio);
+                    // ✅ Render dengan ukuran ASLI PDF (420 points)
+                    renderedBitmap = Bitmap.createBitmap(pdfWidth, pdfHeight, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(renderedBitmap);
+                    canvas.drawColor(Color.WHITE);
 
-                // Limit height
-                if (renderHeight > 2000) {
-                    renderHeight = 2000;
-                    renderWidth = (int) (renderHeight / aspectRatio);
-                }
+                    // ✅ RENDER_MODE_FOR_PRINT
+                    page.render(renderedBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
 
-                Log.d(TAG, "Original: " + originalWidth + "x" + originalHeight);
-                Log.d(TAG, "Render: " + renderWidth + "x" + renderHeight + " (DPI scale: " + dpiScale + "x)");
-                Log.d(TAG, "Final print: " + targetWidth + " dots width");
+                    // ✅ Convert langsung ke B&W (NO SCALING!)
+                    monoBitmap = convertToMonochromeWithDithering(renderedBitmap);
 
-                // ✅ Render dengan ukuran BESAR (high DPI)
-                Bitmap highResBitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(highResBitmap);
-                canvas.drawColor(Color.WHITE);
-                page.render(highResBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+                    int finalWidth = monoBitmap.getWidth();
+                    int finalHeight = monoBitmap.getHeight();
 
-                // ✅ Scale down ke target size dengan high quality filter
-                Bitmap scaledBitmap = Bitmap.createScaledBitmap(highResBitmap, targetWidth, (int)(targetWidth * aspectRatio), true);
-                highResBitmap.recycle();
+                    Log.d(TAG, "Final bitmap: " + finalWidth + "x" + finalHeight);
 
-                // ✅ Convert dengan dithering
-                Bitmap monoBitmap = convertToMonochrome(scaledBitmap);
-                scaledBitmap.recycle();
+                    notifyProgress("Mencetak halaman " + (i + 1) + "/" + pageCount);
 
-                int finalHeight = monoBitmap.getHeight();
+                    // ✅ Print EXACT SIZE (420 dots width)
+                    printer.addImage(
+                            monoBitmap,
+                            0, 0,
+                            finalWidth,
+                            finalHeight,
+                            Printer.COLOR_1,
+                            Printer.MODE_MONO,
+                            Printer.HALFTONE_DITHER,
+                            Printer.PARAM_DEFAULT,
+                            Printer.COMPRESS_NONE
+                    );
 
-                notifyProgress("Mencetak " + (i + 1) + "/" + pageCount);
+                    Log.d(TAG, "Page " + (i + 1) + " sent to printer successfully");
 
-                // ✅ Print dengan ukuran yang PAS di printer
-                printer.addImage(
-                        monoBitmap,
-                        0, 0,
-                        targetWidth,
-                        finalHeight,
-                        Printer.COLOR_1,
-                        Printer.MODE_MONO,
-                        Printer.HALFTONE_DITHER,
-                        Printer.PARAM_DEFAULT,
-                        Printer.COMPRESS_NONE
-                );
+                    if (i < pageCount - 1) {
+                        printer.addFeedLine(3);
+                    }
 
-                page.close();
-                monoBitmap.recycle();
+                } catch (Epos2Exception e) {
+                    Log.e(TAG, "Epos2Exception on page " + (i + 1) + ": " + getErrorMessage(e.getErrorStatus()), e);
+                    throw e;
 
-                if (i < pageCount - 1) {
-                    printer.addFeedLine(2);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error processing page " + (i + 1) + ": " + e.getMessage(), e);
+                    throw e;
+
+                } finally {
+                    // ✅ CLEANUP BITMAPS
+                    if (monoBitmap != null && !monoBitmap.isRecycled()) {
+                        monoBitmap.recycle();
+                        monoBitmap = null;
+                    }
+                    if (renderedBitmap != null && !renderedBitmap.isRecycled()) {
+                        renderedBitmap.recycle();
+                        renderedBitmap = null;
+                    }
+
+                    // ✅ CLOSE PAGE
+                    if (page != null) {
+                        try {
+                            page.close();
+                            Log.d(TAG, "Page " + (i + 1) + " closed successfully");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error closing page " + (i + 1) + ": " + e.getMessage());
+                        }
+                        page = null;
+                    }
                 }
             }
 
+            // ✅ Send print data
             printer.addFeedLine(5);
+
+            Log.d(TAG, "Sending print data to printer...");
             printer.sendData(Printer.PARAM_DEFAULT);
+            Log.d(TAG, "✅ Print data sent successfully");
 
         } finally {
-            if (pdfRenderer != null) pdfRenderer.close();
-            if (fileDescriptor != null) fileDescriptor.close();
+            // ✅ CLEANUP RENDERER & FILE
+            if (pdfRenderer != null) {
+                try {
+                    pdfRenderer.close();
+                    Log.d(TAG, "PDF Renderer closed");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing PDF renderer: " + e.getMessage());
+                }
+            }
+            if (fileDescriptor != null) {
+                try {
+                    fileDescriptor.close();
+                    Log.d(TAG, "File descriptor closed");
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing file descriptor: " + e.getMessage());
+                }
+            }
         }
     }
+
+    // ✅ Floyd-Steinberg Dithering (SAME AS BEFORE)
     private Bitmap convertToMonochromeWithDithering(Bitmap source) {
         int width = source.getWidth();
         int height = source.getHeight();
 
         int[][] grayPixels = new int[height][width];
 
-        // Convert ke grayscale
+        // ✅ Weighted grayscale (ITU-R BT.601 standard)
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int pixel = source.getPixel(x, y);
                 int r = Color.red(pixel);
                 int g = Color.green(pixel);
                 int b = Color.blue(pixel);
+                // Luminance formula
                 grayPixels[y][x] = (int)(0.299 * r + 0.587 * g + 0.114 * b);
             }
         }
 
-        // Floyd-Steinberg Dithering
+        // ✅ Floyd-Steinberg Dithering
         int threshold = 128;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -300,6 +538,7 @@ public class EpsonPrinterHelper {
 
                 int error = oldPixel - newPixel;
 
+                // Distribute error ke pixel sekitar
                 if (x + 1 < width) {
                     grayPixels[y][x + 1] = clamp(grayPixels[y][x + 1] + error * 7 / 16);
                 }
@@ -315,6 +554,7 @@ public class EpsonPrinterHelper {
             }
         }
 
+        // Convert ke Bitmap
         Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -328,35 +568,6 @@ public class EpsonPrinterHelper {
 
     private int clamp(int value) {
         return Math.max(0, Math.min(255, value));
-    }
-
-
-    // METHOD BARU: Convert ke pure black & white
-    private Bitmap convertToMonochrome(Bitmap source) {
-        int width = source.getWidth();
-        int height = source.getHeight();
-
-        Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-        // Threshold: 128 = medium (adjust kalau terlalu terang/gelap)
-        int threshold = 125;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int pixel = source.getPixel(x, y);
-
-                int r = Color.red(pixel);
-                int g = Color.green(pixel);
-                int b = Color.blue(pixel);
-                int gray = (r + g + b) / 3;
-
-                // Pure black or white
-                int newPixel = (gray < threshold) ? Color.BLACK : Color.WHITE;
-                monoBitmap.setPixel(x, y, newPixel);
-            }
-        }
-
-        return monoBitmap;
     }
 
     private void disconnectPrinter() {
