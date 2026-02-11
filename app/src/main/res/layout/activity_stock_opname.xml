@@ -140,7 +140,7 @@
                 android:id="@+id/searchData"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1.5"
+                android:layout_weight="1.2"
                 android:background="@drawable/searchview_background"
                 android:queryHint="Cari..."
                 android:padding="8dp"
@@ -160,10 +160,25 @@
                 android:textColor="@color/white"
                 android:backgroundTint="@color/primary_dark"
                 android:paddingHorizontal="16dp"
+                android:layout_marginRight="16dp"
                 android:paddingVertical="12dp"
                 android:elevation="2dp"
                 app:cornerRadius="8dp"
                 app:icon="@drawable/ic_filter"/>
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/inputAfterButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Input"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/primary_dark"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:elevation="2dp"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_add"/>
 
         </LinearLayout>
 

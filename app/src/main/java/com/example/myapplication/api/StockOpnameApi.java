@@ -1,9 +1,14 @@
 package com.example.myapplication.api;
 
+
+import static com.example.myapplication.config.ApiEndpoints.BASE_URL_API;
+
 import android.util.Log;
 
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LokasiBlok;
+import com.example.myapplication.model.LokasiItem;
+import com.example.myapplication.model.ScanLabelResponse;
 import com.example.myapplication.model.StockOpnameAscendData;
 import com.example.myapplication.model.StockOpnameAscendFamilyData;
 import com.example.myapplication.model.StockOpnameData;
@@ -11,6 +16,15 @@ import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
 import com.example.myapplication.model.UserIDSO;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -1570,7 +1584,120 @@ public class StockOpnameApi {
         }
     }
 
+//API VERSION
 
+    public static ScanLabelResponse scanLabel(String noso, String token, String resultScanned, String idLokasi, Boolean forceSave) {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(BASE_URL_API + "/api/no-stock-opname/" + noso + "/scan");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(30000);
+            connection.setReadTimeout(30000);
+
+            // Buat JSON request body
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("resultscanned", resultScanned);
+            requestBody.put("idlokasi", idLokasi);
+            if (forceSave != null) {
+                requestBody.put("forceSave", forceSave);
+            }
+
+            // Kirim request body
+            OutputStream os = connection.getOutputStream();
+            os.write(requestBody.toString().getBytes("UTF-8"));
+            os.close();
+
+            int responseCode = connection.getResponseCode();
+
+            // Baca response
+            InputStream inputStream;
+            if (responseCode >= 200 && responseCode < 300) {
+                inputStream = connection.getInputStream();
+            } else {
+                inputStream = connection.getErrorStream();
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Parse response
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            String message = jsonResponse.optString("message", "");
+
+            return new ScanLabelResponse(responseCode, message);
+
+        } catch (Exception e) {
+            Log.e("StockOpnameApi", "Error scanning label: " + e.getMessage());
+            return new ScanLabelResponse(500, "Error: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    public static List<LokasiItem> getLokasiFromAPI(String token) {
+        HttpURLConnection connection = null;
+        List<LokasiItem> lokasiList = new ArrayList<>();
+
+        try {
+            URL url = new URL(BASE_URL_API + "/api/mst-lokasi");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
+            connection.setConnectTimeout(30000);
+            connection.setReadTimeout(30000);
+
+            int responseCode = connection.getResponseCode();
+
+            InputStream inputStream;
+            if (responseCode >= 200 && responseCode < 300) {
+                inputStream = connection.getInputStream();
+            } else {
+                inputStream = connection.getErrorStream();
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Parse JSON response
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            if (jsonResponse.getBoolean("success")) {
+                JSONArray dataArray = jsonResponse.getJSONArray("data");
+
+                for (int i = 0; i < dataArray.length(); i++) {
+                    JSONObject item = dataArray.getJSONObject(i);
+                    String idLokasi = item.getString("IdLokasi");
+                    String blok = item.optString("Blok", "");
+                    lokasiList.add(new LokasiItem(idLokasi, blok));
+                }
+            }
+
+            return lokasiList;
+
+        } catch (Exception e) {
+            Log.e("StockOpnameApi", "Error fetching lokasi: " + e.getMessage());
+            return lokasiList;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 
 
 

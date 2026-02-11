@@ -34,7 +34,6 @@ navigationUi = "2.6.0"
 
 
 
-
 [libraries]
 itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7Core" }
 jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }

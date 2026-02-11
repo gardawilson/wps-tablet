@@ -21,8 +21,11 @@ import androidx.core.content.FileProvider;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
+import com.example.myapplication.api.AuthApi;
 import com.example.myapplication.config.DatabaseConfig;
+import com.example.myapplication.model.LoginResponse;
 import com.example.myapplication.utils.SharedPrefUtils;
+import com.example.myapplication.utils.TokenManager;
 
 import java.io.File;
 import java.security.MessageDigest;
@@ -90,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+
         BtnLogin.setOnClickListener(v -> {
             String username = Username.getText().toString().trim();
             String password = Password.getText().toString().trim();
@@ -104,13 +108,14 @@ public class MainActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (isLoginSuccessful) {
-//                        SharedPrefUtils.saveUsername(username);
-                        // Start the task to insert into Riwayat
                         String capitalizedUsername = capitalizeFirstLetter(username);
-
                         String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                         String activity = String.format("User %s Telah Login", capitalizedUsername);
                         new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+                        // Auto-login ke API untuk mendapatkan token
+                        loginToStockOpnameApi(username, password);
+
                         Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(MainActivity.this, MenuUtama.class);
                         startActivity(intent);
@@ -428,7 +433,49 @@ public class MainActivity extends AppCompatActivity {
         return isValid;
     }
 
+    private void loginToStockOpnameApi(String username, String password) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            LoginResponse response = AuthApi.login(username, password);
 
+            runOnUiThread(() -> {
+                if (response.isSuccess() && response.getToken() != null && !response.getToken().isEmpty()) {
+                    // Simpan token
+                    TokenManager.saveToken(MainActivity.this, response.getToken());
+
+                    // Simpan user data dan permissions dari API
+                    if (response.getUser() != null) {
+                        TokenManager.saveUserData(
+                                MainActivity.this,
+                                response.getUser().getIdUsername(),
+                                response.getUser().getUsername(),
+                                response.getUser().getFullName()
+                        );
+
+                        // Gabungkan permissions dari database dan API
+                        List<String> apiPermissions = response.getUser().getPermissions();
+                        if (apiPermissions != null && !apiPermissions.isEmpty()) {
+                            // Ambil permissions yang sudah ada dari database
+                            List<String> existingPermissions = SharedPrefUtils.getPermissions(MainActivity.this);
+
+                            // Gabungkan dengan permissions dari API (hindari duplikat)
+                            Set<String> combinedPermissions = new HashSet<>(existingPermissions);
+                            combinedPermissions.addAll(apiPermissions);
+
+                            // Simpan kembali permissions yang sudah digabung
+                            SharedPrefUtils.savePermissions(MainActivity.this, new ArrayList<>(combinedPermissions));
+
+                            Log.d("API_LOGIN", "Token dan permissions berhasil disimpan. Total permissions: " + combinedPermissions.size());
+                        }
+                    }
+
+                    Log.d("API_LOGIN", "Token berhasil disimpan");
+                } else {
+                    Log.e("API_LOGIN", "Gagal mendapatkan token API: " + response.getMessage());
+                    // Tidak perlu toast karena user sudah berhasil login ke aplikasi utama
+                }
+            });
+        });
+    }
 
 
     private String hashPassword(String password) {

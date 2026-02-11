@@ -14,6 +14,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -34,12 +35,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.api.StockOpnameApi;
 import com.example.myapplication.model.LokasiBlok;
+import com.example.myapplication.model.LokasiItem;
+import com.example.myapplication.model.ScanLabelResponse;
 import com.example.myapplication.model.StockOpnameData;
 import com.example.myapplication.model.StockOpnameDataByNoSO;
 import com.example.myapplication.model.StockOpnameDataInputByNoSO;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.model.UserIDSO;
 import com.example.myapplication.config.WebSocketConnection;
+import com.example.myapplication.utils.TokenManager;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -64,6 +68,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     private RecyclerView recyclerViewAfter;
     private SearchView searchView;
     private Button filterButton;
+    private Button inputAfterButton;
     private Spinner blokSpinner;
     private Spinner idLokasiSpinner;
     private Spinner spinnerNoSO;
@@ -136,6 +141,145 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
 
         setListeners();
 
+    }
+
+
+    private void showInputScanDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_input_scan_stock_opname, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(R.drawable.rounded_background);
+        }
+
+        EditText etResultScanned = dialogView.findViewById(R.id.etResultScanned);
+        Spinner spinnerIdLokasi = dialogView.findViewById(R.id.spinnerIdLokasi);
+        Button btnScan = dialogView.findViewById(R.id.btnScan);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelScan);
+
+        // Ambil token
+        String token = TokenManager.getToken(this);
+
+        if (token.isEmpty()) {
+            Toast.makeText(this, "Token tidak ditemukan. Silakan login kembali", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Load lokasi dari API
+        executorService.execute(() -> {
+            List<LokasiItem> lokasiList = StockOpnameApi.getLokasiFromAPI(token);
+
+            runOnUiThread(() -> {
+                if (lokasiList != null && !lokasiList.isEmpty()) {
+                    // Setup spinner adapter
+                    ArrayAdapter<LokasiItem> adapter = new ArrayAdapter<>(
+                            this,
+                            android.R.layout.simple_spinner_item,
+                            lokasiList
+                    );
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                    spinnerIdLokasi.setAdapter(adapter);
+                } else {
+                    Toast.makeText(this, "Gagal memuat data lokasi", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        btnScan.setOnClickListener(v -> {
+            String resultScanned = etResultScanned.getText().toString().trim();
+
+            // Ambil lokasi yang dipilih dari spinner
+            LokasiItem selectedLokasi = (LokasiItem) spinnerIdLokasi.getSelectedItem();
+
+            if (resultScanned.isEmpty()) {
+                Toast.makeText(this, "Result Scanned tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (selectedLokasi == null) {
+                Toast.makeText(this, "Pilih ID Lokasi terlebih dahulu", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!resultScanned.matches("^[ERSTUVWIA]\\.\\d{6}$")) {
+                Toast.makeText(this, "Format harus berupa Kode.xxxxxx (contoh: E.123456)", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String idLokasi = selectedLokasi.getIdLokasi();
+
+            dialog.dismiss();
+            performScanLabel(resultScanned, idLokasi, false, token);
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void performScanLabel(String resultScanned, String idLokasi, boolean forceSave, String token) {
+        if (selectedNoSO == null || selectedNoSO.isEmpty()) {
+            Toast.makeText(this, "Pilih NoSO terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        inputAfterButton.setEnabled(false);
+        inputAfterButton.setText("Loading...");
+
+        executorService.execute(() -> {
+            ScanLabelResponse response = StockOpnameApi.scanLabel(
+                    selectedNoSO,
+                    token,
+                    resultScanned,
+                    idLokasi,
+                    forceSave ? true : null
+            );
+
+            runOnUiThread(() -> {
+                inputAfterButton.setEnabled(true);
+                inputAfterButton.setText("Input");
+
+                if (response.getStatusCode() == 201) {
+                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    hasMoreDataToFetchAfter = true;
+                    hasMoreDataToFetchBefore = true;
+                    currentPageForNoSOInput = 0;
+                    currentPageForNoSO = 0;
+
+                    filterDataInputByNoSO(selectedIdLokasi, selectedLabels, selectedUserID, currentPageForNoSOInput);
+                    fetchDataByNoSO(selectedIdLokasi, selectedLabels, currentPageForNoSO);
+
+                } else if (response.getStatusCode() == 404) {
+                    showForceSaveDialog(resultScanned, idLokasi, response.getMessage(), token);
+
+                } else if (response.getStatusCode() == 422) {
+                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_LONG).show();
+
+                } else if (response.getStatusCode() == 403) {
+                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+
+                } else if (response.getStatusCode() == 400) {
+                    Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+
+                } else {
+                    Toast.makeText(this, "Error: " + response.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        });
+    }
+
+    private void showForceSaveDialog(String resultScanned, String idLokasi, String message, String token) {
+        new AlertDialog.Builder(this)
+                .setTitle("Konfirmasi")
+                .setMessage(message)
+                .setPositiveButton("Ya, Simpan", (dialog, which) -> {
+                    performScanLabel(resultScanned, idLokasi, true, token);
+                })
+                .setNegativeButton("Tidak", null)
+                .show();
     }
 
     // Mengambil data tooltip dan menampilkan tooltip
@@ -827,6 +971,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         loadingIndicatorAfter = findViewById(R.id.loadingIndicatorAfter);
         searchView = findViewById(R.id.searchData);  // Using the SearchView from XML
         filterButton = findViewById(R.id.filterButton);
+        inputAfterButton = findViewById(R.id.inputAfterButton);
         blokSpinner = findViewById(R.id.blok);
         idLokasiSpinner = findViewById(R.id.idLokasi);
         spinnerNoSO = findViewById(R.id.spinnerNoSO);
@@ -876,6 +1021,10 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
         filterButton.setOnClickListener(v -> {
             // Membuka dialog untuk memilih filter
             openFilterDialog();
+        });
+
+        inputAfterButton.setOnClickListener(v -> {
+            showInputScanDialog();
         });
     }
 
