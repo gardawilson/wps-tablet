@@ -1,4 +1,6 @@
 <!-- res/values/ids.xml -->
 <resources>
     <item name="footer_loading_row" type="id"/>
+    <item name="ton_watcher_tag" type="id"/>
+    <item name="row_ton_tag" type="id"/>
 </resources>

@@ -36,9 +36,12 @@ import com.example.myapplication.api.SawmillApi;
 import com.example.myapplication.model.CustomerData;
 import com.example.myapplication.model.PenerimaanSTSawmillData;
 import com.example.myapplication.model.PenerimaanSTSawmillData;
+import com.example.myapplication.model.QcSawmillData;
+import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
 
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,13 +50,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-
 public class PenerimaanStDariSawmill extends AppCompatActivity {
 
     private TableLayout mainTable;
     private TableLayout tableNoSTList;
     private TableRow selectedRow;
-    private PenerimaanSTSawmillData selectedSTUpahData;
+    private PenerimaanSTSawmillData selectedPenerimaanST;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private String noPenerimaanST;
     private String tglLaporan;
@@ -61,7 +63,7 @@ public class PenerimaanStDariSawmill extends AppCompatActivity {
     private List<PenerimaanSTSawmillData> dataList; // Data asli yang tidak difilter
     private List<String> noSTList = new ArrayList<>();
     private Button btnDataBaru;
-
+    private Button btnDelete;
 
 
     @Override
@@ -72,10 +74,50 @@ public class PenerimaanStDariSawmill extends AppCompatActivity {
         mainTable = findViewById(R.id.mainTable);
         tableNoSTList = findViewById(R.id.tableNoSTList);
         btnDataBaru = findViewById(R.id.btnDataBaru);
+        btnDelete = findViewById(R.id.btnDelete);
 
         loadDataAndDisplayTable();
-
+        
+        btnDelete.setOnClickListener(v -> {
+            if (selectedPenerimaanST != null) {
+                showDeleteDataDialog(selectedPenerimaanST);
+            } else {
+                Toast.makeText(this, "Pilih data yang ingin dihapus terlebih dahulu", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
+    private void showDeleteDataDialog(PenerimaanSTSawmillData data) {
+        new AlertDialog.Builder(this)
+                .setTitle("Konfirmasi Hapus")
+                .setMessage("Yakin ingin menghapus data dengan Nomor Penerimaan ST: " + data.getNoPenerimaanST() + "?")
+                .setPositiveButton("Ya", (dialog, which) -> {
+                    executorService.execute(() -> {
+                        try {
+                            boolean success = SawmillApi.deletePenerimaanST(
+                                    data.getNoPenerimaanST(),
+                                    data.getNoKayuBulat()
+                            );
+
+                            runOnUiThread(() -> {
+                                if (success) {
+                                    Toast.makeText(this, "Data berhasil dihapus", Toast.LENGTH_SHORT).show();
+                                    loadDataAndDisplayTable(); // Refresh tabel setelah delete
+                                    selectedPenerimaanST = null;
+                                    selectedRow = null;
+                                } else {
+                                    Toast.makeText(this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        } catch (SQLException e) {
+                            runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        }
+                    });
+                })
+                .setNegativeButton("Batal", null)
+                .show();
+    }
+
 
     private void loadDataAndDisplayTable() {
         // Menjalankan operasi di background thread
@@ -155,7 +197,7 @@ public class PenerimaanStDariSawmill extends AppCompatActivity {
                 selectedRow = row;
 
                 // Simpan data yang dipilih
-                selectedSTUpahData = data;
+                selectedPenerimaanST = data;
 
                 // Tangani aksi tambahan
                 onRowClick(data);

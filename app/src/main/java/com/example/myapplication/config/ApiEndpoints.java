@@ -9,6 +9,6 @@ public class ApiEndpoints {
     public static final String CRYSTAL_REPORT_WPS_EXPORT_PDF =
             BASE_URL + "api/crystalreport/wps/export-pdf";
 
-    public static final String BASE_URL_API = "http://192.168.10.100:5002";
+    public static final String BASE_URL_API = "http://192.168.11.153:5002";
 
 }

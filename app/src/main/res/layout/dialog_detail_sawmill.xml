@@ -326,18 +326,41 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Grade"
+                            android:text="SPK - Produk"
                             android:textSize="18sp"
                             android:textStyle="bold"
                             android:textColor="@color/black"
                             android:layout_marginStart="4dp"
                             android:layout_marginBottom="4dp" />
 
-                        <LinearLayout
+                        <Spinner
+                            android:id="@+id/spinSpkProduk"
                             android:layout_width="match_parent"
+                            android:layout_height="36dp"
+                            android:background="@drawable/border_input"
+                            android:elevation="1dp" />
+
+                        <TextView
+                            android:id="@+id/tvSisaTarget"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Grade"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp" />
+
 
                             <Spinner
                                 android:id="@+id/spinGradeDetail"
@@ -346,7 +369,6 @@
                                 android:background="@drawable/border_input"
                                 android:elevation="1dp" />
 
-                        </LinearLayout>
 
                         <RadioGroup
                             android:id="@+id/radioGroupBagusKulit"
@@ -542,7 +564,7 @@
                         android:layout_marginBottom="8dp"
                         android:text="Tebal"
                         android:gravity="center"
-                        android:layout_weight="1"
+                        android:layout_weight="0.6"
                         android:textStyle="bold"
                         android:textColor="@color/white" />
 
@@ -558,7 +580,7 @@
                         android:layout_marginBottom="8dp"
                         android:text="Lebar"
                         android:gravity="center"
-                        android:layout_weight="1"
+                        android:layout_weight="0.6"
                         android:textStyle="bold"
                         android:textColor="@color/white" />
 
@@ -574,7 +596,7 @@
                         android:layout_marginBottom="8dp"
                         android:text="Panjang"
                         android:gravity="center"
-                        android:layout_weight="1"
+                        android:layout_weight="0.6"
                         android:textStyle="bold"
                         android:textColor="@color/white" />
 
@@ -590,7 +612,7 @@
                         android:layout_marginBottom="8dp"
                         android:text="Pcs"
                         android:gravity="center"
-                        android:layout_weight="1"
+                        android:layout_weight="0.6"
                         android:textStyle="bold"
                         android:textColor="@color/white" />
 
@@ -621,6 +643,22 @@
                         android:layout_marginTop="8dp"
                         android:layout_marginBottom="8dp"
                         android:text="Bagus/Kulit"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <View
+                        android:layout_width="1px"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="SPK Produk"
                         android:gravity="center"
                         android:layout_weight="1"
                         android:textStyle="bold"

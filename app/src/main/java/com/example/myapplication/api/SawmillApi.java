@@ -1,5 +1,6 @@
 package com.example.myapplication.api;
 
+import static com.example.myapplication.config.ApiEndpoints.BASE_URL_API;
 import static com.example.myapplication.utils.DateTimeUtils.formatToDatabaseDate;
 
 import android.util.Log;
@@ -18,8 +19,18 @@ import com.example.myapplication.model.SawmillData;
 import com.example.myapplication.model.SawmillDetailData;
 import com.example.myapplication.model.SpecialConditionData;
 import com.example.myapplication.model.GradeKBData;
+import com.example.myapplication.model.SpkProdukData;
 
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -64,48 +75,63 @@ public class SawmillApi {
 
 
     // GETTER DAN SETTER DATA SAWMILL
-    public static List<SawmillData> getSawmillData(int page, int pageSize, @Nullable String keyword) {
+    public static List<SawmillData> getSawmillData(
+            int page,
+            int pageSize,
+            @Nullable String keyword
+    ) {
+
         List<SawmillData> sawmillDataList = new ArrayList<>();
         int offset = (page - 1) * pageSize;
 
-        // Ambil data stok berdasarkan jenis kayu
         Map<String, Integer> stokMapUmum = getTotalStokTersediaPerKayuBulat();
         Map<String, Integer> stokMapRambung = getTotalStokTersediaPerKayuBulatRambung();
 
-        // Query yang diperbaiki - pastikan WHERE clause di tempat yang benar
-        String query =
-                "WITH Filtered AS (" +
-                        "  SELECT h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, h.NoMeja, ms.NamaMeja, " +
-                        "         CASE WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator ELSE op1.NamaOperator + '/' + op2.NamaOperator END AS Operator, " +
-                        "         h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, h.JlhBatangRajang, " +
-                        "         h.HourMeter, h.Remark, jk.Jenis AS NamaJenisKayu, " +
+        StringBuilder queryBuilder = new StringBuilder();
+
+        queryBuilder.append(
+                "WITH Filtered AS ( " +
+                        "  SELECT h.NoSTSawmill, h.Shift, h.TglSawmill, h.NoKayuBulat, " +
+                        "         h.NoMeja, ms.NamaMeja, " +
+                        "         CASE WHEN op2.NamaOperator IS NULL THEN op1.NamaOperator " +
+                        "              ELSE op1.NamaOperator + '/' + op2.NamaOperator END AS Operator, " +
+                        "         h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, " +
+                        "         h.JlhBatangRajang, h.HourMeter, h.Remark, " +
+                        "         kb.IdJenisKayu, " +                         // ✅ NEW
+                        "         jk.Jenis AS NamaJenisKayu, " +
                         "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
-                        "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
+                        "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d " +
+                        "                 WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
                         "         h.BeratBalok " +
                         "  FROM STSawmill_h h " +
                         "  LEFT JOIN MstOperator op1 ON h.IdOperator1 = op1.IdOperator " +
                         "  LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
                         "  LEFT JOIN KayuBulat_h kb ON h.NoKayuBulat = kb.NoKayuBulat " +
                         "  LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
-                        "  LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja " +
-                        // PERBAIKAN: Pastikan WHERE clause benar
-                        (keyword != null && !keyword.isEmpty() ? "  WHERE LOWER(h.NoKayuBulat) LIKE LOWER(?) " : "") +
-                        "), " +
-                        "Ordered AS ( " +
-                        "  SELECT ROW_NUMBER() OVER (ORDER BY NoSTSawmill DESC) AS RowNum, * FROM Filtered " +
+                        "  LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja "
+        );
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryBuilder.append(
+                    "  WHERE LOWER(h.NoKayuBulat) LIKE LOWER(?) "
+            );
+        }
+
+        queryBuilder.append(
+                "), Ordered AS ( " +
+                        "  SELECT ROW_NUMBER() OVER (ORDER BY NoSTSawmill DESC) AS RowNum, * " +
+                        "  FROM Filtered " +
                         ") " +
-                        "SELECT * FROM Ordered WHERE RowNum > ? AND RowNum <= ?";
+                        "SELECT * FROM Ordered WHERE RowNum > ? AND RowNum <= ?"
+        );
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement stmt = con.prepareStatement(query)) {
+             PreparedStatement stmt = con.prepareStatement(queryBuilder.toString())) {
 
             int paramIndex = 1;
 
-            if (keyword != null && !keyword.isEmpty()) {
-                // PERBAIKAN: Gunakan % di kedua sisi untuk contains, atau hanya prefix
-                stmt.setString(paramIndex++, "%" + keyword.toLowerCase() + "%"); // Contains search
-                // ATAU untuk prefix search:
-                // stmt.setString(paramIndex++, keyword.toLowerCase() + "%");
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                stmt.setString(paramIndex++, "%" + keyword.trim().toLowerCase() + "%");
             }
 
             stmt.setInt(paramIndex++, offset);
@@ -114,7 +140,7 @@ public class SawmillApi {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                // ... rest of your code remains the same
+
                 String noSTSawmill = rs.getString("NoSTSawmill");
                 String shift = rs.getString("Shift");
                 String tglSawmill = rs.getString("TglSawmill");
@@ -127,35 +153,64 @@ public class SawmillApi {
                 int jlhBatangRajang = rs.getInt("JlhBatangRajang");
                 String hourMeter = rs.getString("HourMeter");
                 String remark = rs.getString("Remark");
+
+                Integer idJenisKayu = (Integer) rs.getObject("IdJenisKayu");  // ✅ SAFE NULL
                 String namaJenisKayu = rs.getString("NamaJenisKayu");
+
                 String hourStart = rs.getString("HourStart");
                 String hourEnd = rs.getString("HourEnd");
-                int idOperator1 = rs.getInt("IdOperator1");
-                int idOperator2 = rs.getInt("IdOperator2");
+
+                Integer idOperator1 = (Integer) rs.getObject("IdOperator1");
+                Integer idOperator2 = (Integer) rs.getObject("IdOperator2");
+
                 double beratBalokTim = rs.getDouble("BeratBalokTim");
                 double beratBalok = rs.getDouble("BeratBalok");
+
                 String namaMeja = rs.getString("NamaMeja");
 
                 int stokTersedia;
-                if (namaJenisKayu != null && namaJenisKayu.toLowerCase().contains("rambung")) {
+
+                if (namaJenisKayu != null &&
+                        namaJenisKayu.toLowerCase().contains("rambung")) {
+
                     stokTersedia = stokMapRambung.getOrDefault(noKayuBulat, -1);
+
                 } else {
+
                     stokTersedia = stokMapUmum.getOrDefault(noKayuBulat, -1);
                 }
 
                 SawmillData data = new SawmillData(
-                        noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja, operator,
-                        idSpecial, balokTerpakai, jamKerja, jlhBatangRajang,
-                        hourMeter, remark, namaJenisKayu, stokTersedia,
-                        beratBalokTim, beratBalok, hourStart, hourEnd, idOperator1, idOperator2, namaMeja
+                        noSTSawmill,
+                        shift,
+                        tglSawmill,
+                        noKayuBulat,
+                        noMeja,
+                        operator,
+                        idSpecial,
+                        balokTerpakai,
+                        jamKerja,
+                        jlhBatangRajang,
+                        hourMeter,
+                        remark,
+                        idJenisKayu,          // ✅ PASS NEW FIELD
+                        namaJenisKayu,
+                        stokTersedia,
+                        beratBalokTim,
+                        beratBalok,
+                        hourStart,
+                        hourEnd,
+                        idOperator1,
+                        idOperator2,
+                        namaMeja
                 );
 
                 sawmillDataList.add(data);
             }
 
         } catch (SQLException e) {
-            Log.e("Database Fetch Error", "Error fetching sawmill data: " + e.getMessage());
-            // TAMBAHAN: Print stack trace untuk debugging
+            Log.e("Database Fetch Error",
+                    "Error fetching sawmill data: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -332,7 +387,7 @@ public class SawmillApi {
                             rs.getString("NoMeja"),// noMeja
                             null,                  // operator
                             0, null, null, 0, null, null,
-                            null, 0, 0.0, 0.0,
+                            null, null, 0, 0.0, 0.0,
                             null, null,
                             idOp1,
                             idOp2,
@@ -1183,16 +1238,20 @@ public class SawmillApi {
 
 
     public static List<SawmillDetailData> fetchSawmillDetailData(String noSTSawmill) {
+
         List<SawmillDetailData> itemList = new ArrayList<>();
 
         String query =
                 "SELECT d.NoUrut, d.Tebal, d.Lebar, d.Panjang, d.JmlhBatang, " +
-                        "d.IsLocal, d.IdUOMTblLebar, d.IdUOMPanjang, d.IsBagusKulit, " +
-                        "kg.IdGradeKB, g.NamaGrade " +
+                        "       d.IsLocal, d.IdUOMTblLebar, d.IdUOMPanjang, d.IsBagusKulit, " +
+                        "       d.NoSPK, d.IdProdukSPK, p.NamaProduk, " +
+                        "       kg.IdGradeKB, g.NamaGrade " +
                         "FROM STSawmill_d d " +
-                        "LEFT JOIN STSawmillKG_d kg ON d.NoSTSawmill = kg.NoSTSawmill AND d.NoUrut = kg.NoUrut " +
+                        "LEFT JOIN STSawmillKG_d kg " +
+                        "       ON d.NoSTSawmill = kg.NoSTSawmill AND d.NoUrut = kg.NoUrut " +
                         "LEFT JOIN MstGradeKB g ON kg.IdGradeKB = g.IdGradeKB " +
-                        "WHERE d.NoSTSawmill = ?" +
+                        "LEFT JOIN MstProdukSPK p ON d.IdProdukSPK = p.IdProdukSPK " +
+                        "WHERE d.NoSTSawmill = ? " +
                         "ORDER BY d.NoUrut ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
@@ -1201,7 +1260,9 @@ public class SawmillApi {
             stmt.setString(1, noSTSawmill);
 
             try (ResultSet rs = stmt.executeQuery()) {
+
                 while (rs.next()) {
+
                     SawmillDetailData item = new SawmillDetailData(
                             rs.getInt("NoUrut"),
                             rs.getFloat("Tebal"),
@@ -1213,8 +1274,12 @@ public class SawmillApi {
                             rs.getInt("IdUOMPanjang"),
                             rs.getInt("IsBagusKulit"),
                             rs.getInt("IdGradeKB"),
-                            rs.getString("NamaGrade") // Ambil nama grade dari hasil join
+                            rs.getString("NamaGrade"),
+                            rs.getString("NoSPK"),
+                            rs.getInt("IdProdukSPK"),
+                            rs.getString("NamaProduk")
                     );
+
                     itemList.add(item);
                 }
             }
@@ -1250,6 +1315,8 @@ public class SawmillApi {
     }
 
 
+// ✅ UPDATED: replaceAllSawmillDetailData yang preserve SPK per-row
+
     public static boolean replaceAllSawmillDetailData(String noSTSawmill, List<SawmillDetailData> detailDataList, String jenisKayu) {
         final String TAG = "SawmillDB";
 
@@ -1257,7 +1324,7 @@ public class SawmillApi {
         if (detailDataList == null || detailDataList.isEmpty()) {
             Log.e(TAG, "⚠️ CRITICAL: detailDataList is null or empty! Aborting to prevent data loss.");
             Log.e(TAG, "NoSTSawmill: " + noSTSawmill + ", JenisKayu: " + jenisKayu);
-            return false; // Jangan DELETE kalau tidak ada data baru!
+            return false;
         }
 
         Log.i(TAG, "Starting replaceAllSawmillDetailData for NoSTSawmill: " + noSTSawmill);
@@ -1350,8 +1417,10 @@ public class SawmillApi {
             // 2. INSERT data baru (already sorted)
             String insertDetailQuery = "INSERT INTO STSawmill_d (" +
                     "NoSTSawmill, NoUrut, Tebal, Lebar, Panjang, JmlhBatang, " +
-                    "IsLocal, IdUOMTblLebar, IdUOMPanjang, IsBagusKulit" +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "IsLocal, IdUOMTblLebar, IdUOMPanjang, IsBagusKulit, " +
+                    "NoSPK, IdProdukSPK" +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
 
             String insertGradeQuery = "INSERT INTO STSawmillKG_d (" +
                     "NoSTSawmill, NoUrut, IdGradeKB" +
@@ -1366,6 +1435,16 @@ public class SawmillApi {
             // Update NoUrut based on sorted order
             int sequence = 1;
             for (SawmillDetailData data : detailDataList) {
+                // ✅ CRITICAL: Ambil noSPK dan idProdukSPK dari OBJECT data (bukan parameter!)
+                String rowNoSPK = data.getNoSPK();
+                int rowIdProdukSPK = data.getIdProdukSPK();
+
+                // ✅ Handle null/empty SPK
+                if (rowNoSPK == null || rowNoSPK.isEmpty() || rowNoSPK.equals("PILIH -")) {
+                    rowNoSPK = null;  // Set NULL di database
+                    rowIdProdukSPK = 0;
+                }
+
                 // Insert ke STSawmill_d
                 insertDetailStmt.setString(1, noSTSawmill);
                 insertDetailStmt.setInt(2, sequence);
@@ -1377,6 +1456,20 @@ public class SawmillApi {
                 insertDetailStmt.setInt(8, data.getIdUOMTblLebar());
                 insertDetailStmt.setInt(9, data.getIdUOMPanjang());
                 insertDetailStmt.setInt(10, data.getIsBagusKulit());
+
+                // ✅ PENTING: Pakai SPK dari object data (bukan parameter global!)
+                if (rowNoSPK != null) {
+                    insertDetailStmt.setString(11, rowNoSPK);
+                } else {
+                    insertDetailStmt.setNull(11, java.sql.Types.VARCHAR);
+                }
+
+                if (rowIdProdukSPK > 0) {
+                    insertDetailStmt.setInt(12, rowIdProdukSPK);
+                } else {
+                    insertDetailStmt.setNull(12, java.sql.Types.INTEGER);
+                }
+
                 insertDetailStmt.addBatch();
 
                 if (isRambung && insertGradeStmt != null) {
@@ -1392,7 +1485,9 @@ public class SawmillApi {
                         ", Tebal=" + data.getTebal() +
                         ", Lebar=" + data.getLebar() +
                         ", Panjang=" + data.getPanjang() +
-                        ", Pcs=" + data.getPcs());
+                        ", Pcs=" + data.getPcs() +
+                        ", SPK=" + rowNoSPK +          // ✅ Log SPK per row
+                        ", IdProdukSPK=" + rowIdProdukSPK);
 
                 sequence++;
             }
@@ -2085,6 +2180,191 @@ public class SawmillApi {
     }
 
 
+
+    public static boolean deletePenerimaanST(
+            String noPenerimaanST,
+            String noKayuBulat
+    ) throws SQLException {
+
+        Connection con = null;
+
+        try {
+            con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
+            con.setAutoCommit(false);
+
+            // 1️⃣ Delete detail first
+            String deleteDetail =
+                    "DELETE FROM PenerimaanSTSawmill_d WHERE NoPenerimaanST = ?";
+
+            try (PreparedStatement stmt = con.prepareStatement(deleteDetail)) {
+                stmt.setString(1, noPenerimaanST);
+                stmt.executeUpdate();
+            }
+
+            // 2️⃣ Update KayuBulat_h → DateUsage = NULL
+            String updateKayu =
+                    "UPDATE KayuBulat_h SET DateUsage = NULL WHERE NoKayuBulat = ?";
+
+            try (PreparedStatement stmt = con.prepareStatement(updateKayu)) {
+                stmt.setString(1, noKayuBulat);
+                stmt.executeUpdate();
+            }
+
+            // 3️⃣ Delete header
+            String deleteHeader =
+                    "DELETE FROM PenerimaanSTSawmill_h WHERE NoPenerimaanST = ?";
+
+            try (PreparedStatement stmt = con.prepareStatement(deleteHeader)) {
+                stmt.setString(1, noPenerimaanST);
+                stmt.executeUpdate();
+            }
+
+            con.commit();
+            return true;
+
+        } catch (SQLException e) {
+            if (con != null) con.rollback();
+            throw e;
+        } finally {
+            if (con != null) con.close();
+        }
+    }
+
+
+    public static List<SpkProdukData> getSpkProdukFromAPI(
+            String token,
+            String tebal,
+            String lebar,
+            int idJenisKayu
+    ) {
+
+        HttpURLConnection connection = null;
+        List<SpkProdukData> spkList = new ArrayList<>();
+
+        try {
+            String urlString = BASE_URL_API + "/api/sawmill/produk-spk"
+                    + "?Tebal=" + URLEncoder.encode(tebal, "UTF-8")
+                    + "&Lebar=" + URLEncoder.encode(lebar, "UTF-8")
+                    + "&IdJenisKayu=" + idJenisKayu;
+
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
+            connection.setConnectTimeout(30000);
+            connection.setReadTimeout(30000);
+
+            int responseCode = connection.getResponseCode();
+
+            InputStream inputStream;
+            if (responseCode >= 200 && responseCode < 300) {
+                inputStream = connection.getInputStream();
+            } else {
+                inputStream = connection.getErrorStream();
+            }
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(inputStream)
+            );
+
+            StringBuilder response = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+
+            reader.close();
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+
+            if (jsonResponse.getBoolean("success")) {
+
+                JSONArray dataArray = jsonResponse.getJSONArray("data");
+
+                for (int i = 0; i < dataArray.length(); i++) {
+
+                    JSONObject obj = dataArray.getJSONObject(i);
+
+                    int idProdukSPK = obj.getInt("IdProdukSPK");
+                    String namaProduk = obj.getString("NamaProduk");
+                    String noSPK = obj.getString("NoSPK");
+                    double ton = obj.optDouble("Ton", 0);
+
+                    spkList.add(
+                            new SpkProdukData(
+                                    idProdukSPK,
+                                    namaProduk,
+                                    noSPK,
+                                    ton
+                            )
+                    );
+                }
+            }
+
+        } catch (Exception e) {
+            Log.e("SawmillApi", "Error fetching SPK Produk: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+
+        return spkList;
+    }
+
+
+    public static Double getSisaTonFromAPI(String token, String noSPK, int idProdukSPK) {
+
+        HttpURLConnection connection = null;
+
+        try {
+            String urlString = BASE_URL_API +
+                    "/api/sawmill/sisa-ton?NoSPK=" +
+                    URLEncoder.encode(noSPK, "UTF-8") +
+                    "&IdProdukSPK=" + idProdukSPK;
+
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
+            connection.setConnectTimeout(30000);
+            connection.setReadTimeout(30000);
+
+            int responseCode = connection.getResponseCode();
+
+            InputStream inputStream = (responseCode >= 200 && responseCode < 300)
+                    ? connection.getInputStream()
+                    : connection.getErrorStream();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder response = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+
+            reader.close();
+
+            JSONObject json = new JSONObject(response.toString());
+
+            if (json.getBoolean("success")) {
+                JSONObject data = json.getJSONObject("data");
+                return data.optDouble("SisaTon", 0.0);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
 
 
 

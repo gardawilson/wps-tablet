@@ -13,6 +13,7 @@ public class SawmillData {
     private int jlhBatangRajang;
     private String hourMeter;
     private String remark;
+    private Integer idJenisKayu;
     private String namaJenisKayu;
     private int stokTersedia;
     private double beratBalokTim;
@@ -26,7 +27,7 @@ public class SawmillData {
 
     public SawmillData(String noSTSawmill, String shift, String tglSawmill, String noKayuBulat, String noMeja, String operator,
                        int idSawmillSpecialCondition, String balokTerpakai, String jamKerja, int jlhBatangRajang,
-                       String hourMeter, String remark, String namaJenisKayu, int stokTersedia, double beratBalokTim, double beratBalok,
+                       String hourMeter, String remark, Integer idJenisKayu, String namaJenisKayu, int stokTersedia, double beratBalokTim, double beratBalok,
                        String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2, String namaMeja) {
         this.noSTSawmill = noSTSawmill;
         this.shift = shift;
@@ -40,6 +41,7 @@ public class SawmillData {
         this.jlhBatangRajang = jlhBatangRajang;
         this.hourMeter = hourMeter;
         this.remark = remark;
+        this.idJenisKayu = idJenisKayu;
         this.namaJenisKayu = namaJenisKayu;
         this.stokTersedia = stokTersedia;
         this.beratBalokTim = beratBalokTim;
@@ -87,6 +89,8 @@ public class SawmillData {
 
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
+
+    public Integer getIdJenisKayu() { return idJenisKayu; }
 
     public String getNamaJenisKayu() { return namaJenisKayu; }
     public void setNamaJenisKayu(String namaJenisKayu) { this.namaJenisKayu = namaJenisKayu; }
