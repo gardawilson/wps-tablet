@@ -376,7 +376,7 @@ public class Sawmill extends AppCompatActivity {
         noKB.setAdapter(kbAdapter);
 
         // ===== SETUP NoMeja AutoComplete =====
-        loadMejaToSpinner(spinMeja, existingData.getNoMeja(), spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, true);
+        loadMejaToSpinner(spinMeja, existingData.getNoMeja(), spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, true, beratBalok);
 
         // Load data ke spinner terlebih dahulu dengan nilai yang sudah ada
         loadSpecialConditionToSpinner(spinSpecialCondition, existingData.getIdSawmillSpecialCondition());
@@ -1052,7 +1052,7 @@ public class Sawmill extends AppCompatActivity {
         noKB.setAdapter(kbAdapter);
 
         // ===== SETUP NoMeja Spinner =====
-        loadMejaToSpinner(spinMeja, null, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, false);
+        loadMejaToSpinner(spinMeja, null, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, false, beratBalok);
 
         // Set default prefix "A."
         noKB.setText("A.");
@@ -1101,7 +1101,7 @@ public class Sawmill extends AppCompatActivity {
     private void loadMejaToSpinner(final Spinner spinMeja, @Nullable String selectedNoMeja,
                                    Spinner spinOperator1, Spinner spinOperator2,
                                    EditText tanggal, EditText jamBerhenti, EditText jamMulai,
-                                   TextView totalJamKerja, boolean isEdit) {
+                                   TextView totalJamKerja, boolean isEdit, EditText beratBalok) {
 
         final List<MstMejaData> mejaList = new ArrayList<>();
         mejaList.add(new MstMejaData(null, "PILIH"));
@@ -1135,6 +1135,10 @@ public class Sawmill extends AppCompatActivity {
                 MstMejaData selected = (MstMejaData) spinMeja.getSelectedItem();
                 if (selected != null && selected.getNoMeja() != null) {
                     final String noMeja = selected.getNoMeja();
+                    final String namaMeja = selected.getNamaMeja(); // ✅ Ambil nama meja
+
+                    // ✅ TAMBAHKAN: Logika enable/disable berat balok
+                    handleBeratBalokVisibility(namaMeja, beratBalok);
 
                     // Ambil operator dan jam terakhir berdasarkan NoMeja
                     executorService.execute(() -> {
@@ -1186,16 +1190,59 @@ public class Sawmill extends AppCompatActivity {
                                 jamBerhenti.setBackgroundResource(R.drawable.border_rejected);
                             }
                         });
-
                     });
                 }
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+                // ✅ TAMBAHKAN: Disable berat balok jika tidak ada yang dipilih
+                if (beratBalok != null) {
+                    beratBalok.setEnabled(false);
+                    beratBalok.setBackgroundResource(R.drawable.border_rejected);
+                }
+            }
         });
     }
 
+    private void handleBeratBalokVisibility(String namaMeja, EditText beratBalok) {
+        if (beratBalok == null) {
+            return; // Safety check
+        }
+
+        // ✅ Daftar nama meja yang ENABLE berat balok
+        boolean shouldEnable = namaMeja != null && (
+                namaMeja.equalsIgnoreCase("PILIH") ||
+                        namaMeja.equalsIgnoreCase("SLP 1") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 1") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 2") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 3") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 4") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 5") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 6") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 7") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 8") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 9") ||
+                        namaMeja.equalsIgnoreCase("BANSAW 10")
+        );
+
+        if (shouldEnable) {
+            // ✅ ENABLE berat balok
+            beratBalok.setEnabled(true);
+            beratBalok.setBackgroundResource(R.drawable.border_input);
+            beratBalok.setHint("Berat Balok"); // Optional: set hint
+            beratBalok.setAlpha(1.0f); // Full opacity
+        } else {
+            // ✅ DISABLE berat balok
+            beratBalok.setEnabled(false);
+            beratBalok.setBackgroundResource(R.drawable.border_rejected);
+            beratBalok.setText(""); // Clear nilai
+            beratBalok.setHint("Tidak Tersedia"); // Optional: info hint
+            beratBalok.setAlpha(0.6f); // Semi-transparent
+        }
+
+        Log.d("BeratBalok", "Meja: " + namaMeja + ", Enabled: " + shouldEnable);
+    }
 
 
 
@@ -2822,6 +2869,8 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinGradeDetail = dialogView.findViewById(R.id.spinGradeDetail);
         Spinner spinSpkProduk = dialogView.findViewById(R.id.spinSpkProduk);
         TextView textSisaTarget = dialogView.findViewById(R.id.tvSisaTarget);
+        TextView tvInfoSpkCount = dialogView.findViewById(R.id.tvInfoSpkCount);
+
 
         // Menambahkan onClickListener untuk tombol tutup dialog
         ImageButton btnCloseDialogInputDetail = dialogView.findViewById(R.id.btnCloseDialogInputDetail);
@@ -2914,10 +2963,23 @@ public class Sawmill extends AppCompatActivity {
 
                 SpkProdukData selected = (SpkProdukData) parent.getItemAtPosition(position);
 
-                if (selected == null || selected.getIdProdukSPK() == 0) {
+                // ✅ Jika PILIH - atau null, hide sisa target
+                if (selected == null || selected.getIdProdukSPK() == 0 ||
+                        "PILIH -".equals(selected.getNoSPK())) {
+
+                    textSisaTarget.setVisibility(View.GONE); // ✅ HIDE
                     textSisaTarget.setText("");
+
+                    // ✅ Reset nilai ton juga
+                    originalSisaTon[0] = 0.0;
+                    currentTempTon = 0.0;
+                    acuanTempTon = 0.0;
+
                     return;
                 }
+
+                // ✅ SPK valid, show dan load data
+                textSisaTarget.setVisibility(View.VISIBLE); // ✅ SHOW
 
                 loadSisaTarget(
                         selected.getNoSPK(),
@@ -2928,6 +2990,7 @@ public class Sawmill extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                textSisaTarget.setVisibility(View.GONE); // ✅ HIDE jika nothing selected
                 textSisaTarget.setText("");
             }
         });
@@ -2989,9 +3052,15 @@ public class Sawmill extends AppCompatActivity {
                         0.0
                 ));
 
+                // ✅ Hitung jumlah SPK dari API (exclude default "PILIH -")
+                int spkCount = 0;
                 if (apiResult != null && !apiResult.isEmpty()) {
                     finalList.addAll(apiResult);
+                    spkCount = apiResult.size(); // Jumlah SPK asli (tanpa "PILIH -")
                 }
+
+                // ✅ Buat final variable untuk dipakai di lambda
+                final int finalSpkCount = spkCount;
 
                 runOnUiThread(() -> {
 
@@ -3009,7 +3078,18 @@ public class Sawmill extends AppCompatActivity {
                     spinSpkProduk.setSelection(0);
                     spinSpkProduk.setEnabled(true);
 
-                    if (finalList.size() == 1) {
+                    // ✅ TAMPILKAN INFO JUMLAH SPK
+                    if (finalSpkCount > 0) {
+                        // Ada SPK yang ditemukan
+                        tvInfoSpkCount.setText("Tersedia " + finalSpkCount + " SPK Produk untuk ukuran ini");
+                        tvInfoSpkCount.setTextColor(getResources().getColor(android.R.color.holo_blue_dark));
+                        tvInfoSpkCount.setVisibility(View.VISIBLE);
+                    } else {
+                        // Tidak ada SPK
+                        tvInfoSpkCount.setText("Tidak ada SPK untuk ukuran ini");
+                        tvInfoSpkCount.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
+                        tvInfoSpkCount.setVisibility(View.VISIBLE);
+
                         Toast.makeText(this,
                                 "SPK Produk tidak ditemukan!",
                                 Toast.LENGTH_SHORT).show();
@@ -3017,7 +3097,7 @@ public class Sawmill extends AppCompatActivity {
                 });
             });
 
-// ✅ CARI bagian ini di dalam showDetailDialog dan GANTI
+            // ✅ CARI bagian ini di dalam showDetailDialog dan GANTI
             Runnable continueSubmit = () -> {
                 GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
                 int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
@@ -3047,6 +3127,7 @@ public class Sawmill extends AppCompatActivity {
                         textSisaPCS, tablePjgPcs, addRowButton, btnSubmit,
                         inputTebal, inputLebar, inputPanjang, inputPcs,
                         textSisaTarget, radioMillimeter, radioFeet, radioMeter); // ✅ TAMBAHKAN parameter
+
             };
 
             // ✅ Kalau panjang acuan tidak standar -> dialog dulu
@@ -3054,6 +3135,12 @@ public class Sawmill extends AppCompatActivity {
                     Sawmill.this, pjgAcuanVal, acuanPanjang, continueSubmit
             );
             if (dialogShown) return;
+
+            // ✅ ENABLE tombol Save setelah data loaded
+            if (!isTutupTransaksi(tgl, tglTutupTransaksi)) {
+                btnSaveDetail.setEnabled(true);
+                btnSaveDetail.setText("Simpan");
+            }
 
             // ✅ standar -> langsung lanjut
             continueSubmit.run();
@@ -3075,6 +3162,8 @@ public class Sawmill extends AppCompatActivity {
 
             addRowButton.setVisibility(View.INVISIBLE);
             btnSubmit.setEnabled(true);
+
+            btnSaveDetail.setEnabled(false);
 
             inputList.clear();
 
@@ -3465,7 +3554,7 @@ public class Sawmill extends AppCompatActivity {
 
                                     // Enable save button kembali
                                     if (!isTutupTransaksi(tgl, tglTutupTransaksi)) {
-                                        btnSaveDetail.setEnabled(true);
+                                        btnSaveDetail.setEnabled(false);
                                         btnSaveDetail.setText("Simpan");
                                     }
                                 });
@@ -3503,11 +3592,6 @@ public class Sawmill extends AppCompatActivity {
                 textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
                 textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
 
-                // ✅ ENABLE tombol Save setelah data loaded
-                if (!isTutupTransaksi(tgl, tglTutupTransaksi)) {
-                    btnSaveDetail.setEnabled(true);
-                    btnSaveDetail.setText("Simpan");
-                }
             });
         });
 
@@ -3545,10 +3629,7 @@ public class Sawmill extends AppCompatActivity {
         String displayText;
         if (totalTempTon > 0.0001) { // Ada input temp
             displayText = "Sisa Target : " +
-                    String.format(Locale.US, "%.4f", adjustedSisa) +
-                    " Ton (Temp: -" + String.format(Locale.US, "%.4f", totalTempTon) +
-                    " | Rows: " + String.format(Locale.US, "%.4f", currentTempTon) +
-                    " + Acuan: " + String.format(Locale.US, "%.4f", acuanTempTon) + ")";
+                    String.format(Locale.US, "%.4f", adjustedSisa) + " Ton";
         } else { // Tidak ada input temp
             displayText = "Sisa Target : " +
                     String.format(Locale.US, "%.4f", adjustedSisa) +

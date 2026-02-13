@@ -195,7 +195,6 @@
 
             </LinearLayout>
 
-
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -341,11 +340,24 @@
                             android:elevation="1dp" />
 
                         <TextView
+                            android:id="@+id/tvInfoSpkCount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/holo_blue_dark"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:paddingTop="4dp"
+                            android:visibility="gone"
+                            android:text="Tersedia SPK untuk ukuran ini" />
+
+                        <TextView
                             android:id="@+id/tvSisaTarget"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="18sp"
                             android:textStyle="bold"
+                            android:text="Sisa Target : -"
                             android:textColor="@color/black"
                             android:layout_marginStart="4dp"
                             android:layout_marginBottom="4dp" />
@@ -510,7 +522,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Simpan" />
+                        android:text="Simpan"
+                        android:enabled="false"/>
                 </LinearLayout>
 
             </LinearLayout>
