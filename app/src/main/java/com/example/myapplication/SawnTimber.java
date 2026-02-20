@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -14,11 +15,15 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
@@ -29,6 +34,7 @@ import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -789,7 +795,7 @@ public class SawnTimber extends AppCompatActivity {
                     return;
                 }
 
-                if (temporaryDataListGrade == null || temporaryDataListGrade.isEmpty()) {
+                if (temporaryDataListGrade == null || temporaryDataListGrade.isEmpty() && selectedJenisKayu.getJenis().contains("kayu lat")) {
                     Toast.makeText(SawnTimber.this, "Grade masih kosong. Tambahkan minimal 1 grade!", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -1050,6 +1056,7 @@ public class SawnTimber extends AppCompatActivity {
                                     printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer); // Parameter baru untuk watermark
 
                             if (pdfUri != null) {
+                                updatePrintStatus(noST);
                                 Intent intent = new Intent(Intent.ACTION_VIEW);
                                 intent.setDataAndType(pdfUri, "application/pdf");
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -3010,6 +3017,7 @@ public class SawnTimber extends AppCompatActivity {
         });
     }
 
+
     private void populateTableOutput(List<OutputDataST> noSTList) {
         runOnUiThread(() -> {
             TextView labelCountView = findViewById(R.id.labelCount);
@@ -3020,7 +3028,7 @@ public class SawnTimber extends AppCompatActivity {
             }
 
             TableOutput.removeAllViews();
-            selectedRowHeader = null; // Reset setiap kali load data baru
+            selectedRowHeader = null;
 
             int labelCount = 0;
 
@@ -3047,15 +3055,16 @@ public class SawnTimber extends AppCompatActivity {
                 );
                 row.setLayoutParams(rowParams);
                 row.setPadding(0, 10, 0, 10);
-
-                // Set tag index row
                 row.setTag(i);
 
-                // Warna selang-seling
+                // Simpan warna original untuk row ini
+                final int originalColor;
                 if (i % 2 == 0) {
-                    row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+                    originalColor = ContextCompat.getColor(this, R.color.background_cream);
+                    row.setBackgroundColor(originalColor);
                 } else {
-                    row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                    originalColor = ContextCompat.getColor(this, R.color.white);
+                    row.setBackgroundColor(originalColor);
                 }
 
                 // === Kolom 1: NoST ===
@@ -3077,9 +3086,34 @@ public class SawnTimber extends AppCompatActivity {
                 iconView.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
                 row.addView(iconView);
 
-                // === Event klik row ===
+                // Variable untuk menyimpan koordinat touch
+                final float[] touchCoords = new float[2];
+                final boolean[] isLongPressTriggered = {false};
+
+                // === Track touch position dengan visual feedback ===
+                row.setOnTouchListener((v, event) -> {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            touchCoords[0] = event.getRawX();
+                            touchCoords[1] = event.getRawY();
+                            isLongPressTriggered[0] = false;
+                            // Highlight saat ditekan
+                            v.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+                            break;
+
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            // Hanya kembalikan warna jika bukan long press
+                            if (!isLongPressTriggered[0]) {
+                                v.setBackgroundColor(originalColor);
+                            }
+                            break;
+                    }
+                    return false;
+                });
+
+                // === Event CLICK row (show tooltip) ===
                 row.setOnClickListener(v -> {
-                    // Reset row sebelumnya kalau ada
                     if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
                         int prevIndex = (int) selectedRowHeader.getTag();
                         if (prevIndex % 2 == 0) {
@@ -3089,12 +3123,10 @@ public class SawnTimber extends AppCompatActivity {
                         }
                     }
 
-                    // Highlight row baru
                     selectedRowHeader = row;
                     row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
                     TableUtils.setTextColor(this, row, R.color.white);
 
-                    // Tooltip dengan callback reset warna
                     TooltipUtils.fetchDataAndShowTooltip(
                             this,
                             executorService,
@@ -3120,6 +3152,28 @@ public class SawnTimber extends AppCompatActivity {
                     );
                 });
 
+                // === Event LONG CLICK row (show popup menu) ===
+                row.setOnLongClickListener(v -> {
+                    v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    isLongPressTriggered[0] = true;
+
+                    // Ubah background ke primary
+                    v.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+                    // Ubah text color ke putih
+                    TableUtils.setTextColor(this, row, R.color.white);
+
+                    if (data.isHasBeenPrinted()) {
+                        // Kirim originalColor ke popup agar bisa reset setelah popup dismiss
+                        showResetPrintPopup(v, data, touchCoords[0], touchCoords[1], row, originalColor);
+                    } else {
+                        // Reset warna jika tidak ada popup
+                        v.setBackgroundColor(originalColor);
+                        TableUtils.setTextColor(this, row, R.color.black);
+                        Toast.makeText(this, "Label belum pernah dicetak", Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                });
+
                 TableOutput.addView(row);
                 labelCount++;
             }
@@ -3130,6 +3184,108 @@ public class SawnTimber extends AppCompatActivity {
         });
     }
 
+    private void showResetPrintPopup(View anchorView, OutputDataST data, float x, float y, TableRow row, int originalColor) {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.popup_menu_row_st, null);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        // Reset warna dan text saat popup dismiss
+        popupWindow.setOnDismissListener(() -> {
+            if (row != null) {
+                row.setBackgroundColor(originalColor);
+                TableUtils.setTextColor(this, row, R.color.black);
+            }
+        });
+
+        Button btnResetPrint = popupView.findViewById(R.id.btnResetPrint);
+
+        btnResetPrint.setOnClickListener(v -> {
+            popupWindow.dismiss();
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Reset Status Cetak")
+                    .setMessage("Reset status cetak untuk Label " + data.getNoST() + "?")
+                    .setPositiveButton("Ya", (dialog, which) -> {
+                        resetPrintStatus(data.getNoST(), row);
+                    })
+                    .setNegativeButton("Batal", null)
+                    .show();
+        });
+
+        popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int popupWidth = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        int screenWidth = dm.widthPixels;
+        int screenHeight = dm.heightPixels;
+
+        int popupX = (int) x - (popupWidth / 2);
+        int popupY = (int) y - popupHeight - 50;
+
+        if (popupX < 10) popupX = 10;
+        if (popupX + popupWidth > screenWidth - 10)
+            popupX = screenWidth - popupWidth - 10;
+        if (popupY < 10) popupY = (int) y + 50;
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, popupX, popupY);
+    }
+
+    private void resetPrintStatus(String noST, TableRow row) {
+        new Thread(() -> {
+            Connection connection = null;
+            try {
+                connection = ConnectionClass();
+                if (connection != null) {
+                    String query = "UPDATE ST_h SET HasBeenPrinted = 0, LastPrintDate = NULL WHERE NoST = ?";
+                    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                        stmt.setString(1, noST);
+                        int rowsAffected = stmt.executeUpdate();
+
+                        if (rowsAffected > 0) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Status cetak berhasil direset", Toast.LENGTH_SHORT).show();
+
+                                if (row != null && row.getChildCount() > 1) {
+                                    ImageView iconView = (ImageView) row.getChildAt(1);
+                                    if (iconView != null) {
+                                        iconView.setImageResource(R.drawable.ic_undone);
+                                    }
+                                }
+                            });
+                        } else {
+                            runOnUiThread(() -> Toast.makeText(this, "Tidak ada data yang direset", Toast.LENGTH_SHORT).show());
+                        }
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(this, "Koneksi database gagal", Toast.LENGTH_SHORT).show());
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Log.e("Database", "Error resetting HasBeenPrinted status: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(this, "Gagal reset status: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
 
     private void setCurrentDateTimeVacuum() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());

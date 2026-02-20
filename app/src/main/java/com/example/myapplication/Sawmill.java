@@ -1694,9 +1694,9 @@ public class Sawmill extends AppCompatActivity {
 
         int rowIndex = mainTable.getChildCount(); // untuk warna selang-seling
 
-        TextView col1 = createTextView(data.getNoSTSawmill(), 1.0f);
-        TextView col2 = createTextView(data.getTglSawmill(), 1.0f);
-        TextView col3 = createTextView(data.getNoKayuBulat(), 1.0f);
+        TextView col1 = createTextView(data.getNoSTSawmill(), 0.8f);
+        TextView col2 = createTextView(data.getTglSawmill(), 0.8f);
+        TextView col3 = createTextView(data.getNoKayuBulat(), 0.8f);
         TextView col4 = createTextView(data.getNamaJenisKayu(), 1.0f);
         TextView col5 = createTextView(String.valueOf(data.getOperator()), 1.0f);
 
@@ -1708,6 +1708,8 @@ public class Sawmill extends AppCompatActivity {
 
         TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
         TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
+        TextView col9 = createTextView(String.valueOf(data.getBeratBalok()), 0.5f);
+
 
         setDateToView(data.getTglSawmill(), col2);
 
@@ -1726,6 +1728,8 @@ public class Sawmill extends AppCompatActivity {
         row.addView(col7);
         row.addView(createDivider());
         row.addView(col8);
+        row.addView(createDivider());
+        row.addView(col9);
 
         // Background warna selang-seling
         row.setBackgroundColor(ContextCompat.getColor(this,
@@ -1872,9 +1876,9 @@ public class Sawmill extends AppCompatActivity {
             TableRow row = new TableRow(this);
             row.setTag(data);
 
-            TextView col1 = createTextView(data.getNoSTSawmill(), 1.0f);
-            TextView col2 = createTextView(data.getTglSawmill(), 1.0f);
-            TextView col3 = createTextView(data.getNoKayuBulat(), 1.0f);
+            TextView col1 = createTextView(data.getNoSTSawmill(), 0.8f);
+            TextView col2 = createTextView(data.getTglSawmill(), 0.8f);
+            TextView col3 = createTextView(data.getNoKayuBulat(), 0.8f);
             TextView col4 = createTextView(data.getNamaJenisKayu(), 1.0f);
             TextView col5 = createTextView(String.valueOf(data.getOperator()), 1.0f);
 
@@ -1886,6 +1890,7 @@ public class Sawmill extends AppCompatActivity {
 
             TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
             TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
+            TextView col9 = createTextView(String.valueOf(data.getBeratBalok()), 0.5f);
 
             setDateToView(data.getTglSawmill(), col2);
 
@@ -1904,6 +1909,8 @@ public class Sawmill extends AppCompatActivity {
             row.addView(col7);
             row.addView(createDivider());
             row.addView(col8);
+            row.addView(createDivider());
+            row.addView(col9);
 
             // Background bergantian
             if (rowIndex % 2 == 0) {
@@ -2280,8 +2287,13 @@ public class Sawmill extends AppCompatActivity {
         });
     }
 
-    private void editDetail(String noSTSawmill, String jenisKayu, SawmillDetailData data, int idJenisKayu) {
-        boolean isRambung = jenisKayu != null && jenisKayu.toLowerCase().contains("rambung");
+    private void editDetail(String noSTSawmill,
+                            String jenisKayu,
+                            SawmillDetailData data,
+                            int idJenisKayu) {
+
+        boolean isRambung = jenisKayu != null &&
+                jenisKayu.toLowerCase().contains("rambung");
 
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_edit_detail_sawmill, null);
@@ -2291,25 +2303,19 @@ public class Sawmill extends AppCompatActivity {
         EditText editPanjang = dialogView.findViewById(R.id.editPanjang);
         EditText editJumlah  = dialogView.findViewById(R.id.editJumlah);
 
-        // Pre-fill data (pakai koma sesuai decimalFormat kamu)
+        Spinner spinGradeDetail = dialogView.findViewById(R.id.spinGradeDetail);
+        Spinner spinSpkProduk   = dialogView.findViewById(R.id.spinSpkProduk);
+
+        RadioButton radioBagus = dialogView.findViewById(R.id.radioBagus);
+        RadioButton radioKulit = dialogView.findViewById(R.id.radioKulit);
+
         editTebal.setText(decimalFormat.format(data.getTebal()));
         editLebar.setText(decimalFormat.format(data.getLebar()));
         editPanjang.setText(decimalFormat.format(data.getPanjang()));
         editJumlah.setText(String.valueOf(data.getPcs()));
 
-        final Spinner spinGradeDetail = dialogView.findViewById(R.id.spinGradeDetail);
-        final Spinner spinSpkProduk = dialogView.findViewById(R.id.spinSpkProduk);
-
-        RadioButton radioBagus = dialogView.findViewById(R.id.radioBagus);
-        RadioButton radioKulit = dialogView.findViewById(R.id.radioKulit);
-
-        // Pre-check radio berdasarkan data
-        int isBagusKulit = data.getIsBagusKulit();
-        if (isBagusKulit == 1) {
-            radioBagus.setChecked(true);
-        } else if (isBagusKulit == 2) {
-            radioKulit.setChecked(true);
-        }
+        if (data.getIsBagusKulit() == 1) radioBagus.setChecked(true);
+        else if (data.getIsBagusKulit() == 2) radioKulit.setChecked(true);
 
         loadGradeKBToSpinner(
                 spinGradeDetail,
@@ -2320,189 +2326,197 @@ public class Sawmill extends AppCompatActivity {
                 data.getIsBagusKulit()
         );
 
-        // ✅ Load SPK Produk ke spinner
         String token = TokenManager.getToken(this);
         if (token.isEmpty()) {
-            Toast.makeText(this, "Token tidak ditemukan. Silakan login kembali", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Token tidak ditemukan", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Disable dulu saat loading
-        spinSpkProduk.setEnabled(false);
+        Runnable reloadSpk = () -> {
+            try {
+                float tebal = decimalFormat.parse(
+                        editTebal.getText().toString()).floatValue();
 
-        executorService.execute(() -> {
-            List<SpkProdukData> apiResult = SawmillApi.getSpkProdukFromAPI(token, editTebal.toString(), editLebar.toString(), idJenisKayu);
+                float lebar = decimalFormat.parse(
+                        editLebar.getText().toString()).floatValue();
 
-            List<SpkProdukData> finalList = new ArrayList<>();
+                spinSpkProduk.setEnabled(false);
 
-            // Default option
-            finalList.add(new SpkProdukData(0, "PILIH -", "", 0.0));
+                executorService.execute(() -> {
 
-            if (apiResult != null && !apiResult.isEmpty()) {
-                finalList.addAll(apiResult);
-            }
+                    List<SpkProdukData> apiResult =
+                            SawmillApi.getSpkProdukFromAPI(
+                                    token,
+                                    String.valueOf(tebal),
+                                    String.valueOf(lebar),
+                                    idJenisKayu
+                            );
 
-            runOnUiThread(() -> {
-                ArrayAdapter<SpkProdukData> adapter = new ArrayAdapter<>(
-                        Sawmill.this,
-                        android.R.layout.simple_spinner_item,
-                        finalList
-                );
-                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-                spinSpkProduk.setAdapter(adapter);
+                    runOnUiThread(() -> {
 
-                // ✅ Pre-select SPK yang sudah ada di data (kalau ada)
-                String existingNoSPK = data.getNoSPK();
-                int existingIdProdukSPK = data.getIdProdukSPK();
+                        boolean spkExistsInApi = false;
 
-                int selectedPosition = 0; // Default ke "PILIH -"
-
-                if (existingNoSPK != null && !existingNoSPK.isEmpty() && !existingNoSPK.equals("PILIH -")) {
-                    // Cari posisi SPK yang sesuai
-                    for (int i = 0; i < finalList.size(); i++) {
-                        SpkProdukData spk = finalList.get(i);
-                        if (spk.getIdProdukSPK() == existingIdProdukSPK ||
-                                (spk.getNoSPK() != null && spk.getNoSPK().equals(existingNoSPK))) {
-                            selectedPosition = i;
-                            break;
+                        if (apiResult != null) {
+                            for (SpkProdukData spk : apiResult) {
+                                if (spk.getIdProdukSPK() == data.getIdProdukSPK()) {
+                                    spkExistsInApi = true;
+                                    break;
+                                }
+                            }
                         }
-                    }
-                }
 
-                spinSpkProduk.setSelection(selectedPosition);
-                spinSpkProduk.setEnabled(true);
+                        List<SpkProdukData> finalList = new ArrayList<>();
+                        finalList.add(new SpkProdukData(0, "PILIH -", "", 0.0));
 
-                if (finalList.size() == 1) {
-                    Toast.makeText(this, "SPK Produk tidak ditemukan!", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
+                        if (apiResult != null) {
+                            finalList.addAll(apiResult);
+                        }
+
+                        // 🔥 If existing SPK not found in API, inject it manually
+                        if (!spkExistsInApi && data.getIdProdukSPK() != 0) {
+                            finalList.add(1, new SpkProdukData(
+                                    data.getIdProdukSPK(),
+                                    data.getNoSPK(),
+                                    data.getNamaProduk(),
+                                    0.0
+                            ));
+                        }
+
+                        ArrayAdapter<SpkProdukData> adapter =
+                                new ArrayAdapter<>(
+                                        Sawmill.this,
+                                        android.R.layout.simple_spinner_item,
+                                        finalList
+                                );
+
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+                        spinSpkProduk.setAdapter(adapter);
+
+                        int selectedPosition = 0;
+
+                        for (int i = 0; i < finalList.size(); i++) {
+                            if (finalList.get(i).getIdProdukSPK()
+                                    == data.getIdProdukSPK()) {
+                                selectedPosition = i;
+                                break;
+                            }
+                        }
+
+                        spinSpkProduk.setSelection(selectedPosition);
+                        spinSpkProduk.setEnabled(true);
+                    });
+                });
+            } catch (Exception ignored) {}
+        };
+
+        reloadSpk.run();
+
+        TextWatcher spkWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) {
+                reloadSpk.run();
+            }
+        };
+
+        editTebal.addTextChangedListener(spkWatcher);
+        editLebar.addTextChangedListener(spkWatcher);
 
         new AlertDialog.Builder(this)
                 .setTitle("Edit Detail")
                 .setView(dialogView)
                 .setPositiveButton("Simpan", (dialog, which) -> {
 
-                    // --- Ambil & validasi input sebagai String dulu ---
-                    String tebalStr   = editTebal.getText().toString().trim();
-                    String lebarStr   = editLebar.getText().toString().trim();
-                    String panjangStr = editPanjang.getText().toString().trim();
-                    String jumlahStr  = editJumlah.getText().toString().trim();
-
-                    if (tebalStr.isEmpty() || lebarStr.isEmpty() ||
-                            panjangStr.isEmpty() || jumlahStr.isEmpty()) {
-                        Toast.makeText(this,
-                                "Tebal, lebar, panjang, dan jumlah tidak boleh kosong",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    float tebal, lebar, panjang;
-                    int jumlah;
-
                     try {
-                        // Pakai DecimalFormat yang sama dengan tampilan
-                        Number nTebal   = decimalFormat.parse(tebalStr);
-                        Number nLebar   = decimalFormat.parse(lebarStr);
-                        Number nPanjang = decimalFormat.parse(panjangStr);
+                        float tebal = decimalFormat.parse(
+                                editTebal.getText().toString()).floatValue();
 
-                        tebal   = nTebal.floatValue();
-                        lebar   = nLebar.floatValue();
-                        panjang = nPanjang.floatValue();
+                        float lebar = decimalFormat.parse(
+                                editLebar.getText().toString()).floatValue();
 
-                        // jumlah biasanya bilangan bulat
-                        jumlah = Integer.parseInt(jumlahStr);
+                        float panjang = decimalFormat.parse(
+                                editPanjang.getText().toString()).floatValue();
+
+                        int jumlah = Integer.parseInt(
+                                editJumlah.getText().toString());
+
+                        GradeKBData selectedGrade =
+                                (GradeKBData) spinGradeDetail.getSelectedItem();
+
+                        int idGradeKB = selectedGrade != null &&
+                                selectedGrade.getIdGradeKB() != null
+                                ? selectedGrade.getIdGradeKB()
+                                : -1;
+
+                        int isBagusKulitUpdated = 0;
+                        if (radioBagus.isChecked()) isBagusKulitUpdated = 1;
+                        else if (radioKulit.isChecked()) isBagusKulitUpdated = 2;
+
+                        SpkProdukData selectedSpk =
+                                (SpkProdukData) spinSpkProduk.getSelectedItem();
+
+                        if (selectedSpk != null &&
+                                selectedSpk.getIdProdukSPK() != 0) {
+
+                            data.setNoSPK(selectedSpk.getNoSPK());
+                            data.setIdProdukSPK(selectedSpk.getIdProdukSPK());
+                            data.setNamaProduk(selectedSpk.getNamaProduk());
+                        }
+
+                        data.setTebal(tebal);
+                        data.setLebar(lebar);
+                        data.setPanjang(panjang);
+                        data.setPcs(jumlah);
+                        data.setIdGradeKB(idGradeKB);
+                        data.setIsBagusKulit(isBagusKulitUpdated);
+
+                        executorService.execute(() -> {
+
+                            boolean success =
+                                    SawmillApi.replaceAllSawmillDetailData(
+                                            noSTSawmill,
+                                            detailDataList,
+                                            jenisKayu
+                                    );
+
+                            detailDataList =
+                                    SawmillApi.fetchSawmillDetailData(
+                                            noSTSawmill);
+
+                            runOnUiThread(() -> {
+
+                                if (success) {
+                                    Toast.makeText(
+                                            this,
+                                            "Berhasil mengubah detail",
+                                            Toast.LENGTH_SHORT).show();
+
+                                    populateDetailTable(
+                                            detailSawmillTableLayout,
+                                            detailDataList,
+                                            noSTSawmill,
+                                            jenisKayu,
+                                            idJenisKayu
+                                    );
+                                } else {
+                                    Toast.makeText(
+                                            this,
+                                            "Gagal mengubah detail",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        });
 
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(this,
-                                "Format angka tidak valid. Contoh: 2,5",
+                        Toast.makeText(
+                                this,
+                                "Format angka tidak valid",
                                 Toast.LENGTH_SHORT).show();
-                        return;
                     }
-
-                    // Ambil nilai dari Spinner dan Radio
-                    GradeKBData selectedGrade = (GradeKBData) spinGradeDetail.getSelectedItem();
-                    int idGradeKB = (selectedGrade != null && selectedGrade.getIdGradeKB() != null)
-                            ? selectedGrade.getIdGradeKB()
-                            : -1;
-
-                    int isBagusKulitUpdated = 0;
-                    if (radioBagus.isChecked())      isBagusKulitUpdated = 1;
-                    else if (radioKulit.isChecked()) isBagusKulitUpdated = 2;
-
-                    // ✅ Ambil SPK Produk yang dipilih
-                    SpkProdukData selectedSpk = (SpkProdukData) spinSpkProduk.getSelectedItem();
-                    String updatedNoSPK = null;
-                    int updatedIdProdukSPK = 0;
-                    String updatedNamaProdukSPK = "";
-
-                    if (selectedSpk != null &&
-                            selectedSpk.getNoSPK() != null &&
-                            !selectedSpk.getNoSPK().isEmpty() &&
-                            !selectedSpk.getNoSPK().equals("PILIH -")) {
-                        updatedNoSPK = selectedSpk.getNoSPK();
-                        updatedIdProdukSPK = selectedSpk.getIdProdukSPK();
-                        updatedNamaProdukSPK = selectedSpk.getNamaProduk();
-                    }
-
-                    // Update objek data (di memori)
-                    data.setTebal(tebal);
-                    data.setLebar(lebar);
-                    data.setPanjang(panjang);
-                    data.setPcs(jumlah);
-                    data.setIdGradeKB(idGradeKB);
-                    data.setIsBagusKulit(isBagusKulitUpdated);
-
-                    // ✅ Update SPK data
-                    data.setNoSPK(updatedNoSPK);
-                    data.setIdProdukSPK(updatedIdProdukSPK);
-                    data.setNamaProduk(updatedNamaProdukSPK);
-
-                    // Proses update di background thread
-                    executorService.execute(() -> {
-                        // ✅ Update item individual tidak perlu lagi, langsung replace all
-                        // boolean success = SawmillApi.updateSawmillDetailItem(
-                        //         noSTSawmill, data.getNoUrut(), data, isRambung
-                        // );
-
-                        // ✅ Replace semua data (sudah termasuk perubahan di object data)
-                        boolean success = SawmillApi.replaceAllSawmillDetailData(
-                                noSTSawmill,
-                                detailDataList,  // List yang sudah termasuk data yang di-update
-                                jenisKayu
-                        );
-
-                        // Refresh data dari database
-                        detailDataList = SawmillApi.fetchSawmillDetailData(noSTSawmill);
-
-                        runOnUiThread(() -> {
-                            if (success) {
-                                Toast.makeText(this, "✅ Berhasil mengubah detail!", Toast.LENGTH_SHORT).show();
-                                populateDetailTable(detailSawmillTableLayout, detailDataList, noSTSawmill, jenisKayu, idJenisKayu);
-
-                                int totalPcs = 0;
-                                float totalTon = calculateTotalTon(detailDataList);
-
-                                for (SawmillDetailData d : detailDataList) {
-                                    totalPcs += d.getPcs();
-                                }
-
-                                textJumlah.setText("Jumlah Batang : " + totalPcs);
-                                textTon.setText("Total Ton : " + String.format("%.4f", totalTon));
-
-                                textJumlah.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
-                                textTon.setVisibility(totalPcs == 0 ? View.GONE : View.VISIBLE);
-                            } else {
-                                Toast.makeText(this, "❌ Gagal mengubah detail!", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    });
                 })
                 .setNegativeButton("Batal", null)
                 .show();
     }
-
 
 
     private void deleteDetail(String noSTSawmill, String jenisKayu, SawmillDetailData data, int idJenisKayu) {

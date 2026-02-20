@@ -15,15 +15,14 @@
         android:elevation="4dp">
 
         <Button
-            android:id="@+id/btnActivateDeactivate"
+            android:id="@+id/btnResetPrint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Aktifkan"
+            android:text="Label Tidak Tercetak"
             android:textColor="@color/black"
-            android:drawableLeft="@drawable/ic_done_all"
+            android:drawableLeft="@drawable/ic_undone"
             android:background="?attr/selectableItemBackground"
             android:textAlignment="textStart" />
-
 
     </LinearLayout>
 
