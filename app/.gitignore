@@ -1,17 +1,27 @@
 # SDK & Config Lokal
 local.properties
 
-# Build output
-/.gradle
-/build
-/app/build
+# Build output - Gunakan tanpa garis miring di depan agar mencakup semua sub-folder
+.gradle/
+build/
+bin/
+gen/
 
-# IDE & metadata
+# File khusus Android Studio / IntelliJ
 .idea/
 *.iml
+*.iws
+*.ipr
+out/
 
-# Keystore atau file sensitif
+# Keystore & Sensitive
 *.keystore
+*.jks
+google-services.json
 
-# Misc
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Log files
 *.log
