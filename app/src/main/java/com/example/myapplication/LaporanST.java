@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.config.ApiEndpoints.BASE_REPORT_MICROSERVICE;
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 import android.os.Bundle;
@@ -7,8 +8,10 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.example.myapplication.utils.DateDialogHelper;
 import com.example.myapplication.utils.DateRangeDialogHelper;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfMicroserviceUtils;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 
@@ -24,6 +27,7 @@ public class LaporanST extends AppCompatActivity {
     private CardView laporan_mutasi_st;
     private CardView laporan_rekap_penerimaan_st_dari_sawmill;
     private CardView laporan_sawmill_perhari_perlebar_pertebal;
+    private CardView laporan_stock_st_basah;
     private String username;
 
     @Override
@@ -35,6 +39,8 @@ public class LaporanST extends AppCompatActivity {
         laporan_mutasi_st = findViewById(R.id.laporan_mutasi_st);
         laporan_rekap_penerimaan_st_dari_sawmill = findViewById(R.id.laporan_rekap_penerimaan_st_dari_sawmill);
         laporan_sawmill_perhari_perlebar_pertebal = findViewById(R.id.laporan_sawmill_perhari_perlebar_pertebal);
+        laporan_stock_st_basah = findViewById(R.id.laporan_stock_st_basah);
+
 
         username = SharedPrefUtils.getUsername(this);
 
@@ -42,6 +48,7 @@ public class LaporanST extends AppCompatActivity {
         laporan_rekap_penerimaan_st_dari_sawmill.setOnClickListener(view -> showLaporanRekapPenerimaanStDariSawmill());
         laporan_mutasi_st.setOnClickListener(view -> showLaporanMutasiST());
         laporan_sawmill_perhari_perlebar_pertebal.setOnClickListener(view -> showLaporanSawmillPerhariPerlebarPertebal());
+        laporan_stock_st_basah.setOnClickListener(view -> showLaporanStockStBasah());
     }
 
     private void showLaporanRekapHasilSawmillMeja() {
@@ -142,6 +149,24 @@ public class LaporanST extends AppCompatActivity {
         });
     }
 
+    private void showLaporanStockStBasah() {
+        DateDialogHelper.show(this,
+                DateDialogHelper.DefaultTanggalMode.HARI_INI,
+                (tanggal) -> {
+
+                    String url = BASE_REPORT_MICROSERVICE
+                            + "api/reports/sawn-timber/stock-st-basah/pdf"
+                            + "?end_date=" + tanggal;
+
+                    PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
+                            this,
+                            url,
+                            "Stock ST Basah.pdf",
+                            executorService,
+                            loadingDialogHelper
+                    );
+                });
+    }
 
 
 }
