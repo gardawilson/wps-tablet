@@ -22,6 +22,7 @@ import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPerio
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
@@ -39,6 +40,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -172,8 +174,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private final String mainTable = "S4SProduksi_h";
     private List<String> userPermissions;
     private String username;
-    private Spinner spinSPK;
-    private MaterialSwitch switchSPK;
 
 
 
@@ -228,14 +228,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         textScanQR = findViewById(R.id.textScanQR);
         btnEdit = findViewById(R.id.btnEdit);
         btnPrint = findViewById(R.id.btnPrint);
-        spinSPK = findViewById(R.id.spinSPK);
-        switchSPK = findViewById(R.id.switchSPK);
 
         username = SharedPrefUtils.getUsername(this);
 
         loadingIndicator.setVisibility(View.VISIBLE);
-        spinSPK.setVisibility(View.GONE);
-        switchSPK.setVisibility(View.GONE);
 
 
         // Inisialisasi View scanner overlay
@@ -254,43 +250,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
         PermissionUtils.permissionCheck(this, btnEdit, "proses_s4s:update");
-
-
-        // 🔹 Set listener untuk perubahan ON/OFF
-        switchSPK.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                Log.d("SPK_SWITCH", "SPK diaktifkan");
-
-                // Pastikan spinner terlihat tapi transparan di awal
-                spinSPK.setVisibility(View.VISIBLE);
-                spinSPK.setAlpha(0f);
-                spinSPK.setTranslationY(30f); // turun 30px untuk efek "slide up"
-
-                // Animasi muncul (fade in + slide up)
-                spinSPK.animate()
-                        .alpha(1f)
-                        .translationY(0f)
-                        .setDuration(200)
-                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                        .start();
-
-            } else {
-                Log.d("SPK_SWITCH", "SPK dimatikan");
-
-                // Animasi hilang (fade out + slide down)
-                spinSPK.animate()
-                        .alpha(0f)
-                        .translationY(30f)
-                        .setDuration(150)
-                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
-                        .withEndAction(() -> spinSPK.setVisibility(View.GONE))
-                        .start();
-
-                loadSPKSpinner(null, null);
-            }
-        });
-
-
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -480,7 +439,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         btnSimpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveScannedResultsToDatabase();
+                showSPKDialogThenSave();
             }
         });
 
@@ -757,20 +716,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         updateButtonText(); // Set teks awal tombol
         btnCameraControl.setOnClickListener(v -> {
             if (isCameraActive) {
-                // 🔹 Animasi smooth hide (fade out + slide up)
-                switchSPK.animate()
-                        .alpha(0f)                // memudar
-                        .translationY(-30f)       // geser ke atas 30px
-                        .setDuration(300)         // durasi animasi (ms)
-                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
-                        .withEndAction(() -> {
-                            switchSPK.setChecked(false);   // reset state switch
-                            switchSPK.setVisibility(View.GONE);
-                            deactivateCamera();            // panggil setelah animasi selesai
-                        })
-                        .start();
-
-
+                deactivateCamera();            // panggil setelah animasi selesai
             } else {
                 String noProduksi = noProduksiView.getText().toString();
 
@@ -794,19 +740,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
                             // Jika valid, minta permission kamera
                             requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-                            loadSPKSpinner(null, null);
-
-                            // 🔹 Tampilkan switch dengan animasi smooth dari atas ke bawah
-                            switchSPK.setAlpha(0f);
-                            switchSPK.setTranslationY(-40f); // mulai sedikit di atas posisi normal
-                            switchSPK.setVisibility(View.VISIBLE);
-
-                            switchSPK.animate()
-                                    .alpha(1f)
-                                    .translationY(0f) // turun ke posisi normal
-                                    .setDuration(350)
-                                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                                    .start();
 
                         });
                     });
@@ -1663,7 +1596,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 //-------------------------------------------METHOD MENYIMPAN DATA KE DALAM DATABASE -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-    private void saveScannedResultsToDatabase() {
+    private void saveScannedResultsToDatabase(SpkData selectedSPK) {
         customProgressDialog = new CustomProgressDialog(this);
         customProgressDialog.show(); // Tampilkan progress dialog
 
@@ -1671,8 +1604,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         String savedUsername = SharedPrefUtils.getUsername(this);
 
         //AMBIL DATA DARI SPINNER SPK
-        SpkData selectedSPK = (SpkData) spinSPK.getSelectedItem();
-        String noSPK = selectedSPK != null ? selectedSPK.getNoSPK() : null;
+        String noSPKTujuan = selectedSPK != null ? selectedSPK.getNoSPK() : null;
 
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -1688,7 +1620,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S");
+                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S", noSPKTujuan);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1699,7 +1631,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoST = ProsesProduksiApi.getNoSTByNoProduksi(noProduksi);
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved, noSPK);
+                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved, noSPKTujuan);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1710,7 +1642,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding");
+                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding", noSPKTujuan);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1721,7 +1653,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ");
+                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ", noSPKTujuan);
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1732,7 +1664,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir", noSPKTujuan);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1766,8 +1698,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                     Log.w("SaveScannedResults", "Tidak ada data yang dipilih untuk diperbarui.");
                 }
             });
-
-            loadSPKSpinner(null,null);
             Log.d("SaveScannedResults", "Proses penyimpanan hasil scan selesai");
         });
     }
@@ -1797,7 +1727,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         // Set listener untuk tombol "Simpan"
         btnSave.setOnClickListener(v -> {
-            saveScannedResultsToDatabase();  // Simpan data
+            showSPKDialogThenSave();
             dialog.dismiss();  // Tutup dialog setelah simpan
         });
 
@@ -2209,12 +2139,21 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     }
 
 
+    private void showSPKDialogThenSave() {
+        // Inflate layout dialog
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_select_spk_tujuan, null);
+        Spinner spinSPKDialog = dialogView.findViewById(R.id.spinSPKDialog);
+        Button btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
+        Button btnSave = dialogView.findViewById(R.id.btnDialogSave);
 
-    // Versi baru dengan callback
-    private void loadSPKSpinner(String selectedNoSPK, @Nullable Runnable onDone) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(dialogView);
+        dialog.setCancelable(false);
+
+        // Load SPK list ke spinner dialog
         executorService.execute(() -> {
             List<SpkData> spkList = MasterApi.getSPKList();
-            spkList.add(0, new SpkData("PILIH")); // Tambahkan default item
+            spkList.add(0, new SpkData("PILIH"));
 
             runOnUiThread(() -> {
                 ArrayAdapter<SpkData> adapter = new ArrayAdapter<>(
@@ -2223,33 +2162,34 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         spkList
                 );
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-                spinSPK.setAdapter(adapter);
+                spinSPKDialog.setAdapter(adapter);
 
-                // Set default selection
-                if (selectedNoSPK == null || selectedNoSPK.isEmpty() || selectedNoSPK.equals("PILIH")) {
-                    spinSPK.setSelection(0);
-                } else {
-                    for (int i = 0; i < spkList.size(); i++) {
-                        if (spkList.get(i).getNoSPK().equals(selectedNoSPK)) {
-                            spinSPK.setSelection(i);
-                            break;
-                        }
-                    }
-                }
-
-                // 🔑 Jalankan callback setelah spinner selesai diisi
-                if (onDone != null) onDone.run();
             });
         });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            SpkData selectedSPK = (SpkData) spinSPKDialog.getSelectedItem();
+
+            if (selectedSPK == null || selectedSPK.getNoSPK().equals("PILIH")) {
+                Toast.makeText(this, "Harap pilih SPK terlebih dahulu!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            saveScannedResultsToDatabase(selectedSPK); // Lanjut save
+        });
+
+        // Atur window agar mengikuti layout (wrap_content / match_parent sesuai xml)
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
+        }
+
+        dialog.show();
     }
-
-    // Overload versi lama tetap bisa dipanggil tanpa callback
-    private void loadSPKSpinner(String selectedNoSPK) {
-        loadSPKSpinner(selectedNoSPK, null);
-    }
-
-
-
 
 
     private <T> void updateTable(
