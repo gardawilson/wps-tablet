@@ -3,6 +3,7 @@ package com.example.myapplication;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.MstOperatorData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.CustomProgressDialog;
@@ -10,6 +11,7 @@ import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SPKTujuanDialogHelper;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -414,7 +416,9 @@ public class ProsesProduksiPacking extends AppCompatActivity {
         btnSimpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveScannedResultsToDatabase();
+                SPKTujuanDialogHelper.show(ProsesProduksiPacking.this, executorService, selectedSPK -> {
+                    saveScannedResultsToDatabase(selectedSPK);
+                });
             }
         });
 
@@ -1441,12 +1445,15 @@ public class ProsesProduksiPacking extends AppCompatActivity {
 //-------------------------------------------METHOD MENYIMPAN DATA KE DALAM DATABASE -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-    private void saveScannedResultsToDatabase() {
+    private void saveScannedResultsToDatabase(SpkData selectedSPK) {
         customProgressDialog = new CustomProgressDialog(this);
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
         String savedUsername = SharedPrefUtils.getUsername(this);
+
+        //AMBIL DATA DARI SPINNER SPK
+        String noSPKTujuan = selectedSPK != null ? selectedSPK.getNoSPK() : null;
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -1460,7 +1467,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
                 List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "PackingProduksiInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "PackingProduksiInputMoulding");
+                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "PackingProduksiInputMoulding", noSPKTujuan);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1471,7 +1478,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "PackingProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "PackingProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "PackingProduksiInputCCAkhir", noSPKTujuan);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1482,7 +1489,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
                 List<String> existingNoSanding = ProsesProduksiApi.getNoSandingByNoProduksi(noProduksi, "PackingProduksiInputSanding");
                 List<String> newNoSanding = new ArrayList<>(noSandingList);
                 newNoSanding.removeAll(existingNoSanding);
-                ProsesProduksiApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "PackingProduksiInputSanding");
+                ProsesProduksiApi.saveNoSanding(noProduksi, tglProduksi, newNoSanding, dateTimeSaved, "PackingProduksiInputSanding", noSPKTujuan);
                 savedItems += newNoSanding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1493,7 +1500,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
                 List<String> existingNoPacking = ProsesProduksiApi.getNoPackingByNoProduksi(noProduksi, "PackingProduksiInputBarangJadi");
                 List<String> newNoPacking = new ArrayList<>(noPackingList);
                 newNoPacking.removeAll(existingNoPacking);
-                ProsesProduksiApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "PackingProduksiInputBarangJadi");
+                ProsesProduksiApi.saveNoPacking(noProduksi, tglProduksi, newNoPacking, dateTimeSaved, "PackingProduksiInputBarangJadi", noSPKTujuan);
                 savedItems += newNoPacking.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1926,10 +1933,10 @@ public class ProsesProduksiPacking extends AppCompatActivity {
 
         // Set listener untuk tombol "Simpan"
         btnSave.setOnClickListener(v -> {
-            saveScannedResultsToDatabase();  // Simpan data
+            SPKTujuanDialogHelper.show(this, executorService, this::saveScannedResultsToDatabase);
             dialog.dismiss();  // Tutup dialog setelah simpan
         });
-
+        
         // Set listener untuk tombol "Tidak"
         btnNo.setOnClickListener(v -> {
             scannedResults.clear();

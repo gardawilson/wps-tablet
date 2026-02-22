@@ -487,50 +487,67 @@ public class ProsesProduksiApi {
         return noReprosesList;
     }
 
-
-    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName) {
+    public static void saveNoS4S(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName, String noSPKTujuan) {
         if (noS4SList == null || noS4SList.isEmpty()) {
             Log.e("SaveError", "List NoS4S kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null || noSPKTujuan.trim().isEmpty() || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputS4S
-            for (String noS4S : noS4SList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noS4S);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // === 1️⃣ Insert ke tabel tableName ===
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoS4S, DateTimeSaved) VALUES (?, ?, ?)")) {
+                for (String noS4S : noS4SList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noS4S);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di S4S_h
-            for (String noS4S : noS4SList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noS4S);
-                updateStmt.addBatch();
+            // === 2️⃣ Update ke tabel S4S_h ===
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
+                    for (String noS4S : noS4SList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noS4S);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE S4S_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoS4S = ?")) {
+                    for (String noS4S : noS4SList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noS4S);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoS4S berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
-            Log.e("SaveError", "Error saat menyimpan data: " + e.getMessage());
+            Log.e("SaveError", "Error saat menyimpan data NoS4S: " + e.getMessage());
         }
     }
 
-
-    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String noSPK) {
+    public static void saveNoST(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String noSPKTujuan) {
         if (noSTList == null || noSTList.isEmpty()) {
             Log.e("SaveError", "List NoST kosong, tidak ada data untuk disimpan.");
             return;
         }
 
         // Normalisasi nilai noSPK agar aman untuk pengecekan
-        boolean isNoSPKEmpty = (noSPK == null || noSPK.trim().isEmpty() || noSPK.equalsIgnoreCase("pilih"));
+        boolean isNoSPKEmpty = (noSPKTujuan == null || noSPKTujuan.trim().isEmpty() || noSPKTujuan.equalsIgnoreCase("pilih"));
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
 
@@ -562,10 +579,10 @@ public class ProsesProduksiApi {
             } else {
                 // Update DateUsage dan NoSPK
                 try (PreparedStatement updateStmt = con.prepareStatement(
-                        "UPDATE ST_h SET DateUsage = ?, NoSPK = ? WHERE NoST = ?")) {
+                        "UPDATE ST_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoST = ?")) {
                     for (String noST : noSTList) {
                         updateStmt.setString(1, tglProduksi);
-                        updateStmt.setString(2, noSPK);
+                        updateStmt.setString(2, noSPKTujuan);
                         updateStmt.setString(3, noST);
                         updateStmt.addBatch();
                     }
@@ -582,169 +599,289 @@ public class ProsesProduksiApi {
 
 
 
-    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName) {
+    public static void saveNoMoulding(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName, String noSPKTujuan) {
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             Log.e("SaveError", "List NoMoulding kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null || noSPKTujuan.trim().isEmpty() || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputMoulding
-            for (String noMoulding : noMouldingList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noMoulding);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // === 1️⃣ Insert ke tabel tableName ===
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)")) {
+                for (String noMoulding : noMouldingList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noMoulding);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di Moulding_h
-            for (String noMoulding : noMouldingList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noMoulding);
-                updateStmt.addBatch();
+            // === 2️⃣ Update ke tabel Moulding_h ===
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
+                    for (String noMoulding : noMouldingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noMoulding);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Moulding_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoMoulding = ?")) {
+                    for (String noMoulding : noMouldingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noMoulding);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoMoulding berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoMoulding berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoMoulding: " + e.getMessage());
         }
     }
 
-
-    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName) {
+    public static void saveNoFJ(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName, String noSPKTujuan) {
         if (noFJList == null || noFJList.isEmpty()) {
             Log.e("SaveError", "List NoFJ kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null || noSPKTujuan.trim().isEmpty() || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputFJ
-            for (String noFJ : noFJList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noFJ);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // === 1️⃣ Insert ke tabel tableName ===
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoFJ, DateTimeSaved) VALUES (?, ?, ?)")) {
+                for (String noFJ : noFJList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noFJ);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di FJ_h
-            for (String noFJ : noFJList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noFJ);
-                updateStmt.addBatch();
+            // === 2️⃣ Update ke tabel FJ_h ===
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
+                    for (String noFJ : noFJList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noFJ);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE FJ_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoFJ = ?")) {
+                    for (String noFJ : noFJList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noFJ);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoFJ berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoFJ berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoFJ: " + e.getMessage());
         }
     }
 
-    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName) {
+    public static void saveNoCC(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName, String noSPKTujuan) {
         if (noCCList == null || noCCList.isEmpty()) {
             Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null || noSPKTujuan.trim().isEmpty() || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputCCAkhir
-            for (String noCCAkhir : noCCList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noCCAkhir);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // === 1️⃣ Insert ke tabel tableName ===
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)")) {
+                for (String noCCAkhir : noCCList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noCCAkhir);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di CCAkhir_h
-            for (String noCCAkhir : noCCList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noCCAkhir);
-                updateStmt.addBatch();
+            // === 2️⃣ Update ke tabel CCAkhir_h ===
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
+                    for (String noCCAkhir : noCCList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noCCAkhir);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE CCAkhir_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoCCAkhir = ?")) {
+                    for (String noCCAkhir : noCCList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noCCAkhir);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoCCAkhir berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoCCAkhir berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoCCAkhir: " + e.getMessage());
         }
     }
 
-    public static void saveNoLaminating(String noProduksi, String tglProduksi, List<String> noLaminatingList, String dateTimeSaved, String tableName) {
+    public static void saveNoLaminating(
+            String noProduksi,
+            String tglProduksi,
+            List<String> noLaminatingList,
+            String dateTimeSaved,
+            String tableName,
+            String noSPKTujuan
+    ) {
         if (noLaminatingList == null || noLaminatingList.isEmpty()) {
             Log.e("SaveError", "List NoLaminating kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoLaminating, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE Laminating_h SET DateUsage = ? WHERE NoLaminating = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null
+                || noSPKTujuan.trim().isEmpty()
+                || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            // Insert Data ke S4SProduksiInputCCAkhir
-            for (String noLaminating : noLaminatingList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noLaminating);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // 1️⃣ Insert ke tabel tableName
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoLaminating, DateTimeSaved) VALUES (?, ?, ?)")) {
+
+                for (String noLaminating : noLaminatingList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noLaminating);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            // Update DataUsage di CCAkhir_h
-            for (String noLaminating : noLaminatingList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noLaminating);
-                updateStmt.addBatch();
+            // 2️⃣ Update ke tabel Laminating_h
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Laminating_h SET DateUsage = ? WHERE NoLaminating = ?")) {
+
+                    for (String noLaminating : noLaminatingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noLaminating);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Laminating_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoLaminating = ?")) {
+
+                    for (String noLaminating : noLaminatingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noLaminating);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoLaminating berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoLaminating berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoLaminating: " + e.getMessage());
         }
     }
 
-    public static void saveNoSanding(String noProduksi, String tglProduksi, List<String> noSandingList, String dateTimeSaved, String tableName) {
+    public static void saveNoSanding(
+            String noProduksi,
+            String tglProduksi,
+            List<String> noSandingList,
+            String dateTimeSaved,
+            String tableName,
+            String noSPKTujuan
+    ) {
         if (noSandingList == null || noSandingList.isEmpty()) {
             Log.e("SaveError", "List NoSanding kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoSanding, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE Sanding_h SET DateUsage = ? WHERE NoSanding = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null
+                || noSPKTujuan.trim().isEmpty()
+                || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            for (String noSanding : noSandingList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noSanding);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // 1️⃣ Insert ke tabel tableName
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoSanding, DateTimeSaved) VALUES (?, ?, ?)")) {
+
+                for (String noSanding : noSandingList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noSanding);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            for (String noSanding : noSandingList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noSanding);
-                updateStmt.addBatch();
+            // 2️⃣ Update ke tabel Sanding_h
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Sanding_h SET DateUsage = ? WHERE NoSanding = ?")) {
+
+                    for (String noSanding : noSandingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSanding);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE Sanding_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoSanding = ?")) {
+
+                    for (String noSanding : noSandingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noSanding);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoSanding berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoSanding berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoSanding: " + e.getMessage());
@@ -752,38 +889,70 @@ public class ProsesProduksiApi {
     }
 
 
-    public static void saveNoPacking(String noProduksi, String tglProduksi, List<String> noPackingList, String dateTimeSaved, String tableName) {
+    public static void saveNoPacking(
+            String noProduksi,
+            String tglProduksi,
+            List<String> noPackingList,
+            String dateTimeSaved,
+            String tableName,
+            String noSPKTujuan
+    ) {
         if (noPackingList == null || noPackingList.isEmpty()) {
             Log.e("SaveError", "List NoPacking kosong, tidak ada data untuk disimpan.");
             return;
         }
 
-        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
-             PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoProduksi, NoBJ, DateTimeSaved) VALUES (?, ?, ?)");
-             PreparedStatement updateStmt = con.prepareStatement("UPDATE BarangJadi_h SET DateUsage = ? WHERE NoBJ = ?")) {
+        boolean isNoSPKEmpty = (noSPKTujuan == null
+                || noSPKTujuan.trim().isEmpty()
+                || noSPKTujuan.equalsIgnoreCase("pilih"));
 
-            for (String noPacking : noPackingList) {
-                insertStmt.setString(1, noProduksi);
-                insertStmt.setString(2, noPacking);
-                insertStmt.setString(3, dateTimeSaved);
-                insertStmt.addBatch();
+        try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
+
+            // 1️⃣ Insert ke tabel tableName
+            try (PreparedStatement insertStmt = con.prepareStatement(
+                    "INSERT INTO " + tableName + " (NoProduksi, NoBJ, DateTimeSaved) VALUES (?, ?, ?)")) {
+
+                for (String noPacking : noPackingList) {
+                    insertStmt.setString(1, noProduksi);
+                    insertStmt.setString(2, noPacking);
+                    insertStmt.setString(3, dateTimeSaved);
+                    insertStmt.addBatch();
+                }
+                insertStmt.executeBatch();
             }
-            insertStmt.executeBatch();
 
-            for (String noPacking : noPackingList) {
-                updateStmt.setString(1, tglProduksi);
-                updateStmt.setString(2, noPacking);
-                updateStmt.addBatch();
+            // 2️⃣ Update ke tabel BarangJadi_h
+            if (isNoSPKEmpty) {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE BarangJadi_h SET DateUsage = ? WHERE NoBJ = ?")) {
+
+                    for (String noPacking : noPackingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noPacking);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
+            } else {
+                try (PreparedStatement updateStmt = con.prepareStatement(
+                        "UPDATE BarangJadi_h SET DateUsage = ?, NoSPKTujuan = ? WHERE NoBJ = ?")) {
+
+                    for (String noPacking : noPackingList) {
+                        updateStmt.setString(1, tglProduksi);
+                        updateStmt.setString(2, noSPKTujuan);
+                        updateStmt.setString(3, noPacking);
+                        updateStmt.addBatch();
+                    }
+                    updateStmt.executeBatch();
+                }
             }
-            updateStmt.executeBatch();
 
-            Log.d("SaveSuccess", "Data NoPacking berhasil disimpan dan DateUsage diperbarui.");
+            Log.d("SaveSuccess", "Data NoPacking berhasil disimpan dan DateUsage/NoSPKTujuan diperbarui.");
 
         } catch (SQLException e) {
             Log.e("SaveError", "Error saat menyimpan data NoPacking: " + e.getMessage());
         }
     }
-
 
     public static void saveNoReproses(String noProduksi, String tglProduksi, List<String> noReprosesList, String dateTimeSaved) {
         if (noReprosesList == null || noReprosesList.isEmpty()) {

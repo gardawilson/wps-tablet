@@ -2,12 +2,14 @@ package com.example.myapplication;
 import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.model.MesinProsesProduksiData;
 import com.example.myapplication.model.MstOperatorData;
+import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.TableConfig;
 import com.example.myapplication.utils.CustomProgressDialog;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.PermissionUtils;
+import com.example.myapplication.utils.SPKTujuanDialogHelper;
 import com.example.myapplication.utils.ScannerAnimationUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableConfigUtils;
@@ -414,7 +416,9 @@ public class ProsesProduksiFJ extends AppCompatActivity {
         btnSimpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveScannedResultsToDatabase();
+                SPKTujuanDialogHelper.show(ProsesProduksiFJ.this, executorService, selectedSPK -> {
+                    saveScannedResultsToDatabase(selectedSPK);
+                });
             }
         });
 
@@ -1287,12 +1291,15 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 //-------------------------------------------METHOD MENYIMPAN DATA KE DALAM DATABASE -------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-    private void saveScannedResultsToDatabase() {
+    private void saveScannedResultsToDatabase(SpkData selectedSPK) {
         customProgressDialog = new CustomProgressDialog(this);
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
         String savedUsername = SharedPrefUtils.getUsername(this);
+
+        //AMBIL DATA DARI SPINNER SPK
+        String noSPKTujuan = selectedSPK != null ? selectedSPK.getNoSPK() : null;
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -1306,7 +1313,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                 List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "FJProduksiInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "FJProduksiInputS4S");
+                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "FJProduksiInputS4S", noSPKTujuan);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1317,7 +1324,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "FJProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "FJProduksiInputCCAkhir");
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "FJProduksiInputCCAkhir", noSPKTujuan);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1515,7 +1522,7 @@ public class ProsesProduksiFJ extends AppCompatActivity {
 
         // Set listener untuk tombol "Simpan"
         btnSave.setOnClickListener(v -> {
-            saveScannedResultsToDatabase();  // Simpan data
+            SPKTujuanDialogHelper.show(this, executorService, this::saveScannedResultsToDatabase);
             dialog.dismiss();  // Tutup dialog setelah simpan
         });
 
