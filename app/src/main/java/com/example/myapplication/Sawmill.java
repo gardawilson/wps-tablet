@@ -29,8 +29,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
@@ -42,6 +44,7 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -325,7 +328,6 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
-
     // DIALOG EDIT DATA HEADER
     private void showEditDataDialog(SawmillData existingData) {
         // Membuat Dialog
@@ -356,6 +358,8 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinSpecialCondition = view.findViewById(R.id.spinSpecialCondition);
         final Spinner spinOperator1 = view.findViewById(R.id.spinOperator1);
         final Spinner spinOperator2 = view.findViewById(R.id.spinOperator2);
+        final CheckBox cbIsBorongan = view.findViewById(R.id.cbIsBorongan);
+        final ImageView ivBoronganHint = view.findViewById(R.id.ivBoronganHint);
 
         // Setup time picker untuk jam mulai dan jam berhenti
         setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
@@ -376,7 +380,7 @@ public class Sawmill extends AppCompatActivity {
         noKB.setAdapter(kbAdapter);
 
         // ===== SETUP NoMeja AutoComplete =====
-        loadMejaToSpinner(spinMeja, existingData.getNoMeja(), spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, true, beratBalok);
+        loadMejaToSpinner(spinMeja, existingData.getNoMeja(), spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, true, beratBalok, cbIsBorongan, ivBoronganHint);
 
         // Load data ke spinner terlebih dahulu dengan nilai yang sudah ada
         loadSpecialConditionToSpinner(spinSpecialCondition, existingData.getIdSawmillSpecialCondition());
@@ -401,6 +405,7 @@ public class Sawmill extends AppCompatActivity {
         beratBalok.setText(decimalFormat.format(existingData.getBeratBalok()));
         remark.setText(existingData.getRemark());
         jlhBatang.setText(String.valueOf(existingData.getJlhBatangRajang()));
+        cbIsBorongan.setChecked(existingData.isBorongan());
 
         if (!existingData.getNoKayuBulat().isEmpty() && existingData.getNoKayuBulat() != null) {
             executorService.execute(() -> {
@@ -486,6 +491,7 @@ public class Sawmill extends AppCompatActivity {
             String jamMulaiVal = jamMulai.getText().toString();
             String jamBerhentiVal = jamBerhenti.getText().toString();
             String totalJamKerjaVal = totalJamKerja.getText().toString();
+            boolean isBorongan = cbIsBorongan.isChecked();
 
             // Validasi: Cek apakah ada field yang kosong
             boolean valid = true;
@@ -549,7 +555,8 @@ public class Sawmill extends AppCompatActivity {
                                 jenisKayuVal,
                                 jamMulaiVal,
                                 jamBerhentiVal,
-                                totalJamKerjaVal
+                                totalJamKerjaVal,
+                                isBorongan
                         );
 
                         // Setelah operasi selesai, update UI di main thread
@@ -996,8 +1003,6 @@ public class Sawmill extends AppCompatActivity {
         });
     }
 
-
-
     // DIALOG NEW DATA HEADER
     private void showNewDataDialog() {
         // Membuat Dialog
@@ -1027,6 +1032,8 @@ public class Sawmill extends AppCompatActivity {
         final Spinner spinSpecialCondition = view.findViewById(R.id.spinSpecialCondition);
         final Spinner spinOperator1 = view.findViewById(R.id.spinOperator1);
         final Spinner spinOperator2 = view.findViewById(R.id.spinOperator2);
+        final CheckBox cbIsBorongan = view.findViewById(R.id.cbIsBorongan);
+        final ImageView ivBoronganHint = view.findViewById(R.id.ivBoronganHint);
 
         setupTimePicker(jamMulai, jamMulai, jamBerhenti, totalJamKerja, tanggal,
                 () -> {
@@ -1052,7 +1059,7 @@ public class Sawmill extends AppCompatActivity {
         noKB.setAdapter(kbAdapter);
 
         // ===== SETUP NoMeja Spinner =====
-        loadMejaToSpinner(spinMeja, null, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, false, beratBalok);
+        loadMejaToSpinner(spinMeja, null, spinOperator1, spinOperator2, tanggal, jamBerhenti, jamMulai, totalJamKerja, false, beratBalok, cbIsBorongan, ivBoronganHint);
 
         // Set default prefix "A."
         noKB.setText("A.");
@@ -1086,7 +1093,7 @@ public class Sawmill extends AppCompatActivity {
         // Setup tombol simpan
         setupSaveButton(view, dialog, noKB, tanggal, jenisKayu, spinMeja, spinShift, jamMulai, jamBerhenti,
                 totalJamKerja, hourMeter, jlhBalokTerpakai, beratBalokTim, beratBalok, remark, jlhBatang,
-                spinSpecialCondition, spinOperator1, spinOperator2);
+                spinSpecialCondition, spinOperator1, spinOperator2, cbIsBorongan);
 
         // Menampilkan Dialog
         dialog.show();
@@ -1101,10 +1108,10 @@ public class Sawmill extends AppCompatActivity {
     private void loadMejaToSpinner(final Spinner spinMeja, @Nullable String selectedNoMeja,
                                    Spinner spinOperator1, Spinner spinOperator2,
                                    EditText tanggal, EditText jamBerhenti, EditText jamMulai,
-                                   TextView totalJamKerja, boolean isEdit, EditText beratBalok) {
+                                   TextView totalJamKerja, boolean isEdit, EditText beratBalok, CheckBox isBorongan, ImageView boronganHint) {
 
         final List<MstMejaData> mejaList = new ArrayList<>();
-        mejaList.add(new MstMejaData(null, "PILIH"));
+        mejaList.add(new MstMejaData(null, false, false, "", false, 1,  "PILIH"));
 
         executorService.execute(() -> {
             List<MstMejaData> result = SawmillApi.getAllMeja();
@@ -1139,6 +1146,8 @@ public class Sawmill extends AppCompatActivity {
 
                     // ✅ TAMBAHKAN: Logika enable/disable berat balok
                     handleBeratBalokVisibility(namaMeja, beratBalok);
+
+                    handleBoronganVisibility(selected, isBorongan, boronganHint);
 
                     // Ambil operator dan jam terakhir berdasarkan NoMeja
                     executorService.execute(() -> {
@@ -1245,6 +1254,37 @@ public class Sawmill extends AppCompatActivity {
     }
 
 
+    private void handleBoronganVisibility(MstMejaData selected, CheckBox checkBorongan, ImageView boronganHint) {
+
+        if (checkBorongan == null) return;
+
+        boolean shouldShow = selected != null
+                && selected.getIdGroupMesinSawmill() != null
+                && selected.getIdGroupMesinSawmill() == 1;
+
+        if (shouldShow) {
+            checkBorongan.setVisibility(View.VISIBLE);
+            checkBorongan.setEnabled(true);
+            checkBorongan.setAlpha(1.0f);
+            boronganHint.setVisibility(View.VISIBLE);
+            // Tooltip saat diklik
+            TooltipCompat.setTooltipText(boronganHint, "Opsi Borongan muncul saat memilih Meja SLP");
+            boronganHint.setOnClickListener(v -> {
+                // Simulasikan long click agar tooltip muncul
+                boronganHint.performLongClick();
+            });
+        } else {
+            checkBorongan.setChecked(false);
+            checkBorongan.setVisibility(View.GONE);
+            boronganHint.setVisibility(View.GONE);
+        }
+
+        Log.d("BoronganVisibility",
+                "Meja: " + (selected != null ? selected.getNoMeja() : "null")
+                        + ", IdGroup: "
+                        + (selected != null ? selected.getIdGroupMesinSawmill() : "null")
+                        + ", Visible: " + shouldShow);
+    }
 
     // Method terpisah untuk setup TextWatcher noKB
     private void setupNoKBTextWatcher(AutoCompleteTextView noKB, ArrayAdapter<String> kbAdapter, View view,
@@ -1496,7 +1536,7 @@ public class Sawmill extends AppCompatActivity {
                                  EditText jamMulai, EditText jamBerhenti, TextView totalJamKerja,
                                  EditText hourMeter, EditText jlhBalokTerpakai, EditText beratBalokTim, EditText beratBalok,
                                  EditText remark, EditText jlhBatang, Spinner spinSpecialCondition,
-                                 Spinner spinOperator1, Spinner spinOperator2) {
+                                 Spinner spinOperator1, Spinner spinOperator2, CheckBox cbIsBorongan) {
 
         Button btnSave = view.findViewById(R.id.btnSimpan);
         btnSave.setOnClickListener(v -> {
@@ -1529,6 +1569,7 @@ public class Sawmill extends AppCompatActivity {
             String jamMulaiVal = jamMulai.getText().toString();
             String jamBerhentiVal = jamBerhenti.getText().toString();
             String totalJamKerjaVal = totalJamKerja.getText().toString();
+            boolean isBorongan = cbIsBorongan.isChecked();
 
             // Validasi
             if (validateInputs(spinSpecialCondition, spinOperator1, spinShift, jlhBalokTerpakai,
@@ -1538,7 +1579,7 @@ public class Sawmill extends AppCompatActivity {
                 // Simpan data
                 saveData(dialog, shiftVal, tanggalVal, noKBVal, noMejaVal, idSpecialConditionVal,
                         jlhBalokTerpakaiVal, jlhBatangVal, hourMeterVal, idOperator1Val, idOperator2Val,
-                        remarkVal, beratBalokTimVal, beratBalokVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal,
+                        remarkVal, beratBalokTimVal, beratBalokVal, jenisKayuVal, jamMulaiVal, jamBerhentiVal, totalJamKerjaVal, isBorongan,
                         btnSave, loadingDialogHelper);
             } else {
                 loadingDialogHelper.hide();
@@ -1601,7 +1642,7 @@ public class Sawmill extends AppCompatActivity {
                           String noMejaVal, int idSpecialConditionVal, int jlhBalokTerpakaiVal,
                           String jlhBatangVal, String hourMeterVal, int idOperator1Val, int idOperator2Val,
                           String remarkVal, String beratBalokTimVal, String beratBalokVal, String jenisKayuVal,
-                          String jamMulaiVal, String jamBerhentiVal, String totalJamKerjaVal,
+                          String jamMulaiVal, String jamBerhentiVal, String totalJamKerjaVal, boolean isBorongan,
                           Button btnSave, LoadingDialogHelper loadingDialogHelper) {
 
         executorService.execute(() -> {
@@ -1613,7 +1654,7 @@ public class Sawmill extends AppCompatActivity {
                             newNoTellySawmill, shiftVal, tanggalVal, noKBVal, noMejaVal,
                             idSpecialConditionVal, jlhBalokTerpakaiVal, jlhBatangVal, hourMeterVal,
                             idOperator1Val, idOperator2Val, remarkVal, beratBalokTimVal, beratBalokVal, jenisKayuVal,
-                            jamMulaiVal, jamBerhentiVal, totalJamKerjaVal
+                            jamMulaiVal, jamBerhentiVal, totalJamKerjaVal, isBorongan
                     );
 
                     runOnUiThread(() -> {

@@ -97,12 +97,12 @@ public class SawmillApi {
                         "              ELSE op1.NamaOperator + '/' + op2.NamaOperator END AS Operator, " +
                         "         h.IdSawmillSpecialCondition, h.BalokTerpakai, h.JamKerja, " +
                         "         h.JlhBatangRajang, h.HourMeter, h.Remark, " +
-                        "         kb.IdJenisKayu, " +                         // ✅ NEW
+                        "         kb.IdJenisKayu, " +
                         "         jk.Jenis AS NamaJenisKayu, " +
                         "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
                         "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d " +
                         "                 WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
-                        "         h.BeratBalok " +
+                        "         h.BeratBalok, h.IsBorongan " +
                         "  FROM STSawmill_h h " +
                         "  LEFT JOIN MstOperator op1 ON h.IdOperator1 = op1.IdOperator " +
                         "  LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
@@ -165,6 +165,7 @@ public class SawmillApi {
 
                 double beratBalokTim = rs.getDouble("BeratBalokTim");
                 double beratBalok = rs.getDouble("BeratBalok");
+                boolean isBorongan = rs.getBoolean("IsBorongan");
 
                 String namaMeja = rs.getString("NamaMeja");
 
@@ -202,7 +203,8 @@ public class SawmillApi {
                         hourEnd,
                         idOperator1,
                         idOperator2,
-                        namaMeja
+                        namaMeja,
+                        isBorongan
                 );
 
                 sawmillDataList.add(data);
@@ -346,7 +348,9 @@ public class SawmillApi {
 
     public static List<MstMejaData> getAllMeja() {
         List<MstMejaData> list = new ArrayList<>();
-        String query = "SELECT NoMeja, NamaMeja FROM MstMesinSawmill ORDER BY NoMeja ASC";
+
+        String query = "SELECT NoMeja, IsSLP, IsGroup, Type, Enable, IdGroupMesinSawmill, NamaMeja " +
+                "FROM MstMesinSawmill ORDER BY NoMeja ASC";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query);
@@ -355,16 +359,23 @@ public class SawmillApi {
             while (rs.next()) {
                 list.add(new MstMejaData(
                         rs.getString("NoMeja"),
+                        rs.getBoolean("IsSLP"),
+                        rs.getBoolean("IsGroup"),
+                        rs.getString("Type"),
+                        rs.getBoolean("Enable"),
+                        rs.getObject("IdGroupMesinSawmill") != null
+                                ? rs.getInt("IdGroupMesinSawmill")
+                                : null,
                         rs.getString("NamaMeja")
                 ));
             }
+
         } catch (SQLException e) {
             Log.e("SawmillApi", "Gagal mengambil data Meja: " + e.getMessage());
         }
 
         return list;
     }
-
 
 
     public static SawmillData getOperatorByNoMeja(String noMeja) {
@@ -391,7 +402,7 @@ public class SawmillApi {
                             null, null,
                             idOp1,
                             idOp2,
-                            null
+                            null, false
                     );
                 } else {
                     Log.w("SawmillApi", "Tidak ditemukan data operator untuk NoMeja: " + noMeja);
@@ -515,7 +526,8 @@ public class SawmillApi {
             final String jenisKayu,
             final String jamMulai,
             final String jamBerhenti,
-            final String totalJamKerja
+            final String totalJamKerja,
+            final boolean isBorongan
     ) throws SQLException {
         Connection con = null;
         try {
@@ -527,7 +539,7 @@ public class SawmillApi {
 
             insertSTSawmillHeader(con, noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja,
                     idSawmillSpecialCondition, balokTerpakai, jlhBatangRajang,
-                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok);
+                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok, isBorongan);
 
             insertBalokTimDetail(con, noSTSawmill, beratBalokTim);
 
@@ -723,10 +735,10 @@ public class SawmillApi {
                                              String noSTSawmill, int shift, String tglSawmill,
                                              String noKayuBulat, String noMeja, int idSawmillSpecialCondition,
                                              int balokTerpakai, String jlhBatangRajang, String hourMeter,
-                                             int idOperator1, int idOperator2, String remark, String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok) throws SQLException {
+                                             int idOperator1, int idOperator2, String remark, String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok, boolean isBorongan) throws SQLException {
         String query = "INSERT INTO STSawmill_h " +
-                "(NoSTSawmill, Shift, TglSawmill, NoKayuBulat, NoMeja, IdSawmillSpecialCondition, BalokTerpakai, JlhBatangRajang, HourMeter, IdOperator1, IdOperator2, Remark, HourStart, HourEnd, JamKerja, BeratBalok) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(NoSTSawmill, Shift, TglSawmill, NoKayuBulat, NoMeja, IdSawmillSpecialCondition, BalokTerpakai, JlhBatangRajang, HourMeter, IdOperator1, IdOperator2, Remark, HourStart, HourEnd, JamKerja, BeratBalok, IsBorongan) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
 
@@ -762,6 +774,7 @@ public class SawmillApi {
             stmt.setString(15, totalJamKerja);
 
             stmt.setString(16, beratBalok);
+            stmt.setBoolean(17, isBorongan);
 
             stmt.executeUpdate();
         }
@@ -935,7 +948,8 @@ public class SawmillApi {
             final String jenisKayu,
             final String jamMulai,
             final String jamBerhenti,
-            final String totalJamKerja
+            final String totalJamKerja,
+            final boolean isBorongan
     ) throws SQLException {
         Connection con = null;
         try {
@@ -945,7 +959,7 @@ public class SawmillApi {
             // 1. Update header table
             updateSTSawmillHeader(con, noSTSawmill, shift, tglSawmill, noKayuBulat, noMeja,
                     idSawmillSpecialCondition, balokTerpakai, jlhBatangRajang,
-                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok);
+                    hourMeter, idOperator1, idOperator2, remark, jamMulai, jamBerhenti, totalJamKerja, beratBalok, isBorongan);
 
             // 2. Update/Replace BalokTim detail - hapus yang lama, insert yang baru
             deleteBalokTimDetail(con, noSTSawmill);
@@ -987,7 +1001,7 @@ public class SawmillApi {
                                              String noKayuBulat, String noMeja, int idSawmillSpecialCondition,
                                              int balokTerpakai, String jlhBatangRajang, String hourMeter,
                                              int idOperator1, int idOperator2, String remark,
-                                             String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok) throws SQLException {
+                                             String jamMulai, String jamBerhenti, String totalJamKerja, String beratBalok, boolean isBorongan) throws SQLException {
 
         Log.d("DEBUG_SAWMILL", "jamBerhenti yang dikirim: " + jamBerhenti);
 
@@ -995,7 +1009,7 @@ public class SawmillApi {
                 "Shift = ?, TglSawmill = ?, NoKayuBulat = ?, NoMeja = ?, " +
                 "IdSawmillSpecialCondition = ?, BalokTerpakai = ?, JlhBatangRajang = ?, " +
                 "HourMeter = ?, IdOperator1 = ?, IdOperator2 = ?, Remark = ?, " +
-                "HourStart = ?, HourEnd = ?, JamKerja = ?, BeratBalok = ? " +
+                "HourStart = ?, HourEnd = ?, JamKerja = ?, BeratBalok = ?, IsBorongan = ? " +
                 "WHERE NoSTSawmill = ?";
 
         try (PreparedStatement stmt = con.prepareStatement(query)) {
@@ -1022,7 +1036,9 @@ public class SawmillApi {
             stmt.setString(13, jamBerhenti);
             stmt.setString(14, totalJamKerja);
             stmt.setString(15, beratBalok);
-            stmt.setString(16, noSTSawmill);
+            stmt.setBoolean(16, isBorongan);
+
+            stmt.setString(17, noSTSawmill);
 
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected == 0) {
