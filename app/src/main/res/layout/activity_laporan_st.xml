@@ -183,7 +183,7 @@
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/laporan_mutasi_st"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/laporan_st_empty">
+            app:layout_constraintEnd_toStartOf="@id/laporan_rekap_hasil_sawmill_semua_meja">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -209,7 +209,7 @@
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:id="@+id/laporan_st_empty"
+            android:id="@+id/laporan_rekap_hasil_sawmill_semua_meja"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -217,8 +217,7 @@
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/laporan_sawmill_perhari_perlebar_pertebal"
             app:layout_constraintStart_toEndOf="@id/laporan_stock_st_basah"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:visibility="invisible">
+            app:layout_constraintEnd_toEndOf="parent" >
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -237,7 +236,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Laporan ST Sawmill PerHari PerLebar PerTebal"
+                    android:text="Laporan Rekap Hasil Sawmill Per-Meja (Semua Meja)"
                     android:textColor="@color/text_brown"
                     android:textSize="20sp" />
             </LinearLayout>

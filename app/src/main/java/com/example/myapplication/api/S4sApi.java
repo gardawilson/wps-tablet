@@ -342,18 +342,12 @@ public class S4sApi {
         String query = "SELECT a.IdMesin, CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, a.NoProduksi " +
                 "FROM dbo.S4SProduksi_h a " +
                 "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
-                "WHERE CONVERT(date, a.Tanggal) = CONVERT(date, ?) " +
-                "UNION ALL " +
-                "SELECT a.IdMesin, CONCAT(b.NamaMesin, ' - (SHIFT ', a.Shift, ')') AS NamaMesin, a.NoProduksi " +
-                "FROM dbo.CCAkhirProduksi_h a " +
-                "INNER JOIN dbo.MstMesin b ON a.IdMesin = b.IdMesin " +
                 "WHERE a.Tanggal = ?";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement ps = con.prepareStatement(query)) {
 
             ps.setString(1, selectedDate);
-            ps.setString(2, selectedDate);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

@@ -139,6 +139,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private TableLayout noMouldingTableLayout;
     private TableLayout noFJTableLayout;
     private TableLayout noCCTableLayout;
+    private TableLayout noLaminatingTableLayout;
     private TableLayout noReprosesTableLayout;
     private LinearLayout jumlahLabel;
     private LinearLayout jumlahLabelHeader;
@@ -147,6 +148,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private TextView sumMouldingLabel;
     private TextView sumFJLabel;
     private TextView sumCCLabel;
+    private TextView sumLaminatingLabel;
     private TextView sumReprosesLabel;
     private View borderTop;
     private View borderBottom;
@@ -166,6 +168,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoMoulding;
     private ProgressBar loadingIndicatorNoFJ;
     private ProgressBar loadingIndicatorNoCC;
+    private ProgressBar loadingIndicatorNoLaminating;
     private ProgressBar loadingIndicatorNoReproses;
     private LinearLayout textScanQR;
     private Button btnInputManual;
@@ -205,6 +208,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         noMouldingTableLayout = findViewById(R.id.noMouldingTableLayout);
         noFJTableLayout = findViewById(R.id.noFJTableLayout);
         noCCTableLayout = findViewById(R.id.noCCTableLayout);
+        noLaminatingTableLayout = findViewById(R.id.noLaminatingTableLayout);
         noReprosesTableLayout = findViewById(R.id.noReprosesTableLayout);
         jumlahLabel = findViewById(R.id.jumlahLabel);
         jumlahLabelHeader = findViewById(R.id.jumlahLabelHeader);
@@ -213,6 +217,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         sumMouldingLabel = findViewById(R.id.sumMouldingLabel);
         sumFJLabel = findViewById(R.id.sumFJLabel);
         sumCCLabel = findViewById(R.id.sumCCLabel);
+        sumLaminatingLabel = findViewById(R.id.sumLaminatingLabel);
         sumReprosesLabel = findViewById(R.id.sumReprosesLabel);
         borderTop = findViewById(R.id.borderTop);
         borderBottom = findViewById(R.id.borderBottom);
@@ -224,6 +229,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         loadingIndicatorNoMoulding = findViewById(R.id.loadingIndicatorNoMoulding);
         loadingIndicatorNoFJ = findViewById(R.id.loadingIndicatorNoFJ);
         loadingIndicatorNoCC = findViewById(R.id.loadingIndicatorNoCC);
+        loadingIndicatorNoLaminating = findViewById(R.id.loadingIndicatorNoLaminating);
         loadingIndicatorNoReproses = findViewById(R.id.loadingIndicatorNoReproses);
         btnInputManual = findViewById(R.id.btnInputManual);
         textScanQR = findViewById(R.id.textScanQR);
@@ -1381,6 +1387,90 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         }
     }
 
+    private void populateNoLaminatingTable(List<String> noLaminatingList) {
+        noLaminatingTableLayout.removeAllViews();
+        int rowIndex = 0;
+
+        if (noLaminatingList == null || noLaminatingList.isEmpty()) {
+            TextView noDataView = new TextView(this);
+            noDataView.setText("Tidak ada Data");
+            noDataView.setGravity(Gravity.CENTER);
+            noDataView.setPadding(16, 16, 16, 16);
+            noLaminatingTableLayout.addView(noDataView);
+            return;
+        }
+
+        // Isi tabel
+        for (String noLaminating : noLaminatingList) {
+            TableRow row = new TableRow(this);
+            row.setTag(rowIndex);
+
+            TextView textView = createTextView(noLaminating, 1.0f);
+            row.addView(textView);
+
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final String currentNoLaminating = noLaminating;
+
+            row.setOnClickListener(view -> {
+                ViewUtils.handleRowSelection(this, currentRow, currentRowIndex, selectedRow);
+                selectedRow = currentRow;
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        this,
+                        executorService,
+                        view,
+                        currentNoLaminating,
+                        "Laminating_h",
+                        "Laminating_d",
+                        "NoLaminating",
+                        () -> {
+                            // Callback saat popup ditutup
+                            if (selectedRow != null) {
+                                int currentIndex = (int) selectedRow.getTag();
+                                ViewUtils.resetRowSelection(this, selectedRow, currentIndex);
+                                selectedRow = null;
+                            }
+                        }
+                );
+            });
+
+
+            row.setOnLongClickListener(v -> {
+                if (!userPermissions.contains("proses_lmt:delete")) {
+                    Toast.makeText(this, "Anda tidak memiliki izin untuk menghapus.", Toast.LENGTH_SHORT).show();
+                    return true; // event dianggap sudah di-handle
+                }
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Konfirmasi Hapus")
+                        .setMessage("Hapus data " + currentNoLaminating + "?")
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            Toast.makeText(this,
+                                    "Menghapus data " + noProduksi + " " + currentNoLaminating,
+                                    Toast.LENGTH_SHORT).show();
+
+                            executorService.execute(() -> {
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoLaminating);
+                                runOnUiThread(this::refreshLaminatingTable);
+                            });
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+                return true; // True = long press sudah di-handle
+            });
+
+            if (rowIndex % 2 == 0) {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+
+            noLaminatingTableLayout.addView(row);
+            rowIndex++;
+        }
+    }
+
 
     private void populateNoReprosesTable(List<String> noReprosesList) {
         noReprosesTableLayout.removeAllViews();
@@ -1477,7 +1567,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 }
 
                 // Filter prefix: hanya terima awalan R (S4S) dan V (CC Akhir)
-                if (!result.startsWith("E") && !result.startsWith("R") && !result.startsWith("T") && !result.startsWith("S") && !result.startsWith("V")) {
+                if (!result.startsWith("E") && !result.startsWith("R") && !result.startsWith("T") && !result.startsWith("S") && !result.startsWith("V") && !result.startsWith("U")) {
                     runOnUiThread(() -> displayErrorState(
                             "Label " + result + " Tidak Sesuai", R.raw.denied_data));
                     return;
@@ -1614,7 +1704,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             Log.d("SaveScannedResults", "Memulai proses penyimpanan hasil scan ke database");
 
             int totalItems = noS4SList.size() + noSTList.size() + noMouldingList.size() +
-                    noFJList.size() + noCCList.size() + noReprosesList.size();
+                    noFJList.size() + noCCList.size() + noLaminatingList.size() + noReprosesList.size();
             int savedItems = 0;
 
             // Proses penyimpanan untuk tabel S4S
@@ -1668,6 +1758,16 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 newNoCC.removeAll(existingNoCC);
                 ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir", noSPKTujuan);
                 savedItems += newNoCC.size();
+                int progress = (savedItems * 100) / totalItems;
+                runOnUiThread(() -> customProgressDialog.updateProgress(progress));
+            }
+
+            if (!noLaminatingList.isEmpty()) {
+                List<String> existingNoLaminating = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "S4SProduksiInputLaminating");
+                List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
+                newNoLaminating.removeAll(existingNoLaminating);
+                ProsesProduksiApi.saveNoLaminating(noProduksi, tglProduksi, newNoLaminating, dateTimeSaved, "S4SProduksiInputLaminating", noSPKTujuan);
+                savedItems += newNoLaminating.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
@@ -1790,6 +1890,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         loadingIndicatorNoMoulding.setVisibility(visibility);
         loadingIndicatorNoFJ.setVisibility(visibility);
         loadingIndicatorNoCC.setVisibility(visibility);
+        loadingIndicatorNoLaminating.setVisibility(visibility);
         loadingIndicatorNoReproses.setVisibility(visibility);
     }
 
@@ -1799,6 +1900,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         noMouldingTableLayout.setVisibility(visibility);
         noFJTableLayout.setVisibility(visibility);
         noCCTableLayout.setVisibility(visibility);
+        noLaminatingTableLayout.setVisibility(visibility);
         noReprosesTableLayout.setVisibility(visibility);
     }
 
@@ -2016,6 +2118,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             noMouldingList = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
             noFJList = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
             noCCList = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
+            noLaminatingList = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "S4SProduksiInputLaminating");
             noReprosesList = ProsesProduksiApi.getNoReprosesByNoProduksi(noProduksi);
 
             // Perbarui UI di thread utama
@@ -2031,6 +2134,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 updateTable(noMouldingList, sumMouldingLabel, loadingIndicatorNoMoulding, noMouldingTableLayout, this::populateNoMouldingTable);
                 updateTable(noFJList, sumFJLabel, loadingIndicatorNoFJ, noFJTableLayout, this::populateNoFJTable);
                 updateTable(noCCList, sumCCLabel, loadingIndicatorNoCC, noCCTableLayout, this::populateNoCCTable);
+                updateTable(noLaminatingList, sumLaminatingLabel, loadingIndicatorNoLaminating, noLaminatingTableLayout, this::populateNoLaminatingTable);
                 updateTable(noReprosesList, sumReprosesLabel, loadingIndicatorNoReproses, noReprosesTableLayout, this::populateNoReprosesTable);
             });
         });
@@ -2135,6 +2239,26 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         loadingIndicatorNoCC,
                         noCCTableLayout,
                         this::populateNoCCTable
+                );
+            });
+        });
+    }
+
+
+    private void refreshLaminatingTable() {
+        loadingIndicatorNoLaminating.setVisibility(View.VISIBLE);
+
+        executorService.execute(() -> {
+            List<String> updatedNoLaminatingList = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "S4SProduksiInputLaminating");
+
+            runOnUiThread(() -> {
+                noLaminatingList = updatedNoLaminatingList;
+                updateTable(
+                        updatedNoLaminatingList,
+                        sumLaminatingLabel,
+                        loadingIndicatorNoLaminating,
+                        noLaminatingTableLayout,
+                        this::populateNoLaminatingTable
                 );
             });
         });

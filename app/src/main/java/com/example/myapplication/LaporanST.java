@@ -28,6 +28,7 @@ public class LaporanST extends AppCompatActivity {
     private CardView laporan_rekap_penerimaan_st_dari_sawmill;
     private CardView laporan_sawmill_perhari_perlebar_pertebal;
     private CardView laporan_stock_st_basah;
+    private CardView laporan_rekap_hasil_sawmill_semua_meja;
     private String username;
 
     @Override
@@ -40,6 +41,7 @@ public class LaporanST extends AppCompatActivity {
         laporan_rekap_penerimaan_st_dari_sawmill = findViewById(R.id.laporan_rekap_penerimaan_st_dari_sawmill);
         laporan_sawmill_perhari_perlebar_pertebal = findViewById(R.id.laporan_sawmill_perhari_perlebar_pertebal);
         laporan_stock_st_basah = findViewById(R.id.laporan_stock_st_basah);
+        laporan_rekap_hasil_sawmill_semua_meja = findViewById(R.id.laporan_rekap_hasil_sawmill_semua_meja);
 
 
         username = SharedPrefUtils.getUsername(this);
@@ -49,6 +51,7 @@ public class LaporanST extends AppCompatActivity {
         laporan_mutasi_st.setOnClickListener(view -> showLaporanMutasiST());
         laporan_sawmill_perhari_perlebar_pertebal.setOnClickListener(view -> showLaporanSawmillPerhariPerlebarPertebal());
         laporan_stock_st_basah.setOnClickListener(view -> showLaporanStockStBasah());
+        laporan_rekap_hasil_sawmill_semua_meja.setOnClickListener(view -> showLaporanRekapHasilSawmillSemuaMeja());
     }
 
     private void showLaporanRekapHasilSawmillMeja() {
@@ -166,6 +169,28 @@ public class LaporanST extends AppCompatActivity {
                             loadingDialogHelper
                     );
                 });
+    }
+
+    private void showLaporanRekapHasilSawmillSemuaMeja() {
+        DateRangeDialogHelper.show(
+                this,
+                DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
+                (tglAwal, tglAkhir) -> {
+
+                    String url = BASE_REPORT_MICROSERVICE
+                            + "api/reports/sawn-timber/rekap-hasil-sawmill-per-meja-upah-borongan-v2/pdf"
+                            + "?start_date=" + tglAwal
+                            + "&end_date=" + tglAkhir;
+
+                    PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
+                            this,
+                            url,
+                            "Rekap Hasil Sawmill Semua Meja.pdf",
+                            executorService,
+                            loadingDialogHelper
+                    );
+                }
+        );
     }
 
 
