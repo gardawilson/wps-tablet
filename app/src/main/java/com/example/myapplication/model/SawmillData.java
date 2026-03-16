@@ -15,6 +15,8 @@ public class SawmillData {
     private String remark;
     private Integer idJenisKayu;
     private String namaJenisKayu;
+    private Integer idSupplier;
+    private String namaSupplier;
     private int stokTersedia;
     private double beratBalokTim;
     private double beratBalok;
@@ -28,7 +30,8 @@ public class SawmillData {
 
     public SawmillData(String noSTSawmill, String shift, String tglSawmill, String noKayuBulat, String noMeja, String operator,
                        int idSawmillSpecialCondition, String balokTerpakai, String jamKerja, int jlhBatangRajang,
-                       String hourMeter, String remark, Integer idJenisKayu, String namaJenisKayu, int stokTersedia, double beratBalokTim, double beratBalok,
+                       String hourMeter, String remark, Integer idJenisKayu, String namaJenisKayu, Integer idSupplier, String namaSupplier,
+                       int stokTersedia, double beratBalokTim, double beratBalok,
                        String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2, String namaMeja, boolean isBorongan) {
         this.noSTSawmill = noSTSawmill;
         this.shift = shift;
@@ -44,6 +47,8 @@ public class SawmillData {
         this.remark = remark;
         this.idJenisKayu = idJenisKayu;
         this.namaJenisKayu = namaJenisKayu;
+        this.idSupplier = idSupplier;
+        this.namaSupplier = namaSupplier;
         this.stokTersedia = stokTersedia;
         this.beratBalokTim = beratBalokTim;
         this.beratBalok = beratBalok;
@@ -96,6 +101,12 @@ public class SawmillData {
 
     public String getNamaJenisKayu() { return namaJenisKayu; }
     public void setNamaJenisKayu(String namaJenisKayu) { this.namaJenisKayu = namaJenisKayu; }
+
+    public Integer getIdSupplier() { return idSupplier; }
+    public void setIdSupplier(Integer idSupplier) { this.idSupplier = idSupplier; }
+
+    public String getNamaSupplier() { return namaSupplier; }
+    public void setNamaSupplier(String namaSupplier) { this.namaSupplier = namaSupplier; }
 
     public int getStokTersedia() { return stokTersedia; }
 

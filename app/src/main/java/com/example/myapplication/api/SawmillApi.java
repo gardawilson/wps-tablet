@@ -99,6 +99,8 @@ public class SawmillApi {
                         "         h.JlhBatangRajang, h.HourMeter, h.Remark, " +
                         "         kb.IdJenisKayu, " +
                         "         jk.Jenis AS NamaJenisKayu, " +
+                        "         kb.IdSupplier, " +
+                        "         sp.NmSupplier AS NamaSupplier, " +
                         "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
                         "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d " +
                         "                 WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
@@ -108,6 +110,7 @@ public class SawmillApi {
                         "  LEFT JOIN MstOperator op2 ON h.IdOperator2 = op2.IdOperator " +
                         "  LEFT JOIN KayuBulat_h kb ON h.NoKayuBulat = kb.NoKayuBulat " +
                         "  LEFT JOIN MstJenisKayu jk ON kb.IdJenisKayu = jk.IdJenisKayu " +
+                        "  LEFT JOIN MstSupplier sp ON kb.IdSupplier = sp.IdSupplier " +
                         "  LEFT JOIN MstMesinSawmill ms ON h.NoMeja = ms.NoMeja "
         );
 
@@ -156,6 +159,8 @@ public class SawmillApi {
 
                 Integer idJenisKayu = (Integer) rs.getObject("IdJenisKayu");  // ✅ SAFE NULL
                 String namaJenisKayu = rs.getString("NamaJenisKayu");
+                Integer idSupplier = (Integer) rs.getObject("IdSupplier");
+                String namaSupplier = rs.getString("NamaSupplier");
 
                 String hourStart = rs.getString("HourStart");
                 String hourEnd = rs.getString("HourEnd");
@@ -196,6 +201,8 @@ public class SawmillApi {
                         remark,
                         idJenisKayu,          // ✅ PASS NEW FIELD
                         namaJenisKayu,
+                        idSupplier,
+                        namaSupplier,
                         stokTersedia,
                         beratBalokTim,
                         beratBalok,
@@ -398,7 +405,7 @@ public class SawmillApi {
                             rs.getString("NoMeja"),// noMeja
                             null,                  // operator
                             0, null, null, 0, null, null,
-                            null, null, 0, 0.0, 0.0,
+                            null, null, null, null, 0, 0.0, 0.0,
                             null, null,
                             idOp1,
                             idOp2,
@@ -2388,3 +2395,6 @@ public class SawmillApi {
 
 
 }
+
+
+

@@ -294,20 +294,6 @@ public class Sawmill extends AppCompatActivity {
         }
     }
 
-    private void filterDataByNoKayuBulat(String keyword) {
-        if (dataList == null) return;
-
-        List<SawmillData> filteredList = new ArrayList<>();
-
-        for (SawmillData data : dataList) {
-            if (data.getNoKayuBulat() != null && data.getNoKayuBulat().toLowerCase().contains(keyword.toLowerCase())) {
-                filteredList.add(data);
-            }
-        }
-
-        populateTable(filteredList);  // tampilkan hasil filter
-    }
-
 
     private void deleteFullSawmillData(String noSTSawmill, String jenisKayu) {
         executorService.execute(() -> {
@@ -1735,9 +1721,9 @@ public class Sawmill extends AppCompatActivity {
 
         int rowIndex = mainTable.getChildCount(); // untuk warna selang-seling
 
-        TextView col1 = createTextView(data.getNoSTSawmill(), 0.8f);
+        TextView col1 = createTextView(data.getNoSTSawmill(), 0.6f);
         TextView col2 = createTextView(data.getTglSawmill(), 0.8f);
-        TextView col3 = createTextView(data.getNoKayuBulat(), 0.8f);
+        TextView col3 = createTextView(data.getNoKayuBulat(), 0.6f);
         TextView col4 = createTextView(data.getNamaJenisKayu(), 1.0f);
         TextView col5 = createTextView(String.valueOf(data.getOperator()), 1.0f);
 
@@ -1750,6 +1736,7 @@ public class Sawmill extends AppCompatActivity {
         TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
         TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
         TextView col9 = createTextView(String.valueOf(data.getBeratBalok()), 0.5f);
+        TextView colSupplier = createTextView(data.getNamaSupplier(), 0.8f);
 
 
         setDateToView(data.getTglSawmill(), col2);
@@ -1759,6 +1746,8 @@ public class Sawmill extends AppCompatActivity {
         row.addView(col2);
         row.addView(createDivider());
         row.addView(col3);
+        row.addView(createDivider());
+        row.addView(colSupplier);
         row.addView(createDivider());
         row.addView(col4);
         row.addView(createDivider());
@@ -1771,6 +1760,7 @@ public class Sawmill extends AppCompatActivity {
         row.addView(col8);
         row.addView(createDivider());
         row.addView(col9);
+
 
         // Background warna selang-seling
         row.setBackgroundColor(ContextCompat.getColor(this,
@@ -1897,143 +1887,6 @@ public class Sawmill extends AppCompatActivity {
                 isLoading = false;
             });
         });
-    }
-
-    private void populateTable(List<SawmillData> dataList) {
-        mainTable.removeAllViews();
-
-        if (dataList == null || dataList.isEmpty()) {
-            TextView noDataView = new TextView(this);
-            noDataView.setText("Data tidak ditemukan");
-            noDataView.setGravity(Gravity.CENTER);
-            noDataView.setPadding(16, 16, 16, 16);
-            mainTable.addView(noDataView);
-            return;
-        }
-
-        int rowIndex = 0;
-
-        for (SawmillData data : dataList) {
-            TableRow row = new TableRow(this);
-            row.setTag(data);
-
-            TextView col1 = createTextView(data.getNoSTSawmill(), 0.8f);
-            TextView col2 = createTextView(data.getTglSawmill(), 0.8f);
-            TextView col3 = createTextView(data.getNoKayuBulat(), 0.8f);
-            TextView col4 = createTextView(data.getNamaJenisKayu(), 1.0f);
-            TextView col5 = createTextView(String.valueOf(data.getOperator()), 1.0f);
-
-            String jamKerja = data.getJamKerja();
-            if (jamKerja == null || jamKerja.trim().equals("0.0") || jamKerja.trim().isEmpty()) {
-                jamKerja = "?";
-            }
-            TextView col6 = createTextView(jamKerja, 0.5f);
-
-            TextView col7 = createTextView(data.getNamaMeja(), 0.5f);
-            TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
-            TextView col9 = createTextView(String.valueOf(data.getBeratBalok()), 0.5f);
-
-            setDateToView(data.getTglSawmill(), col2);
-
-            row.addView(col1);
-            row.addView(createDivider());
-            row.addView(col2);
-            row.addView(createDivider());
-            row.addView(col3);
-            row.addView(createDivider());
-            row.addView(col4);
-            row.addView(createDivider());
-            row.addView(col5);
-            row.addView(createDivider());
-            row.addView(col6);
-            row.addView(createDivider());
-            row.addView(col7);
-            row.addView(createDivider());
-            row.addView(col8);
-            row.addView(createDivider());
-            row.addView(col9);
-
-            // Background bergantian
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-            } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-            }
-
-            if (data.getJamKerja() == null || data.getJamKerja().trim().equals("0.0") || data.getJamKerja().trim().isEmpty()) {
-                col6.setBackgroundColor(Color.parseColor("#FFF176")); // kuning terang (material yellow 300)
-            }
-
-            // Klik biasa
-            row.setOnClickListener(v -> {
-                if (selectedRowMain != null && selectedRowMain != row) {
-                    int previousIndex = mainTable.indexOfChild(selectedRowMain);
-                    SawmillData previousData = (SawmillData) selectedRowMain.getTag(); // tag sudah di-set sebelumnya
-                    resetRowColor(selectedRowMain, previousIndex, previousData);
-                }
-
-                row.setBackgroundResource(R.drawable.row_selector);
-                setTextColor(row, R.color.white);
-
-                // col6 ikut diubah saat dipilih
-                TextView selectedCol6 = (TextView) row.getChildAt(10); // posisi col6
-                selectedCol6.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent)); // hilangkan kuning, ikuti selector
-
-                selectedRowMain = row;
-            });
-
-
-            // Long click dengan touch listener untuk mendapatkan koordinat
-            row.setOnTouchListener((v, event) -> {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // Simpan koordinat klik
-                    touchX = event.getRawX();
-                    touchY = event.getRawY();
-                }
-                return false; // Biarkan event dilanjutkan ke listener lain
-            });
-
-            // Long click
-            row.setOnLongClickListener(v -> {
-                if (selectedRowMain != null && selectedRowMain != row) {
-                    int previousIndex = mainTable.indexOfChild(selectedRowMain);
-                    SawmillData previousData = (SawmillData) selectedRowMain.getTag();
-
-                    // Reset background row sebelumnya
-                    int bgColor = (previousIndex % 2 == 0)
-                            ? ContextCompat.getColor(this, R.color.background_cream)
-                            : ContextCompat.getColor(this, R.color.white);
-                    selectedRowMain.setBackgroundColor(bgColor);
-
-                    // Reset col6 sebelumnya
-                    TextView previousCol6 = (TextView) selectedRowMain.getChildAt(10); // pastikan index col6 benar
-                    if (previousData.getJamKerja() == null || previousData.getJamKerja().trim().equals("0.0") || previousData.getJamKerja().trim().isEmpty()) {
-                        previousCol6.setBackgroundColor(Color.parseColor("#FFF176")); // kembali kuning
-                    } else {
-                        previousCol6.setBackgroundColor(bgColor);
-                    }
-
-                    resetTextColor(selectedRowMain);
-                }
-
-                // Highlight baris sekarang
-                row.setBackgroundResource(R.drawable.row_selector);
-                setTextColor(row, R.color.white);
-
-                // Highlight col6 juga
-                TextView selectedCol6 = (TextView) row.getChildAt(10); // pastikan index benar
-                selectedCol6.setBackgroundColor(Color.TRANSPARENT); // biar ikut selector row
-
-                selectedRowMain = row;
-
-                showRowPopup(v, data, touchX, touchY);
-                return true;
-            });
-
-
-            mainTable.addView(row);
-            rowIndex++;
-        }
     }
 
     private void resetRowColor(TableRow row, int index, SawmillData data) {
