@@ -207,6 +207,7 @@ public class FingerJoint extends AppCompatActivity {
     private EditText mesinView;
     private EditText susunView;
     private Spinner spinLokasi;
+    private volatile boolean isSaving = false;
 
 
     @Override
@@ -541,6 +542,10 @@ public class FingerJoint extends AppCompatActivity {
 
 
         BtnSimpan.setOnClickListener(v -> {
+            if (isSaving) {
+                Toast.makeText(FingerJoint.this, "Proses simpan sedang berjalan.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             String time = Time.getText().toString();
             String remark = remarkLabel.getText().toString();
@@ -591,15 +596,23 @@ public class FingerJoint extends AppCompatActivity {
                 return;
             }
 
+            isSaving = true;
+            BtnSimpan.setEnabled(false);
+
             CountDownLatch latch = new CountDownLatch(1);
             setAndSaveNewNumber(latch);
             try {
                 latch.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                isSaving = false;
+                BtnSimpan.setEnabled(true);
+                Toast.makeText(FingerJoint.this, "Proses simpan dibatalkan.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            if (latch.getCount() == 0) {
+            if (latch.getCount() == 0 && noFJ != null && !noFJ.trim().isEmpty()) {
+                NoFJ.setText(noFJ);
 
                 loadingDialogHelper.show(this);
 
@@ -611,6 +624,8 @@ public class FingerJoint extends AppCompatActivity {
                         if (!canProceed) {
                             runOnUiThread(() -> {
                                 loadingDialogHelper.hide();
+                                isSaving = false;
+                                BtnSimpan.setEnabled(true);
                                 Toast.makeText(FingerJoint.this, "Periode sudah ditutup!", Toast.LENGTH_LONG).show();
                             });
                             return; // stop proses
@@ -635,12 +650,15 @@ public class FingerJoint extends AppCompatActivity {
                         }
 
                         // 3. insert header
-                        FjApi.saveData(
+                        boolean saveSuccess = FjApi.saveData(
                                 noFJ, rawDate, time, idTelly, noSPK, noSPKasal,
                                 idGrade, idJenisKayu, idProfile,
                                 isReject, isLembur, idUOMTblLebar, idUOMPanjang,
                                 remark, idLokasi, isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun, temporaryDataListDetail
                         );
+                        if (!saveSuccess) {
+                            throw new RuntimeException("Gagal menyimpan data ke database.");
+                        }
 
                         // 4. insert detail (mesin / bongkar susun)
                         if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
@@ -653,6 +671,7 @@ public class FingerJoint extends AppCompatActivity {
                         // 5. kalau sukses
                         runOnUiThread(() -> {
                             loadingDialogHelper.hide();
+                            isSaving = false;
                             BtnDataBaru.setEnabled(true);
                             BtnPrint.setEnabled(true);
                             BtnSimpan.setEnabled(false);
@@ -666,10 +685,16 @@ public class FingerJoint extends AppCompatActivity {
                         // 6. kalau error
                         runOnUiThread(() -> {
                             loadingDialogHelper.hide();
+                            isSaving = false;
+                            BtnSimpan.setEnabled(true);
                             Toast.makeText(FingerJoint.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         });
                     }
                 });
+            } else {
+                isSaving = false;
+                BtnSimpan.setEnabled(true);
+                Toast.makeText(FingerJoint.this, "Gagal mengatur nomor FJ baru.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -3066,19 +3091,11 @@ public class FingerJoint extends AppCompatActivity {
     private void setAndSaveNewNumber(final CountDownLatch latch) {
         executorService.execute(() -> {
             String newNumber = FjApi.generateNewNumber();
-
-            runOnUiThread(() -> {
-                if (newNumber != null) {
-                    noFJ = newNumber;
-
-                    NoFJ.setText(newNumber);
-
-                } else {
-                    Log.e("Error", "Failed to set or save FJ.");
-                    Toast.makeText(FingerJoint.this, "Gagal mengatur atau menyimpan FJ.", Toast.LENGTH_SHORT).show();
-                }
-            });
-            // kasih sinyal ke CountDownLatch
+            if (newNumber != null) {
+                noFJ = newNumber;
+            } else {
+                noFJ = null;
+            }
             latch.countDown();
         });
     }

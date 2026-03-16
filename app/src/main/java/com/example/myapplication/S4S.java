@@ -205,6 +205,7 @@ public class S4S extends AppCompatActivity {
     private EditText susunView;
     private Spinner spinWarna;
     private Spinner spinLokasi;
+    private volatile boolean isSaving = false;
 
 
 
@@ -545,6 +546,10 @@ public class S4S extends AppCompatActivity {
 
 
         BtnSimpan.setOnClickListener(v -> {
+            if (isSaving) {
+                Toast.makeText(S4S.this, "Proses simpan sedang berjalan.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             String time = Time.getText().toString();
             String remark = remarkLabel.getText().toString();
@@ -597,15 +602,23 @@ public class S4S extends AppCompatActivity {
                 return;
             }
 
+            isSaving = true;
+            BtnSimpan.setEnabled(false);
+
             CountDownLatch latch = new CountDownLatch(1);
             setAndSaveNewNumber(latch);
             try {
                 latch.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                isSaving = false;
+                BtnSimpan.setEnabled(true);
+                Toast.makeText(S4S.this, "Proses simpan dibatalkan.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            if (latch.getCount() == 0) {
+            if (latch.getCount() == 0 && noS4S != null && !noS4S.trim().isEmpty()) {
+                NoS4S.setText(noS4S);
 
                 loadingDialogHelper.show(this);
 
@@ -617,6 +630,8 @@ public class S4S extends AppCompatActivity {
                         if (!canProceed) {
                             runOnUiThread(() -> {
                                 loadingDialogHelper.hide();
+                                isSaving = false;
+                                BtnSimpan.setEnabled(true);
                                 Toast.makeText(S4S.this, "Periode sudah ditutup!", Toast.LENGTH_LONG).show();
                             });
                             return; // stop proses
@@ -641,12 +656,15 @@ public class S4S extends AppCompatActivity {
                         }
 
                         // 3. insert header
-                        S4sApi.saveData(
+                        boolean saveSuccess = S4sApi.saveData(
                                 noS4S, rawDate, time, idTelly, noSPK, noSPKasal,
                                 idGrade, idJenisKayu, idProfile,
                                 isReject, isLembur, idUOMTblLebar, idUOMPanjang,
                                 remark, idWarna, idLokasi, isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun, temporaryDataListDetail
                         );
+                        if (!saveSuccess) {
+                            throw new RuntimeException("Gagal menyimpan data ke database.");
+                        }
 
                         // 4. insert detail (mesin / bongkar susun)
                         if (radioButtonMesin.isChecked() && SpinMesin.isEnabled() && noProduksi != null) {
@@ -659,6 +677,7 @@ public class S4S extends AppCompatActivity {
                         // 5. kalau sukses
                         runOnUiThread(() -> {
                             loadingDialogHelper.hide();
+                            isSaving = false;
                             BtnDataBaru.setEnabled(true);
                             BtnPrint.setEnabled(true);
                             BtnSimpan.setEnabled(false);
@@ -672,10 +691,16 @@ public class S4S extends AppCompatActivity {
                         // 6. kalau error
                         runOnUiThread(() -> {
                             loadingDialogHelper.hide();
+                            isSaving = false;
+                            BtnSimpan.setEnabled(true);
                             Toast.makeText(S4S.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         });
                     }
                 });
+            } else {
+                isSaving = false;
+                BtnSimpan.setEnabled(true);
+                Toast.makeText(S4S.this, "Gagal mengatur nomor S4S baru.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -3121,20 +3146,11 @@ public class S4S extends AppCompatActivity {
     private void setAndSaveNewNumber(final CountDownLatch latch) {
         executorService.execute(() -> {
             String newNumber = S4sApi.generateNewNumber();
-
-            runOnUiThread(() -> {
-                if (newNumber != null) {
-                    noS4S = newNumber;
-
-                    NoS4S.setText(newNumber);
-
-                    // Toast.makeText(S4S.this, "NoS4S berhasil diatur dan disimpan.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.e("Error", "Failed to set or save NoS4S.");
-                    Toast.makeText(S4S.this, "Gagal mengatur atau menyimpan NoS4S.", Toast.LENGTH_SHORT).show();
-                }
-            });
-            // kasih sinyal ke CountDownLatch
+            if (newNumber != null) {
+                noS4S = newNumber;
+            } else {
+                noS4S = null;
+            }
             latch.countDown();
         });
     }
