@@ -43,7 +43,6 @@ public class LaporanST extends AppCompatActivity {
         laporan_stock_st_basah = findViewById(R.id.laporan_stock_st_basah);
         laporan_rekap_hasil_sawmill_semua_meja = findViewById(R.id.laporan_rekap_hasil_sawmill_semua_meja);
 
-
         username = SharedPrefUtils.getUsername(this);
 
         laporan_rekap_hasil_sawmill_meja.setOnClickListener(view -> showLaporanRekapHasilSawmillMeja());
@@ -192,6 +191,5 @@ public class LaporanST extends AppCompatActivity {
                 }
         );
     }
-
 
 }
