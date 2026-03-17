@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Typeface;
@@ -146,6 +147,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Packing extends AppCompatActivity {
+    private static final int REQUEST_CODE_PDF_PREVIEW = 9107;
 
     private String idUsername;
     private String username;
@@ -995,91 +997,11 @@ public class Packing extends AppCompatActivity {
 
 
                             if (pdfUri != null) {
-                                // Siapkan PrintManager
-                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                                String jobName = getString(R.string.app_name) + " Document";
-
-                                // Buat PrintDocumentAdapter
-                                PrintDocumentAdapter pda = new PrintDocumentAdapter() {
-                                    @Override
-                                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
-                                                         CancellationSignal cancellationSignal,
-                                                         LayoutResultCallback callback, Bundle extras) {
-                                        if (cancellationSignal.isCanceled()) {
-                                            callback.onLayoutCancelled();
-                                            return;
-                                        }
-
-                                        PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
-                                                .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                                                .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
-                                                .build();
-
-                                        callback.onLayoutFinished(info, true);
-                                    }
-
-                                    @Override
-                                    public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
-                                                        CancellationSignal cancellationSignal,
-                                                        WriteResultCallback callback) {
-                                        try {
-                                            InputStream input = getContentResolver().openInputStream(pdfUri);
-                                            OutputStream output = new FileOutputStream(destination.getFileDescriptor());
-
-                                            byte[] buf = new byte[1024];
-                                            int bytesRead;
-
-                                            while ((bytesRead = input.read(buf)) > 0) {
-                                                output.write(buf, 0, bytesRead);
-                                            }
-
-                                            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
-
-                                            input.close();
-                                            output.close();
-                                        } catch (Exception e) {
-                                            callback.onWriteFailed(e.getMessage());
-                                        }
-                                    }
-                                };
-
-                                // Mulai proses pencetakan
-                                PrintAttributes attributes = new PrintAttributes.Builder()
-                                        .setMediaSize(new PrintAttributes.MediaSize("CUSTOM", "Custom Roll Paper", 72, 3000)) // 72mm lebar
-                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                        .build();
-
-                                try {
-                                    // Dapatkan PrintJob
-                                    PrintJob printJob = printManager.print(jobName, pda, attributes);
-
-                                    // Monitor status PrintJob
-                                    new Thread(() -> {
-                                        boolean isPrinting = true;
-                                        while (isPrinting) {
-                                            if (printJob.isCompleted()) {
-                                                // Update database setiap kali print selesai
-                                                updatePrintStatus(noBarangJadi); // Update nilai HasBeenPrinted setelah print selesai
-                                                isPrinting = false;
-                                            } else if (printJob.isFailed() || printJob.isCancelled()) {
-                                                isPrinting = false;
-                                            }
-
-                                            try {
-                                                Thread.sleep(1000); // Check setiap 1 detik
-                                            } catch (InterruptedException e) {
-                                                Thread.currentThread().interrupt();
-                                                break;
-                                            }
-                                        }
-                                    }).start();
-
-                                } catch (Exception e) {
-                                    Toast.makeText(Packing.this,
-                                            "Error printing: " + e.getMessage(),
-                                            Toast.LENGTH_LONG).show();
-                                }
+                                Intent previewIntent = new Intent(Packing.this, PdfPreviewActivity.class);
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, pdfUri.toString());
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noBarangJadi);
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Packing");
+                                startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -3520,6 +3442,17 @@ public class Packing extends AppCompatActivity {
             }
             latch.countDown();
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
+            String printedNoBarangJadi = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
+            if (printedNoBarangJadi != null && !printedNoBarangJadi.trim().isEmpty()) {
+                updatePrintStatus(printedNoBarangJadi);
+            }
+        }
     }
 
 

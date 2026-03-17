@@ -8,6 +8,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -138,6 +139,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CrossCut extends AppCompatActivity {
+    private static final int REQUEST_CODE_PDF_PREVIEW = 9105;
 
     private String idUsername;
     private String username;
@@ -1008,91 +1010,11 @@ public class CrossCut extends AppCompatActivity {
                                     temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
 
                             if (pdfUri != null) {
-                                // Siapkan PrintManager
-                                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                                String jobName = getString(R.string.app_name) + " Documents";
-
-                                // Buat PrintDocumentAdapter
-                                PrintDocumentAdapter pda = new PrintDocumentAdapter() {
-                                    @Override
-                                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
-                                                         CancellationSignal cancellationSignal,
-                                                         LayoutResultCallback callback, Bundle extras) {
-                                        if (cancellationSignal.isCanceled()) {
-                                            callback.onLayoutCancelled();
-                                            return;
-                                        }
-
-                                        PrintDocumentInfo info = new PrintDocumentInfo.Builder(jobName)
-                                                .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                                                .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
-                                                .build();
-
-                                        callback.onLayoutFinished(info, true);
-                                    }
-
-                                    @Override
-                                    public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
-                                                        CancellationSignal cancellationSignal,
-                                                        WriteResultCallback callback) {
-                                        try {
-                                            InputStream input = getContentResolver().openInputStream(pdfUri);
-                                            OutputStream output = new FileOutputStream(destination.getFileDescriptor());
-
-                                            byte[] buf = new byte[1024];
-                                            int bytesRead;
-
-                                            while ((bytesRead = input.read(buf)) > 0) {
-                                                output.write(buf, 0, bytesRead);
-                                            }
-
-                                            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
-
-                                            input.close();
-                                            output.close();
-                                        } catch (Exception e) {
-                                            callback.onWriteFailed(e.getMessage());
-                                        }
-                                    }
-                                };
-
-                                // Mulai proses pencetakan
-                                PrintAttributes attributes = new PrintAttributes.Builder()
-                                        .setMediaSize(new PrintAttributes.MediaSize("CUSTOM", "Custom Roll Paper", 72, 3000)) // 72mm lebar
-                                        .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                        .build();
-
-                                try {
-                                    // Dapatkan PrintJob
-                                    PrintJob printJob = printManager.print(jobName, pda, attributes);
-
-                                    // Monitor status PrintJob
-                                    new Thread(() -> {
-                                        boolean isPrinting = true;
-                                        while (isPrinting) {
-                                            if (printJob.isCompleted()) {
-                                                // Update database setiap kali print selesai
-                                                updatePrintStatus(noCC); // Update nilai HasBeenPrinted setelah print selesai
-                                                isPrinting = false;
-                                            } else if (printJob.isFailed() || printJob.isCancelled()) {
-                                                isPrinting = false;
-                                            }
-
-                                            try {
-                                                Thread.sleep(1000); // Check setiap 1 detik
-                                            } catch (InterruptedException e) {
-                                                Thread.currentThread().interrupt();
-                                                break;
-                                            }
-                                        }
-                                    }).start();
-
-                                } catch (Exception e) {
-                                    Toast.makeText(CrossCut.this,
-                                            "Error printing: " + e.getMessage(),
-                                            Toast.LENGTH_LONG).show();
-                                }
+                                Intent previewIntent = new Intent(CrossCut.this, PdfPreviewActivity.class);
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, pdfUri.toString());
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noCC);
+                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Cross Cut");
+                                startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -3174,6 +3096,17 @@ public class CrossCut extends AppCompatActivity {
             }
             latch.countDown();
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
+            String printedNoCC = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
+            if (printedNoCC != null && !printedNoCC.trim().isEmpty()) {
+                updatePrintStatus(printedNoCC);
+            }
+        }
     }
 
 

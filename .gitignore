@@ -1,6 +1,7 @@
 # SDK & Config Lokal
 local.properties
 .gradle/
+.gradle-user/
 
 # Build output
 build/
