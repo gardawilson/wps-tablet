@@ -101,6 +101,7 @@ public class SawmillApi {
                         "         jk.Jenis AS NamaJenisKayu, " +
                         "         kb.IdSupplier, " +
                         "         sp.NmSupplier AS NamaSupplier, " +
+                        "         kb.NoTruk, " +
                         "         h.HourStart, h.HourEnd, h.IdOperator1, h.IdOperator2, " +
                         "         ISNULL((SELECT SUM(Berat) FROM STSawmill_dBalokTim d " +
                         "                 WHERE d.NoSTSawmill = h.NoSTSawmill), 0) AS BeratBalokTim, " +
@@ -161,6 +162,7 @@ public class SawmillApi {
                 String namaJenisKayu = rs.getString("NamaJenisKayu");
                 Integer idSupplier = (Integer) rs.getObject("IdSupplier");
                 String namaSupplier = rs.getString("NamaSupplier");
+                String noTruk = rs.getString("NoTruk");
 
                 String hourStart = rs.getString("HourStart");
                 String hourEnd = rs.getString("HourEnd");
@@ -203,6 +205,7 @@ public class SawmillApi {
                         namaJenisKayu,
                         idSupplier,
                         namaSupplier,
+                        noTruk,
                         stokTersedia,
                         beratBalokTim,
                         beratBalok,
@@ -405,7 +408,7 @@ public class SawmillApi {
                             rs.getString("NoMeja"),// noMeja
                             null,                  // operator
                             0, null, null, 0, null, null,
-                            null, null, null, null, 0, 0.0, 0.0,
+                            null, null, null, null, null, 0, 0.0, 0.0,
                             null, null,
                             idOp1,
                             idOp2,

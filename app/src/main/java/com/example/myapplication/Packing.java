@@ -29,6 +29,7 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
@@ -92,6 +93,8 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -116,6 +119,7 @@ import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
 import com.example.myapplication.utils.TooltipUtils;
 import com.google.android.material.textfield.TextInputEditText;
+import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.barcodes.BarcodeQRCode;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -191,7 +195,7 @@ public class Packing extends AppCompatActivity {
     boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private String rawDate;
-    private TableLayout TabelOutput;
+    private RecyclerView TabelOutput;
     private TextView tvLabelCount;
     private EditText remarkLabel;
     private ImageButton BtnExpandView;
@@ -208,6 +212,10 @@ public class Packing extends AppCompatActivity {
     private EditText susunView;
     private Spinner spinLokasi;
     private volatile boolean isSaving = false;
+    private final List<OutputLabelItem> outputLabelItems = new ArrayList<>();
+    private OutputLabelAdapter outputLabelAdapter;
+    private String currentOutputParameter;
+    private Boolean currentOutputIsNoProduksi;
 
 
     @Override
@@ -265,6 +273,10 @@ public class Packing extends AppCompatActivity {
         btnUpdate = findViewById(R.id.btnUpdate);
         spinLokasi = findViewById(R.id.spinLokasi);
         BtnExpandView = findViewById(R.id.BtnExpandView);
+        outputLabelAdapter = new OutputLabelAdapter();
+        TabelOutput.setLayoutManager(new LinearLayoutManager(this));
+        TabelOutput.setNestedScrollingEnabled(false);
+        TabelOutput.setAdapter(outputLabelAdapter);
 
         //GET USERNAME
         idUsername = SharedPrefUtils.getIdUsername(this);
@@ -422,7 +434,7 @@ public class Packing extends AppCompatActivity {
                         loadOutputByMesinSusun(noProduksi, true);
                     } else {
                         Log.e("Error", "Item bukan tipe MesinData");
-                        TabelOutput.removeAllViews();
+                        clearOutputList();
                         tvLabelCount.setText("Total Label : 0");
                     }
                 }
@@ -445,7 +457,7 @@ public class Packing extends AppCompatActivity {
                         loadOutputByMesinSusun(noBongkarSusun, false);
                     } else {
                         Log.e("Error", "Item bukan tipe SusunData");
-                        TabelOutput.removeAllViews();
+                        clearOutputList();
                         tvLabelCount.setText("Total Label : 0");
                     }
                 }
@@ -467,7 +479,7 @@ public class Packing extends AppCompatActivity {
                     loadOutputByMesinSusun(noProduksi, true);
                 }
             } else if (radioButtonBSusun.isChecked()) {
-                TabelOutput.removeAllViews();
+                clearOutputList();
                 tvLabelCount.setText("Total Label : 0");
             }
         });
@@ -483,7 +495,7 @@ public class Packing extends AppCompatActivity {
                     loadOutputByMesinSusun(noBongkarSusun, false);
                 }
             } else if (radioButtonMesin.isChecked()) {
-                TabelOutput.removeAllViews();
+                clearOutputList();
                 tvLabelCount.setText("Total Label : 0");
             }
         });
@@ -1338,6 +1350,8 @@ public class Packing extends AppCompatActivity {
 
 
     private void loadOutputByMesinSusun(String parameter, boolean isNoProduksi) {
+        currentOutputParameter = parameter;
+        currentOutputIsNoProduksi = isNoProduksi;
         new Thread(() -> {
             Connection connection = null;
             try {
@@ -1361,138 +1375,16 @@ public class Packing extends AppCompatActivity {
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, parameter);
                         try (ResultSet rs = stmt.executeQuery()) {
-                            List<String> noBJList = new ArrayList<>();
-                            List<Integer> hasBeenPrintedList = new ArrayList<>();
+                            List<OutputLabelItem> items = new ArrayList<>();
 
                             while (rs.next()) {
-                                noBJList.add(rs.getString("NoBJ"));
-                                hasBeenPrintedList.add(rs.getInt("HasBeenPrinted"));
+                                items.add(new OutputLabelItem(
+                                        rs.getString("NoBJ"),
+                                        rs.getInt("HasBeenPrinted")
+                                ));
                             }
 
-                            runOnUiThread(() -> {
-                                TabelOutput.removeAllViews();
-
-                                // Reset selected row saat memuat data baru
-                                selectedRowHeader = null;
-
-                                int labelCount = 0;
-
-                                if (!noBJList.isEmpty() && noBJList.size() == hasBeenPrintedList.size()) {
-                                    for (int i = 0; i < noBJList.size(); i++) {
-                                        String noBarangJadi = noBJList.get(i);
-                                        int hasBeenPrinted = hasBeenPrintedList.get(i);
-
-                                        TableRow row = new TableRow(this);
-                                        TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
-                                                TableLayout.LayoutParams.MATCH_PARENT,
-                                                TableLayout.LayoutParams.WRAP_CONTENT
-                                        );
-
-                                        row.setLayoutParams(rowParams);
-                                        row.setPadding(0, 10, 0, 10);
-
-                                        // Set tag untuk menyimpan index
-                                        row.setTag(i);
-
-                                        // Ubah warna latar belakang berdasarkan indeks
-                                        if (i % 2 == 0) {
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                        } else {
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                        }
-
-                                        TextView labelTextView = new TextView(this);
-                                        labelTextView.setText(noBarangJadi);
-                                        labelTextView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
-                                        labelTextView.setGravity(Gravity.CENTER);
-                                        labelTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-                                        row.addView(labelTextView);
-
-                                        ImageView iIcon = new ImageView(this);
-                                        iIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
-                                        iIcon.setScaleType(ImageView.ScaleType.CENTER);
-                                        iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
-
-                                        ImageView oIcon = new ImageView(this);
-                                        oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
-                                        oIcon.setScaleType(ImageView.ScaleType.CENTER);
-                                        oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
-
-                                        if (hasBeenPrinted == 0) {
-                                            iIcon.setImageResource(R.drawable.ic_undone);
-                                            oIcon.setImageResource(R.drawable.ic_undone);
-                                        } else if (hasBeenPrinted == 1) {
-                                            iIcon.setImageResource(R.drawable.ic_done);
-                                            oIcon.setImageResource(R.drawable.ic_undone);
-                                        } else if (hasBeenPrinted == 2) {
-                                            iIcon.setImageResource(R.drawable.ic_done);
-                                            oIcon.setImageResource(R.drawable.ic_done);
-                                        } else {
-                                            iIcon.setImageResource(R.drawable.ic_done_all);
-                                            oIcon.setImageResource(R.drawable.ic_done_all);
-                                        }
-
-                                        row.addView(iIcon);
-                                        row.addView(oIcon);
-
-                                        row.setOnClickListener(v -> {
-                                            // Reset selected row sebelumnya jika ada
-                                            if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
-                                                int prevIndex = (int) selectedRowHeader.getTag();
-                                                // Kembalikan warna asli row sebelumnya
-                                                if (prevIndex % 2 == 0) {
-                                                    selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                                } else {
-                                                    selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                                }
-                                            }
-
-                                            // Set row yang baru dipilih
-                                            selectedRowHeader = row;
-                                            // Highlight row yang dipilih (gunakan warna berbeda)
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // atau warna highlight lainnya
-                                            TableUtils.setTextColor(this, row, R.color.white);
-
-                                            // Tampilkan tooltip dengan parameter yang benar
-                                            TooltipUtils.fetchDataAndShowTooltip(
-                                                    this,
-                                                    executorService,
-                                                    selectedRowHeader, // Parameter ketiga adalah selectedRow, bukan connection
-                                                    noBarangJadi, // currentNoBJ
-                                                    "BarangJadi_h",
-                                                    "BarangJadi_d",
-                                                    "NoBJ",
-                                                    () -> {
-                                                        // Callback saat popup ditutup - dengan null check
-                                                        if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
-                                                            int currentIndex = (int) selectedRowHeader.getTag();
-                                                            // Reset warna row ke warna asli
-                                                            if (currentIndex % 2 == 0) {
-                                                                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                                            } else {
-                                                                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                                            }
-                                                            TableUtils.setTextColor(this, row, R.color.black);
-                                                            selectedRowHeader = null;
-                                                        } else {
-                                                            // Jika tag null, tetap reset selectedRowHeader
-                                                            selectedRowHeader = null;
-                                                        }
-                                                    }
-                                            );
-                                        });
-
-                                        TabelOutput.addView(row);
-                                        labelCount++;
-                                    }
-
-                                    tvLabelCount.setText("Total Label : " + labelCount);
-
-                                } else {
-                                    Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
-                                }
-                            });
-
+                            runOnUiThread(() -> setOutputList(items));
                         }
                     }
                 } else {
@@ -1517,6 +1409,133 @@ public class Packing extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void clearOutputList() {
+        outputLabelItems.clear();
+        if (outputLabelAdapter != null) {
+            outputLabelAdapter.clearSelection();
+            outputLabelAdapter.notifyDataSetChanged();
+        }
+        currentOutputParameter = null;
+        currentOutputIsNoProduksi = null;
+        selectedRowHeader = null;
+        tvLabelCount.setText("Total Label : 0");
+    }
+
+    private void setOutputList(List<OutputLabelItem> items) {
+        outputLabelItems.clear();
+        outputLabelItems.addAll(items);
+        if (outputLabelAdapter != null) {
+            outputLabelAdapter.clearSelection();
+            outputLabelAdapter.notifyDataSetChanged();
+        }
+        selectedRowHeader = null;
+        tvLabelCount.setText("Total Label : " + outputLabelItems.size());
+        if (outputLabelItems.isEmpty()) {
+            Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
+        }
+    }
+
+    private void resetOutputRow(View rowView, int position) {
+        int bgColor = position % 2 == 0 ? R.color.background_cream : R.color.white;
+        rowView.setBackgroundColor(ContextCompat.getColor(this, bgColor));
+        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
+        tvNoLabel.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+        tvPrintCount.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+    }
+
+    private void highlightOutputRow(View rowView) {
+        rowView.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
+        tvNoLabel.setTextColor(ContextCompat.getColor(this, R.color.white));
+        tvPrintCount.setTextColor(ContextCompat.getColor(this, R.color.white));
+    }
+
+    private class OutputLabelAdapter extends RecyclerView.Adapter<OutputLabelAdapter.OutputLabelViewHolder> {
+        private int selectedPosition = RecyclerView.NO_POSITION;
+
+        void clearSelection() {
+            selectedPosition = RecyclerView.NO_POSITION;
+        }
+
+        @Override
+        public OutputLabelViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_output_s4s, parent, false);
+            return new OutputLabelViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(OutputLabelViewHolder holder, int position) {
+            OutputLabelItem item = outputLabelItems.get(position);
+            holder.tvNoLabel.setText(item.noLabel);
+            holder.tvPrintCount.setText(item.hasBeenPrinted + "x");
+
+            if (position == selectedPosition) {
+                highlightOutputRow(holder.itemView);
+            } else {
+                resetOutputRow(holder.itemView, position);
+            }
+
+            holder.itemView.setOnClickListener(v -> {
+                int previousPosition = selectedPosition;
+                selectedPosition = holder.getBindingAdapterPosition();
+                if (selectedPosition == RecyclerView.NO_POSITION) {
+                    return;
+                }
+
+                if (previousPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previousPosition);
+                }
+                notifyItemChanged(selectedPosition);
+
+                selectedRowHeader = null;
+                TooltipUtils.fetchDataAndShowTooltip(
+                        Packing.this,
+                        executorService,
+                        holder.itemView,
+                        item.noLabel,
+                        "BarangJadi_h",
+                        "BarangJadi_d",
+                        "NoBJ",
+                        () -> {
+                            int currentPosition = selectedPosition;
+                            selectedPosition = RecyclerView.NO_POSITION;
+                            if (currentPosition != RecyclerView.NO_POSITION) {
+                                runOnUiThread(() -> notifyItemChanged(currentPosition));
+                            }
+                        }
+                );
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return outputLabelItems.size();
+        }
+
+        class OutputLabelViewHolder extends RecyclerView.ViewHolder {
+            private final TextView tvNoLabel;
+            private final TextView tvPrintCount;
+
+            OutputLabelViewHolder(View itemView) {
+                super(itemView);
+                tvNoLabel = itemView.findViewById(R.id.tvOutputNoS4S);
+                tvPrintCount = itemView.findViewById(R.id.tvOutputPrintCount);
+            }
+        }
+    }
+
+    private static class OutputLabelItem {
+        private final String noLabel;
+        private final int hasBeenPrinted;
+
+        OutputLabelItem(String noLabel, int hasBeenPrinted) {
+            this.noLabel = noLabel;
+            this.hasBeenPrinted = hasBeenPrinted;
+        }
     }
 
     private void fetchDataAndShowTooltip(View anchorView, String noBJ) {
@@ -2352,6 +2371,11 @@ public class Packing extends AppCompatActivity {
         void onResult(int count);  // Callback menerima count
     }
 
+    interface UpdatePrintStatusCallback {
+        void onSuccess();
+        void onFailed(String message);
+    }
+
     // Method untuk mengecek status HasBeenPrinted dengan penanganan NULL
     private void checkHasBeenPrinted(String noBarangJadi, Packing.HasBeenPrintedCallback callback) {
         new Thread(() -> {
@@ -2438,7 +2462,7 @@ public class Packing extends AppCompatActivity {
 
 
     // Method untuk mengupdate status HasBeenPrinted pada database
-    private void updatePrintStatus(String noBarangJadi) {
+    private void updatePrintStatus(String noBarangJadi, UpdatePrintStatusCallback callback) {
         new Thread(() -> {
             Connection connection = null;
             try {
@@ -2451,27 +2475,21 @@ public class Packing extends AppCompatActivity {
                         stmt.setString(1, noBarangJadi);
                         int rowsAffected = stmt.executeUpdate();
 
-                        if (rowsAffected > 0) {
-                            runOnUiThread(() -> Toast.makeText(Packing.this,
-                                    "Status cetak berhasil diupdate",
-                                    Toast.LENGTH_SHORT).show());
-                        } else {
-                            runOnUiThread(() -> Toast.makeText(Packing.this,
-                                    "Tidak ada data yang diupdate",
-                                    Toast.LENGTH_SHORT).show());
-                        }
+                        runOnUiThread(() -> {
+                            if (rowsAffected > 0) {
+                                callback.onSuccess();
+                            } else {
+                                callback.onFailed("Tidak ada data yang diupdate");
+                            }
+                        });
                     }
                 } else {
-                    runOnUiThread(() -> Toast.makeText(Packing.this,
-                            "Koneksi database gagal",
-                            Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> callback.onFailed("Koneksi database gagal"));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
                 Log.e("Database", "Error updating HasBeenPrinted status: " + e.getMessage());
-                runOnUiThread(() -> Toast.makeText(Packing.this,
-                        "Gagal mengupdate status cetak: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> callback.onFailed("Gagal mengupdate status cetak: " + e.getMessage()));
             } finally {
                 if (connection != null) {
                     try {
@@ -2482,6 +2500,12 @@ public class Packing extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void refreshCurrentOutputList() {
+        if (currentOutputParameter != null && currentOutputIsNoProduksi != null) {
+            loadOutputByMesinSusun(currentOutputParameter, currentOutputIsNoProduksi);
+        }
     }
 
 
@@ -2923,9 +2947,11 @@ public class Packing extends AppCompatActivity {
     }
 
     private void addTextDitheringWatermark(PdfDocument pdfDocument, PdfFont font) {
+
         for (int i = 1; i <= pdfDocument.getNumberOfPages(); i++) {
+
             PdfPage page = pdfDocument.getPage(i);
-            // Menggunakan newContentStreamBefore() untuk menempatkan watermark di belakang
+
             PdfCanvas canvas = new PdfCanvas(
                     page.newContentStreamBefore(),
                     page.getResources(),
@@ -2938,51 +2964,28 @@ public class Packing extends AppCompatActivity {
 
             canvas.saveState();
 
+            // ---------- TRANSPARENCY ----------
+            PdfExtGState gs = new PdfExtGState();
+            gs.setFillOpacity(0.2f); // 20% opacity
+            canvas.setExtGState(gs);
+
             String watermarkText = "COPY";
-            float fontSize = 95;
+            float fontSize = 75;
+
             float textWidth = font.getWidth(watermarkText, fontSize);
-            float textHeight = 175;
 
-            // Posisi watermark di tengah halaman
-            float centerX = width / 2 - 25;
-            float centerY = height / 2 + 100;
+            float centerX = width / 2;
+            float centerY = height / 2 + 60;
 
-            // Rotasi derajat
-            double angle = Math.toRadians(0);
-            float cos = (float) Math.cos(angle);
-            float sin = (float) Math.sin(angle);
-
-            // Terapkan matriks transformasi untuk rotasi
-            canvas.concatMatrix(cos, sin, -sin, cos, centerX, centerY);
-
-            // Gambar teks watermark
+            canvas.beginText();
             canvas.setFontAndSize(font, fontSize);
             canvas.setFillColor(ColorConstants.BLACK);
 
-            float textX = (-textWidth / 2) + 25; // Offset teks ke tengah setelah rotasi
-            float textY = (-textHeight / 2) + 50;
+            canvas.moveText(centerX - textWidth / 2, centerY);
 
-            canvas.beginText();
-            canvas.setTextMatrix(textX, textY);
             canvas.showText(watermarkText);
             canvas.endText();
 
-            // Pattern dithering (opsional, jika tetap ingin digunakan)
-            float boxWidth = textWidth + 200;
-            float boxHeight = textHeight + 200;
-            float dotSize = 1.4f;
-            float dotSpacing = 1f;
-
-            canvas.setFillColor(ColorConstants.WHITE);
-
-            for (float x = -boxWidth / 2; x < boxWidth / 2; x += dotSpacing) {
-                for (float y = -boxHeight / 2; y < boxHeight / 2; y += dotSpacing) {
-                    if ((Math.round(x) + Math.round(y)) % 4 == 0) {
-                        canvas.circle(x, y, dotSize);
-                        canvas.fill();
-                    }
-                }
-            }
             canvas.restoreState();
         }
     }
@@ -3450,7 +3453,18 @@ public class Packing extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoBarangJadi = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoBarangJadi != null && !printedNoBarangJadi.trim().isEmpty()) {
-                updatePrintStatus(printedNoBarangJadi);
+                updatePrintStatus(printedNoBarangJadi, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(Packing.this, "Status cetak berhasil diupdate", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String message) {
+                        Toast.makeText(Packing.this, message, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         }
     }
@@ -3805,7 +3819,7 @@ public class Packing extends AppCompatActivity {
                 } else {
                     Log.e("Error", "Failed to load mesin data.");
                     SpinMesin.setAdapter(null);
-                    TabelOutput.removeAllViews();
+                    clearOutputList();
                 }
 
                 // 🔑 Jalankan callback setelah spinner selesai diisi
@@ -3846,7 +3860,7 @@ public class Packing extends AppCompatActivity {
                 } else {
                     Log.e("Error", "Failed to load susun data.");
                     SpinSusun.setAdapter(null);
-                    TabelOutput.removeAllViews();
+                    clearOutputList();
                 }
 
                 // 🔑 Jalankan callback setelah spinner selesai diisi

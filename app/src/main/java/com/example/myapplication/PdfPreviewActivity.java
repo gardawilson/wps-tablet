@@ -211,6 +211,11 @@ public class PdfPreviewActivity extends AppCompatActivity {
         btnPrint.setEnabled(false);
         btnSelectPrinter.setEnabled(false);
         Toast.makeText(this, "Mengirim data ke printer...", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "printDirectBluetooth:start printer="
+                + (selectedPrinter != null ? selectedPrinter.getName() : "null")
+                + " addr=" + (selectedPrinter != null ? selectedPrinter.getAddress() : "-")
+                + " pages=" + renderedBitmaps.size()
+                + " labelNo=" + labelNo);
 
         new Thread(() -> {
             boolean success = false;
@@ -219,6 +224,7 @@ public class PdfPreviewActivity extends AppCompatActivity {
                 success = BluetoothEscPosPrinter.printBitmaps(selectedPrinter, renderedBitmaps);
             } catch (Exception e) {
                 errorMsg = e.getMessage();
+                Log.e(TAG, "printDirectBluetooth:failed", e);
             }
 
             final boolean finalSuccess = success;
@@ -227,12 +233,14 @@ public class PdfPreviewActivity extends AppCompatActivity {
                 btnPrint.setEnabled(true);
                 btnSelectPrinter.setEnabled(true);
                 if (finalSuccess) {
+                    Log.d(TAG, "printDirectBluetooth:success");
                     Toast.makeText(PdfPreviewActivity.this, "Cetak selesai.", Toast.LENGTH_SHORT).show();
                     Intent result = new Intent();
                     result.putExtra(EXTRA_LABEL_NO, labelNo);
                     setResult(RESULT_OK, result);
                     finish();
                 } else {
+                    Log.e(TAG, "printDirectBluetooth:error=" + finalErrorMsg);
                     Toast.makeText(
                             PdfPreviewActivity.this,
                             "Cetak gagal: " + (finalErrorMsg != null ? finalErrorMsg : "unknown error"),

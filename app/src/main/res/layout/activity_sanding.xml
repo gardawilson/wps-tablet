@@ -852,59 +852,42 @@
 
                     </LinearLayout>
 
-                    <TableLayout
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="#EFEFEF">
+                        android:orientation="horizontal"
+                        android:background="@color/hijau"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
 
-                        <TableRow
-                            android:background="@color/hijau">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.4"
+                            android:gravity="center"
+                            android:paddingStart="24dp"
+                            android:paddingEnd="24dp"
+                            android:text="No. SND"
+                            android:textColor="@color/white"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="18sp"
-                                android:layout_margin="8dp"
-                                android:text="Label"
-                                android:gravity="center"
-                                android:layout_weight="1"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:background="@color/gray" />
 
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.6"
+                            android:gravity="center"
+                            android:text="Print"
+                            android:textColor="@color/white"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="18sp"
-                                android:layout_margin="8dp"
-                                android:text="I"
-                                android:gravity="center"
-                                android:layout_weight="0.5"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
-
-                            <View
-                                android:layout_width="1px"
-                                android:layout_height="match_parent"
-                                android:background="@color/gray" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="18sp"
-                                android:layout_margin="8dp"
-                                android:text="O"
-                                android:gravity="center"
-                                android:layout_weight="0.5"
-                                android:textStyle="bold"
-                                android:textColor="@color/white" />
-
-                        </TableRow>
-                    </TableLayout>
+                    </LinearLayout>
 
                     <!-- Isi Tabel -->
                     <ScrollView
@@ -922,14 +905,12 @@
                                 android:layout_centerInParent="true"
                                 android:visibility="gone" />
 
-                            <TableLayout
+                            <androidx.recyclerview.widget.RecyclerView
                                 android:id="@+id/TabelOutput"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:background="#EFEFEF"
-                                android:stretchColumns="0">
-
-                            </TableLayout>
+                                android:overScrollMode="never" />
 
                         </RelativeLayout>
                     </ScrollView>

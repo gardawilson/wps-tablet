@@ -17,6 +17,7 @@ public class SawmillData {
     private String namaJenisKayu;
     private Integer idSupplier;
     private String namaSupplier;
+    private String noTruk;
     private int stokTersedia;
     private double beratBalokTim;
     private double beratBalok;
@@ -30,7 +31,7 @@ public class SawmillData {
 
     public SawmillData(String noSTSawmill, String shift, String tglSawmill, String noKayuBulat, String noMeja, String operator,
                        int idSawmillSpecialCondition, String balokTerpakai, String jamKerja, int jlhBatangRajang,
-                       String hourMeter, String remark, Integer idJenisKayu, String namaJenisKayu, Integer idSupplier, String namaSupplier,
+                       String hourMeter, String remark, Integer idJenisKayu, String namaJenisKayu, Integer idSupplier, String namaSupplier, String noTruk,
                        int stokTersedia, double beratBalokTim, double beratBalok,
                        String hourStart, String hourEnd, Integer idOperator1, Integer idOperator2, String namaMeja, boolean isBorongan) {
         this.noSTSawmill = noSTSawmill;
@@ -49,6 +50,7 @@ public class SawmillData {
         this.namaJenisKayu = namaJenisKayu;
         this.idSupplier = idSupplier;
         this.namaSupplier = namaSupplier;
+        this.noTruk = noTruk;
         this.stokTersedia = stokTersedia;
         this.beratBalokTim = beratBalokTim;
         this.beratBalok = beratBalok;
@@ -107,6 +109,9 @@ public class SawmillData {
 
     public String getNamaSupplier() { return namaSupplier; }
     public void setNamaSupplier(String namaSupplier) { this.namaSupplier = namaSupplier; }
+
+    public String getNoTruk() { return noTruk; }
+    public void setNoTruk(String noTruk) { this.noTruk = noTruk; }
 
     public int getStokTersedia() { return stokTersedia; }
 

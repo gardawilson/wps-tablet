@@ -1737,7 +1737,7 @@ public class Sawmill extends AppCompatActivity {
         TextView col8 = createTextView(String.valueOf(data.getBalokTerpakai()), 0.5f);
         TextView col9 = createTextView(String.valueOf(data.getBeratBalok()), 0.5f);
         TextView colSupplier = createTextView(data.getNamaSupplier(), 0.8f);
-
+        TextView colNoTruk = createTextView(data.getNoTruk(), 0.4f);
 
         setDateToView(data.getTglSawmill(), col2);
 
@@ -1748,6 +1748,8 @@ public class Sawmill extends AppCompatActivity {
         row.addView(col3);
         row.addView(createDivider());
         row.addView(colSupplier);
+        row.addView(createDivider());
+        row.addView(colNoTruk);
         row.addView(createDivider());
         row.addView(col4);
         row.addView(createDivider());

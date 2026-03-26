@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,13 +16,41 @@ import java.util.Set;
 import java.util.UUID;
 
 public class BluetoothEscPosPrinter {
+    private static final String TAG = "BluetoothEscPosPrinter";
     private static final UUID SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final int TARGET_WIDTH_DOTS = 576; // umum untuk thermal 80mm
+    private static final int TARGET_WIDTH_DOTS = 576;
     private static final int FEED_LINES_BETWEEN_PAGES = 1;
     private static final int FEED_LINES_AFTER_PRINT = 4;
+    private static final int CONSERVATIVE_THRESHOLD = 145;
+    private static final int CONSERVATIVE_CHUNK_DELAY_MS = 12;
+    private static final int CONSERVATIVE_CHUNK_SIZE = 256;
+    private static final int CONSERVATIVE_POST_INIT_DELAY_MS = 120;
 
     private BluetoothEscPosPrinter() {
+    }
+
+    private static class PrintOptions {
+        private final int targetWidthDots;
+        private final int threshold;
+        private final boolean useDithering;
+        private final boolean sendCut;
+        private final int chunkDelayMs;
+        private final int chunkSize;
+        private final int postInitDelayMs;
+        private final String profileName;
+
+        private PrintOptions(int targetWidthDots, int threshold, boolean useDithering, boolean sendCut,
+                             int chunkDelayMs, int chunkSize, int postInitDelayMs, String profileName) {
+            this.targetWidthDots = targetWidthDots;
+            this.threshold = threshold;
+            this.useDithering = useDithering;
+            this.sendCut = sendCut;
+            this.chunkDelayMs = chunkDelayMs;
+            this.chunkSize = chunkSize;
+            this.postInitDelayMs = postInitDelayMs;
+            this.profileName = profileName;
+        }
     }
 
     public static List<BluetoothDevice> getBondedDevices() {
@@ -38,6 +67,16 @@ public class BluetoothEscPosPrinter {
 
     public static boolean printBitmaps(BluetoothDevice device, List<Bitmap> pages) throws IOException {
         if (device == null || pages == null || pages.isEmpty()) return false;
+        Log.d(TAG, "printBitmaps:start device=" + safeName(device) + " addr=" + device.getAddress() + " pages=" + pages.size());
+        PrintOptions options = resolvePrintOptions();
+        Log.d(TAG, "printBitmaps:profile=" + options.profileName
+                + " width=" + options.targetWidthDots
+                + " threshold=" + options.threshold
+                + " dithering=" + options.useDithering
+                + " cut=" + options.sendCut
+                + " chunkDelayMs=" + options.chunkDelayMs
+                + " chunkSize=" + options.chunkSize
+                + " postInitDelayMs=" + options.postInitDelayMs);
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (adapter == null) return false;
@@ -49,28 +88,40 @@ public class BluetoothEscPosPrinter {
         OutputStream out = null;
         try {
             socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+            Log.d(TAG, "printBitmaps:connecting uuid=" + SPP_UUID);
             socket.connect();
             out = socket.getOutputStream();
+            Log.d(TAG, "printBitmaps:connected");
 
-            // Initialize printer
-            out.write(new byte[]{0x1B, 0x40});
+            writeChunked(out, new byte[]{0x1B, 0x40}, options.chunkDelayMs, options.chunkSize);
+            sleepQuietly(options.postInitDelayMs);
+            Log.d(TAG, "printBitmaps:init sent");
 
-            for (Bitmap page : pages) {
-                Bitmap resized = resizeToWidth(page, TARGET_WIDTH_DOTS);
+            for (int i = 0; i < pages.size(); i++) {
+                Bitmap page = pages.get(i);
+                Bitmap resized = resizeToWidth(page, options.targetWidthDots);
                 Bitmap trimmed = trimBottomWhitespace(resized);
-                byte[] imageCmd = bitmapToEscPosRaster(trimmed);
-                out.write(imageCmd);
-                // Jarak tipis antar halaman jika ada multi-page.
-                out.write(new byte[]{0x1B, 0x64, (byte) FEED_LINES_BETWEEN_PAGES});
+                byte[] imageCmd = bitmapToEscPosRaster(trimmed, options.threshold, options.useDithering);
+                Log.d(TAG, "printBitmaps:page=" + i
+                        + " original=" + page.getWidth() + "x" + page.getHeight()
+                        + " resized=" + resized.getWidth() + "x" + resized.getHeight()
+                        + " trimmed=" + trimmed.getWidth() + "x" + trimmed.getHeight()
+                        + " rasterBytes=" + imageCmd.length);
+                writeChunked(out, imageCmd, options.chunkDelayMs, options.chunkSize);
+                writeChunked(out, new byte[]{0x1B, 0x64, (byte) FEED_LINES_BETWEEN_PAGES}, options.chunkDelayMs, options.chunkSize);
             }
 
-            // Tambahan kertas kosong untuk area potong user.
-            out.write(new byte[]{0x1B, 0x64, (byte) FEED_LINES_AFTER_PRINT});
+            writeChunked(out, new byte[]{0x1B, 0x64, (byte) FEED_LINES_AFTER_PRINT}, options.chunkDelayMs, options.chunkSize);
 
-            // Partial cut (abaikan jika printer tidak support)
-            out.write(new byte[]{0x1D, 0x56, 0x01});
+            if (options.sendCut) {
+                writeChunked(out, new byte[]{0x1D, 0x56, 0x01}, options.chunkDelayMs, options.chunkSize);
+            }
             out.flush();
+            Log.d(TAG, "printBitmaps:done");
             return true;
+        } catch (IOException e) {
+            Log.e(TAG, "printBitmaps:io failure", e);
+            throw e;
         } finally {
             if (out != null) {
                 try {
@@ -87,6 +138,19 @@ public class BluetoothEscPosPrinter {
         }
     }
 
+    private static PrintOptions resolvePrintOptions() {
+        return new PrintOptions(
+                TARGET_WIDTH_DOTS,
+                CONSERVATIVE_THRESHOLD,
+                true,
+                false,
+                CONSERVATIVE_CHUNK_DELAY_MS,
+                CONSERVATIVE_CHUNK_SIZE,
+                CONSERVATIVE_POST_INIT_DELAY_MS,
+                "UNIFIED_CONSERVATIVE_GSV0_576"
+        );
+    }
+
     private static Bitmap resizeToWidth(Bitmap src, int targetWidth) {
         if (src == null) return null;
         if (src.getWidth() == targetWidth) return src;
@@ -96,12 +160,11 @@ public class BluetoothEscPosPrinter {
         return Bitmap.createScaledBitmap(src, targetWidth, targetHeight, true);
     }
 
-    private static byte[] bitmapToEscPosRaster(Bitmap bitmap) throws IOException {
+    private static byte[] bitmapToEscPosRaster(Bitmap bitmap, int blackThreshold, boolean allowDithering) throws IOException {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         int widthBytes = (width + 7) / 8;
 
-        // Pre-calc luminance to support adaptive dithering for watermark/mid-tone areas.
         int[][] lum = new int[height][width];
         int midToneCount = 0;
         int totalCount = width * height;
@@ -113,7 +176,7 @@ public class BluetoothEscPosPrinter {
                 int g = Color.green(pixel);
                 int b = Color.blue(pixel);
                 int gray = (r * 30 + g * 59 + b * 11) / 100;
-                if (a < 128) gray = 255; // transparent => white
+                if (a < 128) gray = 255;
                 lum[y][x] = gray;
                 if (gray > 40 && gray < 220) {
                     midToneCount++;
@@ -121,8 +184,7 @@ public class BluetoothEscPosPrinter {
             }
         }
 
-        // If many mid-tone pixels exist (typical watermark), use ordered dithering.
-        boolean useDithering = totalCount > 0 && ((float) midToneCount / (float) totalCount) > 0.01f;
+        boolean useDithering = allowDithering && totalCount > 0 && ((float) midToneCount / (float) totalCount) > 0.01f;
         final int[][] bayer4 = {
                 {0, 8, 2, 10},
                 {12, 4, 14, 6},
@@ -141,11 +203,10 @@ public class BluetoothEscPosPrinter {
                         int gray = lum[y][x];
                         boolean black;
                         if (useDithering) {
-                            // Ordered dithering 4x4, threshold in range [0..255].
                             int threshold = bayer4[y & 3][x & 3] * 16;
                             black = gray < threshold;
                         } else {
-                            black = gray < 128;
+                            black = gray < blackThreshold;
                         }
                         if (black) {
                             value |= (1 << (7 - bit));
@@ -157,7 +218,6 @@ public class BluetoothEscPosPrinter {
         }
 
         ByteArrayOutputStream command = new ByteArrayOutputStream();
-        // GS v 0 m xL xH yL yH d1...dk
         command.write(0x1D);
         command.write(0x76);
         command.write(0x30);
@@ -178,7 +238,6 @@ public class BluetoothEscPosPrinter {
         if (width <= 0 || height <= 0) return src;
 
         int lastContentRow = -1;
-
         for (int y = height - 1; y >= 0; y--) {
             boolean hasInk = false;
             for (int x = 0; x < width; x++) {
@@ -188,8 +247,6 @@ public class BluetoothEscPosPrinter {
                 int g = Color.green(pixel);
                 int b = Color.blue(pixel);
                 int gray = (r * 30 + g * 59 + b * 11) / 100;
-
-                // Anggap "ada konten" jika pixel tidak putih/transparent.
                 if (a >= 16 && gray < 245) {
                     hasInk = true;
                     break;
@@ -210,5 +267,36 @@ public class BluetoothEscPosPrinter {
         if (newHeight == height) return src;
 
         return Bitmap.createBitmap(src, 0, 0, width, Math.max(1, newHeight));
+    }
+
+    private static void writeChunked(OutputStream out, byte[] data, int chunkDelayMs, int chunkSize) throws IOException {
+        if (data == null || data.length == 0) return;
+        int offset = 0;
+        int chunkCount = 0;
+        while (offset < data.length) {
+            int len = Math.min(chunkSize, data.length - offset);
+            out.write(data, offset, len);
+            offset += len;
+            chunkCount++;
+            if (chunkDelayMs > 0) {
+                sleepQuietly(chunkDelayMs);
+            }
+        }
+        Log.d(TAG, "writeChunked: bytes=" + data.length + " chunks=" + chunkCount + " chunkSize=" + chunkSize + " delayMs=" + chunkDelayMs);
+    }
+
+    private static void sleepQuietly(int delayMs) {
+        if (delayMs <= 0) return;
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static String safeName(BluetoothDevice device) {
+        if (device == null) return "null";
+        String name = device.getName();
+        return name != null && !name.trim().isEmpty() ? name : "Unknown";
     }
 }

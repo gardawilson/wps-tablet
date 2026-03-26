@@ -5,6 +5,8 @@ import android.app.DatePickerDialog;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -28,6 +30,7 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 import android.view.Window;
 import android.view.WindowManager;
@@ -191,7 +194,7 @@ public class S4S extends AppCompatActivity {
     private boolean isCreateMode = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private String rawDate;
-    private TableLayout TabelOutput;
+    private RecyclerView TabelOutput;
     private TextView tvLabelCount;
     private EditText remarkLabel;
     private ImageButton BtnExpandView;
@@ -209,6 +212,10 @@ public class S4S extends AppCompatActivity {
     private Spinner spinWarna;
     private Spinner spinLokasi;
     private volatile boolean isSaving = false;
+    private final List<OutputLabelItem> outputLabelItems = new ArrayList<>();
+    private OutputLabelAdapter outputLabelAdapter;
+    private String currentOutputParameter;
+    private Boolean currentOutputIsNoProduksi;
 
 
 
@@ -258,6 +265,10 @@ public class S4S extends AppCompatActivity {
         BtnExpandView = findViewById(R.id.BtnExpandView);
         spinWarna = findViewById(R.id.spinWarna);
         spinLokasi = findViewById(R.id.spinLokasi);
+        outputLabelAdapter = new OutputLabelAdapter();
+        TabelOutput.setLayoutManager(new LinearLayoutManager(this));
+        TabelOutput.setNestedScrollingEnabled(false);
+        TabelOutput.setAdapter(outputLabelAdapter);
         btnUpdate = findViewById(R.id.btnUpdate);
         mesinView = findViewById(R.id.mesinView);
         susunView = findViewById(R.id.susunView);
@@ -422,8 +433,7 @@ public class S4S extends AppCompatActivity {
                         loadOutputByMesinSusun(noProduksi, true);
                     } else {
                         Log.e("Error", "Item bukan tipe MesinData");
-                        TabelOutput.removeAllViews();
-                        tvLabelCount.setText("Total Label : 0");
+                        clearOutputList();
                     }
                 }
             }
@@ -445,8 +455,7 @@ public class S4S extends AppCompatActivity {
                         loadOutputByMesinSusun(noBongkarSusun, false);
                     } else {
                         Log.e("Error", "Item bukan tipe SusunData");
-                        TabelOutput.removeAllViews();
-                        tvLabelCount.setText("Total Label : 0");
+                        clearOutputList();
                     }
                 }
             }
@@ -467,8 +476,7 @@ public class S4S extends AppCompatActivity {
                     loadOutputByMesinSusun(noProduksi, true);
                 }
             } else if (radioButtonBSusun.isChecked()) {
-                TabelOutput.removeAllViews();
-                tvLabelCount.setText("Total Label : 0");
+                clearOutputList();
             }
         });
 
@@ -483,8 +491,7 @@ public class S4S extends AppCompatActivity {
                     loadOutputByMesinSusun(noBongkarSusun, false);
                 }
             } else if (radioButtonMesin.isChecked()) {
-                TabelOutput.removeAllViews();
-                tvLabelCount.setText("Total Label : 0");
+                clearOutputList();
             }
         });
 
@@ -1426,6 +1433,8 @@ public class S4S extends AppCompatActivity {
 
     //OUTPUT PER TANGGAL PER MESIN
     private void loadOutputByMesinSusun(String parameter, boolean isNoProduksi) {
+        currentOutputParameter = parameter;
+        currentOutputIsNoProduksi = isNoProduksi;
         new Thread(() -> {
             Connection connection = null;
             try {
@@ -1457,137 +1466,16 @@ public class S4S extends AppCompatActivity {
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, parameter);
                         try (ResultSet rs = stmt.executeQuery()) {
-                            List<String> noS4SList = new ArrayList<>();
-                            List<Integer> hasBeenPrintedList = new ArrayList<>();
+                            List<OutputLabelItem> items = new ArrayList<>();
 
                             while (rs.next()) {
-                                noS4SList.add(rs.getString("NoS4S"));
-                                hasBeenPrintedList.add(rs.getInt("HasBeenPrinted"));
+                                items.add(new OutputLabelItem(
+                                        rs.getString("NoS4S"),
+                                        rs.getInt("HasBeenPrinted")
+                                ));
                             }
 
-                            runOnUiThread(() -> {
-                                TabelOutput.removeAllViews();
-
-                                // Reset selected row saat memuat data baru
-                                selectedRowHeader = null;
-
-                                int labelCount = 0;
-
-                                if (!noS4SList.isEmpty() && noS4SList.size() == hasBeenPrintedList.size()) {
-                                    for (int i = 0; i < noS4SList.size(); i++) {
-                                        String noS4S = noS4SList.get(i);
-                                        int hasBeenPrinted = hasBeenPrintedList.get(i);
-
-                                        TableRow row = new TableRow(this);
-                                        TableLayout.LayoutParams rowParams = new TableLayout.LayoutParams(
-                                                TableLayout.LayoutParams.MATCH_PARENT,
-                                                TableLayout.LayoutParams.WRAP_CONTENT
-                                        );
-
-                                        row.setLayoutParams(rowParams);
-                                        row.setPadding(0, 10, 0, 10);
-
-                                        // Set tag untuk menyimpan index
-                                        row.setTag(i);
-
-                                        // Ubah warna latar belakang berdasarkan indeks
-                                        if (i % 2 == 0) {
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                        } else {
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                        }
-
-                                        TextView labelTextView = new TextView(this);
-                                        labelTextView.setText(noS4S);
-                                        labelTextView.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
-                                        labelTextView.setGravity(Gravity.CENTER);
-                                        labelTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-                                        row.addView(labelTextView);
-
-                                        ImageView iIcon = new ImageView(this);
-                                        iIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
-                                        iIcon.setScaleType(ImageView.ScaleType.CENTER);
-                                        iIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
-
-                                        ImageView oIcon = new ImageView(this);
-                                        oIcon.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f));
-                                        oIcon.setScaleType(ImageView.ScaleType.CENTER);
-                                        oIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary_dark));
-
-                                        if (hasBeenPrinted == 0) {
-                                            iIcon.setImageResource(R.drawable.ic_undone);
-                                            oIcon.setImageResource(R.drawable.ic_undone);
-                                        } else if (hasBeenPrinted == 1) {
-                                            iIcon.setImageResource(R.drawable.ic_done);
-                                            oIcon.setImageResource(R.drawable.ic_undone);
-                                        } else if (hasBeenPrinted == 2) {
-                                            iIcon.setImageResource(R.drawable.ic_done);
-                                            oIcon.setImageResource(R.drawable.ic_done);
-                                        } else {
-                                            iIcon.setImageResource(R.drawable.ic_done_all);
-                                            oIcon.setImageResource(R.drawable.ic_done_all);
-                                        }
-
-                                        row.addView(iIcon);
-                                        row.addView(oIcon);
-
-                                        row.setOnClickListener(v -> {
-                                            // Reset selected row sebelumnya jika ada
-                                            if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
-                                                int prevIndex = (int) selectedRowHeader.getTag();
-                                                // Kembalikan warna asli row sebelumnya
-                                                if (prevIndex % 2 == 0) {
-                                                    selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                                } else {
-                                                    selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                                }
-                                            }
-
-                                            // Set row yang baru dipilih
-                                            selectedRowHeader = row;
-                                            // Highlight row yang dipilih (gunakan warna berbeda)
-                                            row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // atau warna highlight lainnya
-                                            TableUtils.setTextColor(this, row, R.color.white);
-
-                                            // Tampilkan tooltip dengan parameter yang benar
-                                            TooltipUtils.fetchDataAndShowTooltip(
-                                                    this,
-                                                    executorService,
-                                                    selectedRowHeader, // Parameter ketiga adalah selectedRow, bukan connection
-                                                    noS4S, // currentNoS4S
-                                                    "S4S_h",
-                                                    "S4S_d",
-                                                    "NoS4S",
-                                                    () -> {
-                                                        // Callback saat popup ditutup - dengan null check
-                                                        if (selectedRowHeader != null && selectedRowHeader.getTag() != null) {
-                                                            int currentIndex = (int) selectedRowHeader.getTag();
-                                                            // Reset warna row ke warna asli
-                                                            if (currentIndex % 2 == 0) {
-                                                                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                                                            } else {
-                                                                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                                                            }
-                                                            TableUtils.setTextColor(this, row, R.color.black);
-                                                            selectedRowHeader = null;
-                                                        } else {
-                                                            // Jika tag null, tetap reset selectedRowHeader
-                                                            selectedRowHeader = null;
-                                                        }
-                                                    }
-                                            );
-                                        });
-
-                                        TabelOutput.addView(row);
-                                        labelCount++;
-                                    }
-
-                                    tvLabelCount.setText("Total Label : " + labelCount);
-
-                                } else {
-                                    Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
-                                }
-                            });
+                            runOnUiThread(() -> setOutputList(items));
                         }
                     }
                 } else {
@@ -1610,6 +1498,129 @@ public class S4S extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void clearOutputList() {
+        outputLabelItems.clear();
+        if (outputLabelAdapter != null) {
+            outputLabelAdapter.clearSelection();
+            outputLabelAdapter.notifyDataSetChanged();
+        }
+        currentOutputParameter = null;
+        currentOutputIsNoProduksi = null;
+        tvLabelCount.setText("Total Label : 0");
+    }
+
+    private void setOutputList(List<OutputLabelItem> items) {
+        outputLabelItems.clear();
+        outputLabelItems.addAll(items);
+        selectedRowHeader = null;
+        outputLabelAdapter.clearSelection();
+        outputLabelAdapter.notifyDataSetChanged();
+        tvLabelCount.setText("Total Label : " + outputLabelItems.size());
+        if (outputLabelItems.isEmpty()) {
+            Log.d("LabelNull", "Tidak ada data pada mesin atau susun");
+        }
+    }
+
+    private void resetOutputRow(View rowView, int position) {
+        int bgColor = position % 2 == 0 ? R.color.background_cream : R.color.white;
+        rowView.setBackgroundColor(ContextCompat.getColor(this, bgColor));
+        TextView tvNoS4S = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
+        tvNoS4S.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+        tvPrintCount.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+    }
+
+    private void highlightOutputRow(View rowView) {
+        rowView.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+        TextView tvNoS4S = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
+        tvNoS4S.setTextColor(ContextCompat.getColor(this, R.color.white));
+        tvPrintCount.setTextColor(ContextCompat.getColor(this, R.color.white));
+    }
+
+    private class OutputLabelAdapter extends RecyclerView.Adapter<OutputLabelAdapter.OutputLabelViewHolder> {
+        private int selectedPosition = RecyclerView.NO_POSITION;
+
+        void clearSelection() {
+            selectedPosition = RecyclerView.NO_POSITION;
+        }
+
+        @Override
+        public OutputLabelViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_output_s4s, parent, false);
+            return new OutputLabelViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(OutputLabelViewHolder holder, int position) {
+            OutputLabelItem item = outputLabelItems.get(position);
+            holder.tvNoS4S.setText(item.noS4S);
+            holder.tvPrintCount.setText(item.hasBeenPrinted + "x");
+
+            if (position == selectedPosition) {
+                highlightOutputRow(holder.itemView);
+            } else {
+                resetOutputRow(holder.itemView, position);
+            }
+
+            holder.itemView.setOnClickListener(v -> {
+                int previousPosition = selectedPosition;
+                selectedPosition = holder.getBindingAdapterPosition();
+                if (selectedPosition == RecyclerView.NO_POSITION) {
+                    return;
+                }
+
+                if (previousPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previousPosition);
+                }
+                notifyItemChanged(selectedPosition);
+
+                TooltipUtils.fetchDataAndShowTooltip(
+                        S4S.this,
+                        executorService,
+                        holder.itemView,
+                        item.noS4S,
+                        "S4S_h",
+                        "S4S_d",
+                        "NoS4S",
+                        () -> {
+                            int currentPosition = selectedPosition;
+                            selectedPosition = RecyclerView.NO_POSITION;
+                            if (currentPosition != RecyclerView.NO_POSITION) {
+                                runOnUiThread(() -> notifyItemChanged(currentPosition));
+                            }
+                        }
+                );
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return outputLabelItems.size();
+        }
+
+        class OutputLabelViewHolder extends RecyclerView.ViewHolder {
+            private final TextView tvNoS4S;
+            private final TextView tvPrintCount;
+
+            OutputLabelViewHolder(View itemView) {
+                super(itemView);
+                tvNoS4S = itemView.findViewById(R.id.tvOutputNoS4S);
+                tvPrintCount = itemView.findViewById(R.id.tvOutputPrintCount);
+            }
+        }
+    }
+
+    private static class OutputLabelItem {
+        private final String noS4S;
+        private final int hasBeenPrinted;
+
+        OutputLabelItem(String noS4S, int hasBeenPrinted) {
+            this.noS4S = noS4S;
+            this.hasBeenPrinted = hasBeenPrinted;
+        }
     }
 
 
@@ -2204,6 +2215,11 @@ public class S4S extends AppCompatActivity {
         void onResult(int count); // Callback menerima count
     }
 
+    interface UpdatePrintStatusCallback {
+        void onSuccess();
+        void onFailed(String message);
+    }
+
     private void checkHasBeenPrinted(String noS4S, S4S.HasBeenPrintedCallback callback) {
         new Thread(() -> {
             int hasBeenPrintedValue = -1; // Default jika tidak ditemukan
@@ -2291,7 +2307,7 @@ public class S4S extends AppCompatActivity {
 
 
     // Method untuk mengupdate status HasBeenPrinted pada database
-    private void updatePrintStatus(String noS4S) {
+    private void updatePrintStatus(String noS4S, UpdatePrintStatusCallback callback) {
         new Thread(() -> {
             Connection connection = null;
             try {
@@ -2304,27 +2320,21 @@ public class S4S extends AppCompatActivity {
                         stmt.setString(1, noS4S);
                         int rowsAffected = stmt.executeUpdate();
 
-                        if (rowsAffected > 0) {
-                            runOnUiThread(() -> Toast.makeText(S4S.this,
-                                    "Status cetak berhasil diupdate",
-                                    Toast.LENGTH_SHORT).show());
-                        } else {
-                            runOnUiThread(() -> Toast.makeText(S4S.this,
-                                    "Tidak ada data yang diupdate",
-                                    Toast.LENGTH_SHORT).show());
-                        }
+                        runOnUiThread(() -> {
+                            if (rowsAffected > 0) {
+                                callback.onSuccess();
+                            } else {
+                                callback.onFailed("Tidak ada data yang diupdate");
+                            }
+                        });
                     }
                 } else {
-                    runOnUiThread(() -> Toast.makeText(S4S.this,
-                            "Koneksi database gagal",
-                            Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> callback.onFailed("Koneksi database gagal"));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
                 Log.e("Database", "Error updating HasBeenPrinted status: " + e.getMessage());
-                runOnUiThread(() -> Toast.makeText(S4S.this,
-                        "Gagal mengupdate status cetak: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> callback.onFailed("Gagal mengupdate status cetak: " + e.getMessage()));
             } finally {
                 if (connection != null) {
                     try {
@@ -2335,6 +2345,12 @@ public class S4S extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void refreshCurrentOutputList() {
+        if (currentOutputParameter != null && currentOutputIsNoProduksi != null) {
+            loadOutputByMesinSusun(currentOutputParameter, currentOutputIsNoProduksi);
+        }
     }
 
 
@@ -3063,7 +3079,18 @@ public class S4S extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoS4S = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoS4S != null && !printedNoS4S.trim().isEmpty()) {
-                updatePrintStatus(printedNoS4S);
+                updatePrintStatus(printedNoS4S, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(S4S.this, "Status cetak berhasil diupdate", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String message) {
+                        Toast.makeText(S4S.this, message, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         }
     }
@@ -3498,7 +3525,7 @@ public class S4S extends AppCompatActivity {
                 } else {
                     Log.e("Error", "Failed to load mesin data.");
                     SpinMesin.setAdapter(null);
-                    TabelOutput.removeAllViews();
+                    clearOutputList();
                 }
 
                 // 🔑 Jalankan callback setelah spinner selesai diisi
@@ -3539,7 +3566,7 @@ public class S4S extends AppCompatActivity {
                 } else {
                     Log.e("Error", "Failed to load susun data.");
                     SpinSusun.setAdapter(null);
-                    TabelOutput.removeAllViews();
+                    clearOutputList();
                 }
 
                 // 🔑 Jalankan callback setelah spinner selesai diisi
