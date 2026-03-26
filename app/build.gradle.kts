@@ -1,5 +1,4 @@
 import java.util.Properties
-import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -31,6 +30,16 @@ android {
         buildConfigField("String", "DB_USER", "\"${localProperties["DB_USER"]}\"")
         buildConfigField("String", "DB_PASS", "\"${localProperties["DB_PASS"]}\"")
         buildConfigField("String", "DB_NAME", "\"${localProperties["DB_NAME"]}\"")
+        buildConfigField(
+            "String",
+            "BASE_REPORT_MICROSERVICE",
+            "\"${localProperties.getProperty("BASE_REPORT_MICROSERVICE", "http://192.168.10.100:5006/")}\""
+        )
+        buildConfigField(
+            "String",
+            "BASE_URL_API",
+            "\"${localProperties.getProperty("BASE_URL_API", "http://192.168.10.100:5002")}\""
+        )
     }
 
     buildFeatures {

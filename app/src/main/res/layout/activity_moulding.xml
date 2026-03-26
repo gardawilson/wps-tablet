@@ -831,9 +831,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:background="@color/hijau"
-                        android:paddingTop="8dp"
-                        android:paddingBottom="8dp">
+                        android:background="@color/hijau">
 
                         <TextView
                             android:layout_width="0dp"
@@ -842,6 +840,8 @@
                             android:gravity="center"
                             android:paddingStart="24dp"
                             android:paddingEnd="24dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp"
                             android:text="No. MLD"
                             android:textColor="@color/white"
                             android:textSize="18sp"
@@ -852,15 +852,17 @@
                             android:layout_height="match_parent"
                             android:background="@color/gray" />
 
-                        <TextView
+                        <ImageView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="0.6"
                             android:gravity="center"
-                            android:text="Print"
-                            android:textColor="@color/white"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp"
+                            android:src="@drawable/print_connect"
+                            android:tint="@color/white"
+                            android:contentDescription="Print"
+                            android:scaleType="centerInside" />
 
                     </LinearLayout>
 

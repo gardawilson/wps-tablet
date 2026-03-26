@@ -1471,7 +1471,7 @@ public class CrossCut extends AppCompatActivity {
     private void resetOutputRow(View rowView, int position) {
         int bgColor = position % 2 == 0 ? R.color.background_cream : R.color.white;
         rowView.setBackgroundColor(ContextCompat.getColor(this, bgColor));
-        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoLabel);
         TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
         tvNoLabel.setTextColor(ContextCompat.getColor(this, android.R.color.black));
         tvPrintCount.setTextColor(ContextCompat.getColor(this, android.R.color.black));
@@ -1479,7 +1479,7 @@ public class CrossCut extends AppCompatActivity {
 
     private void highlightOutputRow(View rowView) {
         rowView.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
-        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoS4S);
+        TextView tvNoLabel = rowView.findViewById(R.id.tvOutputNoLabel);
         TextView tvPrintCount = rowView.findViewById(R.id.tvOutputPrintCount);
         tvNoLabel.setTextColor(ContextCompat.getColor(this, R.color.white));
         tvPrintCount.setTextColor(ContextCompat.getColor(this, R.color.white));
@@ -1494,7 +1494,7 @@ public class CrossCut extends AppCompatActivity {
 
         @Override
         public OutputLabelViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_output_s4s, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_output_label, parent, false);
             return new OutputLabelViewHolder(view);
         }
 
@@ -1552,7 +1552,7 @@ public class CrossCut extends AppCompatActivity {
 
             OutputLabelViewHolder(View itemView) {
                 super(itemView);
-                tvNoLabel = itemView.findViewById(R.id.tvOutputNoS4S);
+                tvNoLabel = itemView.findViewById(R.id.tvOutputNoLabel);
                 tvPrintCount = itemView.findViewById(R.id.tvOutputPrintCount);
             }
         }

@@ -3,18 +3,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="@color/white"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+    android:background="@color/white">
 
     <TextView
-        android:id="@+id/tvOutputNoS4S"
+        android:id="@+id/tvOutputNoLabel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1.4"
         android:gravity="center"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:textColor="@android:color/black"
         android:textSize="16sp" />
 
@@ -29,6 +29,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="0.6"
         android:gravity="center"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:textColor="@android:color/black"
         android:textSize="16sp"
         android:textStyle="bold" />
