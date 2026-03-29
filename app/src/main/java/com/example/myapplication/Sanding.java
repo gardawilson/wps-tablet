@@ -83,6 +83,7 @@ import com.example.myapplication.model.MstProfileData;
 import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import android.app.TimePickerDialog;
@@ -111,6 +112,7 @@ import java.text.DecimalFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 
 
 import com.example.myapplication.utils.LoadingDialogHelper;
@@ -203,7 +205,7 @@ public class Sanding extends AppCompatActivity {
     private EditText remarkLabel;
     private ImageButton BtnExpandView;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private TableRow selectedRowHeader = null;
+    private View selectedRowHeader = null;
     int page = 1;
     int currentPage = 0;
     boolean isLoading = false;
@@ -541,8 +543,8 @@ public class Sanding extends AppCompatActivity {
             };
 
             // Jalankan semua loader async dengan callback
-            setCurrentDateTime(); // synchronous → langsung dipanggil
-            isCreateMode = true;  // synchronous → langsung dipanggil
+            setCurrentDateTime(); // synchronous â†’ langsung dipanggil
+            isCreateMode = true;  // synchronous â†’ langsung dipanggil
             loadJenisKayuSpinner(0, checkAllDone);
             loadTellyByIdUsernameSpinner(idUsername, checkAllDone);
             loadSPKSpinner("0", checkAllDone);
@@ -660,11 +662,14 @@ public class Sanding extends AppCompatActivity {
                         }
 
                         // 3. insert header
+                        String actorName = SharedPrefUtils.getUsername(Sanding.this);
+                        String requestId = UUID.randomUUID().toString();
                         boolean saveSuccess = SndApi.saveData(
                                 noSanding, rawDate, time, idTelly, noSPK, noSPKasal,
                                 idGrade, idJenisKayu, idProfile,
                                 isReject, isLembur, idUOMTblLebar, idUOMPanjang,
-                                remark, idLokasi, isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun, temporaryDataListDetail
+                                remark, idLokasi, isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun,
+                                temporaryDataListDetail, idUsername, actorName, requestId
                         );
                         if (!saveSuccess) {
                             throw new RuntimeException("Gagal menyimpan data ke database.");
@@ -789,11 +794,14 @@ public class Sanding extends AppCompatActivity {
                     }
 
                     // 3. insert header
+                    String actorName = SharedPrefUtils.getUsername(Sanding.this);
+                    String requestId = UUID.randomUUID().toString();
                     SndApi.updateData(
                             noSanding, dateCreate, time, idTelly, noSPK, noSPKasal,
                             idGrade, idJenisKayu, idProfile,
                             isReject, isLembur, idUOMTblLebar, idUOMPanjang,
-                            remark, idLokasi, temporaryDataListDetail
+                            remark, idLokasi, temporaryDataListDetail,
+                            idUsername, actorName, requestId
                     );
 
                     // 5. kalau sukses
@@ -1078,50 +1086,37 @@ public class Sanding extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_list_item_snd, null);
 
-        TableLayout tableLayout = dialogView.findViewById(R.id.tableHeaderLabel);
         ProgressBar loadingIndicator = dialogView.findViewById(R.id.listLabelLoadingIndicator);
-
-        ScrollView scrollView = dialogView.findViewById(R.id.scrollViewTable);
-
+        RecyclerView rvLabelList = dialogView.findViewById(R.id.rvLabelList);
+        TextView tvNoData = dialogView.findViewById(R.id.tvNoData);
         EditText searchInput = dialogView.findViewById(R.id.searchInput);
         ImageView clearButton = dialogView.findViewById(R.id.clearButton);
-
         Button btnEditData = dialogView.findViewById(R.id.btnEditData);
         Button btnDeleteData = dialogView.findViewById(R.id.btnDeleteData);
-
         TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
 
-        // Reset selection state
         selectedRowHeader = null;
-
-        executorService.execute(() -> {
-            // 🔹 Jalankan delete di background thread
-            int totalLabel = SndApi.getTotalLabelCount("");
-
-            // 🔹 Update UI kembali
-            runOnUiThread(() -> {
-                tvSumLabel.setText("LIST LABEL SANDING " + "(" + String.valueOf(totalLabel) + ")");
-
-            });
-        });
-
-
-        // Variable untuk menyimpan data yang dipilih
         final SndData[] selectedData = {null};
+        final boolean[] hasMoreData = {true};
+        final String[] activeKeyword = {""};
 
-        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
-            View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
-            int diff = (view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY()));
-
-            if (diff <= 50 && !isLoading) { // 50px sebelum mentok bawah
-                isLoading = true;
-                currentPage++;
-                loadMoreData(tableLayout, selectedData);
+        DialogLabelAdapter adapter = new DialogLabelAdapter(selectedData);
+        rvLabelList.setLayoutManager(new LinearLayoutManager(this));
+        rvLabelList.setAdapter(adapter);
+        rvLabelList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy <= 0) {
+                    return;
+                }
+                if (!recyclerView.canScrollVertically(1) && !isLoading && hasMoreData[0]) {
+                    isLoading = true;
+                    currentPage++;
+                    loadLabelPageForDialog(currentPage, activeKeyword[0], true, adapter, loadingIndicator, tvNoData, hasMoreData);
+                }
             }
         });
-
-        tableLayout.removeAllViews();
-        loadingIndicator.setVisibility(View.VISIBLE); // tampilkan loading
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -1138,75 +1133,68 @@ public class Sanding extends AppCompatActivity {
             window.setAttributes(layoutParams);
         }
 
-        // Click listener untuk button Edit
+        refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
+        page = 1;
+        currentPage = 1;
+        isLoading = true;
+        loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
+
         btnEditData.setOnClickListener(v -> {
             if (selectedData[0] != null) {
                 isCreateMode = false;
-
-                // Mengisi noLaminating dengan data yang dipilih
                 NoSanding.setText(selectedData[0].getNoSanding());
-
-                // Tutup dialog
                 dialog.dismiss();
 
                 btnUpdate.setVisibility(View.VISIBLE);
                 BtnSimpan.setVisibility(View.GONE);
                 BtnDataBaru.setVisibility(View.GONE);
-
-
                 SpinMesin.setVisibility(View.GONE);
                 SpinSusun.setVisibility(View.GONE);
                 mesinView.setVisibility(View.VISIBLE);
                 susunView.setVisibility(View.VISIBLE);
-
                 Date.setEnabled(false);
                 Time.setEnabled(false);
-
-                // Optional: tampilkan pesan sukses
-//                Toast.makeText(this, "Data dipilih: " + selectedData[0].getNoSanding(), Toast.LENGTH_SHORT).show();
             } else {
-                // Tampilkan pesan jika belum ada row yang dipilih
                 Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Click listener untuk button Delete (opsional, sesuai kebutuhan)
         btnDeleteData.setOnClickListener(v -> {
             if (selectedData[0] != null) {
                 new AlertDialog.Builder(this)
                         .setTitle("Konfirmasi")
                         .setMessage("Apakah Anda yakin ingin menghapus data " + selectedData[0].getNoSanding() + "?")
-                        .setPositiveButton("Ya", (dialogInterface, i) -> {
-                            executorService.execute(() -> {
-                                try {
-                                    // 🔹 Jalankan delete di background thread
-                                    boolean success = SndApi.deleteData(selectedData[0].getNoSanding());
-
-                                    // 🔹 Update UI kembali
-                                    runOnUiThread(() -> {
-                                        if (success) {
-                                            Toast.makeText(this,
-                                                    "Data " + selectedData[0].getNoSanding() + " dihapus",
-                                                    Toast.LENGTH_SHORT).show();
-
-                                            // contoh: refresh tabel/list setelah delete
-                                            loadSearchData(tableLayout, loadingIndicator, "", selectedData);
-                                        } else {
-                                            Toast.makeText(this,
-                                                    "Gagal menghapus data",
-                                                    Toast.LENGTH_SHORT).show();
-                                        }
-                                        dialogInterface.dismiss();
-                                    });
-                                } catch (Exception e) {
-                                    runOnUiThread(() ->
-                                            Toast.makeText(this,
-                                                    "Error: " + e.getMessage(),
-                                                    Toast.LENGTH_SHORT).show()
-                                    );
-                                }
-                            });
-                        })
+                        .setPositiveButton("Ya", (dialogInterface, i) -> executorService.execute(() -> {
+                            try {
+                                String actorName = SharedPrefUtils.getUsername(Sanding.this);
+                                String requestId = UUID.randomUUID().toString();
+                                boolean success = SndApi.deleteData(
+                                        selectedData[0].getNoSanding(),
+                                        idUsername,
+                                        actorName,
+                                        requestId
+                                );
+                                runOnUiThread(() -> {
+                                    if (success) {
+                                        Toast.makeText(this, "Data " + selectedData[0].getNoSanding() + " dihapus", Toast.LENGTH_SHORT).show();
+                                        selectedData[0] = null;
+                                        selectedRowHeader = null;
+                                        adapter.clearSelection();
+                                        currentPage = 1;
+                                        page = 1;
+                                        hasMoreData[0] = true;
+                                        isLoading = true;
+                                        loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
+                                        refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
+                                    } else {
+                                        Toast.makeText(this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
+                                    }
+                                    dialogInterface.dismiss();
+                                });
+                            } catch (Exception e) {
+                                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                            }
+                        }))
                         .setNegativeButton("Tidak", null)
                         .show();
             } else {
@@ -1220,178 +1208,199 @@ public class Sanding extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Munculkan / sembunyikan tombol clear
-                if (s.length() > 0) {
-                    clearButton.setVisibility(View.VISIBLE);
-                } else {
-                    clearButton.setVisibility(View.GONE);
-                }
-
-                // Reset selection saat search
+                clearButton.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+                activeKeyword[0] = s.toString().trim();
+                selectedData[0] = null;
                 selectedRowHeader = null;
-                selectedData[0] = null; // Reset selected data
-
-                // Logika search
-                String keyword = s.toString().trim();
-                page = 1; // reset halaman
-                loadSearchData(tableLayout, loadingIndicator, keyword, selectedData);
+                adapter.clearSelection();
+                page = 1;
+                currentPage = 1;
+                hasMoreData[0] = true;
+                isLoading = true;
+                loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
+                refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
-        // Aksi tombol clear
-        clearButton.setOnClickListener(v -> {
-            searchInput.setText(""); // Hapus teks
-        });
+        clearButton.setOnClickListener(v -> searchInput.setText(""));
+    }
 
-        // Jalankan fetch data di background setelah dialog ditampilkan
+    private void refreshDialogLabelCount(TextView tvSumLabel, String keyword) {
         executorService.execute(() -> {
-            List<SndData> list = SndApi.getSndData(page, 50, "");
-
-            runOnUiThread(() -> {
-                loadingIndicator.setVisibility(View.GONE); // sembunyikan loading
-                tableLayout.removeAllViews(); // hapus semua tampilan sebelumnya
-
-                if (list == null || list.isEmpty()) {
-                    TextView noDataView = new TextView(this);
-                    noDataView.setText("Data tidak ditemukan");
-                    noDataView.setGravity(Gravity.CENTER);
-                    noDataView.setPadding(16, 16, 16, 16);
-                    tableLayout.addView(noDataView);
-                    return;
-                }
-
-                addRowsToTable(tableLayout, list, 0, selectedData);
-            });
+            int totalLabel = SndApi.getTotalLabelCount(keyword);
+            runOnUiThread(() -> tvSumLabel.setText("LIST LABEL SANDING (" + totalLabel + ")"));
         });
     }
 
-    private void loadSearchData(TableLayout tableLayout, ProgressBar loadingIndicator, String keyword, SndData[] selectedData) {
-        loadingIndicator.setVisibility(View.VISIBLE);
-        tableLayout.removeAllViews();
+    private void loadLabelPageForDialog(
+            int targetPage,
+            String keyword,
+            boolean isAppend,
+            DialogLabelAdapter adapter,
+            ProgressBar loadingIndicator,
+            TextView tvNoData,
+            boolean[] hasMoreData
+    ) {
+        if (!isAppend) {
+            loadingIndicator.setVisibility(View.VISIBLE);
+            tvNoData.setVisibility(View.GONE);
+        }
 
         executorService.execute(() -> {
-            List<SndData> list = SndApi.getSndData(page, 50, keyword);
-
+            List<SndData> list = SndApi.getSndData(targetPage, 50, keyword);
             runOnUiThread(() -> {
-                loadingIndicator.setVisibility(View.GONE);
-                if (list == null || list.isEmpty()) {
-                    TextView noDataView = new TextView(this);
-                    noDataView.setText("Data tidak ditemukan");
-                    noDataView.setGravity(Gravity.CENTER);
-                    noDataView.setPadding(16, 16, 16, 16);
-                    tableLayout.addView(noDataView);
-                    return;
+                if (!isAppend) {
+                    loadingIndicator.setVisibility(View.GONE);
                 }
 
-                addRowsToTable(tableLayout, list, 0, selectedData);
-            });
-        });
-    }
-
-    private void loadMoreData(TableLayout tableLayout, SndData[] selectedData) {
-        executorService.execute(() -> {
-            List<SndData> moreData = SndApi.getSndData(currentPage, 50, "");
-            runOnUiThread(() -> {
-                if (moreData != null && !moreData.isEmpty()) {
-                    int startIndex = tableLayout.getChildCount();
-                    addRowsToTable(tableLayout, moreData, startIndex, selectedData);
+                List<SndData> safeList = list != null ? list : new ArrayList<>();
+                if (isAppend) {
+                    adapter.appendData(safeList);
+                } else {
+                    adapter.setData(safeList);
                 }
+
+                hasMoreData[0] = safeList.size() == 50;
+                tvNoData.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
                 isLoading = false;
             });
         });
     }
 
-    // Method yang sudah diupdate untuk menyimpan selected data
-    private void addRowsToTable(TableLayout tableLayout, List<SndData> list, int startRowIndex, SndData[] selectedData) {
-        int rowIndex = startRowIndex;
+    private class DialogLabelAdapter extends RecyclerView.Adapter<DialogLabelAdapter.DialogLabelViewHolder> {
+        private final List<SndData> items = new ArrayList<>();
+        private final SndData[] selectedData;
+        private int selectedPosition = RecyclerView.NO_POSITION;
 
-        for (SndData data : list) {
-            TableRow row = new TableRow(this);
-            row.setTag(rowIndex);
+        DialogLabelAdapter(SndData[] selectedData) {
+            this.selectedData = selectedData;
+        }
 
-            TextView col1 = TableUtils.createTextView(this, data.getNoSanding(), 1f);
-            TextView col2 = TableUtils.createTextView(this, DateTimeUtils.formatDate(data.getDateCreate()), 1f);
-            TextView col3 = TableUtils.createTextView(this, data.getNamaJenisKayu(), 1f);
-            TextView col4 = TableUtils.createTextView(this, data.getNamaGrade(), 1f);
-            TextView col5 = TableUtils.createTextView(this, data.getIdLokasi(), 0.5f);
-            TextView col6 = TableUtils.createTextView(this, data.getNamaOrgTelly(), 1f);
+        void setData(List<SndData> newItems) {
+            items.clear();
+            items.addAll(newItems);
+            notifyDataSetChanged();
+        }
 
-            row.addView(col1);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col2);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col3);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col4);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col5);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col6);
+        void appendData(List<SndData> moreItems) {
+            if (moreItems.isEmpty()) {
+                return;
+            }
+            int start = items.size();
+            items.addAll(moreItems);
+            notifyItemRangeInserted(start, moreItems.size());
+        }
 
-            // Set background color berdasarkan index
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+        void clearSelection() {
+            int oldSelection = selectedPosition;
+            selectedPosition = RecyclerView.NO_POSITION;
+            if (oldSelection != RecyclerView.NO_POSITION) {
+                notifyItemChanged(oldSelection);
+            }
+        }
+
+        @Override
+        public DialogLabelViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_dialog_label_snd, parent, false);
+            return new DialogLabelViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(DialogLabelViewHolder holder, int position) {
+            SndData data = items.get(position);
+            holder.tvNoLabel.setText(defaultText(data.getNoSanding()));
+            holder.tvTanggal.setText(defaultText(DateTimeUtils.formatDate(data.getDateCreate())));
+            holder.tvJenisKayu.setText(defaultText(data.getNamaJenisKayu()));
+            holder.tvGrade.setText(defaultText(data.getNamaGrade()));
+            holder.tvLokasi.setText(defaultText(data.getIdLokasi()));
+            holder.tvTally.setText(defaultText(data.getNamaOrgTelly()));
+
+            if (position == selectedPosition) {
+                holder.setSelectedState(true, true);
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                holder.setSelectedState(false, position % 2 == 0);
             }
 
-            // Set click listener yang konsisten untuk semua row
-            row.setOnClickListener(v -> {
-                // Reset previous selection
-                if (selectedRowHeader != null) {
-                    int prevIndex = (int) selectedRowHeader.getTag();
-                    if (prevIndex % 2 == 0) {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                    } else {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                    }
-                    TableUtils.resetTextColor(this, selectedRowHeader);
+            holder.itemView.setOnClickListener(v -> {
+                int adapterPosition = holder.getBindingAdapterPosition();
+                if (adapterPosition == RecyclerView.NO_POSITION) {
+                    return;
                 }
 
-                // Set new selection
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
-                TableUtils.setTextColor(this, row, R.color.white);
-                selectedRowHeader = row;
+                int previousSelection = selectedPosition;
+                selectedPosition = adapterPosition;
+                if (previousSelection != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previousSelection);
+                }
+                notifyItemChanged(selectedPosition);
 
-                // Simpan data yang dipilih
-                selectedData[0] = data;
+                SndData selected = items.get(adapterPosition);
+                selectedData[0] = selected;
+                selectedRowHeader = holder.itemView;
+                noSanding = selected.getNoSanding();
 
-                // Call click handler
-                onRowClick(data);
+                TooltipUtils.fetchDataAndShowTooltip(
+                        Sanding.this,
+                        executorService,
+                        holder.itemView,
+                        selected.getNoSanding(),
+                        "Sanding_h",
+                        "Sanding_d",
+                        "NoSanding",
+                        () -> {
+                        }
+                );
             });
+        }
 
-            tableLayout.addView(row);
-            rowIndex++;
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        class DialogLabelViewHolder extends RecyclerView.ViewHolder {
+            private final TextView tvNoLabel;
+            private final TextView tvTanggal;
+            private final TextView tvJenisKayu;
+            private final TextView tvGrade;
+            private final TextView tvLokasi;
+            private final TextView tvTally;
+
+            DialogLabelViewHolder(View itemView) {
+                super(itemView);
+                tvNoLabel = itemView.findViewById(R.id.tvNoLabel);
+                tvTanggal = itemView.findViewById(R.id.tvTanggal);
+                tvJenisKayu = itemView.findViewById(R.id.tvJenisKayu);
+                tvGrade = itemView.findViewById(R.id.tvGrade);
+                tvLokasi = itemView.findViewById(R.id.tvLokasi);
+                tvTally = itemView.findViewById(R.id.tvTally);
+            }
+
+            void setSelectedState(boolean selected, boolean isEvenRow) {
+                int bgColor;
+                if (selected) {
+                    bgColor = R.color.primary;
+                } else {
+                    bgColor = isEvenRow ? R.color.background_cream : R.color.white;
+                }
+                int textColor = selected ? R.color.white : android.R.color.black;
+                itemView.setBackgroundColor(ContextCompat.getColor(Sanding.this, bgColor));
+                tvNoLabel.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+                tvTanggal.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+                tvJenisKayu.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+                tvGrade.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+                tvLokasi.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+                tvTally.setTextColor(ContextCompat.getColor(Sanding.this, textColor));
+            }
         }
     }
 
-    private void onRowClick(SndData data) {
-        noSanding = data.getNoSanding();
-
-        // Tampilkan tooltip
-        TooltipUtils.fetchDataAndShowTooltip(
-                this,
-                executorService,
-                selectedRowHeader,
-                data.getNoSanding(),
-                "Sanding_h",
-                "Sanding_d",
-                "NoSanding",
-                () -> {
-                    // Callback saat popup ditutup
-                    if (selectedRowHeader != null) {
-                        int currentIndex = (int) selectedRowHeader.getTag();
-//                        ViewUtils.resetRowSelection(this, selectedRowHeader, currentIndex);
-//                        selectedRowHeader = null;
-                    }
-                }
-        );
+    private String defaultText(String value) {
+        return value == null || value.trim().isEmpty() ? "-" : value;
     }
-
-
     private void loadOutputByMesinSusun(String parameter, boolean isNoProduksi) {
         currentOutputParameter = parameter;
         currentOutputIsNoProduksi = isNoProduksi;
@@ -2468,7 +2477,7 @@ public class Sanding extends AppCompatActivity {
             LinearLayout actionLayout = new LinearLayout(this);
             actionLayout.setOrientation(LinearLayout.HORIZONTAL);
 
-            // ✅ Cek permission edit
+            // âœ… Cek permission edit
             if (userPermissions.contains("label_snd:update")) {
                 ImageButton editButton = new ImageButton(this);
                 editButton.setImageResource(R.drawable.ic_edit);
@@ -2488,7 +2497,7 @@ public class Sanding extends AppCompatActivity {
                 actionLayout.addView(editButton);
             }
 
-            // ✅ Cek permission delete
+            // âœ… Cek permission delete
             if (userPermissions.contains("label_snd:delete")) {
                 ImageButton deleteButton = new ImageButton(this);
                 deleteButton.setImageResource(R.drawable.ic_delete);
@@ -2665,11 +2674,23 @@ public class Sanding extends AppCompatActivity {
                 // Mendapatkan koneksi dari method ConnectionClass
                 connection = ConnectionClass();
                 if (connection != null) {
+                    connection.setAutoCommit(false);
+                    String actorId = idUsername;
+                    String actorName = SharedPrefUtils.getUsername(Sanding.this);
+                    String requestId = UUID.randomUUID().toString();
+                    AuditSessionContextHelper.apply(connection, actorId, actorName, requestId);
+
                     // Query untuk menambah 1 pada nilai HasBeenPrinted
                     String query = "UPDATE Sanding_h SET HasBeenPrinted = COALESCE(HasBeenPrinted, 0) + 1, LastPrintDate = GETDATE() WHERE NoSanding = ?";
                     try (PreparedStatement stmt = connection.prepareStatement(query)) {
                         stmt.setString(1, noSanding);
                         int rowsAffected = stmt.executeUpdate();
+
+                        if (rowsAffected > 0) {
+                            connection.commit();
+                        } else {
+                            connection.rollback();
+                        }
 
                         runOnUiThread(() -> {
                             if (rowsAffected > 0) {
@@ -2685,6 +2706,14 @@ public class Sanding extends AppCompatActivity {
             } catch (SQLException e) {
                 e.printStackTrace();
                 Log.e("Database", "Error updating HasBeenPrinted status: " + e.getMessage());
+                if (connection != null) {
+                    try {
+                        connection.rollback();
+                    } catch (SQLException rollbackEx) {
+                        rollbackEx.printStackTrace();
+                        Log.e("Database", "Rollback gagal saat update print status: " + rollbackEx.getMessage());
+                    }
+                }
                 runOnUiThread(() -> callback.onFailed("Gagal mengupdate status cetak: " + e.getMessage()));
             } finally {
                 if (connection != null) {
@@ -3534,7 +3563,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3575,7 +3604,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3615,7 +3644,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3654,7 +3683,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3692,7 +3721,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3730,7 +3759,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3764,7 +3793,7 @@ public class Sanding extends AppCompatActivity {
                     }
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3812,7 +3841,7 @@ public class Sanding extends AppCompatActivity {
                     Log.e("Error", "Failed to load profile data.");
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3843,7 +3872,7 @@ public class Sanding extends AppCompatActivity {
                     Log.e("Error", "Failed to load fisik data.");
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3881,7 +3910,7 @@ public class Sanding extends AppCompatActivity {
                     clearOutputList();
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3922,7 +3951,7 @@ public class Sanding extends AppCompatActivity {
                     clearOutputList();
                 }
 
-                // 🔑 Jalankan callback setelah spinner selesai diisi
+                // ðŸ”‘ Jalankan callback setelah spinner selesai diisi
                 if (onDone != null) onDone.run();
             });
         });
@@ -3954,3 +3983,4 @@ public class Sanding extends AppCompatActivity {
         return con;
     }
 }
+

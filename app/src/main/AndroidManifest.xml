@@ -50,6 +50,9 @@
             android:name=".LaporanVerifikasi"
             android:exported="false" />
         <activity
+            android:name=".AuditActivity"
+            android:exported="false" />
+        <activity
             android:name=".PdfPreviewActivity"
             android:exported="false" />
         <activity

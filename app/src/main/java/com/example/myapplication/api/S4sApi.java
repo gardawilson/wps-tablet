@@ -6,6 +6,7 @@ import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.LabelDetailData;
 import com.example.myapplication.model.MstMesinData;
 import com.example.myapplication.model.S4sData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,7 +14,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class S4sApi {
 
@@ -367,23 +371,18 @@ public class S4sApi {
     }
 
     public static String generateNewNumber() {
-        String query = "SELECT MAX(NoS4S) FROM dbo.S4S_h";
+        String query =
+                "SELECT ISNULL(MAX(TRY_CONVERT(int, SUBSTRING(NoS4S, 3, 50))), 0) AS MaxNo " +
+                "FROM dbo.S4S_h " +
+                "WHERE NoS4S LIKE 'R.%'";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
 
             if (rs.next()) {
-                String lastNoS4S = rs.getString(1);
-
-                if (lastNoS4S != null && lastNoS4S.startsWith("R.")) {
-                    String numericPart = lastNoS4S.substring(2);
-                    int numericValue = Integer.parseInt(numericPart);
-                    int newNumericValue = numericValue + 1;
-
-                    // Format baru, misalnya R.000123
-                    return "R." + String.format("%06d", newNumericValue);
-                }
+                int newNumericValue = rs.getInt("MaxNo") + 1;
+                return "R." + String.format("%06d", newNumericValue);
             }
 
         } catch (SQLException e) {
@@ -391,7 +390,7 @@ public class S4sApi {
             e.printStackTrace();
         }
 
-        return null; // gagal atau tidak ada data
+        return "R.000001";
     }
 
 
@@ -407,11 +406,31 @@ public class S4sApi {
             boolean isProduksiOutput, String noProduksi,
             boolean isBongkarSusun, String noBongkarSusun,
             List<LabelDetailData> dataList) {
+        return saveData(
+                noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
+                idGrade, idJenisKayu, idFJProfile, isReject, isLembur,
+                idUOMTblLebar, idUOMPanjang, remark, idWarna, idLokasi,
+                isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun,
+                dataList, null, null, null
+        );
+    }
+
+    public static boolean saveData(
+            String noS4S, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark,
+            int idWarna, String idLokasi,
+            boolean isProduksiOutput, String noProduksi,
+            boolean isBongkarSusun, String noBongkarSusun,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Insert Header
             if (!insertHeader(con, noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -454,22 +473,34 @@ public class S4sApi {
                 try {
                     con.rollback();
                 } catch (SQLException rollbackEx) {
-                    System.err.println("[DB_ERROR] Gagal rollback transaction:");
-                    rollbackEx.printStackTrace();
+                    logSqlException("[DB_ERROR] Gagal rollback transaction", rollbackEx);
                 }
             }
-            System.err.println("[DB_ERROR] Transaction gagal untuk NoS4S=" + noS4S + ":");
-            e.printStackTrace();
+            logSqlException("[DB_ERROR] Transaction gagal untuk NoS4S=" + noS4S, e);
             return false;
         } finally {
             if (con != null) {
                 try {
                     con.close();
                 } catch (SQLException e) {
-                    System.err.println("[DB_ERROR] Gagal close connection:");
-                    e.printStackTrace();
+                    logSqlException("[DB_ERROR] Gagal close connection", e);
                 }
             }
+        }
+    }
+
+    private static void logSqlException(String context, SQLException exception) {
+        int index = 1;
+        SQLException current = exception;
+        while (current != null) {
+            System.err.println(
+                    context
+                            + " [#" + index + "] SQLState=" + current.getSQLState()
+                            + ", ErrorCode=" + current.getErrorCode()
+                            + ", Message=" + current.getMessage()
+            );
+            current = current.getNextException();
+            index++;
         }
     }
 
@@ -606,11 +637,28 @@ public class S4sApi {
             int idUOMTblLebar, int idUOMPanjang, String remark,
             int idWarna, String idLokasi,
             List<LabelDetailData> dataList) {
+        return updateData(
+                noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
+                idGrade, idJenisKayu, idFJProfile, isReject, isLembur,
+                idUOMTblLebar, idUOMPanjang, remark, idWarna, idLokasi,
+                dataList, null, null, null
+        );
+    }
+
+    public static boolean updateData(
+            String noS4S, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark,
+            int idWarna, String idLokasi,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Update Header
             if (!updateHeader(con, noS4S, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -665,6 +713,11 @@ public class S4sApi {
                                         String idFJProfile, int isReject, int isLembur,
                                         int idUOMTblLebar, int idUOMPanjang, String remark,
                                         int idWarna, String idLokasi) throws SQLException {
+        if (!isHeaderChanged(con, noS4S, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                idJenisKayu, idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang,
+                remark, idWarna, idLokasi)) {
+            return true;
+        }
 
         String query = "UPDATE dbo.S4S_h SET " +
                 "DateCreate=?, Jam=?, IdOrgTelly=?, NoSPK=?, NoSPKAsal=?, IdGrade=?, " +
@@ -716,19 +769,134 @@ public class S4sApi {
      * Replace S4S Detail data (Delete existing + Insert new)
      */
     private static boolean replaceDetail(Connection con, String noS4S, List<LabelDetailData> dataList) throws SQLException {
-        // 1. Delete existing detail
-        String deleteQuery = "DELETE FROM dbo.S4S_d WHERE NoS4S = ?";
-        try (PreparedStatement ps = con.prepareStatement(deleteQuery)) {
+        Map<Integer, DetailRow> existingRows = loadExistingDetailRows(con, noS4S);
+        Map<Integer, DetailRow> incomingRows = new HashMap<>();
+
+        if (dataList != null) {
+            for (int i = 0; i < dataList.size(); i++) {
+                LabelDetailData data = dataList.get(i);
+                int noUrut = i + 1;
+                incomingRows.put(noUrut, new DetailRow(
+                        parseDetailNumber(data.getTebal()),
+                        parseDetailNumber(data.getLebar()),
+                        parseDetailNumber(data.getPanjang()),
+                        Integer.parseInt(data.getPcs())
+                ));
+            }
+        }
+
+        String insertQuery = "INSERT INTO dbo.S4S_d (NoS4S, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateQuery = "UPDATE dbo.S4S_d SET Tebal=?, Lebar=?, Panjang=?, JmlhBatang=? WHERE NoS4S=? AND NoUrut=?";
+        String deleteQuery = "DELETE FROM dbo.S4S_d WHERE NoS4S = ? AND NoUrut = ?";
+
+        try (PreparedStatement insertPs = con.prepareStatement(insertQuery);
+             PreparedStatement updatePs = con.prepareStatement(updateQuery);
+             PreparedStatement deletePs = con.prepareStatement(deleteQuery)) {
+
+            for (Map.Entry<Integer, DetailRow> entry : incomingRows.entrySet()) {
+                int noUrut = entry.getKey();
+                DetailRow incoming = entry.getValue();
+                DetailRow existing = existingRows.get(noUrut);
+
+                if (existing == null) {
+                    insertPs.setString(1, noS4S);
+                    insertPs.setInt(2, noUrut);
+                    insertPs.setDouble(3, incoming.tebal);
+                    insertPs.setDouble(4, incoming.lebar);
+                    insertPs.setDouble(5, incoming.panjang);
+                    insertPs.setInt(6, incoming.jmlhBatang);
+                    insertPs.addBatch();
+                    continue;
+                }
+
+                if (isDetailRowChanged(existing, incoming)) {
+                    updatePs.setDouble(1, incoming.tebal);
+                    updatePs.setDouble(2, incoming.lebar);
+                    updatePs.setDouble(3, incoming.panjang);
+                    updatePs.setInt(4, incoming.jmlhBatang);
+                    updatePs.setString(5, noS4S);
+                    updatePs.setInt(6, noUrut);
+                    updatePs.addBatch();
+                }
+            }
+
+            for (Integer existingNoUrut : existingRows.keySet()) {
+                if (!incomingRows.containsKey(existingNoUrut)) {
+                    deletePs.setString(1, noS4S);
+                    deletePs.setInt(2, existingNoUrut);
+                    deletePs.addBatch();
+                }
+            }
+
+            int[] insertResults = insertPs.executeBatch();
+            int[] updateResults = updatePs.executeBatch();
+            int[] deleteResults = deletePs.executeBatch();
+
+            return isBatchSuccessful(insertResults)
+                    && isBatchSuccessful(updateResults)
+                    && isBatchSuccessful(deleteResults);
+        }
+    }
+
+    private static Map<Integer, DetailRow> loadExistingDetailRows(Connection con, String noS4S) throws SQLException {
+        String query = "SELECT NoUrut, Tebal, Lebar, Panjang, JmlhBatang FROM dbo.S4S_d WHERE NoS4S = ?";
+        Map<Integer, DetailRow> rows = new HashMap<>();
+        try (PreparedStatement ps = con.prepareStatement(query)) {
             ps.setString(1, noS4S);
-            ps.executeUpdate(); // Don't check result, might be 0 if no existing detail
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int noUrut = rs.getInt("NoUrut");
+                    rows.put(noUrut, new DetailRow(
+                            rs.getDouble("Tebal"),
+                            rs.getDouble("Lebar"),
+                            rs.getDouble("Panjang"),
+                            rs.getInt("JmlhBatang")
+                    ));
+                }
+            }
         }
+        return rows;
+    }
 
-        // 2. Insert new detail if provided
-        if (dataList != null && !dataList.isEmpty()) {
-            return insertDetail(con, noS4S, dataList);
+    private static boolean isDetailRowChanged(DetailRow oldRow, DetailRow newRow) {
+        return !isSameNumber(oldRow.tebal, newRow.tebal)
+                || !isSameNumber(oldRow.lebar, newRow.lebar)
+                || !isSameNumber(oldRow.panjang, newRow.panjang)
+                || oldRow.jmlhBatang != newRow.jmlhBatang;
+    }
+
+    private static boolean isSameNumber(double a, double b) {
+        return Math.abs(a - b) < 0.000001;
+    }
+
+    private static double parseDetailNumber(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0d;
         }
+        return Double.parseDouble(value.trim());
+    }
 
-        return true; // Success even if no new detail to insert
+    private static boolean isBatchSuccessful(int[] results) {
+        for (int result : results) {
+            if (result == PreparedStatement.EXECUTE_FAILED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static final class DetailRow {
+        final double tebal;
+        final double lebar;
+        final double panjang;
+        final int jmlhBatang;
+
+        DetailRow(double tebal, double lebar, double panjang, int jmlhBatang) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.jmlhBatang = jmlhBatang;
+        }
     }
 
     /**
@@ -776,11 +944,104 @@ public class S4sApi {
      * @return true jika berhasil, false jika gagal
      */
     public static boolean deleteData(String noS4S) {
+        return deleteData(noS4S, null, null, null);
+    }
+
+    private static boolean isHeaderChanged(
+            Connection con,
+            String noS4S, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark,
+            int idWarna, String idLokasi
+    ) throws SQLException {
+        String query = "SELECT DateCreate, Jam, IdOrgTelly, NoSPK, NoSPKAsal, IdGrade, IdJenisKayu, " +
+                "IdFJProfile, IsReject, IsLembur, IdUOMTblLebar, IdUOMPanjang, Remark, IdWarna, IdLokasi " +
+                "FROM dbo.S4S_h WHERE NoS4S = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noS4S);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return true;
+                }
+
+                String currentDateCreate = normalizeNullableString(rs.getString("DateCreate"));
+                String currentTime = normalizeNullableString(rs.getString("Jam"));
+                String currentIdTelly = normalizeNullableString(rs.getString("IdOrgTelly"));
+                String currentNoSPK = normalizeNullableString(rs.getString("NoSPK"));
+                String currentNoSPKAsal = normalizeNullableString(rs.getString("NoSPKAsal"));
+                int currentIdGrade = rs.getInt("IdGrade");
+                int currentIdJenisKayu = rs.getInt("IdJenisKayu");
+                String currentIdFJProfile = normalizeNullableString(rs.getString("IdFJProfile"));
+                int currentIsReject = rs.getInt("IsReject");
+                int currentIsLembur = rs.getInt("IsLembur");
+                int currentIdUomTblLebar = rs.getInt("IdUOMTblLebar");
+                int currentIdUomPanjang = rs.getInt("IdUOMPanjang");
+                String currentRemark = normalizeNullableString(rs.getString("Remark"));
+                int currentIdWarna = rs.getInt("IdWarna");
+                boolean currentIdWarnaNull = rs.wasNull();
+                String currentIdLokasi = normalizeNullableString(rs.getString("IdLokasi"));
+
+                String newDateCreate = normalizeNullableString(dateCreate);
+                String newTime = normalizeNullableString(time);
+                String newIdTelly = normalizeNullableString(idTelly);
+                String newNoSPK = normalizeNullableString(noSPK);
+                String newNoSPKAsal = normalizeNullableString(noSPKasal);
+                String newIdFJProfile = normalizeNullableString(idFJProfile);
+                String newRemark = normalizeNullableString(remark);
+                Integer newIdWarna = idWarna == 0 ? null : idWarna;
+                String newIdLokasi = normalizeNullableString(idLokasi);
+                if ("PILIH".equalsIgnoreCase(newIdLokasi)) {
+                    newIdLokasi = null;
+                }
+
+                if (!equalsNullable(currentDateCreate, newDateCreate)) return true;
+                if (!equalsNullable(currentTime, newTime)) return true;
+                if (!equalsNullable(currentIdTelly, newIdTelly)) return true;
+                if (!equalsNullable(currentNoSPK, newNoSPK)) return true;
+                if (!equalsNullable(currentNoSPKAsal, newNoSPKAsal)) return true;
+                if (currentIdGrade != idGrade) return true;
+                if (currentIdJenisKayu != idJenisKayu) return true;
+                if (!equalsNullable(currentIdFJProfile, newIdFJProfile)) return true;
+                if (currentIsReject != isReject) return true;
+                if (currentIsLembur != isLembur) return true;
+                if (currentIdUomTblLebar != idUOMTblLebar) return true;
+                if (currentIdUomPanjang != idUOMPanjang) return true;
+                if (!equalsNullable(currentRemark, newRemark)) return true;
+                if ((newIdWarna == null && !currentIdWarnaNull) || (newIdWarna != null && currentIdWarna != newIdWarna)) return true;
+                if (!equalsNullable(currentIdLokasi, newIdLokasi)) return true;
+
+                return false;
+            }
+        }
+    }
+
+    private static String normalizeNullableString(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean equalsNullable(String left, String right) {
+        if (left == null && right == null) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return left.equals(right);
+    }
+
+    public static boolean deleteData(String noS4S, String actorId, String actorName, String requestId) {
         final String TAG = "DeleteData";
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false);
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // Delete ProduksiOutput
             if (!deleteProduksiOutput(con, noS4S)) {

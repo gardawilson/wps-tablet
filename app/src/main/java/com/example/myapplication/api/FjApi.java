@@ -6,6 +6,7 @@ import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.FjData;
 import com.example.myapplication.model.LabelDetailData;
 import com.example.myapplication.model.MstMesinData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,7 +14,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class FjApi {
 
@@ -391,6 +395,23 @@ public class FjApi {
             boolean isProduksiOutput, String noProduksi,
             boolean isBongkarSusun, String noBongkarSusun,
             List<LabelDetailData> dataList) {
+        return saveData(
+                noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu,
+                idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark, idLokasi,
+                isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun, dataList,
+                null, null, null
+        );
+    }
+
+    public static boolean saveData(
+            String noFJ, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
+            boolean isProduksiOutput, String noProduksi,
+            boolean isBongkarSusun, String noBongkarSusun,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         final String TAG = "SaveDataFJ";
         Connection con = null;
@@ -398,6 +419,7 @@ public class FjApi {
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Insert Header
             if (!insertHeader(con, noFJ, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -477,7 +499,7 @@ public class FjApi {
             ps.setString(5, noSPK);
             ps.setString(6, noSPKasal);
             ps.setInt(7, idGrade);
-            ps.setString(8, idFJProfile);
+            ps.setString(8, normalizeProfileId(idFJProfile));
             ps.setInt(9, idJenisKayu);
             ps.setInt(10, isReject);
             ps.setInt(11, isLembur);
@@ -578,6 +600,20 @@ public class FjApi {
             String idFJProfile, int isReject, int isLembur,
             int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
             List<LabelDetailData> dataList) {
+        return updateData(
+                noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade, idJenisKayu,
+                idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark, idLokasi,
+                dataList, null, null, null
+        );
+    }
+
+    public static boolean updateData(
+            String noFJ, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         final String TAG = "UpdateDataFJ";
         Connection con = null;
@@ -585,6 +621,7 @@ public class FjApi {
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Update Header
             if (!updateHeader(con, noFJ, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -635,6 +672,10 @@ public class FjApi {
                                         String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
                                         String idFJProfile, int isReject, int isLembur,
                                         int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi) throws SQLException {
+        if (!isHeaderChanged(con, noFJ, dateCreate, time, idTelly, noSPK, noSPKasal, idGrade,
+                idJenisKayu, idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark, idLokasi)) {
+            return true;
+        }
 
         String query = "UPDATE dbo.FJ_h SET " +
                 "DateCreate=?, Jam=?, IdOrgTelly=?, NoSPK=?, NoSPKAsal=?, IdGrade=?, " +
@@ -649,7 +690,7 @@ public class FjApi {
             ps.setString(4, noSPK);
             ps.setString(5, noSPKasal);
             ps.setInt(6, idGrade);
-            ps.setString(7, idFJProfile);
+            ps.setString(7, normalizeProfileId(idFJProfile));
             ps.setInt(8, idJenisKayu);
             ps.setInt(9, isReject);
             ps.setInt(10, isLembur);
@@ -658,7 +699,7 @@ public class FjApi {
             ps.setString(13, remark);
 
             // Handle null values for idLokasi
-            if (idLokasi.equals("PILIH") || idLokasi == null || idLokasi.trim().isEmpty()) {
+            if (idLokasi == null || idLokasi.trim().isEmpty() || "PILIH".equals(idLokasi)) {
                 ps.setNull(14, java.sql.Types.VARCHAR);
             } else {
                 ps.setString(14, idLokasi);
@@ -679,19 +720,73 @@ public class FjApi {
      * Replace FJ Detail data (Delete existing + Insert new)
      */
     private static boolean replaceDetail(Connection con, String noFJ, List<LabelDetailData> dataList) throws SQLException {
-        // 1. Delete existing detail
-        String deleteQuery = "DELETE FROM dbo.FJ_d WHERE NoFJ = ?";
-        try (PreparedStatement ps = con.prepareStatement(deleteQuery)) {
-            ps.setString(1, noFJ);
-            ps.executeUpdate(); // Don't check result, might be 0 if no existing detail
+        Map<Integer, DetailRow> existingRows = loadExistingDetailRows(con, noFJ);
+        Map<Integer, DetailRow> incomingRows = new HashMap<>();
+
+        if (dataList != null) {
+            for (int i = 0; i < dataList.size(); i++) {
+                LabelDetailData data = dataList.get(i);
+                int noUrut = i + 1;
+                incomingRows.put(noUrut, new DetailRow(
+                        parseDetailNumber(data.getTebal()),
+                        parseDetailNumber(data.getLebar()),
+                        parseDetailNumber(data.getPanjang()),
+                        Integer.parseInt(data.getPcs())
+                ));
+            }
         }
 
-        // 2. Insert new detail if provided
-        if (dataList != null && !dataList.isEmpty()) {
-            return insertDetail(con, noFJ, dataList);
-        }
+        String insertQuery = "INSERT INTO dbo.FJ_d (NoFJ, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateQuery = "UPDATE dbo.FJ_d SET Tebal=?, Lebar=?, Panjang=?, JmlhBatang=? WHERE NoFJ=? AND NoUrut=?";
+        String deleteQuery = "DELETE FROM dbo.FJ_d WHERE NoFJ = ? AND NoUrut = ?";
 
-        return true; // Success even if no new detail to insert
+        try (PreparedStatement insertPs = con.prepareStatement(insertQuery);
+             PreparedStatement updatePs = con.prepareStatement(updateQuery);
+             PreparedStatement deletePs = con.prepareStatement(deleteQuery)) {
+
+            for (Map.Entry<Integer, DetailRow> entry : incomingRows.entrySet()) {
+                int noUrut = entry.getKey();
+                DetailRow incoming = entry.getValue();
+                DetailRow existing = existingRows.get(noUrut);
+
+                if (existing == null) {
+                    insertPs.setString(1, noFJ);
+                    insertPs.setInt(2, noUrut);
+                    insertPs.setDouble(3, incoming.tebal);
+                    insertPs.setDouble(4, incoming.lebar);
+                    insertPs.setDouble(5, incoming.panjang);
+                    insertPs.setInt(6, incoming.jmlhBatang);
+                    insertPs.addBatch();
+                    continue;
+                }
+
+                if (isDetailRowChanged(existing, incoming)) {
+                    updatePs.setDouble(1, incoming.tebal);
+                    updatePs.setDouble(2, incoming.lebar);
+                    updatePs.setDouble(3, incoming.panjang);
+                    updatePs.setInt(4, incoming.jmlhBatang);
+                    updatePs.setString(5, noFJ);
+                    updatePs.setInt(6, noUrut);
+                    updatePs.addBatch();
+                }
+            }
+
+            for (Integer existingNoUrut : existingRows.keySet()) {
+                if (!incomingRows.containsKey(existingNoUrut)) {
+                    deletePs.setString(1, noFJ);
+                    deletePs.setInt(2, existingNoUrut);
+                    deletePs.addBatch();
+                }
+            }
+
+            int[] insertResults = insertPs.executeBatch();
+            int[] updateResults = updatePs.executeBatch();
+            int[] deleteResults = deletePs.executeBatch();
+
+            return isBatchSuccessful(insertResults)
+                    && isBatchSuccessful(updateResults)
+                    && isBatchSuccessful(deleteResults);
+        }
     }
 
 
@@ -702,11 +797,16 @@ public class FjApi {
      * @return true jika berhasil, false jika gagal
      */
     public static boolean deleteData(String noFJ) {
+        return deleteData(noFJ, null, null, null);
+    }
+
+    public static boolean deleteData(String noFJ, String actorId, String actorName, String requestId) {
         final String TAG = "DeleteData";
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false);
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // Delete ProduksiOutput
             if (!deleteProduksiOutput(con, noFJ)) {
@@ -754,6 +854,155 @@ public class FjApi {
                     Log.e(TAG, "Gagal close connection", e);
                 }
             }
+        }
+    }
+
+    private static boolean isHeaderChanged(
+            Connection con,
+            String noFJ, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idGrade, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi
+    ) throws SQLException {
+        String query = "SELECT DateCreate, Jam, IdOrgTelly, NoSPK, NoSPKAsal, IdGrade, IdJenisKayu, " +
+                "IdFJProfile, IsReject, IsLembur, IdUOMTblLebar, IdUOMPanjang, Remark, IdLokasi " +
+                "FROM dbo.FJ_h WHERE NoFJ = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noFJ);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return true;
+                }
+
+                String currentDateCreate = normalizeNullableString(rs.getString("DateCreate"));
+                String currentTime = normalizeNullableString(rs.getString("Jam"));
+                String currentIdTelly = normalizeNullableString(rs.getString("IdOrgTelly"));
+                String currentNoSPK = normalizeNullableString(rs.getString("NoSPK"));
+                String currentNoSPKAsal = normalizeNullableString(rs.getString("NoSPKAsal"));
+                int currentIdGrade = rs.getInt("IdGrade");
+                int currentIdJenisKayu = rs.getInt("IdJenisKayu");
+                String currentIdFJProfile = normalizeNullableString(rs.getString("IdFJProfile"));
+                int currentIsReject = rs.getInt("IsReject");
+                int currentIsLembur = rs.getInt("IsLembur");
+                int currentIdUomTblLebar = rs.getInt("IdUOMTblLebar");
+                int currentIdUomPanjang = rs.getInt("IdUOMPanjang");
+                String currentRemark = normalizeNullableString(rs.getString("Remark"));
+                String currentIdLokasi = normalizeNullableString(rs.getString("IdLokasi"));
+
+                String newDateCreate = normalizeNullableString(dateCreate);
+                String newTime = normalizeNullableString(time);
+                String newIdTelly = normalizeNullableString(idTelly);
+                String newNoSPK = normalizeNullableString(noSPK);
+                String newNoSPKAsal = normalizeNullableString(noSPKasal);
+                String newIdFJProfile = normalizeProfileId(idFJProfile);
+                String newRemark = normalizeNullableString(remark);
+                String newIdLokasi = normalizeNullableString(idLokasi);
+                if ("PILIH".equalsIgnoreCase(newIdLokasi)) {
+                    newIdLokasi = null;
+                }
+
+                if (!equalsNullable(currentDateCreate, newDateCreate)) return true;
+                if (!equalsNullable(currentTime, newTime)) return true;
+                if (!equalsNullable(currentIdTelly, newIdTelly)) return true;
+                if (!equalsNullable(currentNoSPK, newNoSPK)) return true;
+                if (!equalsNullable(currentNoSPKAsal, newNoSPKAsal)) return true;
+                if (currentIdGrade != idGrade) return true;
+                if (currentIdJenisKayu != idJenisKayu) return true;
+                if (!equalsNullable(currentIdFJProfile, newIdFJProfile)) return true;
+                if (currentIsReject != isReject) return true;
+                if (currentIsLembur != isLembur) return true;
+                if (currentIdUomTblLebar != idUOMTblLebar) return true;
+                if (currentIdUomPanjang != idUOMPanjang) return true;
+                if (!equalsNullable(currentRemark, newRemark)) return true;
+                if (!equalsNullable(currentIdLokasi, newIdLokasi)) return true;
+
+                return false;
+            }
+        }
+    }
+
+    private static Map<Integer, DetailRow> loadExistingDetailRows(Connection con, String noFJ) throws SQLException {
+        String query = "SELECT NoUrut, Tebal, Lebar, Panjang, JmlhBatang FROM dbo.FJ_d WHERE NoFJ = ?";
+        Map<Integer, DetailRow> rows = new HashMap<>();
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noFJ);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int noUrut = rs.getInt("NoUrut");
+                    rows.put(noUrut, new DetailRow(
+                            rs.getDouble("Tebal"),
+                            rs.getDouble("Lebar"),
+                            rs.getDouble("Panjang"),
+                            rs.getInt("JmlhBatang")
+                    ));
+                }
+            }
+        }
+        return rows;
+    }
+
+    private static boolean isDetailRowChanged(DetailRow oldRow, DetailRow newRow) {
+        return !isSameNumber(oldRow.tebal, newRow.tebal)
+                || !isSameNumber(oldRow.lebar, newRow.lebar)
+                || !isSameNumber(oldRow.panjang, newRow.panjang)
+                || oldRow.jmlhBatang != newRow.jmlhBatang;
+    }
+
+    private static boolean isSameNumber(double a, double b) {
+        return Math.abs(a - b) < 0.000001;
+    }
+
+    private static double parseDetailNumber(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0d;
+        }
+        return Double.parseDouble(value.trim());
+    }
+
+    private static boolean isBatchSuccessful(int[] results) {
+        for (int result : results) {
+            if (result == PreparedStatement.EXECUTE_FAILED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String normalizeNullableString(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean equalsNullable(String left, String right) {
+        if (left == null && right == null) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return left.equals(right);
+    }
+
+    private static String normalizeProfileId(String idFJProfile) {
+        String normalized = normalizeNullableString(idFJProfile);
+        return normalized == null ? "0" : normalized;
+    }
+
+    private static final class DetailRow {
+        final double tebal;
+        final double lebar;
+        final double panjang;
+        final int jmlhBatang;
+
+        DetailRow(double tebal, double lebar, double panjang, int jmlhBatang) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.jmlhBatang = jmlhBatang;
         }
     }
 

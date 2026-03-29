@@ -6,6 +6,7 @@ import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BjData;
 import com.example.myapplication.model.LabelDetailData;
 import com.example.myapplication.model.MstMesinData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,7 +14,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class BjApi {
 
@@ -379,6 +383,23 @@ public class BjApi {
             boolean isProduksiOutput, String noProduksi,
             boolean isBongkarSusun, String noBongkarSusun,
             List<LabelDetailData> dataList) {
+        return saveData(
+                noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal, idBarangJadi, idJenisKayu,
+                idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark, idLokasi,
+                isProduksiOutput, noProduksi, isBongkarSusun, noBongkarSusun, dataList,
+                null, null, null
+        );
+    }
+
+    public static boolean saveData(
+            String noBarangJadi, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idBarangJadi, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
+            boolean isProduksiOutput, String noProduksi,
+            boolean isBongkarSusun, String noBongkarSusun,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         final String TAG = "SaveDataLMT";
         Connection con = null;
@@ -386,6 +407,7 @@ public class BjApi {
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Insert Header
             if (!insertHeader(con, noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -465,7 +487,7 @@ public class BjApi {
             ps.setString(5, noSPK);
             ps.setString(6, noSPKasal);
             ps.setInt(7, idBarangJadi);
-            ps.setString(8, idFJProfile);
+            ps.setString(8, normalizeProfileId(idFJProfile));
             ps.setInt(9, idJenisKayu);
             ps.setInt(10, isReject);
             ps.setInt(11, isLembur);
@@ -564,6 +586,20 @@ public class BjApi {
             String idFJProfile, int isReject, int isLembur,
             int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
             List<LabelDetailData> dataList) {
+        return updateData(
+                noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal, idBarangJadi, idJenisKayu,
+                idFJProfile, isReject, isLembur, idUOMTblLebar, idUOMPanjang, remark, idLokasi,
+                dataList, null, null, null
+        );
+    }
+
+    public static boolean updateData(
+            String noBarangJadi, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idBarangJadi, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur,
+            int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi,
+            List<LabelDetailData> dataList,
+            String actorId, String actorName, String requestId) {
 
         final String TAG = "UpdateDataBJ";
         Connection con = null;
@@ -571,6 +607,7 @@ public class BjApi {
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // 1. Update Header
             if (!updateHeader(con, noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal,
@@ -621,6 +658,10 @@ public class BjApi {
                                         String noSPK, String noSPKasal, int idBarangJadi, int idJenisKayu,
                                         String idFJProfile, int isReject, int isLembur,
                                         int idUOMTblLebar, int idUOMPanjang, String remark, String idLokasi) throws SQLException {
+        if (!isHeaderChanged(con, noBarangJadi, dateCreate, time, idTelly, noSPK, noSPKasal,
+                idBarangJadi, idJenisKayu, idFJProfile, isReject, isLembur, remark, idLokasi)) {
+            return true;
+        }
 
         String query = "UPDATE dbo.BarangJadi_h SET " +
                 "DateCreate=?, Jam=?, IdOrgTelly=?, NoSPK=?, NoSPKAsal=?, IdBarangJadi=?, " +
@@ -635,14 +676,14 @@ public class BjApi {
             ps.setString(4, noSPK);
             ps.setString(5, noSPKasal);
             ps.setInt(6, idBarangJadi);
-            ps.setString(7, idFJProfile);
+            ps.setString(7, normalizeProfileId(idFJProfile));
             ps.setInt(8, idJenisKayu);
             ps.setInt(9, isReject);
             ps.setInt(10, isLembur);
             ps.setString(11, remark);
 
             // Handle null values for idLokasi
-            if (idLokasi.equals("PILIH") || idLokasi == null || idLokasi.trim().isEmpty()) {
+            if (idLokasi == null || idLokasi.trim().isEmpty() || "PILIH".equals(idLokasi)) {
                 ps.setNull(12, java.sql.Types.VARCHAR);
             } else {
                 ps.setString(12, idLokasi);
@@ -663,19 +704,58 @@ public class BjApi {
      * Replace BJ Detail data (Delete existing + Insert new)
      */
     private static boolean replaceDetail(Connection con, String noBarangJadi, List<LabelDetailData> dataList) throws SQLException {
-        // 1. Delete existing detail
-        String deleteQuery = "DELETE FROM dbo.BarangJadi_d WHERE NoBJ = ?";
-        try (PreparedStatement ps = con.prepareStatement(deleteQuery)) {
-            ps.setString(1, noBarangJadi);
-            ps.executeUpdate(); // Don't check result, might be 0 if no existing detail
+        Map<Integer, DetailRow> existingRows = loadExistingDetailRows(con, noBarangJadi);
+        Map<Integer, DetailRow> incomingRows = new HashMap<>();
+        if (dataList != null) {
+            for (int i = 0; i < dataList.size(); i++) {
+                LabelDetailData data = dataList.get(i);
+                incomingRows.put(i + 1, new DetailRow(
+                        parseDetailNumber(data.getTebal()),
+                        parseDetailNumber(data.getLebar()),
+                        parseDetailNumber(data.getPanjang()),
+                        Integer.parseInt(data.getPcs())
+                ));
+            }
         }
-
-        // 2. Insert new detail if provided
-        if (dataList != null && !dataList.isEmpty()) {
-            return insertDetail(con, noBarangJadi, dataList);
+        String insertQuery = "INSERT INTO dbo.BarangJadi_d (NoBJ, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateQuery = "UPDATE dbo.BarangJadi_d SET Tebal=?, Lebar=?, Panjang=?, JmlhBatang=? WHERE NoBJ=? AND NoUrut=?";
+        String deleteQuery = "DELETE FROM dbo.BarangJadi_d WHERE NoBJ = ? AND NoUrut = ?";
+        try (PreparedStatement insertPs = con.prepareStatement(insertQuery);
+             PreparedStatement updatePs = con.prepareStatement(updateQuery);
+             PreparedStatement deletePs = con.prepareStatement(deleteQuery)) {
+            for (Map.Entry<Integer, DetailRow> entry : incomingRows.entrySet()) {
+                int noUrut = entry.getKey();
+                DetailRow incoming = entry.getValue();
+                DetailRow existing = existingRows.get(noUrut);
+                if (existing == null) {
+                    insertPs.setString(1, noBarangJadi);
+                    insertPs.setInt(2, noUrut);
+                    insertPs.setDouble(3, incoming.tebal);
+                    insertPs.setDouble(4, incoming.lebar);
+                    insertPs.setDouble(5, incoming.panjang);
+                    insertPs.setInt(6, incoming.jmlhBatang);
+                    insertPs.addBatch();
+                } else if (isDetailRowChanged(existing, incoming)) {
+                    updatePs.setDouble(1, incoming.tebal);
+                    updatePs.setDouble(2, incoming.lebar);
+                    updatePs.setDouble(3, incoming.panjang);
+                    updatePs.setInt(4, incoming.jmlhBatang);
+                    updatePs.setString(5, noBarangJadi);
+                    updatePs.setInt(6, noUrut);
+                    updatePs.addBatch();
+                }
+            }
+            for (Integer noUrut : existingRows.keySet()) {
+                if (!incomingRows.containsKey(noUrut)) {
+                    deletePs.setString(1, noBarangJadi);
+                    deletePs.setInt(2, noUrut);
+                    deletePs.addBatch();
+                }
+            }
+            return isBatchSuccessful(insertPs.executeBatch())
+                    && isBatchSuccessful(updatePs.executeBatch())
+                    && isBatchSuccessful(deletePs.executeBatch());
         }
-
-        return true; // Success even if no new detail to insert
     }
 
 
@@ -686,11 +766,16 @@ public class BjApi {
      * @return true jika berhasil, false jika gagal
      */
     public static boolean deleteData(String noBarangJadi) {
+        return deleteData(noBarangJadi, null, null, null);
+    }
+
+    public static boolean deleteData(String noBarangJadi, String actorId, String actorName, String requestId) {
         final String TAG = "DeleteData";
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false);
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
             // Delete ProduksiOutput
             if (!deleteProduksiOutput(con, noBarangJadi)) {
@@ -738,6 +823,106 @@ public class BjApi {
                     Log.e(TAG, "Gagal close connection", e);
                 }
             }
+        }
+    }
+
+    private static boolean isHeaderChanged(
+            Connection con,
+            String noBarangJadi, String dateCreate, String time, String idTelly,
+            String noSPK, String noSPKasal, int idBarangJadi, int idJenisKayu,
+            String idFJProfile, int isReject, int isLembur, String remark, String idLokasi
+    ) throws SQLException {
+        String query = "SELECT DateCreate, Jam, IdOrgTelly, NoSPK, NoSPKAsal, IdBarangJadi, IdJenisKayu, IdFJProfile, IsReject, IsLembur, Remark, IdLokasi " +
+                "FROM dbo.BarangJadi_h WHERE NoBJ = ?";
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noBarangJadi);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return true;
+                String newLokasi = normalizeNullableString(idLokasi);
+                if ("PILIH".equalsIgnoreCase(newLokasi)) newLokasi = null;
+                return !equalsNullable(normalizeNullableString(rs.getString("DateCreate")), normalizeNullableString(dateCreate))
+                        || !equalsNullable(normalizeNullableString(rs.getString("Jam")), normalizeNullableString(time))
+                        || !equalsNullable(normalizeNullableString(rs.getString("IdOrgTelly")), normalizeNullableString(idTelly))
+                        || !equalsNullable(normalizeNullableString(rs.getString("NoSPK")), normalizeNullableString(noSPK))
+                        || !equalsNullable(normalizeNullableString(rs.getString("NoSPKAsal")), normalizeNullableString(noSPKasal))
+                        || rs.getInt("IdBarangJadi") != idBarangJadi
+                        || rs.getInt("IdJenisKayu") != idJenisKayu
+                        || !equalsNullable(normalizeProfileId(rs.getString("IdFJProfile")), normalizeProfileId(idFJProfile))
+                        || rs.getInt("IsReject") != isReject
+                        || rs.getInt("IsLembur") != isLembur
+                        || !equalsNullable(normalizeNullableString(rs.getString("Remark")), normalizeNullableString(remark))
+                        || !equalsNullable(normalizeNullableString(rs.getString("IdLokasi")), newLokasi);
+            }
+        }
+    }
+
+    private static Map<Integer, DetailRow> loadExistingDetailRows(Connection con, String noBarangJadi) throws SQLException {
+        Map<Integer, DetailRow> rows = new HashMap<>();
+        try (PreparedStatement ps = con.prepareStatement("SELECT NoUrut, Tebal, Lebar, Panjang, JmlhBatang FROM dbo.BarangJadi_d WHERE NoBJ = ?")) {
+            ps.setString(1, noBarangJadi);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.put(rs.getInt("NoUrut"), new DetailRow(
+                            rs.getDouble("Tebal"),
+                            rs.getDouble("Lebar"),
+                            rs.getDouble("Panjang"),
+                            rs.getInt("JmlhBatang")
+                    ));
+                }
+            }
+        }
+        return rows;
+    }
+
+    private static boolean isDetailRowChanged(DetailRow oldRow, DetailRow newRow) {
+        return !isSameNumber(oldRow.tebal, newRow.tebal)
+                || !isSameNumber(oldRow.lebar, newRow.lebar)
+                || !isSameNumber(oldRow.panjang, newRow.panjang)
+                || oldRow.jmlhBatang != newRow.jmlhBatang;
+    }
+
+    private static boolean isSameNumber(double a, double b) {
+        return Math.abs(a - b) > 0.000001 ? false : true;
+    }
+
+    private static double parseDetailNumber(String value) {
+        if (value == null || value.trim().isEmpty()) return 0d;
+        return Double.parseDouble(value.trim());
+    }
+
+    private static boolean isBatchSuccessful(int[] results) {
+        for (int result : results) if (result == PreparedStatement.EXECUTE_FAILED) return false;
+        return true;
+    }
+
+    private static String normalizeNullableString(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean equalsNullable(String left, String right) {
+        if (left == null && right == null) return true;
+        if (left == null || right == null) return false;
+        return left.equals(right);
+    }
+
+    private static String normalizeProfileId(String idFJProfile) {
+        String normalized = normalizeNullableString(idFJProfile);
+        return normalized == null ? "0" : normalized;
+    }
+
+    private static final class DetailRow {
+        final double tebal;
+        final double lebar;
+        final double panjang;
+        final int jmlhBatang;
+
+        DetailRow(double tebal, double lebar, double panjang, int jmlhBatang) {
+            this.tebal = tebal;
+            this.lebar = lebar;
+            this.panjang = panjang;
+            this.jmlhBatang = jmlhBatang;
         }
     }
 
