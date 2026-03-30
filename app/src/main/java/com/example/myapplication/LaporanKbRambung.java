@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.example.myapplication.utils.DateRangeDialogHelper;
+import com.example.myapplication.utils.DateRangeNumberDialogHelper;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PdfMicroserviceUtils;
 import com.example.myapplication.utils.PdfUtils;
@@ -46,14 +47,12 @@ public class LaporanKbRambung extends AppCompatActivity {
     }
 
     private void showLaporanRekapPenerimaanStDariSawmill() {
-        DateRangeDialogHelper.show(
-                this,
-                DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
-                (tglAwal, tglAkhir) -> {
+        DateRangeNumberDialogHelper.show(this, (tglAwal, tglAkhir, angka) -> {
             String url = BASE_REPORT_MICROSERVICE
                     + "api/reports/kayu-bulat/rekap-produktivitas-sawmill-rp/pdf"
-                    + "?start_date=" + tglAwal
-                    + "&end_date=" + tglAkhir;
+                    + "?TglAwal=" + tglAwal
+                    + "&TglAkhir=" + tglAkhir
+                    + "&UpahRacip=" + angka;
 
             PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
                     this,
