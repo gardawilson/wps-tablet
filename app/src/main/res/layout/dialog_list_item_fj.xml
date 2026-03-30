@@ -22,29 +22,9 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:layout_marginTop="8dp">
-
-        <Button
-            android:id="@+id/btnEditData"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginRight="8dp"
-            android:layout_weight="1"
-            android:text="Ubah" />
-
-        <Button
-            android:id="@+id/btnDeleteData"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginRight="8dp"
-            android:layout_weight="1"
-            android:text="Hapus" />
-
-
-        <!-- Search Bar -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="3"
             android:layout_margin="8dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="2dp"

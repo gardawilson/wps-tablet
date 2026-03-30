@@ -32,6 +32,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.MotionEvent;
+import android.view.HapticFeedbackConstants;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -42,6 +44,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -53,6 +56,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.Gravity;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.content.Context;
 import android.print.PrintManager;
 import android.print.PrintAttributes;
@@ -66,8 +71,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import android.print.PrintJob;
 
-import com.example.myapplication.api.MasterApi;
 import com.example.myapplication.api.LmtApi;
+import com.example.myapplication.api.MasterApi;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.MstFisikData;
 import com.example.myapplication.model.MstGradeData;
@@ -80,6 +86,7 @@ import com.example.myapplication.model.MstProfileData;
 import com.example.myapplication.model.SpkData;
 import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
+import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.AuditSessionContextHelper;
 import com.example.myapplication.utils.DateTimeUtils;
 
@@ -212,6 +219,7 @@ public class Laminating extends AppCompatActivity {
     private EditText susunView;
     private Spinner spinLokasi;
     private volatile boolean isSaving = false;
+    private boolean suppressNoLaminatingAutoLoad = false;
     private final List<OutputLabelItem> outputLabelItems = new ArrayList<>();
     private OutputLabelAdapter outputLabelAdapter;
     private String currentOutputParameter;
@@ -396,6 +404,9 @@ public class Laminating extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (!isCreateMode) {
+                    if (suppressNoLaminatingAutoLoad) {
+                        return;
+                    }
                     String newText = s.toString();
 
                     if(!newText.isEmpty()) {
@@ -976,76 +987,7 @@ public class Laminating extends AppCompatActivity {
             resetDetailData();
         });
 
-        BtnPrint.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Validasi input
-                if (NoLaminating.getText() == null || NoLaminating.getText().toString().trim().isEmpty()) {
-                    Toast.makeText(Laminating.this, "Nomor Laminating tidak boleh kosong", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Validasi apakah ada data untuk dicetak
-                if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
-                    Toast.makeText(Laminating.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Cek status HasBeenPrinted di database
-                String noLaminating = NoLaminating.getText().toString().trim();
-                checkHasBeenPrinted(noLaminating, new HasBeenPrintedCallback() {
-                    @Override
-                    public void onResult(int printCount) {
-                        if (printCount == -1) {
-                            return;
-                        }
-                        // Menggunakan printCount untuk menentukan jumlah print sebelumnya
-                        // Tidak ada logika boolean, hanya menghitung dan menambah nilai HasBeenPrinted
-
-                        try {
-                            // Ambil data dari form
-                            String mesinSusun;
-                            String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
-                            String date = Date.getText() != null ? Date.getText().toString().trim() : "";
-                            String time = Time.getText() != null ? Time.getText().toString().trim() : "";
-                            String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
-                            String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
-                            String noSPKasal = SpinSPKAsal.getSelectedItem() != null ? SpinSPKAsal.getSelectedItem().toString().trim() : "";
-                            String grade = SpinGrade.getSelectedItem() != null ? SpinGrade.getSelectedItem().toString().trim() : "";
-                            String fisik = SpinFisik.getSelectedItem() != null ? SpinFisik.getSelectedItem().toString().trim() : "";
-                            String jumlahPcs = JumlahPcs.getText() != null ? JumlahPcs.getText().toString().trim() : "";
-                            String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
-                            String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
-
-                            if (radioButtonMesin.isChecked()) {
-                                mesinSusun = SpinMesin.getSelectedItem() != null && isCreateMode ? SpinMesin.getSelectedItem().toString().trim() : mesinView.getText().toString();
-                            } else {
-                                mesinSusun = SpinSusun.getSelectedItem() != null && isCreateMode ? SpinSusun.getSelectedItem().toString().trim() : susunView.getText().toString();
-                            }
-
-
-                            // Buat PDF dengan parameter printCount
-                            Uri pdfUri = createPdf(noLaminating, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
-                                    temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
-
-                            if (pdfUri != null) {
-                                Intent previewIntent = new Intent(Laminating.this, PdfPreviewActivity.class);
-                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, pdfUri.toString());
-                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noLaminating);
-                                previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Laminating");
-                                startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
-                            Toast.makeText(Laminating.this,
-                                    "Terjadi kesalahan: " + errorMessage,
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-            }
-        });
+        BtnPrint.setOnClickListener(view -> printCurrentFormData());
     }
 
     //METHOD LAMINATING
@@ -1072,6 +1014,301 @@ public class Laminating extends AppCompatActivity {
 //        });
     }
 
+    private void printCurrentFormData() {
+        if (NoLaminating.getText() == null || NoLaminating.getText().toString().trim().isEmpty()) {
+            Toast.makeText(Laminating.this, "Nomor Laminating tidak boleh kosong", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (temporaryDataListDetail == null || temporaryDataListDetail.isEmpty()) {
+            Toast.makeText(Laminating.this, "Tidak ada data untuk dicetak", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String noLaminating = NoLaminating.getText().toString().trim();
+        checkHasBeenPrinted(noLaminating, printCount -> {
+            if (printCount == -1) return;
+            try {
+                String mesinSusun;
+                String jenisKayu = SpinKayu.getSelectedItem() != null ? SpinKayu.getSelectedItem().toString().trim() : "";
+                String date = Date.getText() != null ? Date.getText().toString().trim() : "";
+                String time = Time.getText() != null ? Time.getText().toString().trim() : "";
+                String tellyBy = SpinTelly.getSelectedItem() != null ? SpinTelly.getSelectedItem().toString().trim() : "";
+                String noSPK = SpinSPK.getSelectedItem() != null ? SpinSPK.getSelectedItem().toString().trim() : "";
+                String noSPKasal = SpinSPKAsal.getSelectedItem() != null ? SpinSPKAsal.getSelectedItem().toString().trim() : "";
+                String grade = SpinGrade.getSelectedItem() != null ? SpinGrade.getSelectedItem().toString().trim() : "";
+                String fisik = SpinFisik.getSelectedItem() != null ? SpinFisik.getSelectedItem().toString().trim() : "";
+                String jumlahPcs = JumlahPcs.getText() != null ? JumlahPcs.getText().toString().trim() : "";
+                String m3 = M3.getText() != null ? M3.getText().toString().trim() : "";
+                String remark = remarkLabel.getText() != null ? remarkLabel.getText().toString().trim() : "";
+                if (radioButtonMesin.isChecked()) {
+                    mesinSusun = SpinMesin.getSelectedItem() != null && isCreateMode ? SpinMesin.getSelectedItem().toString().trim() : mesinView.getText().toString();
+                } else {
+                    mesinSusun = SpinSusun.getSelectedItem() != null && isCreateMode ? SpinSusun.getSelectedItem().toString().trim() : susunView.getText().toString();
+                }
+                Uri pdfUri = createPdf(noLaminating, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
+                        temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
+                if (pdfUri != null) {
+                    Intent previewIntent = new Intent(Laminating.this, PdfPreviewActivity.class);
+                    previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, pdfUri.toString());
+                    previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noLaminating);
+                    previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Laminating");
+                    startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+                Toast.makeText(Laminating.this, "Terjadi kesalahan: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void openAuditHistory(LmtData data) {
+        if (data == null || data.getNoLaminating() == null || data.getNoLaminating().trim().isEmpty()) {
+            Toast.makeText(this, "Data No Laminating tidak valid", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, AuditActivity.class);
+        intent.putExtra(AuditActivity.EXTRA_SEARCH_PK, data.getNoLaminating().trim());
+        startActivity(intent);
+    }
+
+    private void openLabelForEdit(LmtData data, AlertDialog dialog, Runnable onLoaded) {
+        if (data == null) {
+            Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        isCreateMode = false;
+        suppressNoLaminatingAutoLoad = true;
+        NoLaminating.setText(data.getNoLaminating());
+        suppressNoLaminatingAutoLoad = false;
+        if (dialog != null && dialog.isShowing()) dialog.dismiss();
+        btnUpdate.setVisibility(View.VISIBLE);
+        BtnSimpan.setVisibility(View.GONE);
+        BtnDataBaru.setVisibility(View.GONE);
+        SpinMesin.setVisibility(View.GONE);
+        SpinSusun.setVisibility(View.GONE);
+        mesinView.setVisibility(View.VISIBLE);
+        susunView.setVisibility(View.VISIBLE);
+        Date.setEnabled(false);
+        Time.setEnabled(false);
+        loadSubmittedData(data.getNoLaminating(), onLoaded);
+    }
+
+    private void editDialogLabelData(LmtData data, AlertDialog dialog) { openLabelForEdit(data, dialog, null); }
+
+    private void deleteDialogLabelData(LmtData data, DialogLabelAdapter adapter, ProgressBar loadingIndicator,
+                                       TextView tvNoData, TextView tvSumLabel, String keyword, boolean[] hasMoreData) {
+        if (data == null) {
+            Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Konfirmasi")
+                .setMessage("Apakah Anda yakin ingin menghapus data " + data.getNoLaminating() + "?")
+                .setPositiveButton("Ya", (dialogInterface, i) -> executorService.execute(() -> {
+                    try {
+                        String actorName = SharedPrefUtils.getUsername(Laminating.this);
+                        String requestId = UUID.randomUUID().toString();
+                        boolean success = LmtApi.deleteData(data.getNoLaminating(), idUsername, actorName, requestId);
+                        runOnUiThread(() -> {
+                            if (success) {
+                                Toast.makeText(this, "Data " + data.getNoLaminating() + " dihapus", Toast.LENGTH_SHORT).show();
+                                selectedRowHeader = null;
+                                adapter.clearSelection();
+                                currentPage = 1;
+                                page = 1;
+                                hasMoreData[0] = true;
+                                isLoading = true;
+                                loadLabelPageForDialog(1, keyword, false, adapter, loadingIndicator, tvNoData, hasMoreData);
+                                refreshDialogLabelCount(tvSumLabel, keyword);
+                            } else {
+                                Toast.makeText(this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
+                            }
+                            dialogInterface.dismiss();
+                        });
+                    } catch (Exception e) {
+                        runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    }
+                }))
+                .setNegativeButton("Tidak", null)
+                .show();
+    }
+
+    private void showDialogRowActionPopup(View anchorView, LmtData data, float touchX, float touchY,
+                                          AlertDialog listDialog, DialogLabelAdapter adapter,
+                                          ProgressBar loadingIndicator, TextView tvNoData, TextView tvSumLabel,
+                                          String keyword, boolean[] hasMoreData) {
+        View popupView = LayoutInflater.from(this).inflate(R.layout.popup_menu_label_dialog_row, null);
+        Button btnEditData = popupView.findViewById(R.id.btnEditData);
+        Button btnDeleteData = popupView.findViewById(R.id.btnDeleteData);
+        Button btnPrintData = popupView.findViewById(R.id.btnPrintData);
+        Button btnHistory = popupView.findViewById(R.id.btnHistory);
+        setTooltipDialogLoadingState(popupView);
+
+        PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        btnEditData.setOnClickListener(v -> { popupWindow.dismiss(); editDialogLabelData(data, listDialog); });
+        btnDeleteData.setOnClickListener(v -> { popupWindow.dismiss(); deleteDialogLabelData(data, adapter, loadingIndicator, tvNoData, tvSumLabel, keyword, hasMoreData); });
+        btnPrintData.setOnClickListener(v -> { popupWindow.dismiss(); openLabelForEdit(data, listDialog, this::printCurrentFormData); });
+        btnHistory.setOnClickListener(v -> { popupWindow.dismiss(); openAuditHistory(data); });
+
+        popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int popupWidth = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int margin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics());
+        int x = (int) touchX;
+        int y = (int) touchY - popupHeight;
+        if (x + popupWidth > screenWidth - margin) x = screenWidth - popupWidth - margin;
+        if (x < margin) x = margin;
+        if (y < margin) y = (int) touchY + margin;
+        if (y + popupHeight > screenHeight - margin) y = screenHeight - popupHeight - margin;
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+
+        executorService.execute(() -> {
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(data.getNoLaminating(), "Laminating_h", "Laminating_d", "NoLaminating");
+            runOnUiThread(() -> {
+                if (!popupWindow.isShowing() || isFinishing() || isDestroyed()) return;
+                if (tooltipData != null && tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
+                    bindTooltipDialogData(popupView, tooltipData, "Laminating_h");
+                } else {
+                    showTooltipDialogError(popupView);
+                }
+                popupWindow.update();
+            });
+        });
+    }
+
+    private void setTooltipDialogLoadingState(View tooltipView) {
+        int loadingColor = Color.GRAY;
+        setTooltipDialogText(tooltipView, R.id.tvNoLabel, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvDateTime, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvJenis, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPK, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPKAsal, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvNamaGrade, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvIsLembur, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoPlat, "Loading...", loadingColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoKBSuket, "Loading...", loadingColor);
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+        tableLayout.removeAllViews();
+        TableRow loadingRow = new TableRow(this);
+        loadingRow.setGravity(Gravity.CENTER);
+        loadingRow.setPadding(0, 20, 0, 20);
+        LinearLayout loadingContainer = new LinearLayout(this);
+        loadingContainer.setOrientation(LinearLayout.HORIZONTAL);
+        loadingContainer.setGravity(Gravity.CENTER);
+        ProgressBar progressBar = new ProgressBar(this);
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(48, 48);
+        progressParams.setMargins(0, 0, 16, 0);
+        progressBar.setLayoutParams(progressParams);
+        TextView loadingText = new TextView(this);
+        loadingText.setText("Loading table data...");
+        loadingText.setTextColor(Color.GRAY);
+        loadingText.setTextSize(12);
+        loadingContainer.addView(progressBar);
+        loadingContainer.addView(loadingText);
+        TableRow.LayoutParams cellParams = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT);
+        cellParams.span = 4;
+        loadingContainer.setLayoutParams(cellParams);
+        loadingRow.addView(loadingContainer);
+        tableLayout.addView(loadingRow);
+    }
+
+    private void bindTooltipDialogData(View tooltipView, TooltipData tooltipData, String tableH) {
+        int normalColor = Color.BLACK;
+        setTooltipDialogText(tooltipView, R.id.tvNoLabel, tooltipData.getNoLabel(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvDateTime, tooltipData.getFormattedDateTime(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvJenis, tooltipData.getJenis(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPK, tooltipData.getSpkDetail(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPKAsal, tooltipData.getSpkAsalDetail(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvNamaGrade, tooltipData.getNamaGrade(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvIsLembur, tooltipData.isLembur() ? "Yes" : "No", normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoPlat, tooltipData.getNoPlat(), normalColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoKBSuket, tooltipData.getNoKBSuket(), normalColor);
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+        tableLayout.removeAllViews();
+        tableLayout.setStretchAllColumns(true);
+        if (tooltipData.getTableData() != null) {
+            for (String[] row : tooltipData.getTableData()) {
+                TableRow tableRow = new TableRow(this);
+                tableRow.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+                tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
+                for (String cell : row) {
+                    TextView textView = new TextView(this);
+                    textView.setText(cell);
+                    textView.setLayoutParams(createTooltipTableCellParams(1f));
+                    textView.setGravity(Gravity.CENTER);
+                    textView.setPadding(8, 8, 8, 8);
+                    textView.setTextColor(Color.BLACK);
+                    tableRow.addView(textView);
+                }
+                tableLayout.addView(tableRow);
+            }
+        }
+        addTooltipDialogSummaryRow(tableLayout, "Total :", String.valueOf(tooltipData.getTotalPcs()));
+        addTooltipDialogSummaryRow(tableLayout, "M3 :", new DecimalFormat("0.0000").format(tooltipData.getTotalM3()));
+        tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.VISIBLE);
+        tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.VISIBLE);
+        tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.GONE);
+    }
+
+    private void showTooltipDialogError(View tooltipView) {
+        int errorColor = Color.RED;
+        setTooltipDialogText(tooltipView, R.id.tvNoLabel, "Error loading data", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvDateTime, "Failed to load", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvJenis, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPK, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoSPKAsal, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvNamaGrade, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvIsLembur, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoPlat, "-", errorColor);
+        setTooltipDialogText(tooltipView, R.id.tvNoKBSuket, "-", errorColor);
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+        tableLayout.removeAllViews();
+    }
+
+    private void addTooltipDialogSummaryRow(TableLayout tableLayout, String label, String value) {
+        TableRow totalRow = new TableRow(this);
+        totalRow.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+        totalRow.setBackgroundColor(Color.WHITE);
+        for (int i = 0; i < 2; i++) {
+            TextView emptyCell = new TextView(this);
+            emptyCell.setLayoutParams(createTooltipTableCellParams(1f));
+            emptyCell.setText("");
+            totalRow.addView(emptyCell);
+        }
+        TextView labelView = new TextView(this);
+        labelView.setText(label);
+        labelView.setLayoutParams(createTooltipTableCellParams(1f));
+        labelView.setGravity(Gravity.END);
+        labelView.setPadding(8, 8, 8, 8);
+        labelView.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(labelView);
+        TextView valueView = new TextView(this);
+        valueView.setText(value);
+        valueView.setLayoutParams(createTooltipTableCellParams(1f));
+        valueView.setGravity(Gravity.CENTER);
+        valueView.setPadding(8, 8, 8, 8);
+        valueView.setTypeface(Typeface.DEFAULT_BOLD);
+        totalRow.addView(valueView);
+        tableLayout.addView(totalRow);
+    }
+
+    private TableRow.LayoutParams createTooltipTableCellParams(float weight) {
+        return new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, weight);
+    }
+
+    private void setTooltipDialogText(View rootView, int textViewId, String value, int color) {
+        TextView textView = rootView.findViewById(textViewId);
+        textView.setText(value == null || value.trim().isEmpty() ? "-" : value);
+        textView.setTextColor(color);
+    }
+
 
     //LABEL LIST
     private void showListDialogOnDemand() {
@@ -1083,8 +1320,6 @@ public class Laminating extends AppCompatActivity {
         TextView tvNoData = dialogView.findViewById(R.id.tvNoData);
         EditText searchInput = dialogView.findViewById(R.id.searchInput);
         ImageView clearButton = dialogView.findViewById(R.id.clearButton);
-        Button btnEditData = dialogView.findViewById(R.id.btnEditData);
-        Button btnDeleteData = dialogView.findViewById(R.id.btnDeleteData);
         TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
 
         selectedRowHeader = null;
@@ -1092,7 +1327,11 @@ public class Laminating extends AppCompatActivity {
         final boolean[] hasMoreData = {true};
         final String[] activeKeyword = {""};
 
-        DialogLabelAdapter adapter = new DialogLabelAdapter(selectedData);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        DialogLabelAdapter adapter = new DialogLabelAdapter(selectedData, dialog, loadingIndicator, tvNoData, tvSumLabel, activeKeyword, hasMoreData);
         rvLabelList.setLayoutManager(new LinearLayoutManager(this));
         rvLabelList.setAdapter(adapter);
         rvLabelList.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -1110,10 +1349,6 @@ public class Laminating extends AppCompatActivity {
             }
         });
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .create();
-
         dialog.show();
 
         Window window = dialog.getWindow();
@@ -1130,69 +1365,6 @@ public class Laminating extends AppCompatActivity {
         currentPage = 1;
         isLoading = true;
         loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
-
-        btnEditData.setOnClickListener(v -> {
-            if (selectedData[0] != null) {
-                isCreateMode = false;
-                NoLaminating.setText(selectedData[0].getNoLaminating());
-                dialog.dismiss();
-
-                btnUpdate.setVisibility(View.VISIBLE);
-                BtnSimpan.setVisibility(View.GONE);
-                BtnDataBaru.setVisibility(View.GONE);
-                SpinMesin.setVisibility(View.GONE);
-                SpinSusun.setVisibility(View.GONE);
-                mesinView.setVisibility(View.VISIBLE);
-                susunView.setVisibility(View.VISIBLE);
-                Date.setEnabled(false);
-                Time.setEnabled(false);
-            } else {
-                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnDeleteData.setOnClickListener(v -> {
-            if (selectedData[0] != null) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Konfirmasi")
-                        .setMessage("Apakah Anda yakin ingin menghapus data " + selectedData[0].getNoLaminating() + "?")
-                        .setPositiveButton("Ya", (dialogInterface, i) -> executorService.execute(() -> {
-                            try {
-                                String actorName = SharedPrefUtils.getUsername(Laminating.this);
-                                String requestId = UUID.randomUUID().toString();
-                                boolean success = LmtApi.deleteData(
-                                        selectedData[0].getNoLaminating(),
-                                        idUsername,
-                                        actorName,
-                                        requestId
-                                );
-                                runOnUiThread(() -> {
-                                    if (success) {
-                                        Toast.makeText(this, "Data " + selectedData[0].getNoLaminating() + " dihapus", Toast.LENGTH_SHORT).show();
-                                        selectedData[0] = null;
-                                        selectedRowHeader = null;
-                                        adapter.clearSelection();
-                                        currentPage = 1;
-                                        page = 1;
-                                        hasMoreData[0] = true;
-                                        isLoading = true;
-                                        loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
-                                        refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
-                                    } else {
-                                        Toast.makeText(this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
-                                    }
-                                    dialogInterface.dismiss();
-                                });
-                            } catch (Exception e) {
-                                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                            }
-                        }))
-                        .setNegativeButton("Tidak", null)
-                        .show();
-            } else {
-                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -1265,10 +1437,23 @@ public class Laminating extends AppCompatActivity {
     private class DialogLabelAdapter extends RecyclerView.Adapter<DialogLabelAdapter.DialogLabelViewHolder> {
         private final List<LmtData> items = new ArrayList<>();
         private final LmtData[] selectedData;
+        private final AlertDialog listDialog;
+        private final ProgressBar loadingIndicator;
+        private final TextView tvNoData;
+        private final TextView tvSumLabel;
+        private final String[] activeKeyword;
+        private final boolean[] hasMoreData;
         private int selectedPosition = RecyclerView.NO_POSITION;
 
-        DialogLabelAdapter(LmtData[] selectedData) {
+        DialogLabelAdapter(LmtData[] selectedData, AlertDialog listDialog, ProgressBar loadingIndicator,
+                           TextView tvNoData, TextView tvSumLabel, String[] activeKeyword, boolean[] hasMoreData) {
             this.selectedData = selectedData;
+            this.listDialog = listDialog;
+            this.loadingIndicator = loadingIndicator;
+            this.tvNoData = tvNoData;
+            this.tvSumLabel = tvSumLabel;
+            this.activeKeyword = activeKeyword;
+            this.hasMoreData = hasMoreData;
         }
 
         void setData(List<LmtData> newItems) {
@@ -1289,9 +1474,24 @@ public class Laminating extends AppCompatActivity {
         void clearSelection() {
             int oldSelection = selectedPosition;
             selectedPosition = RecyclerView.NO_POSITION;
+            selectedData[0] = null;
             if (oldSelection != RecyclerView.NO_POSITION) {
                 notifyItemChanged(oldSelection);
             }
+        }
+
+        private void selectDialogItem(DialogLabelViewHolder holder, int adapterPosition) {
+            int previousSelection = selectedPosition;
+            selectedPosition = adapterPosition;
+            if (previousSelection != RecyclerView.NO_POSITION) {
+                notifyItemChanged(previousSelection);
+            }
+            notifyItemChanged(selectedPosition);
+
+            LmtData selected = items.get(adapterPosition);
+            selectedData[0] = selected;
+            selectedRowHeader = holder.itemView;
+            noLaminating = selected.getNoLaminating();
         }
 
         @Override
@@ -1316,35 +1516,44 @@ public class Laminating extends AppCompatActivity {
                 holder.setSelectedState(false, position % 2 == 0);
             }
 
+            final float[] touchPoint = new float[2];
+            holder.itemView.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    touchPoint[0] = event.getRawX();
+                    touchPoint[1] = event.getRawY();
+                }
+                return false;
+            });
+
             holder.itemView.setOnClickListener(v -> {
                 int adapterPosition = holder.getBindingAdapterPosition();
                 if (adapterPosition == RecyclerView.NO_POSITION) {
                     return;
                 }
+                selectDialogItem(holder, adapterPosition);
+            });
 
-                int previousSelection = selectedPosition;
-                selectedPosition = adapterPosition;
-                if (previousSelection != RecyclerView.NO_POSITION) {
-                    notifyItemChanged(previousSelection);
+            holder.itemView.setOnLongClickListener(v -> {
+                int adapterPosition = holder.getBindingAdapterPosition();
+                if (adapterPosition == RecyclerView.NO_POSITION) {
+                    return false;
                 }
-                notifyItemChanged(selectedPosition);
-
-                LmtData selected = items.get(adapterPosition);
-                selectedData[0] = selected;
-                selectedRowHeader = holder.itemView;
-                noLaminating = selected.getNoLaminating();
-
-                TooltipUtils.fetchDataAndShowTooltip(
-                        Laminating.this,
-                        executorService,
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                selectDialogItem(holder, adapterPosition);
+                showDialogRowActionPopup(
                         holder.itemView,
-                        selected.getNoLaminating(),
-                        "Laminating_h",
-                        "Laminating_d",
-                        "NoLaminating",
-                        () -> {
-                        }
+                        items.get(adapterPosition),
+                        touchPoint[0],
+                        touchPoint[1],
+                        listDialog,
+                        this,
+                        loadingIndicator,
+                        tvNoData,
+                        tvSumLabel,
+                        activeKeyword[0],
+                        hasMoreData
                 );
+                return true;
             });
         }
 
@@ -1910,6 +2119,10 @@ public class Laminating extends AppCompatActivity {
 
 
     private void loadSubmittedData(String noLaminating) {
+        loadSubmittedData(noLaminating, null);
+    }
+
+    private void loadSubmittedData(String noLaminating, Runnable onLoaded) {
         // Tampilkan progress dialog
         loadingDialogHelper.show(this);
         resetDetailData();
@@ -1930,7 +2143,7 @@ public class Laminating extends AppCompatActivity {
                     // Update UI di thread utama
                     runOnUiThread(() -> {
                         try {
-                            updateUIWithHeaderData(headerData);
+                            updateUIWithHeaderData(headerData, onLoaded);
                             updateTableFromTemporaryData();
                             m3();
                             jumlahpcs();
@@ -1966,6 +2179,10 @@ public class Laminating extends AppCompatActivity {
 
 
     private void updateUIWithHeaderData(LmtData headerData) {
+        updateUIWithHeaderData(headerData, null);
+    }
+
+    private void updateUIWithHeaderData(LmtData headerData, Runnable onLoaded) {
         radioGroup.clearCheck();
         radioButtonMesin.setEnabled(false);
         radioButtonBSusun.setEnabled(false);
@@ -1985,6 +2202,9 @@ public class Laminating extends AppCompatActivity {
             if (completedCount.incrementAndGet() == totalSpinners) {
                 // Semua spinner selesai, baru hide loading
                 loadingDialogHelper.hide();
+                if (onLoaded != null) {
+                    onLoaded.run();
+                }
             }
         };
 

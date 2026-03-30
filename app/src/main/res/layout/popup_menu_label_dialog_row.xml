@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/tooltipContent"
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/tooltip_background"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/tvNoLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:text="-"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvNoKBSuket"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:text="-"
+            android:textColor="@android:color/black"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="Tanggal/Jam" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvDateTime" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:singleLine="true" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="Jenis" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvJenis" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:singleLine="true" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="SPK" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvNoSPK" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fieldPlatTruk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="Plat Truk" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvNoPlat" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fieldNoSPKAsal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="SPK Asal" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvNoSPKAsal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fieldGrade"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="Grade" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvNamaGrade" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:singleLine="true" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="Lembur" android:textColor="@android:color/black" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.1" android:gravity="center" android:text=":" android:textColor="@android:color/black" />
+            <TextView android:id="@+id/tvIsLembur" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.6" android:ellipsize="end" android:text="-" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/hijau"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:padding="8dp" android:text="Tebal" android:textColor="@android:color/white" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:padding="8dp" android:text="Lebar" android:textColor="@android:color/white" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:padding="8dp" android:text="Panjang" android:textColor="@android:color/white" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:padding="8dp" android:text="Pcs" android:textColor="@android:color/white" android:textStyle="bold" />
+            </LinearLayout>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fillViewport="true">
+                <TableLayout
+                    android:id="@+id/tabelDetailTooltip"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFEFEF"
+                    android:stretchColumns="*" />
+            </ScrollView>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="10dp"
+            android:background="#D9D9D9" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btnEditData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:drawableLeft="@drawable/ic_edit"
+                android:drawablePadding="6dp"
+                android:paddingHorizontal="10dp"
+                android:text="Ubah"
+                android:textAlignment="textStart"
+                android:textColor="@color/black" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0" />
+
+            <Button
+                android:id="@+id/btnDeleteData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:drawableLeft="@drawable/ic_delete"
+                android:drawablePadding="6dp"
+                android:paddingHorizontal="10dp"
+                android:text="Hapus"
+                android:textAlignment="textStart"
+                android:textColor="@color/black" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0" />
+
+            <Button
+                android:id="@+id/btnPrintData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:drawableLeft="@drawable/print_connect"
+                android:drawablePadding="6dp"
+                android:paddingHorizontal="10dp"
+                android:text="Print"
+                android:textAlignment="textStart"
+                android:textColor="@color/black" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0" />
+
+            <Button
+                android:id="@+id/btnHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:drawableLeft="@drawable/ic_history_popup_menu"
+                android:drawablePadding="6dp"
+                android:paddingHorizontal="10dp"
+                android:text="History"
+                android:textAlignment="textStart"
+                android:textColor="@color/black" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/trianglePointer"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="-1dp"
+        android:layout_toRightOf="@id/tooltipContent"
+        android:elevation="10dp"
+        android:src="@drawable/triangle_pointer"
+        android:visibility="invisible" />
+
+</RelativeLayout>

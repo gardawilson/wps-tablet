@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -40,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.text.SimpleDateFormat;
 
 public class AuditActivity extends AppCompatActivity {
+    public static final String EXTRA_SEARCH_PK = "extra_search_pk";
 
     private static final int PAGE_SIZE = 20;
 
@@ -82,6 +84,7 @@ public class AuditActivity extends AppCompatActivity {
         }
 
         bindViews();
+        applyInitialFilterFromIntent();
         setupList();
         setupActions();
         resetAndLoadAudit();
@@ -107,6 +110,22 @@ public class AuditActivity extends AppCompatActivity {
         tblHeadToHeadOutput = findViewById(R.id.tblHeadToHeadOutput);
 
         clearDetailPanel();
+    }
+
+    private void applyInitialFilterFromIntent() {
+        Intent intent = getIntent();
+        if (intent == null) {
+            return;
+        }
+
+        String pkFromIntent = intent.getStringExtra(EXTRA_SEARCH_PK);
+        if (pkFromIntent == null) {
+            return;
+        }
+
+        currentPkFilter = pkFromIntent.trim();
+        etSearchPk.setText(currentPkFilter);
+        etSearchPk.setSelection(etSearchPk.getText().length());
     }
 
     private void setupList() {
