@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.config.ApiEndpoints.BASE_REPORT_MICROSERVICE;
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
 import android.net.Uri;
@@ -9,8 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.example.myapplication.utils.DateRangeDialogHelper;
-import com.example.myapplication.utils.DateRangeNumberDialogHelper;
 import com.example.myapplication.utils.LoadingDialogHelper;
+import com.example.myapplication.utils.PdfMicroserviceUtils;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 
@@ -45,21 +46,16 @@ public class LaporanKbRambung extends AppCompatActivity {
     }
 
     private void showLaporanRekapPenerimaanStDariSawmill() {
-        DateRangeNumberDialogHelper.show(this, (tglAwal, tglAkhir, angka) -> {
-            String reportName = "CrRekapPenSTDariSawmillKGRP";
+        DateRangeDialogHelper.show(
+                this,
+                DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
+                (tglAwal, tglAkhir) -> {
+            String url = BASE_REPORT_MICROSERVICE
+                    + "api/reports/kayu-bulat/rekap-produktivitas-sawmill-rp/pdf"
+                    + "?start_date=" + tglAwal
+                    + "&end_date=" + tglAkhir;
 
-            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
-                    + "?reportName=" + reportName
-                    + "&TglAwal=" + tglAwal
-                    + "&TglAkhir=" + tglAkhir
-                    + "&StartDate=" + tglAwal
-                    + "&EndDate=" + tglAkhir
-                    + "&Username=" + username
-                    + "&Upah=" + angka;
-
-            loadingDialogHelper.show(this);
-
-            PdfUtils.downloadAndOpenPDF(
+            PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
                     this,
                     url,
                     "Rekap Penerimaan ST dari Sawmill.pdf",
