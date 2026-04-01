@@ -266,7 +266,78 @@ public class AuditActivity extends AppCompatActivity {
 
         tvDetailPlaceholder.setVisibility(View.GONE);
         layoutDetailContent.setVisibility(View.VISIBLE);
-        renderHeadToHeadTable(items);
+
+        if (isConsumeOrUnconsumeGroup(items)) {
+            renderConsumeUnconsumeDetail(items);
+        } else {
+            renderHeadToHeadTable(items);
+        }
+    }
+
+    private boolean isConsumeOrUnconsumeGroup(List<AuditItem> items) {
+        if (items == null || items.isEmpty()) return false;
+        for (AuditItem item : items) {
+            String action = item.getAction();
+            if (!"CONSUME".equalsIgnoreCase(action) && !"UNCONSUME".equalsIgnoreCase(action)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void renderConsumeUnconsumeDetail(List<AuditItem> items) {
+        // Ambil NoProduksi dari item pertama sebagai "wadah"
+        String noProduksi = "-";
+        for (AuditItem item : items) {
+            LinkedHashMap<String, String> pkMap = AuditDisplayFormatter.toFieldMap(item.getPk());
+            if (pkMap.containsKey("NoProduksi")) {
+                noProduksi = pkMap.get("NoProduksi");
+                break;
+            }
+        }
+
+        // --- HEADER: tampilkan NoProduksi sebagai wadah ---
+        tblHeadToHeadHeader.removeAllViews();
+        addTableHeader(tblHeadToHeadHeader, "Field", "Nilai", "");
+        TableRow wadahRow = new TableRow(this);
+        wadahRow.addView(createCell("No Produksi", false, false, false, "#222222", false));
+        wadahRow.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
+        wadahRow.addView(createCell("", false, false, false, "#333333", false));
+        tblHeadToHeadHeader.addView(wadahRow);
+
+        // --- DETAIL: tampilkan semua label per item ---
+        tblHeadToHeadDetail.removeAllViews();
+        addTableHeader(tblHeadToHeadDetail, "Field", "Before", "After");
+
+        for (AuditItem item : items) {
+            boolean isConsume = "CONSUME".equalsIgnoreCase(item.getAction());
+            LinkedHashMap<String, String> pkMap = AuditDisplayFormatter.toFieldMap(item.getPk());
+
+            for (Map.Entry<String, String> entry : pkMap.entrySet()) {
+                String fieldKey = entry.getKey();
+                if ("NoProduksi".equalsIgnoreCase(fieldKey) || "NoBongkarSusun".equalsIgnoreCase(fieldKey)) {
+                    continue;
+                }
+                String labelValue = entry.getValue();
+                String oldVal = isConsume ? "-" : labelValue;
+                String newVal = isConsume ? labelValue : "-";
+                boolean strikeOld = !isConsume;
+                boolean boldNew = isConsume;
+                String oldColor = strikeOld ? "#B71C1C" : "#333333";
+                String newColor = boldNew ? "#1B5E20" : "#333333";
+
+                TableRow row = new TableRow(this);
+                row.addView(createCell(AuditDisplayFormatter.fieldAlias(fieldKey), false, false, false, "#222222", false));
+                row.addView(createCell(oldVal, false, strikeOld, false, oldColor, false));
+                row.addView(createCell(newVal, false, false, boldNew, newColor, false));
+                tblHeadToHeadDetail.addView(row);
+            }
+        }
+
+        // --- OUTPUT: kosongkan ---
+        tblHeadToHeadOutput.removeAllViews();
+        addTableHeader(tblHeadToHeadOutput, "Field", "Before", "After");
+        addInfoRow(tblHeadToHeadOutput, "Tidak ada data");
     }
 
     private void clearDetailPanel() {
@@ -361,6 +432,10 @@ public class AuditActivity extends AppCompatActivity {
                 lines.add(table + ": data baru ditambahkan");
             } else if ("DELETE".equalsIgnoreCase(item.getAction())) {
                 lines.add(table + ": data dihapus");
+            } else if ("CONSUME".equalsIgnoreCase(item.getAction())) {
+                lines.add(table + ": data dikonsumsi");
+            } else if ("UNCONSUME".equalsIgnoreCase(item.getAction())) {
+                lines.add(table + ": konsumsi data dibatalkan");
             } else {
                 lines.add(table + ": " + item.getAction());
             }
@@ -441,6 +516,11 @@ public class AuditActivity extends AppCompatActivity {
                 outputKeys.add("NoBongkarSusun");
             }
             keys = outputKeys;
+        } else if ("CONSUME".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action)) {
+            // Hanya buang NoProduksi/NoBongkarSusun, tampilkan nilai label (NoS4S, NoST, dll)
+            keys.remove("NoProduksi");
+            keys.remove("NoBongkarSusun");
+            keys.remove("DateTimeSaved");
         } else {
             keys.removeAll(pkKeys);
         }
@@ -451,8 +531,8 @@ public class AuditActivity extends AppCompatActivity {
         }
 
         boolean isUpdate = "UPDATE".equalsIgnoreCase(action);
-        boolean isInsert = "INSERT".equalsIgnoreCase(action);
-        boolean isDelete = "DELETE".equalsIgnoreCase(action);
+        boolean isInsert = "INSERT".equalsIgnoreCase(action) || "CONSUME".equalsIgnoreCase(action);
+        boolean isDelete = "DELETE".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action);
         boolean isPrint = "PRINT".equalsIgnoreCase(action);
         boolean rowsAdded = false;
 

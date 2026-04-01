@@ -65,21 +65,18 @@ public class DateTimeUtils {
         }
     }
 
-    // Format tanggal dari "yyyy-MM-dd" ke "dd MMM yyyy"
+    // Format tanggal dari "yyyy-MM-dd" ke "dd-MMM-yyyy"
     public static String formatDate(String originalDate) {
         String formattedDate;
 
         try {
-            // Format input dan output
-            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MMM-yyyy");
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 
-            // Parsing tanggal dan format ulang
             Date date = inputFormat.parse(originalDate);
             formattedDate = outputFormat.format(date);
         } catch (Exception e) {
             Log.e("DateFormatError", "Gagal memformat tanggal: " + e.getMessage());
-            // Jika gagal, gunakan tanggal asli untuk tampilan
             formattedDate = originalDate;
         }
 
@@ -116,10 +113,18 @@ public class DateTimeUtils {
 
 
     // Format dari "dd-MMM-yyyy" ke "yyyy-MM-dd"
+    // Jika sudah dalam format "yyyy-MM-dd", langsung dikembalikan tanpa konversi
     public static String formatToDatabaseDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) return "ERROR";
+
+        // Jika sudah dalam format yyyy-MM-dd, langsung return
+        if (dateString.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
+            return dateString.substring(0, 10);
+        }
+
         try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
-            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
 
             Date date = inputFormat.parse(dateString);
             return outputFormat.format(date);

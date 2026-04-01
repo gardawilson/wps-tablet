@@ -144,6 +144,10 @@ public class AuditDisplayFormatter {
                 return "PRINT";
             case "DELETE":
                 return "DELETE";
+            case "CONSUME":
+                return "CONSUME";
+            case "UNCONSUME":
+                return "UNCONSUME";
             default:
                 return upper;
         }

@@ -37,7 +37,10 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -152,7 +155,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
     private View borderBottom;
     private View borderLeft;
     private View borderRight;
-    private View btnHistorySave;
     private AlertDialog dialog;
     private CustomProgressDialog customProgressDialog;
     private View scannerOverlay;
@@ -170,8 +172,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
     private Button btnInputManual;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private final String mainTable = "SandingProduksi_h";
-    private Button btnEdit;
-    private Button btnPrint;
     private List<String> userPermissions;
     private String username;
 
@@ -218,7 +218,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
         borderBottom = findViewById(R.id.borderBottom);
         borderLeft = findViewById(R.id.borderLeft);
         borderRight = findViewById(R.id.borderRight);
-        btnHistorySave = findViewById(R.id.btnHistorySave);
         loadingIndicatorNoMoulding = findViewById(R.id.loadingIndicatorNoMoulding);
         loadingIndicatorNoFJ = findViewById(R.id.loadingIndicatorNoFJ);
         loadingIndicatorNoCC = findViewById(R.id.loadingIndicatorNoCC);
@@ -226,8 +225,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
         loadingIndicatorNoPacking = findViewById(R.id.loadingIndicatorNoPacking);
         btnInputManual = findViewById(R.id.btnInputManual);
         textScanQR = findViewById(R.id.textScanQR);
-        btnEdit = findViewById(R.id.btnEdit);
-        btnPrint = findViewById(R.id.btnPrint);
 
         username = SharedPrefUtils.getUsername(this);
 
@@ -245,7 +242,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
 
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
-        PermissionUtils.permissionCheck(this, btnEdit, "proses_snd:update");
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -260,41 +256,6 @@ public class ProsesProduksiSanding extends AppCompatActivity {
                     // Jika tidak ada data di list, lakukan back seperti biasa
                     onBackPressedDispatcher.onBackPressed();  // Memanggil aksi default back
                 }
-            }
-        });
-
-        btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String noProduksi = noProduksiView.getText().toString();
-                if (!noProduksi.isEmpty()) {
-                    showEditProductionDialog();
-                } else {
-                    Toast.makeText(ProsesProduksiSanding.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        btnPrint.setOnClickListener(v -> {
-            if (selectedProductionData != null) {
-
-                String reportName = "CrProduksiSanding";
-
-                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
-                        + "?NoProduksi=" + noProduksi
-                        + "&Username=" + username
-                        + "&reportName=" + reportName;
-
-                loadingDialogHelper.show(this);
-                PdfUtils.downloadAndOpenPDF(
-                        this,
-                        url,
-                        "ProsesProduksiS4S_" + noProduksi + ".pdf",
-                        executorService,
-                        loadingDialogHelper
-                );
-            } else {
-                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -486,14 +447,91 @@ public class ProsesProduksiSanding extends AppCompatActivity {
                     }
                 });
 
-        btnHistorySave.setOnClickListener(v -> showHistoryDialog(noProduksi));
-
     }
 
 
     //------------------------------------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------METHOD EDIT HEADER--------------------------------------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    private void printSelectedProduction() {
+        if (selectedProductionData != null) {
+            String reportName = "CrProduksiSanding";
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?NoProduksi=" + noProduksi
+                    + "&Username=" + username
+                    + "&reportName=" + reportName;
+            loadingDialogHelper.show(this);
+            PdfUtils.downloadAndOpenPDF(
+                    this,
+                    url,
+                    "ProsesProduksiSanding_" + noProduksi + ".pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        } else {
+            Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showProductionRowActionPopup(View anchorView, float touchX, float touchY, ProductionData data) {
+        View popupView = LayoutInflater.from(this).inflate(R.layout.popup_menu_production_row, null);
+        Button btnPopupEdit = popupView.findViewById(R.id.btnPopupEdit);
+        Button btnPopupHistory = popupView.findViewById(R.id.btnPopupHistory);
+        Button btnPopupPrint = popupView.findViewById(R.id.btnPopupPrint);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        boolean canUpdate = userPermissions.contains("proses_snd:update");
+        btnPopupEdit.setEnabled(canUpdate);
+        btnPopupEdit.setAlpha(canUpdate ? 1f : 0.5f);
+
+        btnPopupEdit.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            if (!canUpdate) {
+                Toast.makeText(this, "Anda tidak memiliki izin untuk edit.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showEditProductionDialog();
+        });
+
+        btnPopupHistory.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            showHistoryDialog(data.getNoProduksi());
+        });
+
+        btnPopupPrint.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            printSelectedProduction();
+        });
+
+        popupView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        );
+        int popupWidth = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int margin = (int) (getResources().getDisplayMetrics().density * 8);
+        int x = (int) touchX;
+        int y = (int) touchY - popupHeight;
+
+        if (x + popupWidth > screenWidth - margin) x = screenWidth - popupWidth - margin;
+        if (x < margin) x = margin;
+        if (y < margin) y = (int) touchY + margin;
+        if (y + popupHeight > screenHeight - margin) y = screenHeight - popupHeight - margin;
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
 
     private void showEditProductionDialog() {
         // Inflate dialog layout
@@ -910,6 +948,9 @@ public class ProsesProduksiSanding extends AppCompatActivity {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
 
+            final TableRow currentRow = row;
+            final ProductionData currentData = data;
+
             row.setOnClickListener(v -> {
                 // Reset warna baris sebelumnya (jika ada)
                 if (selectedRowHeader != null) {
@@ -923,17 +964,31 @@ public class ProsesProduksiSanding extends AppCompatActivity {
                 }
 
                 // Tandai baris yang baru dipilih
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
-                setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
-                selectedRowHeader = row;
+                currentRow.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
+                setTextColor(currentRow, R.color.white); // Ubah warna teks menjadi putih
+                selectedRowHeader = currentRow;
 
                 // Simpan data yang dipilih
-                selectedProductionData = data;
+                selectedProductionData = currentData;
 
                 // Tangani aksi tambahan
-                onRowClick(data);
+                onRowClick(currentData);
             });
 
+            final float[] touchPoint = new float[2];
+            row.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    touchPoint[0] = event.getRawX();
+                    touchPoint[1] = event.getRawY();
+                }
+                return false;
+            });
+            row.setOnLongClickListener(v -> {
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                selectedProductionData = currentData;
+                showProductionRowActionPopup(currentRow, touchPoint[0], touchPoint[1], currentData);
+                return true;
+            });
 
             tableLayout.addView(row);
             rowIndex++; // Tingkatkan indeks

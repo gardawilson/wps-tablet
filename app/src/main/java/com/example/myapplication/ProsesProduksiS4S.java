@@ -37,10 +37,13 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -48,6 +51,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -56,6 +60,7 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.widget.Toast;
 import android.view.View;
+import android.view.ViewGroup;
 import android.app.AlertDialog;
 import android.Manifest;
 
@@ -86,6 +91,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -101,6 +107,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private PreviewView cameraPreview;
     private Button btnCameraControl;
     private Button btnSimpan;
+    private Button btnInputManual;
     private TableRow selectedRowHeader;
     private TableRow selectedRow;
     private TextView qrResultText;
@@ -154,7 +161,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private View borderBottom;
     private View borderLeft;
     private View borderRight;
-    private View btnHistorySave;
     private AlertDialog dialog;
     private CustomProgressDialog customProgressDialog;
     private View scannerOverlay;
@@ -171,12 +177,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     private ProgressBar loadingIndicatorNoLaminating;
     private ProgressBar loadingIndicatorNoReproses;
     private LinearLayout textScanQR;
-    private Button btnInputManual;
-    private Button btnEdit;
-    private Button btnPrint;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
     private final String mainTable = "S4SProduksi_h";
     private List<String> userPermissions;
+    private String idUsername;
     private String username;
 
 
@@ -197,6 +201,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         tglProduksiView = findViewById(R.id.tglProduksiView);
         mesinProduksiView = findViewById(R.id.mesinProduksiView);
         btnSimpan = findViewById(R.id.btnSimpan);
+        btnInputManual = findViewById(R.id.btnInputManual);
         kodeLabel = findViewById(R.id.kodeLabel);
         searchMainTable = findViewById(R.id.searchMainTable);
         btnInputKodeLabel = findViewById(R.id.btnInputKodeLabel);
@@ -223,7 +228,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         borderBottom = findViewById(R.id.borderBottom);
         borderLeft = findViewById(R.id.borderLeft);
         borderRight = findViewById(R.id.borderRight);
-        btnHistorySave = findViewById(R.id.btnHistorySave);
         loadingIndicatorNoS4S = findViewById(R.id.loadingIndicatorNoS4S);
         loadingIndicatorNoST = findViewById(R.id.loadingIndicatorNoST);
         loadingIndicatorNoMoulding = findViewById(R.id.loadingIndicatorNoMoulding);
@@ -231,12 +235,10 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         loadingIndicatorNoCC = findViewById(R.id.loadingIndicatorNoCC);
         loadingIndicatorNoLaminating = findViewById(R.id.loadingIndicatorNoLaminating);
         loadingIndicatorNoReproses = findViewById(R.id.loadingIndicatorNoReproses);
-        btnInputManual = findViewById(R.id.btnInputManual);
         textScanQR = findViewById(R.id.textScanQR);
-        btnEdit = findViewById(R.id.btnEdit);
-        btnPrint = findViewById(R.id.btnPrint);
 
         username = SharedPrefUtils.getUsername(this);
+        idUsername = SharedPrefUtils.getIdUsername(this);
 
         loadingIndicator.setVisibility(View.VISIBLE);
 
@@ -256,7 +258,17 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
-        PermissionUtils.permissionCheck(this, btnEdit, "proses_s4s:update");
+
+        boolean canUpdate = userPermissions.contains("proses_s4s:update");
+        btnInputManual.setEnabled(canUpdate);
+        btnInputManual.setAlpha(canUpdate ? 1f : 0.5f);
+        btnInputManual.setOnClickListener(v -> {
+            if (!canUpdate) {
+                Toast.makeText(this, "Anda tidak memiliki izin untuk input.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showInputManualDialog();
+        });
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -273,134 +285,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 }
             }
         });
-
-
-        btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String noProduksi = noProduksiView.getText().toString();
-                if (!noProduksi.isEmpty()) {
-                    showEditProductionDialog();
-                } else {
-                    Toast.makeText(ProsesProduksiS4S.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        btnPrint.setOnClickListener(v -> {
-            if (selectedProductionData != null) {
-
-                String reportName = "CrProduksiS4S";
-
-                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
-                        + "?NoProduksi=" + noProduksi
-                        + "&Username=" + username
-                        + "&reportName=" + reportName;
-
-                loadingDialogHelper.show(this);
-                PdfUtils.downloadAndOpenPDF(
-                        this,
-                        url,
-                        "ProsesProduksiS4S_" + noProduksi + ".pdf",
-                        executorService,
-                        loadingDialogHelper
-                );
-            } else {
-                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnInputManual.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String noProduksi = noProduksiView.getText().toString();
-
-                if (!noProduksi.isEmpty()) {
-                    // Membuat layout untuk dialog
-                    LinearLayout layout = new LinearLayout(ProsesProduksiS4S.this);
-                    layout.setOrientation(LinearLayout.VERTICAL);
-                    layout.setPadding(50, 50, 50, 50);
-                    layout.setGravity(Gravity.CENTER_HORIZONTAL);
-
-                    // Membuat TextInputLayout untuk EditText yang lebih modern
-                    TextInputLayout textInputLayout = new TextInputLayout(ProsesProduksiS4S.this);
-                    textInputLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                    textInputLayout.setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_FILLED);
-
-                    // Membuat EditText di dalam TextInputLayout
-                    final EditText inputNoLabelManual = new EditText(ProsesProduksiS4S.this);  // Nama diganti menjadi inputNoLabelManual
-                    inputNoLabelManual.setLayoutParams(new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                    inputNoLabelManual.setHint("No. Label");
-                    inputNoLabelManual.setPadding(40, 40, 40, 40);
-                    inputNoLabelManual.setTextColor(Color.BLACK);
-                    inputNoLabelManual.setBackgroundColor(getResources().getColor(R.color.white));
-
-                    // Set input type untuk huruf kapital
-                    inputNoLabelManual.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
-
-                    // Menambahkan filter untuk membatasi panjang input menjadi 8 karakter
-                    inputNoLabelManual.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8)});
-
-                    // Menambahkan EditText ke dalam TextInputLayout
-                    textInputLayout.addView(inputNoLabelManual);
-
-                    // Menambahkan TextInputLayout ke dalam LinearLayout
-                    layout.addView(textInputLayout);
-
-                    // Membuat MaterialAlertDialogBuilder untuk tampilan modern
-                    MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(ProsesProduksiS4S.this);
-                    builder.setTitle("Input Label")
-                            .setView(layout)
-                            .setBackground(ContextCompat.getDrawable(ProsesProduksiS4S.this, R.drawable.tooltip_background))
-                            .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    String result = inputNoLabelManual.getText().toString();  // Menggunakan inputNoLabelManual
-                                    if (!result.isEmpty()) {
-                                        // Panggil metode yang sama dengan hasil scan
-                                        addScanResultToTable(result);
-                                    } else {
-                                        Toast.makeText(ProsesProduksiS4S.this, "Kode tidak boleh kosong", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            })
-                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.cancel();
-                                }
-                            });
-
-                    // Buat dialog dan tampilkan
-                    final androidx.appcompat.app.AlertDialog dialog = builder.create();
-                    dialog.show();
-
-                    // Menghitung 40% dari lebar layar
-                    WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-                    Display display = windowManager.getDefaultDisplay();
-                    Point size = new Point();
-                    display.getSize(size);
-                    int width = (int) (size.x * 0.4); // 40% dari lebar layar
-
-                    // Mengatur ukuran dialog
-                    if (dialog.getWindow() != null) {
-                        WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
-                        layoutParams.width = width; // Atur lebar 40% dari layar
-                        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT; // Ukuran tinggi mengikuti konten
-                        dialog.getWindow().setAttributes(layoutParams);
-                    }
-                }
-                else{
-                    Toast.makeText(ProsesProduksiS4S.this, "Kode tidak boleh kosong", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-
 
         searchMainTable.addTextChangedListener(new TextWatcher() {
             @Override
@@ -500,17 +384,189 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                     }
                 });
 
-        btnHistorySave.setOnClickListener(v -> showHistoryDialog(noProduksi));
-
     }
 
+
     //METHOD S4S
+    //------------------------------------------------------------------------------------------------------------------------------------------------------//
+    //----------------------------------METHOD EDIT HEADER--------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------------------------//
 
+    private void showInputManualDialog() {
+        String currentNoProduksi = noProduksiView.getText().toString();
 
+        if (currentNoProduksi.isEmpty()) {
+            Toast.makeText(ProsesProduksiS4S.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
-//----------------------------------METHOD EDIT HEADER--------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------//
+        LinearLayout layout = new LinearLayout(ProsesProduksiS4S.this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 50, 50, 50);
+        layout.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        TextInputLayout textInputLayout = new TextInputLayout(ProsesProduksiS4S.this);
+        textInputLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        textInputLayout.setBoxBackgroundMode(TextInputLayout.BOX_BACKGROUND_FILLED);
+
+        final EditText inputNoLabelManual = new EditText(ProsesProduksiS4S.this);
+        inputNoLabelManual.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        inputNoLabelManual.setHint("No. Label");
+        inputNoLabelManual.setPadding(40, 40, 40, 40);
+        inputNoLabelManual.setTextColor(Color.BLACK);
+        inputNoLabelManual.setBackgroundColor(getResources().getColor(R.color.white));
+        inputNoLabelManual.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        inputNoLabelManual.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8)});
+        textInputLayout.addView(inputNoLabelManual);
+        layout.addView(textInputLayout);
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(ProsesProduksiS4S.this);
+        builder.setTitle("Input Label")
+                .setView(layout)
+                .setBackground(ContextCompat.getDrawable(ProsesProduksiS4S.this, R.drawable.tooltip_background))
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String result = inputNoLabelManual.getText().toString();
+                    if (!result.isEmpty()) {
+                        addScanResultToTable(result);
+                    } else {
+                        Toast.makeText(ProsesProduksiS4S.this, "Kode tidak boleh kosong", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        final androidx.appcompat.app.AlertDialog inputDialog = builder.create();
+        inputDialog.show();
+
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = (int) (size.x * 0.4);
+
+        if (inputDialog.getWindow() != null) {
+            WindowManager.LayoutParams layoutParams = inputDialog.getWindow().getAttributes();
+            layoutParams.width = width;
+            layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            inputDialog.getWindow().setAttributes(layoutParams);
+        }
+    }
+
+    private void printSelectedProduction() {
+        if (selectedProductionData != null) {
+            String reportName = "CrProduksiS4S";
+
+            String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
+                    + "?NoProduksi=" + noProduksi
+                    + "&Username=" + username
+                    + "&reportName=" + reportName;
+
+            loadingDialogHelper.show(this);
+            PdfUtils.downloadAndOpenPDF(
+                    this,
+                    url,
+                    "ProsesProduksiS4S_" + noProduksi + ".pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        } else {
+            Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void selectProductionRow(TableRow row, int rowIndex, ProductionData data) {
+        if (selectedRowHeader != null) {
+            int previousRowIndex = (int) selectedRowHeader.getTag();
+            if (previousRowIndex % 2 == 0) {
+                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+            } else {
+                selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+            }
+            resetTextColor(selectedRowHeader);
+        }
+
+        row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+        setTextColor(row, R.color.white);
+        selectedRowHeader = row;
+        selectedProductionData = data;
+        noProduksi = data.getNoProduksi();
+        tglProduksi = data.getTanggal();
+        mesinProduksi = data.getMesin();
+        noProduksiView.setText(noProduksi);
+        setDateToView(tglProduksi, tglProduksiView);
+        mesinProduksiView.setText(mesinProduksi);
+        onRowClick(data);
+    }
+
+    private void showProductionRowActionPopup(View anchorView, float touchX, float touchY, ProductionData data) {
+        View popupView = LayoutInflater.from(this).inflate(R.layout.popup_menu_production_row, null);
+        Button btnPopupEdit = popupView.findViewById(R.id.btnPopupEdit);
+        Button btnPopupHistory = popupView.findViewById(R.id.btnPopupHistory);
+        Button btnPopupPrint = popupView.findViewById(R.id.btnPopupPrint);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        boolean canUpdate = userPermissions.contains("proses_s4s:update");
+        btnPopupEdit.setEnabled(canUpdate);
+        btnPopupEdit.setAlpha(canUpdate ? 1f : 0.5f);
+
+        btnPopupEdit.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            if (!canUpdate) {
+                Toast.makeText(this, "Anda tidak memiliki izin untuk edit.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showEditProductionDialog();
+        });
+
+        btnPopupHistory.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            showHistoryDialog(data.getNoProduksi());
+        });
+
+        btnPopupPrint.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            printSelectedProduction();
+        });
+
+        popupView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        );
+        int popupWidth = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int margin = (int) (getResources().getDisplayMetrics().density * 8);
+        int x = (int) touchX;
+        int y = (int) touchY - popupHeight;
+
+        if (x + popupWidth > screenWidth - margin) {
+            x = screenWidth - popupWidth - margin;
+        }
+        if (x < margin) {
+            x = margin;
+        }
+        if (y < margin) {
+            y = (int) touchY + margin;
+        }
+        if (y + popupHeight > screenHeight - margin) {
+            y = screenHeight - popupHeight - margin;
+        }
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+    }
 
     private void showEditProductionDialog() {
         // Inflate dialog layout
@@ -549,6 +605,58 @@ public class ProsesProduksiS4S extends AppCompatActivity {
         // Populate fields with selected data
         populateDialogFields(tvNoProduksi, spinShift, editTanggal, spinMesin, spinOperator, editJlhAnggota, editJamKerja, editHourMeter, selectedProductionData);
 
+        // Disable save button initially — enable only when there are changes
+        btnSimpan.setEnabled(false);
+
+        Runnable checkChanges = () -> {
+            try {
+                String tanggalDisplay = editTanggal.getText().toString().trim();
+                String shift = spinShift.getSelectedItem() != null ? spinShift.getSelectedItem().toString() : "";
+                int idMesin = spinMesin.getSelectedItem() instanceof MesinProsesProduksiData
+                        ? ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin() : -1;
+                int idOperator = spinOperator.getSelectedItem() instanceof MstOperatorData
+                        ? ((MstOperatorData) spinOperator.getSelectedItem()).getIdOperator() : -1;
+                String jamKerja = editJamKerja.getText().toString().trim();
+                String jlhAnggotaStr = editJlhAnggota.getText().toString().trim();
+                String hourMeterStr = editHourMeter.getText().toString().trim();
+
+                if (tanggalDisplay.isEmpty() || jlhAnggotaStr.isEmpty() || hourMeterStr.isEmpty()) {
+                    btnSimpan.setEnabled(false);
+                    return;
+                }
+
+                int jumlahAnggota = Integer.parseInt(jlhAnggotaStr);
+                double hourMeter = Double.parseDouble(hourMeterStr);
+                String tanggalDb = DateTimeUtils.formatToDatabaseDate(tanggalDisplay);
+
+                ProductionData currentData = new ProductionData(
+                        selectedProductionData.getNoProduksi(), shift, tanggalDb, "", "", jamKerja,
+                        jumlahAnggota, hourMeter, idMesin, idOperator
+                );
+
+                btnSimpan.setEnabled(hasProductionDataChanged(selectedProductionData, currentData));
+            } catch (NumberFormatException e) {
+                btnSimpan.setEnabled(false);
+            }
+        };
+
+        TextWatcher changeWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) { checkChanges.run(); }
+        };
+        editTanggal.addTextChangedListener(changeWatcher);
+        editJlhAnggota.addTextChangedListener(changeWatcher);
+        editJamKerja.addTextChangedListener(changeWatcher);
+        editHourMeter.addTextChangedListener(changeWatcher);
+
+        android.widget.AdapterView.OnItemSelectedListener spinnerChangeListener = new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) { checkChanges.run(); }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        };
+        spinShift.setOnItemSelectedListener(spinnerChangeListener);
+        spinMesin.setOnItemSelectedListener(spinnerChangeListener);
+        spinOperator.setOnItemSelectedListener(spinnerChangeListener);
 
         editTanggal.setInputType(InputType.TYPE_NULL);
         editTanggal.setFocusable(false);
@@ -571,7 +679,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 // Ambil data dari UI
                 String noProduksi = tvNoProduksi.getText().toString().trim();
                 String shift = spinShift.getSelectedItem().toString();
-                String tanggal = editTanggal.getText().toString().trim(); // Pastikan ini dalam format yyyy-MM-dd
+                String tanggal = DateTimeUtils.formatToDatabaseDate(editTanggal.getText().toString().trim());
                 int idMesin = ((MesinProsesProduksiData) spinMesin.getSelectedItem()).getIdMesin();
                 int idOperator = ((MstOperatorData) spinOperator.getSelectedItem()).getIdOperator();
                 String jamKerja = editJamKerja.getText().toString().trim();
@@ -584,8 +692,23 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         jumlahAnggota, hourMeter, idMesin, idOperator
                 );
 
+
+                if (!hasProductionDataChanged(selectedProductionData, updatedData)) {
+                    loadingDialogHelper.hide();
+                    Toast.makeText(ProsesProduksiS4S.this, "Tidak ada perubahan data", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 executorService.execute(() -> {
-                    boolean success = ProsesProduksiApi.updateProductionData(mainTable, updatedData);
+                    String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                    String requestId = UUID.randomUUID().toString();
+                    boolean success = ProsesProduksiApi.updateProductionData(
+                            mainTable,
+                            updatedData,
+                            idUsername,
+                            actorName,
+                            requestId
+                    );
                     dataList = ProsesProduksiApi.getProductionData(mainTable);
 
 
@@ -640,6 +763,34 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
 
         return true;
+    }
+
+    private boolean hasProductionDataChanged(ProductionData original, ProductionData updated) {
+        if (original == null || updated == null) {
+            return true;
+        }
+        if (!TextUtils.equals(original.getShift(), updated.getShift())) {
+            return true;
+        }
+        if (!TextUtils.equals(original.getTanggal(), updated.getTanggal())) {
+            return true;
+        }
+        if (original.getIdMesin() != updated.getIdMesin()) {
+            return true;
+        }
+        if (original.getIdOperator() != updated.getIdOperator()) {
+            return true;
+        }
+        if (!TextUtils.equals(original.getJamKerja(), updated.getJamKerja())) {
+            return true;
+        }
+        if (original.getJumlahAnggota() != updated.getJumlahAnggota()) {
+            return true;
+        }
+        if (Double.compare(original.getHourMeter(), updated.getHourMeter()) != 0) {
+            return true;
+        }
+        return false;
     }
 
 
@@ -810,7 +961,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
                 scanLayout.setVisibility(View.VISIBLE);
                 cameraPreview.setVisibility(View.VISIBLE);
-//                inputKodeManual.setVisibility(View.VISIBLE);
                 tableLayout.setVisibility(View.GONE);
                 headerTableProduksi.setVisibility(View.GONE);
 //                searchMainTable.setVisibility(View.INVISIBLE);
@@ -819,7 +969,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 jumlahLabel.setVisibility(View.VISIBLE);
                 textScanQR.setVisibility(View.VISIBLE);
                 btnSimpan.setEnabled(true);
-                btnInputManual.setEnabled(true);
 
                 isCameraActive = true;
 //                Toast.makeText(this, "Kamera diaktifkan", Toast.LENGTH_SHORT).show();
@@ -842,7 +991,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             ScannerAnimationUtils.stopScanningAnimation();
             scanLayout.setVisibility(View.GONE);
             cameraPreview.setVisibility(View.GONE);
-//            inputKodeManual.setVisibility(View.GONE);
             jumlahLabelHeader.setVisibility(View.GONE);
             jumlahLabel.setVisibility(View.GONE);
             tableLayout.setVisibility(View.VISIBLE);
@@ -851,7 +999,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 //            searchMainTable.setVisibility(View.VISIBLE);
 //            textLayoutSearchMainTable.setVisibility(View.VISIBLE);
             btnSimpan.setEnabled(false);
-            btnInputManual.setEnabled(false);
 
 
 
@@ -896,6 +1043,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
             // Simpan indeks baris di tag
             row.setTag(rowIndex);
+            final int currentRowIndex = rowIndex;
+            final TableRow currentRow = row;
+            final ProductionData currentData = data;
 
             // Tambahkan TextView untuk setiap kolom
             TextView col1 = createTextView(data.getNoProduksi(), 1.0f);
@@ -928,27 +1078,23 @@ public class ProsesProduksiS4S extends AppCompatActivity {
             }
 
             row.setOnClickListener(v -> {
-                // Reset warna baris sebelumnya (jika ada)
-                if (selectedRowHeader != null) {
-                    int previousRowIndex = (int) selectedRowHeader.getTag();
-                    if (previousRowIndex % 2 == 0) {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                    } else {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                    }
-                    resetTextColor(selectedRowHeader); // Kembalikan warna teks ke hitam
+                selectProductionRow(currentRow, currentRowIndex, currentData);
+            });
+
+            final float[] touchPoint = new float[2];
+            row.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    touchPoint[0] = event.getRawX();
+                    touchPoint[1] = event.getRawY();
                 }
+                return false;
+            });
 
-                // Tandai baris yang baru dipilih
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
-                setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
-                selectedRowHeader = row;
-
-                // Simpan data yang dipilih
-                selectedProductionData = data;
-
-                // Tangani aksi tambahan
-                onRowClick(data);
+            row.setOnLongClickListener(v -> {
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                selectProductionRow(currentRow, currentRowIndex, currentData);
+                showProductionRowActionPopup(currentRow, touchPoint[0], touchPoint[1], currentData);
+                return true;
             });
 
 
@@ -1023,7 +1169,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoST);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoST, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshSTTable);
                             });
                         })
@@ -1111,7 +1259,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoS4S);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoS4S, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshS4STable);
                             });
                         })
@@ -1119,7 +1269,6 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                         .show();
                 return true; // True = long press sudah di-handle
             });
-
 
             if (rowIndex % 2 == 0) {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
@@ -1196,7 +1345,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoFJ);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoFJ, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshFJTable);
                             });
                         })
@@ -1282,7 +1433,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoMoulding);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoMoulding, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshMouldingTable);
                             });
                         })
@@ -1367,7 +1520,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoCC);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoCC, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshCCTable);
                             });
                         })
@@ -1451,7 +1606,9 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoLaminating);
+                                String actorName = SharedPrefUtils.getUsername(ProsesProduksiS4S.this);
+                                String requestId = UUID.randomUUID().toString();
+                                ProsesProduksiApi.deleteDataByNoLabel(noProduksi, currentNoLaminating, idUsername, actorName, requestId);
                                 runOnUiThread(this::refreshLaminatingTable);
                             });
                         })
@@ -1695,6 +1852,8 @@ public class ProsesProduksiS4S extends AppCompatActivity {
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
         String savedUsername = SharedPrefUtils.getUsername(this);
+        String actorName = SharedPrefUtils.getUsername(this);
+        String requestId = UUID.randomUUID().toString();
 
         //AMBIL DATA DARI SPINNER SPK
         String noSPKTujuan = selectedSPK != null ? selectedSPK.getNoSPK() : null;
@@ -1712,7 +1871,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoProduksi(noProduksi, "S4SProduksiInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S", noSPKTujuan);
+                ProsesProduksiApi.saveNoS4S(noProduksi, tglProduksi, newNoS4S, dateTimeSaved, "S4SProduksiInputS4S", noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1723,7 +1882,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoST = ProsesProduksiApi.getNoSTByNoProduksi(noProduksi);
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved, noSPKTujuan);
+                ProsesProduksiApi.saveNoST(noProduksi, tglProduksi, newNoST, dateTimeSaved, noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1734,7 +1893,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoProduksi(noProduksi, "S4SProduksiInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding", noSPKTujuan);
+                ProsesProduksiApi.saveNoMoulding(noProduksi, tglProduksi, newNoMoulding, dateTimeSaved, "S4SProduksiInputMoulding", noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1745,7 +1904,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoProduksi(noProduksi, "S4SProduksiInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ", noSPKTujuan);
+                ProsesProduksiApi.saveNoFJ(noProduksi, tglProduksi, newNoFJ, dateTimeSaved, "S4SProduksiInputFJ", noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1756,7 +1915,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoProduksi(noProduksi, "S4SProduksiInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir", noSPKTujuan);
+                ProsesProduksiApi.saveNoCC(noProduksi, tglProduksi, newNoCC, dateTimeSaved, "S4SProduksiInputCCAkhir", noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1766,7 +1925,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoLaminating = ProsesProduksiApi.getNoLaminatingByNoProduksi(noProduksi, "S4SProduksiInputLaminating");
                 List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
                 newNoLaminating.removeAll(existingNoLaminating);
-                ProsesProduksiApi.saveNoLaminating(noProduksi, tglProduksi, newNoLaminating, dateTimeSaved, "S4SProduksiInputLaminating", noSPKTujuan);
+                ProsesProduksiApi.saveNoLaminating(noProduksi, tglProduksi, newNoLaminating, dateTimeSaved, "S4SProduksiInputLaminating", noSPKTujuan, idUsername, actorName, requestId);
                 savedItems += newNoLaminating.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1777,7 +1936,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
                 List<String> existingNoReproses = ProsesProduksiApi.getNoReprosesByNoProduksi(noProduksi);
                 List<String> newNoReproses = new ArrayList<>(noReprosesList);
                 newNoReproses.removeAll(existingNoReproses);
-                ProsesProduksiApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses, dateTimeSaved);
+                ProsesProduksiApi.saveNoReproses(noProduksi, tglProduksi, newNoReproses, dateTimeSaved, idUsername, actorName, requestId);
                 savedItems += newNoReproses.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
