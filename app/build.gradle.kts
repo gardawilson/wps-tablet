@@ -129,4 +129,11 @@ dependencies {
     implementation(libs.viewpager2)
     implementation(libs.cardview)
 
+    // Room (persistent queue)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+
+    // WorkManager (retry background job)
+    implementation(libs.workmanager)
+
 }

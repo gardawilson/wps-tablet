@@ -53,6 +53,7 @@ import android.widget.ImageView;
 import java.io.OutputStream;
 
 import com.example.myapplication.api.MasterApi;
+import com.example.myapplication.api.ProsesProduksiApi;
 import com.example.myapplication.api.SawnTimberApi;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.GradeDetailData;
@@ -66,7 +67,9 @@ import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.OutputDataST;
 import com.example.myapplication.model.StData;
 import com.example.myapplication.model.TellyData;
+import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.DateTimeUtils;
+import com.example.myapplication.utils.PrintStatusQueue;
 
 import android.view.inputmethod.InputMethodManager;
 import android.content.SharedPreferences;
@@ -77,6 +80,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -132,6 +137,7 @@ import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -221,7 +227,7 @@ public class SawnTimber extends AppCompatActivity {
     private ImageButton BtnExpandView;
     private List<String> userPermissions;
     private Button btnUpdate;
-    private TableRow selectedRowHeader = null;
+    private View selectedRowHeader = null;
     int page = 1;
     int currentPage = 0;
     boolean isLoading = false;
@@ -831,12 +837,15 @@ public class SawnTimber extends AppCompatActivity {
                                 isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
                             }
 
+                            String actorName = SharedPrefUtils.getUsername(SawnTimber.this);
+                            String requestId = UUID.randomUUID().toString();
+
                             String generatedNoST = SawnTimberApi.saveSawnTimberTransaction(
                                     noKayuBulat, String.valueOf(jenisKayu), noSPK, telly, stickBy,
                                     dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
                                     isBagusKulit, isUpah, idUOMTblLebar, 4,
                                     temporaryDataListDetail, gradeListToSave, noPenST,
-                                    labelVersion, noBongkarSusun, cbBongkarSusun.isChecked()
+                                    labelVersion, noBongkarSusun, cbBongkarSusun.isChecked(), idUsername, actorName, requestId
                             );
 
                             runOnUiThread(() -> {
@@ -1056,7 +1065,11 @@ public class SawnTimber extends AppCompatActivity {
                                     printCount, username, remark, isSLP, idUOMTblLebar, idUOMPanjang, noPenST, labelVersion, customer); // Parameter baru untuk watermark
 
                             if (pdfUri != null) {
-                                updatePrintStatus(noST);
+                                PrintStatusQueue.enqueue(
+                                        SawnTimber.this,
+                                        "ST_h", "NoST", noST,
+                                        idUsername, SharedPrefUtils.getUsername(SawnTimber.this)
+                                );
                                 Intent intent = new Intent(Intent.ACTION_VIEW);
                                 intent.setDataAndType(pdfUri, "application/pdf");
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -1161,13 +1174,16 @@ public class SawnTimber extends AppCompatActivity {
                     isBagusKulit = radioBagus.isChecked() ? 1 : (radioKulit.isChecked() ? 2 : 0);
                 }
 
+                String actorName = SharedPrefUtils.getUsername(SawnTimber.this);
+                String requestId = UUID.randomUUID().toString();
+
                 // Call update transaction method
                 boolean updateSuccess = SawnTimberApi.updateSawnTimberTransaction(
                         noST, noKayuBulat, String.valueOf(jenisKayu), noSPK, telly, stickBy,
                         dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
                         isBagusKulit, isUpah, idUOMTblLebar, 4,
                         temporaryDataListDetail, gradeListToSave, noPenST,
-                        labelVersion, noBongkarSusun, cbBongkarSusun.isChecked()
+                        labelVersion, noBongkarSusun, cbBongkarSusun.isChecked(), idUsername, actorName, requestId
                 );
 
                 runOnUiThread(() -> {
@@ -1247,55 +1263,38 @@ public class SawnTimber extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_list_item_st, null);
 
-        TableLayout tableLayout = dialogView.findViewById(R.id.tableHeaderLabel);
         ProgressBar loadingIndicator = dialogView.findViewById(R.id.listLabelLoadingIndicator);
-
-        ScrollView scrollView = dialogView.findViewById(R.id.scrollViewTable);
-
+        RecyclerView rvLabelList = dialogView.findViewById(R.id.rvLabelList);
+        TextView tvNoData = dialogView.findViewById(R.id.tvNoData);
         EditText searchInput = dialogView.findViewById(R.id.searchInput);
         ImageView clearButton = dialogView.findViewById(R.id.clearButton);
-
-        Button btnEditData = dialogView.findViewById(R.id.btnEditData);
-        Button btnDeleteData = dialogView.findViewById(R.id.btnDeleteData);
-
         TextView tvSumLabel = dialogView.findViewById(R.id.tvSumLabel);
 
-        // Reset selection state
         selectedRowHeader = null;
-
-        executorService.execute(() -> {
-            // 🔹 Jalankan delete di background thread
-            int totalLabel = SawnTimberApi.getTotalLabelCount("");
-
-            // 🔹 Update UI kembali
-            runOnUiThread(() -> {
-                tvSumLabel.setText("LIST LABEL ST " + "(" + String.valueOf(totalLabel) + ")");
-
-            });
-
-        });
-
-
-        // Variable untuk menyimpan data yang dipilih
         final StData[] selectedData = {null};
-
-        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
-            View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
-            int diff = (view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY()));
-
-            if (diff <= 50 && !isLoading) { // 50px sebelum mentok bawah
-                isLoading = true;
-                currentPage++;
-                loadMoreData(tableLayout, selectedData);
-            }
-        });
-
-        tableLayout.removeAllViews();
-        loadingIndicator.setVisibility(View.VISIBLE); // tampilkan loading
+        final boolean[] hasMoreData = {true};
+        final String[] activeKeyword = {""};
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
+
+        DialogLabelAdapter adapter = new DialogLabelAdapter(
+                selectedData, dialog, loadingIndicator, tvNoData, tvSumLabel, activeKeyword, hasMoreData);
+        rvLabelList.setLayoutManager(new LinearLayoutManager(this));
+        rvLabelList.setAdapter(adapter);
+        rvLabelList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy <= 0) return;
+                if (!recyclerView.canScrollVertically(1) && !isLoading && hasMoreData[0]) {
+                    isLoading = true;
+                    currentPage++;
+                    loadLabelPageForDialog(currentPage, activeKeyword[0], true, adapter, loadingIndicator, tvNoData, hasMoreData);
+                }
+            }
+        });
 
         dialog.show();
 
@@ -1308,234 +1307,472 @@ public class SawnTimber extends AppCompatActivity {
             window.setAttributes(layoutParams);
         }
 
-        // Click listener untuk button Edit
-        btnEditData.setOnClickListener(v -> {
-            if (selectedData[0] != null) {
-                isCreateMode = false;
-
-                // Mengisi NoS4S dengan data yang dipilih
-                NoST.setText(selectedData[0].getNoST());
-
-                // Tutup dialog
-                dialog.dismiss();
-
-                btnUpdate.setVisibility(View.VISIBLE);
-                BtnSimpanST.setVisibility(View.GONE);
-                BtnDataBaruST.setVisibility(View.GONE);
-
-
-                SpinBongkarSusun.setVisibility(View.GONE);
-                susunView.setVisibility(View.VISIBLE);
-
-                fabAddDetailData.setVisibility(View.VISIBLE);
-
-                btnUpdate.setVisibility(View.VISIBLE);
-
-
-                // Optional: tampilkan pesan sukses
-//                Toast.makeText(this, "Data dipilih: " + selectedData[0].getNoS4S(), Toast.LENGTH_SHORT).show();
-            } else {
-                // Tampilkan pesan jika belum ada row yang dipilih
-                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // Click listener untuk button Delete (opsional, sesuai kebutuhan)
-        btnDeleteData.setOnClickListener(v -> {
-            if (selectedData[0] != null) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Konfirmasi")
-                        .setMessage("Apakah Anda yakin ingin menghapus data " + selectedData[0].getNoST() + "?")
-                        .setPositiveButton("Ya", (dialogInterface, i) -> {
-                            executorService.execute(() -> {
-                                try {
-                                    // 🔹 Jalankan delete di background thread
-                                    boolean success = SawnTimberApi.deleteSawnTimberTransaction(selectedData[0].getNoST());
-
-                                    // 🔹 Update UI kembali
-                                    runOnUiThread(() -> {
-                                        if (success) {
-                                            Toast.makeText(this,
-                                                    "Data " + selectedData[0].getNoST() + " dihapus",
-                                                    Toast.LENGTH_SHORT).show();
-
-                                            // contoh: refresh tabel/list setelah delete
-                                            loadSearchData(tableLayout, loadingIndicator, "", selectedData);
-                                        } else {
-                                            Toast.makeText(this,
-                                                    "Gagal menghapus data",
-                                                    Toast.LENGTH_SHORT).show();
-                                        }
-                                        dialogInterface.dismiss();
-                                    });
-                                } catch (Exception e) {
-                                    runOnUiThread(() ->
-                                            Toast.makeText(this,
-                                                    "Error: " + e.getMessage(),
-                                                    Toast.LENGTH_SHORT).show()
-                                    );
-                                }
-                            });
-                        })
-                        .setNegativeButton("Tidak", null)
-                        .show();
-            } else {
-                Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
+        refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
+        page = 1;
+        currentPage = 1;
+        isLoading = true;
+        loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
 
         searchInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Munculkan / sembunyikan tombol clear
-                if (s.length() > 0) {
-                    clearButton.setVisibility(View.VISIBLE);
-                } else {
-                    clearButton.setVisibility(View.GONE);
-                }
-
-                // Reset selection saat search
+                clearButton.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+                activeKeyword[0] = s.toString().trim();
+                selectedData[0] = null;
                 selectedRowHeader = null;
-                selectedData[0] = null; // Reset selected data
-
-                // Logika search
-                String keyword = s.toString().trim();
-                page = 1; // reset halaman
-                loadSearchData(tableLayout, loadingIndicator, keyword, selectedData);
+                adapter.clearSelection();
+                page = 1;
+                currentPage = 1;
+                hasMoreData[0] = true;
+                isLoading = true;
+                loadLabelPageForDialog(1, activeKeyword[0], false, adapter, loadingIndicator, tvNoData, hasMoreData);
+                refreshDialogLabelCount(tvSumLabel, activeKeyword[0]);
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
 
-        // Aksi tombol clear
-        clearButton.setOnClickListener(v -> {
-            searchInput.setText(""); // Hapus teks
-        });
+        clearButton.setOnClickListener(v -> searchInput.setText(""));
+    }
 
-        // Jalankan fetch data di background setelah dialog ditampilkan
+    private void refreshDialogLabelCount(TextView tvSumLabel, String keyword) {
         executorService.execute(() -> {
-            List<StData> list = SawnTimberApi.getSawnTimberData(page, 50, "");
-
-            runOnUiThread(() -> {
-                loadingIndicator.setVisibility(View.GONE); // sembunyikan loading
-                tableLayout.removeAllViews(); // hapus semua tampilan sebelumnya
-
-                if (list == null || list.isEmpty()) {
-                    TextView noDataView = new TextView(this);
-                    noDataView.setText("Data tidak ditemukan");
-                    noDataView.setGravity(Gravity.CENTER);
-                    noDataView.setPadding(16, 16, 16, 16);
-                    tableLayout.addView(noDataView);
-                    return;
-                }
-
-                addRowsToTable(tableLayout, list, 0, selectedData);
-            });
+            int total = SawnTimberApi.getTotalLabelCount(keyword);
+            runOnUiThread(() -> tvSumLabel.setText("LIST LABEL ST (" + total + ")"));
         });
     }
 
-    private void loadSearchData(TableLayout tableLayout, ProgressBar loadingIndicator, String keyword, StData[] selectedData) {
-        loadingIndicator.setVisibility(View.VISIBLE);
-        tableLayout.removeAllViews();
-
+    private void loadLabelPageForDialog(
+            int targetPage, String keyword, boolean isAppend,
+            DialogLabelAdapter adapter, ProgressBar loadingIndicator,
+            TextView tvNoData, boolean[] hasMoreData) {
+        if (!isAppend) {
+            loadingIndicator.setVisibility(View.VISIBLE);
+            tvNoData.setVisibility(View.GONE);
+        }
         executorService.execute(() -> {
-            List<StData> list = SawnTimberApi.getSawnTimberData(page, 50, keyword);
-
+            List<StData> list = SawnTimberApi.getSawnTimberData(targetPage, 50, keyword);
             runOnUiThread(() -> {
-                loadingIndicator.setVisibility(View.GONE);
-                if (list == null || list.isEmpty()) {
-                    TextView noDataView = new TextView(this);
-                    noDataView.setText("Data tidak ditemukan");
-                    noDataView.setGravity(Gravity.CENTER);
-                    noDataView.setPadding(16, 16, 16, 16);
-                    tableLayout.addView(noDataView);
-                    return;
+                if (!isAppend) loadingIndicator.setVisibility(View.GONE);
+                List<StData> safeList = list != null ? list : new ArrayList<>();
+                if (isAppend) {
+                    adapter.appendData(safeList);
+                } else {
+                    adapter.setData(safeList);
                 }
-
-                addRowsToTable(tableLayout, list, 0, selectedData);
-            });
-        });
-    }
-
-    private void loadMoreData(TableLayout tableLayout, StData[] selectedData) {
-        executorService.execute(() -> {
-            List<StData> moreData = SawnTimberApi.getSawnTimberData(currentPage, 50, "");
-            runOnUiThread(() -> {
-                if (moreData != null && !moreData.isEmpty()) {
-                    int startIndex = tableLayout.getChildCount();
-                    addRowsToTable(tableLayout, moreData, startIndex, selectedData);
-                }
+                hasMoreData[0] = safeList.size() == 50;
+                tvNoData.setVisibility(adapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
                 isLoading = false;
             });
         });
     }
 
-    // Method yang sudah diupdate untuk menyimpan selected data
-    private void addRowsToTable(TableLayout tableLayout, List<StData> list, int startRowIndex, StData[] selectedData) {
-        int rowIndex = startRowIndex;
+    private void openSTForEdit(StData data, AlertDialog dialog) {
+        if (data == null) {
+            Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        isCreateMode = false;
+        if (dialog != null && dialog.isShowing()) dialog.dismiss();
 
-        for (StData data : list) {
-            TableRow row = new TableRow(this);
-            row.setTag(rowIndex);
+        NoST.setText(data.getNoST());
+        btnUpdate.setVisibility(View.VISIBLE);
+        BtnSimpanST.setVisibility(View.GONE);
+        BtnDataBaruST.setVisibility(View.GONE);
+        SpinBongkarSusun.setVisibility(View.GONE);
+        susunView.setVisibility(View.VISIBLE);
+        fabAddDetailData.setVisibility(View.VISIBLE);
+    }
 
-            TextView col1 = TableUtils.createTextView(this, data.getNoST(), 1f);
-            TextView col2 = TableUtils.createTextView(this, DateTimeUtils.formatDate(data.getDateCreate()), 1f);
-            TextView col3 = TableUtils.createTextView(this, data.getNoKayuBulat(), 1f);
-            TextView col4 = TableUtils.createTextView(this, data.getJenis(), 1f);
-            TextView col5 = TableUtils.createTextView(this, data.getNoSPK(), 1f);
-            TextView col6 = TableUtils.createTextView(this, data.getNamaOrgTelly(), 1f);
+    private void editDialogLabelData(StData data, AlertDialog dialog) {
+        openSTForEdit(data, dialog);
+    }
 
-            row.addView(col1);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col2);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col3);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col4);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col5);
-            row.addView(TableUtils.createDivider(this));
-            row.addView(col6);
+    private void deleteDialogLabelData(
+            StData data,
+            DialogLabelAdapter adapter,
+            ProgressBar loadingIndicator,
+            TextView tvNoData,
+            TextView tvSumLabel,
+            String keyword,
+            boolean[] hasMoreData) {
+        if (data == null) {
+            Toast.makeText(this, "Silakan pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Konfirmasi")
+                .setMessage("Apakah Anda yakin ingin menghapus data " + data.getNoST() + "?")
+                .setPositiveButton("Ya", (dialogInterface, i) -> executorService.execute(() -> {
+                    try {
+                        String actorName = SharedPrefUtils.getUsername(SawnTimber.this);
+                        String requestId = UUID.randomUUID().toString();
+                        boolean success = SawnTimberApi.deleteSawnTimberTransaction(
+                                data.getNoST(), idUsername, actorName, requestId);
+                        runOnUiThread(() -> {
+                            if (success) {
+                                Toast.makeText(this, "Data " + data.getNoST() + " dihapus", Toast.LENGTH_SHORT).show();
+                                selectedRowHeader = null;
+                                adapter.clearSelection();
+                                currentPage = 1;
+                                page = 1;
+                                hasMoreData[0] = true;
+                                isLoading = true;
+                                loadLabelPageForDialog(1, keyword, false, adapter, loadingIndicator, tvNoData, hasMoreData);
+                                refreshDialogLabelCount(tvSumLabel, keyword);
+                            } else {
+                                Toast.makeText(this, "Gagal menghapus data", Toast.LENGTH_SHORT).show();
+                            }
+                            dialogInterface.dismiss();
+                        });
+                    } catch (Exception e) {
+                        runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    }
+                }))
+                .setNegativeButton("Tidak", null)
+                .show();
+    }
 
-            // Set background color berdasarkan index
-            if (rowIndex % 2 == 0) {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
+    private void openAuditHistoryST(StData data) {
+        if (data == null || data.getNoST() == null || data.getNoST().trim().isEmpty()) {
+            Toast.makeText(this, "Data No ST tidak valid", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, AuditActivity.class);
+        intent.putExtra(AuditActivity.EXTRA_SEARCH_PK, data.getNoST().trim());
+        startActivity(intent);
+    }
+
+    private void showDialogRowActionPopup(
+            View anchorView, StData data, float touchX, float touchY,
+            AlertDialog listDialog, DialogLabelAdapter adapter,
+            ProgressBar loadingIndicator, TextView tvNoData, TextView tvSumLabel,
+            String keyword, boolean[] hasMoreData) {
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View popupView = inflater.inflate(R.layout.popup_menu_label_dialog_row, null);
+        Button btnEditData   = popupView.findViewById(R.id.btnEditData);
+        Button btnDeleteData = popupView.findViewById(R.id.btnDeleteData);
+        Button btnPrintData  = popupView.findViewById(R.id.btnPrintData);
+        Button btnHistory    = popupView.findViewById(R.id.btnHistory);
+        setSTTooltipLoadingState(popupView);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        boolean canUpdate = userPermissions.contains("label_st:update");
+        btnEditData.setEnabled(canUpdate);
+        btnEditData.setAlpha(canUpdate ? 1f : 0.5f);
+        btnDeleteData.setEnabled(canUpdate);
+        btnDeleteData.setAlpha(canUpdate ? 1f : 0.5f);
+
+        btnEditData.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            editDialogLabelData(data, listDialog);
+        });
+        btnDeleteData.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            deleteDialogLabelData(data, adapter, loadingIndicator, tvNoData, tvSumLabel, keyword, hasMoreData);
+        });
+        btnPrintData.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            openSTForEdit(data, listDialog);
+        });
+        btnHistory.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            openAuditHistoryST(data);
+        });
+
+        popupView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int popupWidth  = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+        int screenWidth  = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int margin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics());
+
+        int x = (int) touchX;
+        int y = (int) touchY - popupHeight;
+        if (x + popupWidth  > screenWidth  - margin) x = screenWidth  - popupWidth  - margin;
+        if (x < margin) x = margin;
+        if (y < margin) y = (int) touchY + margin;
+        if (y + popupHeight > screenHeight - margin) y = screenHeight - popupHeight - margin;
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+
+        executorService.execute(() -> {
+            TooltipData tooltipData = ProsesProduksiApi.getTooltipData(data.getNoST(), "ST_h", "ST_d", "NoST");
+            runOnUiThread(() -> {
+                if (!popupWindow.isShowing() || isFinishing() || isDestroyed()) return;
+                if (tooltipData != null && tooltipData.getNoLabel() != null && tooltipData.getTableData() != null) {
+                    bindSTTooltipDialogData(popupView, tooltipData);
+                } else {
+                    showSTTooltipDialogError(popupView);
+                }
+                popupWindow.update();
+            });
+        });
+    }
+
+    private void setSTTooltipText(View v, int id, String text, int color) {
+        TextView tv = v.findViewById(id);
+        if (tv != null) { tv.setText(text); tv.setTextColor(color); }
+    }
+
+    private void setSTTooltipLoadingState(View tooltipView) {
+        int gray = Color.GRAY;
+        setSTTooltipText(tooltipView, R.id.tvNoLabel,    "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvNoKBSuket,  "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvDateTime,   "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvJenis,      "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvNoSPK,      "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvNoPlat,     "Loading...", gray);
+        setSTTooltipText(tooltipView, R.id.tvIsLembur,   "-",          gray);
+        tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
+        tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+        tableLayout.removeAllViews();
+        TableRow loadingRow = new TableRow(this);
+        loadingRow.setGravity(Gravity.CENTER);
+        loadingRow.setPadding(0, 20, 0, 20);
+        ProgressBar progressBar = new ProgressBar(this);
+        LinearLayout.LayoutParams pParams = new LinearLayout.LayoutParams(48, 48);
+        pParams.setMargins(0, 0, 16, 0);
+        progressBar.setLayoutParams(pParams);
+        TextView loadingText = new TextView(this);
+        loadingText.setText("Loading...");
+        loadingText.setTextColor(Color.GRAY);
+        loadingText.setTextSize(12);
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.HORIZONTAL);
+        container.setGravity(Gravity.CENTER);
+        container.addView(progressBar);
+        container.addView(loadingText);
+        TableRow.LayoutParams cellParams = new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT);
+        cellParams.span = 4;
+        container.setLayoutParams(cellParams);
+        loadingRow.addView(container);
+        tableLayout.addView(loadingRow);
+    }
+
+    private void bindSTTooltipDialogData(View tooltipView, TooltipData tooltipData) {
+        int black = Color.BLACK;
+        setSTTooltipText(tooltipView, R.id.tvNoLabel,   tooltipData.getNoLabel(),           black);
+        setSTTooltipText(tooltipView, R.id.tvNoKBSuket, tooltipData.getNoKBSuket(),          black);
+        setSTTooltipText(tooltipView, R.id.tvDateTime,  tooltipData.getFormattedDateTime(),  black);
+        setSTTooltipText(tooltipView, R.id.tvJenis,     tooltipData.getJenis(),              black);
+        setSTTooltipText(tooltipView, R.id.tvNoSPK,     tooltipData.getSpkDetail(),          black);
+        setSTTooltipText(tooltipView, R.id.tvNoPlat,    tooltipData.getNoPlat(),             black);
+        setSTTooltipText(tooltipView, R.id.tvIsLembur,  "-",                                 black);
+        tooltipView.findViewById(R.id.fieldNoSPKAsal).setVisibility(View.GONE);
+        tooltipView.findViewById(R.id.fieldGrade).setVisibility(View.GONE);
+        tooltipView.findViewById(R.id.fieldPlatTruk).setVisibility(View.VISIBLE);
+
+        TableLayout tableLayout = tooltipView.findViewById(R.id.tabelDetailTooltip);
+        tableLayout.removeAllViews();
+        tableLayout.setStretchAllColumns(true);
+        if (tooltipData.getTableData() != null) {
+            for (String[] rowData : tooltipData.getTableData()) {
+                TableRow tableRow = new TableRow(this);
+                tableRow.setLayoutParams(new TableLayout.LayoutParams(
+                        TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+                tableRow.setBackgroundColor(getResources().getColor(R.color.background_cream));
+                for (String cell : rowData) {
+                    TextView tv = new TextView(this);
+                    tv.setText(cell);
+                    TableRow.LayoutParams cp = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+                    tv.setLayoutParams(cp);
+                    tv.setGravity(Gravity.CENTER);
+                    tv.setPadding(8, 8, 8, 8);
+                    tv.setTextColor(Color.BLACK);
+                    tableRow.addView(tv);
+                }
+                tableLayout.addView(tableRow);
+            }
+        }
+        // Summary rows
+        addSTTooltipSummaryRow(tableLayout, "Total :", String.valueOf(tooltipData.getTotalPcs()));
+        addSTTooltipSummaryRow(tableLayout, "M3 :", new DecimalFormat("0.0000").format(tooltipData.getTotalM3()));
+        addSTTooltipSummaryRow(tableLayout, "Ton :", new DecimalFormat("0.0000").format(tooltipData.getTotalTon()));
+    }
+
+    private void addSTTooltipSummaryRow(TableLayout tableLayout, String label, String value) {
+        TableRow row = new TableRow(this);
+        TextView tvLabel = new TextView(this);
+        tvLabel.setText(label);
+        tvLabel.setTextColor(Color.BLACK);
+        tvLabel.setTextSize(12);
+        tvLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        TableRow.LayoutParams lp = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 3f);
+        tvLabel.setLayoutParams(lp);
+        tvLabel.setPadding(8, 4, 8, 4);
+        TextView tvValue = new TextView(this);
+        tvValue.setText(value);
+        tvValue.setTextColor(Color.BLACK);
+        tvValue.setTextSize(12);
+        TableRow.LayoutParams vp = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+        tvValue.setLayoutParams(vp);
+        tvValue.setPadding(8, 4, 8, 4);
+        row.addView(tvLabel);
+        row.addView(tvValue);
+        tableLayout.addView(row);
+    }
+
+    private void showSTTooltipDialogError(View tooltipView) {
+        int red = Color.RED;
+        setSTTooltipText(tooltipView, R.id.tvNoLabel,   "Error loading data", red);
+        setSTTooltipText(tooltipView, R.id.tvNoKBSuket, "-", red);
+        setSTTooltipText(tooltipView, R.id.tvDateTime,  "Failed to load",     red);
+        setSTTooltipText(tooltipView, R.id.tvJenis,     "-", red);
+        setSTTooltipText(tooltipView, R.id.tvNoSPK,     "-", red);
+        setSTTooltipText(tooltipView, R.id.tvNoPlat,    "-", red);
+        setSTTooltipText(tooltipView, R.id.tvIsLembur,  "-", red);
+    }
+
+    private class DialogLabelAdapter extends RecyclerView.Adapter<DialogLabelAdapter.ViewHolder> {
+        private final List<StData> items = new ArrayList<>();
+        private final StData[] selectedData;
+        private final AlertDialog listDialog;
+        private final ProgressBar loadingIndicator;
+        private final TextView tvNoData;
+        private final TextView tvSumLabel;
+        private final String[] activeKeyword;
+        private final boolean[] hasMoreData;
+        private int selectedPosition = RecyclerView.NO_POSITION;
+
+        DialogLabelAdapter(StData[] selectedData, AlertDialog listDialog, ProgressBar loadingIndicator,
+                           TextView tvNoData, TextView tvSumLabel, String[] activeKeyword, boolean[] hasMoreData) {
+            this.selectedData     = selectedData;
+            this.listDialog       = listDialog;
+            this.loadingIndicator = loadingIndicator;
+            this.tvNoData         = tvNoData;
+            this.tvSumLabel       = tvSumLabel;
+            this.activeKeyword    = activeKeyword;
+            this.hasMoreData      = hasMoreData;
+        }
+
+        void setData(List<StData> newItems) {
+            items.clear();
+            items.addAll(newItems);
+            notifyDataSetChanged();
+        }
+
+        void appendData(List<StData> moreItems) {
+            if (moreItems.isEmpty()) return;
+            int start = items.size();
+            items.addAll(moreItems);
+            notifyItemRangeInserted(start, moreItems.size());
+        }
+
+        void clearSelection() {
+            int old = selectedPosition;
+            selectedPosition = RecyclerView.NO_POSITION;
+            selectedData[0] = null;
+            if (old != RecyclerView.NO_POSITION) notifyItemChanged(old);
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_dialog_label_st, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            StData data = items.get(position);
+            final float[] touchCoords = new float[2];
+
+            holder.tvNoST.setText(defaultDialogText(data.getNoST()));
+            holder.tvTanggal.setText(defaultDialogText(DateTimeUtils.formatDate(data.getDateCreate())));
+            holder.tvNoKB.setText(defaultDialogText(data.getNoKayuBulat()));
+            holder.tvJenisKayu.setText(defaultDialogText(data.getJenis()));
+            holder.tvNoSPK.setText(defaultDialogText(data.getNoSPK()));
+            holder.tvTally.setText(defaultDialogText(data.getNamaOrgTelly()));
+
+            if (position == selectedPosition) {
+                holder.setSelectedState(true, true);
             } else {
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
+                holder.setSelectedState(false, position % 2 == 0);
             }
 
-            // Set click listener yang konsisten untuk semua row
-            row.setOnClickListener(v -> {
-                // Reset previous selection
-                if (selectedRowHeader != null) {
-                    int prevIndex = (int) selectedRowHeader.getTag();
-                    if (prevIndex % 2 == 0) {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.background_cream));
-                    } else {
-                        selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
-                    }
-                    TableUtils.resetTextColor(this, selectedRowHeader);
+            holder.itemView.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    touchCoords[0] = event.getRawX();
+                    touchCoords[1] = event.getRawY();
                 }
-
-                // Set new selection
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
-                TableUtils.setTextColor(this, row, R.color.white);
-                selectedRowHeader = row;
-
-                // Simpan data yang dipilih
-                selectedData[0] = data;
-
-                // Call click handler
-                onRowClick(data);
+                return false;
             });
 
-            tableLayout.addView(row);
-            rowIndex++;
+            holder.itemView.setOnClickListener(v -> {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return;
+                selectSTDialogItem(holder, pos);
+            });
+
+            holder.itemView.setOnLongClickListener(v -> {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return false;
+                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                StData selected = selectSTDialogItem(holder, pos);
+                showDialogRowActionPopup(v, selected, touchCoords[0], touchCoords[1],
+                        listDialog, this, loadingIndicator, tvNoData, tvSumLabel,
+                        activeKeyword[0], hasMoreData);
+                return true;
+            });
         }
+
+        @Override
+        public int getItemCount() { return items.size(); }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            final TextView tvNoST, tvTanggal, tvNoKB, tvJenisKayu, tvNoSPK, tvTally;
+
+            ViewHolder(View itemView) {
+                super(itemView);
+                tvNoST      = itemView.findViewById(R.id.tvNoST);
+                tvTanggal   = itemView.findViewById(R.id.tvTanggal);
+                tvNoKB      = itemView.findViewById(R.id.tvNoKB);
+                tvJenisKayu = itemView.findViewById(R.id.tvJenisKayu);
+                tvNoSPK     = itemView.findViewById(R.id.tvNoSPK);
+                tvTally     = itemView.findViewById(R.id.tvTally);
+            }
+
+            void setSelectedState(boolean selected, boolean isEvenRow) {
+                int bgColor = selected ? R.color.primary
+                        : (isEvenRow ? R.color.background_cream : R.color.white);
+                int textColor = selected ? R.color.white : android.R.color.black;
+                itemView.setBackgroundColor(ContextCompat.getColor(SawnTimber.this, bgColor));
+                int tc = ContextCompat.getColor(SawnTimber.this, textColor);
+                tvNoST.setTextColor(tc);
+                tvTanggal.setTextColor(tc);
+                tvNoKB.setTextColor(tc);
+                tvJenisKayu.setTextColor(tc);
+                tvNoSPK.setTextColor(tc);
+                tvTally.setTextColor(tc);
+            }
+        }
+
+        private StData selectSTDialogItem(ViewHolder holder, int adapterPosition) {
+            int previousSelection = selectedPosition;
+            selectedPosition = adapterPosition;
+            if (previousSelection != RecyclerView.NO_POSITION) notifyItemChanged(previousSelection);
+            notifyItemChanged(selectedPosition);
+            StData selected = items.get(adapterPosition);
+            selectedData[0] = selected;
+            selectedRowHeader = holder.itemView;
+            noST = selected.getNoST();
+            return selected;
+        }
+    }
+
+    private String defaultDialogText(String value) {
+        return value == null || value.trim().isEmpty() || value.equals("-") ? "-" : value;
     }
 
     private void onRowClick(StData data) {
@@ -2425,6 +2662,7 @@ public class SawnTimber extends AppCompatActivity {
 
         TglVacuum.setText(headerData.getVacuumDate());
         cbVacuum.setChecked(!headerData.getVacuumDate().equals("-"));
+        rawDateVacuum = headerData.getVacuumDate().equals("-") ? null : headerData.getVacuumDate();
 
         // ====== panggil semua loader spinner dengan callback ======
         loadJenisKayuSpinner(headerData.getIdJenisKayu(), checkAllDone);

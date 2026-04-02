@@ -14,6 +14,7 @@ import com.example.myapplication.model.STPembelianDataReject;
 import com.example.myapplication.model.STUpahData;
 import com.example.myapplication.model.StData;
 import com.example.myapplication.model.SupplierData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -24,7 +25,9 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SawnTimberApi {
 
@@ -762,12 +765,14 @@ public class SawnTimberApi {
                                                    int isBagusKulit, int isUpah, int idUOMTblLebar,
                                                    int idUOMPanjang, List<LabelDetailData> detailList,
                                                    List<GradeDetailData> gradeList, String noPenST,
-                                                   int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked) {
+                                                   int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked, String actorId, String actorName, String requestId) {
 
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
+
 
             // 1. Generate new number
             String newNoST = generateNewNumberWithConnection(con);
@@ -997,36 +1002,36 @@ public class SawnTimberApi {
                                                       int isBagusKulit, int isUpah, int idUOMTblLebar,
                                                       int idUOMPanjang, List<LabelDetailData> detailList,
                                                       List<GradeDetailData> gradeList, String noPenST,
-                                                      int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked) {
+                                                      int labelVersion, String noBongkarSusun, boolean cbBongkarSusunChecked, String actorId, String actorName, String requestId) {
 
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false); // Start transaction
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
 
-            // 1. Update header
-            updateSawnTimberHeaderWithConnection(con, noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy,
+
+            // 1. Update header (hanya jika ada perubahan)
+            if (isSTHeaderChanged(con, noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy,
                     dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
-                    isBagusKulit, isUpah, idUOMTblLebar, idUOMPanjang);
-
-            // 2. Delete existing detail dan insert yang baru
-            deleteSawnTimberDetailWithConnection(con, noST);
-            for (int i = 0; i < detailList.size(); i++) {
-                LabelDetailData dataRow = detailList.get(i);
-                saveSawnTimberDetailWithConnection(con, noST, i + 1,
-                        Double.parseDouble(dataRow.getTebal()),
-                        Double.parseDouble(dataRow.getLebar()),
-                        Double.parseDouble(dataRow.getPanjang()),
-                        Integer.parseInt(dataRow.getPcs()));
+                    isBagusKulit, isUpah, idUOMTblLebar, idUOMPanjang)) {
+                updateSawnTimberHeaderWithConnection(con, noST, noKayuBulat, jenisKayu, noSPK, telly, stickBy,
+                        dateCreate, isVacuum, remark, isSLP, isSticked, isKering,
+                        isBagusKulit, isUpah, idUOMTblLebar, idUOMPanjang);
             }
 
-            // 3. Delete existing grade dan insert yang baru (jika bukan kayu lat)
-            deleteSawnTimberGradeWithConnection(con, noST);
-            if (gradeList != null && !gradeList.isEmpty()) {
-                for (GradeDetailData gradeDetailList : gradeList) {
-                    saveSawnTimberGradeWithConnection(con, noST,
-                            gradeDetailList.getGradeId(), gradeDetailList.getJumlah());
-                }
+            // 2. Replace detail ST_d (hanya baris yang berubah)
+            if (!replaceSTDetail(con, noST, detailList)) {
+                con.rollback();
+                System.err.println("[DB_ERROR] Gagal replace ST detail untuk NoST=" + noST);
+                return false;
+            }
+
+            // 3. Replace grade STStick (hanya baris yang berubah)
+            if (!replaceSTGrade(con, noST, gradeList)) {
+                con.rollback();
+                System.err.println("[DB_ERROR] Gagal replace ST grade untuk NoST=" + noST);
+                return false;
             }
 
 
@@ -1134,6 +1139,261 @@ public class SawnTimberApi {
         }
     }
 
+    // =========================================================
+    // Smart comparison helpers (S4S pattern)
+    // =========================================================
+
+    private static boolean isSTHeaderChanged(Connection con, String noST,
+                                              String noKayuBulat, String jenisKayu, String noSPK,
+                                              String telly, String stickBy, String dateCreate,
+                                              String isVacuum, String remark, int isSLP, int isSticked,
+                                              int isKering, int isBagusKulit, int isUpah,
+                                              int idUOMTblLebar, int idUOMPanjang) throws SQLException {
+        String query = "SELECT NoKayuBulat, IdJenisKayu, NoSPK, IdOrgTelly, IdStickBy, IsUpah, " +
+                "IdUOMTblLebar, IdUOMPanjang, DateCreate, VacuumDate, Remark, IsSLP, IsSticked, " +
+                "StartKering, IsBagusKulit FROM dbo.ST_h WHERE NoST = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, noST);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return true;
+
+                String dbNoKayuBulat = normalizeSTString(rs.getString("NoKayuBulat"));
+                String dbJenisKayu   = normalizeSTString(rs.getString("IdJenisKayu"));
+                String dbNoSPK       = normalizeSTString(rs.getString("NoSPK"));
+                String dbTelly       = normalizeSTString(rs.getString("IdOrgTelly"));
+                String dbStickBy     = normalizeSTString(rs.getString("IdStickBy"));
+                int    dbIsUpah      = rs.getInt("IsUpah");
+                int    dbUOMTblLebar = rs.getInt("IdUOMTblLebar");
+                int    dbUOMPanjang  = rs.getInt("IdUOMPanjang");
+                String dbDateCreate  = normalizeSTString(rs.getString("DateCreate"));
+                String dbVacuumDate  = normalizeSTString(rs.getString("VacuumDate"));
+                String dbRemark      = normalizeSTString(rs.getString("Remark"));
+                int    dbIsSLP       = rs.getInt("IsSLP");
+                int    dbIsSticked   = rs.getInt("IsSticked");
+                int    dbIsKering    = rs.getInt("StartKering");
+                int    dbIsBagusKulit= rs.getInt("IsBagusKulit");
+
+                // Normalize incoming values
+                String newNoKayuBulat = normalizeSTString(noKayuBulat);
+                if ("-".equals(newNoKayuBulat)) newNoKayuBulat = null;
+                String newJenisKayu  = normalizeSTString(jenisKayu);
+                String newNoSPK      = normalizeSTString(noSPK);
+                String newTelly      = normalizeSTString(telly);
+                String newStickBy    = normalizeSTString(stickBy);
+                String newDateCreate = normalizeSTString(dateCreate);
+                String newVacuumDate = normalizeSTString(isVacuum);
+                String newRemark     = normalizeSTString(remark);
+
+                if (!equalsSTNullable(dbNoKayuBulat, newNoKayuBulat)) return true;
+                if (!equalsSTNullable(dbJenisKayu,   newJenisKayu))   return true;
+                if (!equalsSTNullable(dbNoSPK,        newNoSPK))       return true;
+                if (!equalsSTNullable(dbTelly,         newTelly))       return true;
+                if (!equalsSTNullable(dbStickBy,       newStickBy))     return true;
+                if (dbIsUpah       != isUpah)        return true;
+                if (dbUOMTblLebar  != idUOMTblLebar) return true;
+                if (dbUOMPanjang   != idUOMPanjang)  return true;
+                if (!equalsSTNullable(dbDateCreate,  newDateCreate))   return true;
+                if (!equalsSTNullable(dbVacuumDate,  newVacuumDate))   return true;
+                if (!equalsSTNullable(dbRemark,       newRemark))       return true;
+                if (dbIsSLP        != isSLP)         return true;
+                if (dbIsSticked    != isSticked)     return true;
+                if (dbIsKering     != isKering)      return true;
+                if (dbIsBagusKulit != isBagusKulit)  return true;
+
+                return false;
+            }
+        }
+    }
+
+    private static boolean replaceSTDetail(Connection con, String noST,
+                                            List<LabelDetailData> dataList) throws SQLException {
+        // Load existing rows keyed by NoUrut
+        Map<Integer, STDetailRow> existingRows = new HashMap<>();
+        String loadQuery = "SELECT NoUrut, Tebal, Lebar, Panjang, JmlhBatang FROM dbo.ST_d WHERE NoST = ?";
+        try (PreparedStatement ps = con.prepareStatement(loadQuery)) {
+            ps.setString(1, noST);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    existingRows.put(rs.getInt("NoUrut"), new STDetailRow(
+                            rs.getDouble("Tebal"), rs.getDouble("Lebar"),
+                            rs.getDouble("Panjang"), rs.getInt("JmlhBatang")));
+                }
+            }
+        }
+
+        // Build incoming map
+        Map<Integer, STDetailRow> incomingRows = new HashMap<>();
+        if (dataList != null) {
+            for (int i = 0; i < dataList.size(); i++) {
+                LabelDetailData d = dataList.get(i);
+                incomingRows.put(i + 1, new STDetailRow(
+                        parseSTNumber(d.getTebal()), parseSTNumber(d.getLebar()),
+                        parseSTNumber(d.getPanjang()), Integer.parseInt(d.getPcs())));
+            }
+        }
+
+        String insertSql = "INSERT INTO dbo.ST_d (NoST, NoUrut, Tebal, Lebar, Panjang, JmlhBatang) VALUES (?, ?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE dbo.ST_d SET Tebal=?, Lebar=?, Panjang=?, JmlhBatang=? WHERE NoST=? AND NoUrut=?";
+        String deleteSql = "DELETE FROM dbo.ST_d WHERE NoST=? AND NoUrut=?";
+
+        try (PreparedStatement insertPs = con.prepareStatement(insertSql);
+             PreparedStatement updatePs = con.prepareStatement(updateSql);
+             PreparedStatement deletePs = con.prepareStatement(deleteSql)) {
+
+            for (Map.Entry<Integer, STDetailRow> entry : incomingRows.entrySet()) {
+                int noUrut = entry.getKey();
+                STDetailRow incoming = entry.getValue();
+                STDetailRow existing = existingRows.get(noUrut);
+
+                if (existing == null) {
+                    insertPs.setString(1, noST);
+                    insertPs.setInt(2, noUrut);
+                    insertPs.setDouble(3, incoming.tebal);
+                    insertPs.setDouble(4, incoming.lebar);
+                    insertPs.setDouble(5, incoming.panjang);
+                    insertPs.setInt(6, incoming.jmlhBatang);
+                    insertPs.addBatch();
+                } else if (isSTDetailChanged(existing, incoming)) {
+                    updatePs.setDouble(1, incoming.tebal);
+                    updatePs.setDouble(2, incoming.lebar);
+                    updatePs.setDouble(3, incoming.panjang);
+                    updatePs.setInt(4, incoming.jmlhBatang);
+                    updatePs.setString(5, noST);
+                    updatePs.setInt(6, noUrut);
+                    updatePs.addBatch();
+                }
+            }
+
+            for (Integer existingNoUrut : existingRows.keySet()) {
+                if (!incomingRows.containsKey(existingNoUrut)) {
+                    deletePs.setString(1, noST);
+                    deletePs.setInt(2, existingNoUrut);
+                    deletePs.addBatch();
+                }
+            }
+
+            return isSTBatchOk(insertPs.executeBatch())
+                    && isSTBatchOk(updatePs.executeBatch())
+                    && isSTBatchOk(deletePs.executeBatch());
+        }
+    }
+
+    private static boolean replaceSTGrade(Connection con, String noST,
+                                           List<GradeDetailData> gradeList) throws SQLException {
+        // Load existing rows keyed by IdGradeStick
+        Map<Integer, STGradeRow> existingRows = new HashMap<>();
+        String loadQuery = "SELECT IdGradeStick, JumlahStick FROM dbo.STStick WHERE NoST = ?";
+        try (PreparedStatement ps = con.prepareStatement(loadQuery)) {
+            ps.setString(1, noST);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    existingRows.put(rs.getInt("IdGradeStick"),
+                            new STGradeRow(rs.getString("JumlahStick")));
+                }
+            }
+        }
+
+        // Build incoming map
+        Map<Integer, STGradeRow> incomingRows = new HashMap<>();
+        if (gradeList != null) {
+            for (GradeDetailData g : gradeList) {
+                incomingRows.put(g.getGradeId(), new STGradeRow(g.getJumlah()));
+            }
+        }
+
+        String insertSql = "INSERT INTO dbo.STStick (NoST, IdGradeStick, JumlahStick) VALUES (?, ?, ?)";
+        String updateSql = "UPDATE dbo.STStick SET JumlahStick=? WHERE NoST=? AND IdGradeStick=?";
+        String deleteSql = "DELETE FROM dbo.STStick WHERE NoST=? AND IdGradeStick=?";
+
+        try (PreparedStatement insertPs = con.prepareStatement(insertSql);
+             PreparedStatement updatePs = con.prepareStatement(updateSql);
+             PreparedStatement deletePs = con.prepareStatement(deleteSql)) {
+
+            for (Map.Entry<Integer, STGradeRow> entry : incomingRows.entrySet()) {
+                int gradeId = entry.getKey();
+                STGradeRow incoming = entry.getValue();
+                STGradeRow existing = existingRows.get(gradeId);
+
+                if (existing == null) {
+                    insertPs.setString(1, noST);
+                    insertPs.setInt(2, gradeId);
+                    insertPs.setString(3, incoming.jumlahStick);
+                    insertPs.addBatch();
+                } else if (!equalsSTNullable(normalizeSTString(existing.jumlahStick),
+                        normalizeSTString(incoming.jumlahStick))) {
+                    updatePs.setString(1, incoming.jumlahStick);
+                    updatePs.setString(2, noST);
+                    updatePs.setInt(3, gradeId);
+                    updatePs.addBatch();
+                }
+            }
+
+            for (Integer existingGradeId : existingRows.keySet()) {
+                if (!incomingRows.containsKey(existingGradeId)) {
+                    deletePs.setString(1, noST);
+                    deletePs.setInt(2, existingGradeId);
+                    deletePs.addBatch();
+                }
+            }
+
+            return isSTBatchOk(insertPs.executeBatch())
+                    && isSTBatchOk(updatePs.executeBatch())
+                    && isSTBatchOk(deletePs.executeBatch());
+        }
+    }
+
+    private static boolean isSTDetailChanged(STDetailRow old, STDetailRow new_) {
+        return !isSTSameNumber(old.tebal, new_.tebal)
+                || !isSTSameNumber(old.lebar, new_.lebar)
+                || !isSTSameNumber(old.panjang, new_.panjang)
+                || old.jmlhBatang != new_.jmlhBatang;
+    }
+
+    private static boolean isSTSameNumber(double a, double b) {
+        return Math.abs(a - b) < 0.000001;
+    }
+
+    private static double parseSTNumber(String value) {
+        if (value == null || value.trim().isEmpty()) return 0d;
+        return Double.parseDouble(value.trim());
+    }
+
+    private static String normalizeSTString(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean equalsSTNullable(String left, String right) {
+        if (left == null && right == null) return true;
+        if (left == null || right == null) return false;
+        return left.equals(right);
+    }
+
+    private static boolean isSTBatchOk(int[] results) {
+        for (int r : results) {
+            if (r == PreparedStatement.EXECUTE_FAILED) return false;
+        }
+        return true;
+    }
+
+    private static final class STDetailRow {
+        final double tebal, lebar, panjang;
+        final int jmlhBatang;
+        STDetailRow(double tebal, double lebar, double panjang, int jmlhBatang) {
+            this.tebal = tebal; this.lebar = lebar;
+            this.panjang = panjang; this.jmlhBatang = jmlhBatang;
+        }
+    }
+
+    private static final class STGradeRow {
+        final String jumlahStick;
+        STGradeRow(String jumlahStick) { this.jumlahStick = jumlahStick; }
+    }
+
+    // =========================================================
+
     private static void deleteBongkarSusunOutputSTWithConnection(Connection con, String noST) throws SQLException {
         String query = "DELETE FROM dbo.BongkarSusunOutputST WHERE NoST = ?";
 
@@ -1171,11 +1431,13 @@ public class SawnTimberApi {
     }
 
 
-    public static boolean deleteSawnTimberTransaction(String noST) {
+    public static boolean deleteSawnTimberTransaction(String noST, String actorId, String actorName, String requestId) {
         Connection con = null;
         try {
             con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
             con.setAutoCommit(false);
+            AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
+
 
             // Urutan: child → parent
             deleteBongkarSusunOutputSTWithConnection(con, noST);

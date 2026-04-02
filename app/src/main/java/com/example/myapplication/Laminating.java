@@ -88,6 +88,10 @@ import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.AuditSessionContextHelper;
+import com.example.myapplication.AppDatabase;
+import com.example.myapplication.model.PendingPrintUpdate;
+import com.example.myapplication.utils.PrintStatusQueue;
+import com.example.myapplication.utils.PrintSyncEvent;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import android.app.TimePickerDialog;
@@ -109,6 +113,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -234,6 +240,11 @@ public class Laminating extends AppCompatActivity {
 //        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_laminating);
 
+        PrintSyncEvent.get().observe(this, tableName -> {
+            if ("Laminating_h".equals(tableName)) {
+                refreshCurrentOutputList();
+            }
+        });
 
         NoSTAL = findViewById(R.id.NoSTAL);
         NoLaminating = findViewById(R.id.NoLaminating);
@@ -1636,7 +1647,13 @@ public class Laminating extends AppCompatActivity {
                                         rs.getInt("HasBeenPrinted")
                                 ));
                             }
-
+                            Set<String> pendingKeys = new HashSet<>();
+                            for (PendingPrintUpdate p : AppDatabase.getInstance(getApplicationContext()).pendingPrintUpdateDao().getAll()) {
+                                if ("Laminating_h".equals(p.tableName)) pendingKeys.add(p.keyValue);
+                            }
+                            for (OutputLabelItem item : items) {
+                                if (pendingKeys.contains(item.noLabel)) item.isPending = true;
+                            }
                             runOnUiThread(() -> setOutputList(items));
                         }
                     }
@@ -1722,12 +1739,15 @@ public class Laminating extends AppCompatActivity {
         public void onBindViewHolder(OutputLabelViewHolder holder, int position) {
             OutputLabelItem item = outputLabelItems.get(position);
             holder.tvNoLabel.setText(item.noLabel);
-            holder.tvPrintCount.setText(item.hasBeenPrinted + "x");
+            holder.tvPrintCount.setText(item.isPending ? "-" : item.hasBeenPrinted + "x");
 
             if (position == selectedPosition) {
                 highlightOutputRow(holder.itemView);
             } else {
                 resetOutputRow(holder.itemView, position);
+                if (item.isPending) {
+                    holder.tvPrintCount.setTextColor(ContextCompat.getColor(Laminating.this, R.color.pending_orange));
+                }
             }
 
             holder.itemView.setOnClickListener(v -> {
@@ -1781,6 +1801,7 @@ public class Laminating extends AppCompatActivity {
     private static class OutputLabelItem {
         private final String noLabel;
         private final int hasBeenPrinted;
+        boolean isPending = false;
 
         OutputLabelItem(String noLabel, int hasBeenPrinted) {
             this.noLabel = noLabel;
@@ -2523,6 +2544,16 @@ public class Laminating extends AppCompatActivity {
         }
     }
 
+    private void applyPendingState(String keyValue) {
+        for (OutputLabelItem item : outputLabelItems) {
+            if (keyValue.equals(item.noLabel) && !item.isPending) {
+                item.isPending = true;
+                outputLabelAdapter.notifyDataSetChanged();
+                break;
+            }
+        }
+    }
+
     private void clearData() {
         NoLaminating.setText("");
         M3.setText("");
@@ -3247,18 +3278,14 @@ public class Laminating extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoLaminating = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoLaminating != null && !printedNoLaminating.trim().isEmpty()) {
-                updatePrintStatus(printedNoLaminating, new UpdatePrintStatusCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(Laminating.this, "Status cetak berhasil diupdate", Toast.LENGTH_SHORT).show();
-                        refreshCurrentOutputList();
-                    }
-
-                    @Override
-                    public void onFailed(String message) {
-                        Toast.makeText(Laminating.this, message, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                Toast.makeText(Laminating.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                final String key = printedNoLaminating;
+                PrintStatusQueue.enqueue(
+                        this,
+                        "Laminating_h", "NoLaminating", key,
+                        idUsername, SharedPrefUtils.getUsername(this),
+                        () -> applyPendingState(key)
+                );
             }
         }
     }

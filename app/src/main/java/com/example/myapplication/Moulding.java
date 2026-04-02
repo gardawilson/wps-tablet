@@ -87,6 +87,10 @@ import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
 import com.example.myapplication.model.TooltipData;
 import com.example.myapplication.utils.AuditSessionContextHelper;
+import com.example.myapplication.AppDatabase;
+import com.example.myapplication.model.PendingPrintUpdate;
+import com.example.myapplication.utils.PrintStatusQueue;
+import com.example.myapplication.utils.PrintSyncEvent;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import android.app.TimePickerDialog;
@@ -108,6 +112,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -230,6 +236,12 @@ public class Moulding extends AppCompatActivity {
 
 //        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_moulding);
+
+        PrintSyncEvent.get().observe(this, tableName -> {
+            if ("Moulding_h".equals(tableName)) {
+                refreshCurrentOutputList();
+            }
+        });
 
         //deklarasi semua item yang ada di xml yang akan digunakan sesuai ID yang tertera di XML
         NoSTAM = findViewById(R.id.NoSTAM);
@@ -1638,6 +1650,13 @@ public class Moulding extends AppCompatActivity {
                                         rs.getInt("HasBeenPrinted")
                                 ));
                             }
+                            Set<String> pendingKeys = new HashSet<>();
+                            for (PendingPrintUpdate p : AppDatabase.getInstance(getApplicationContext()).pendingPrintUpdateDao().getAll()) {
+                                if ("Moulding_h".equals(p.tableName)) pendingKeys.add(p.keyValue);
+                            }
+                            for (OutputLabelItem item : items) {
+                                if (pendingKeys.contains(item.noLabel)) item.isPending = true;
+                            }
                             runOnUiThread(() -> setOutputList(items));
                         }
                     }
@@ -1723,12 +1742,15 @@ public class Moulding extends AppCompatActivity {
         public void onBindViewHolder(OutputLabelViewHolder holder, int position) {
             OutputLabelItem item = outputLabelItems.get(position);
             holder.tvNoLabel.setText(item.noLabel);
-            holder.tvPrintCount.setText(item.hasBeenPrinted + "x");
+            holder.tvPrintCount.setText(item.isPending ? "-" : item.hasBeenPrinted + "x");
 
             if (position == selectedPosition) {
                 highlightOutputRow(holder.itemView);
             } else {
                 resetOutputRow(holder.itemView, position);
+                if (item.isPending) {
+                    holder.tvPrintCount.setTextColor(ContextCompat.getColor(Moulding.this, R.color.pending_orange));
+                }
             }
 
             holder.itemView.setOnClickListener(v -> {
@@ -1782,6 +1804,7 @@ public class Moulding extends AppCompatActivity {
     private static class OutputLabelItem {
         private final String noLabel;
         private final int hasBeenPrinted;
+        boolean isPending = false;
 
         OutputLabelItem(String noLabel, int hasBeenPrinted) {
             this.noLabel = noLabel;
@@ -2527,6 +2550,16 @@ public class Moulding extends AppCompatActivity {
         }
     }
 
+    private void applyPendingState(String keyValue) {
+        for (OutputLabelItem item : outputLabelItems) {
+            if (keyValue.equals(item.noLabel) && !item.isPending) {
+                item.isPending = true;
+                outputLabelAdapter.notifyDataSetChanged();
+                break;
+            }
+        }
+    }
+
 
     //Fungsi untuk add Data Detail
     private void addDataDetail(String noMoulding) {
@@ -3259,18 +3292,14 @@ public class Moulding extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoMoulding = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoMoulding != null && !printedNoMoulding.trim().isEmpty()) {
-                updatePrintStatus(printedNoMoulding, new UpdatePrintStatusCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(Moulding.this, "Status cetak berhasil diupdate", Toast.LENGTH_SHORT).show();
-                        refreshCurrentOutputList();
-                    }
-
-                    @Override
-                    public void onFailed(String message) {
-                        Toast.makeText(Moulding.this, message, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                Toast.makeText(Moulding.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                final String key = printedNoMoulding;
+                PrintStatusQueue.enqueue(
+                        this,
+                        "Moulding_h", "NoMoulding", key,
+                        idUsername, SharedPrefUtils.getUsername(this),
+                        () -> applyPendingState(key)
+                );
             }
         }
     }

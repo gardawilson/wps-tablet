@@ -94,6 +94,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -121,6 +123,10 @@ import com.example.myapplication.model.MstSusunData;
 import com.example.myapplication.model.TellyData;
 import com.example.myapplication.model.MstWarnaData;
 import com.example.myapplication.utils.AuditSessionContextHelper;
+import com.example.myapplication.AppDatabase;
+import com.example.myapplication.model.PendingPrintUpdate;
+import com.example.myapplication.utils.PrintStatusQueue;
+import com.example.myapplication.utils.PrintSyncEvent;
 import com.example.myapplication.utils.DateTimeUtils;
 import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PermissionUtils;
@@ -235,6 +241,12 @@ public class S4S extends AppCompatActivity {
 
 //        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_s4_s);
+
+        PrintSyncEvent.get().observe(this, tableName -> {
+            if ("S4S_h".equals(tableName)) {
+                refreshCurrentOutputList();
+            }
+        });
 
         NoSTAsal = findViewById(R.id.NoSTAsal);
         NoS4S = findViewById(R.id.NoS4S);
@@ -1868,6 +1880,15 @@ public class S4S extends AppCompatActivity {
                                 ));
                             }
 
+                            // Cross-check pending queue Room
+                            Set<String> pendingKeys = new HashSet<>();
+                            for (PendingPrintUpdate p : AppDatabase.getInstance(getApplicationContext()).pendingPrintUpdateDao().getAll()) {
+                                if ("S4S_h".equals(p.tableName)) pendingKeys.add(p.keyValue);
+                            }
+                            for (OutputLabelItem item : items) {
+                                if (pendingKeys.contains(item.noS4S)) item.isPending = true;
+                            }
+
                             runOnUiThread(() -> setOutputList(items));
                         }
                     }
@@ -1950,12 +1971,15 @@ public class S4S extends AppCompatActivity {
         public void onBindViewHolder(OutputLabelViewHolder holder, int position) {
             OutputLabelItem item = outputLabelItems.get(position);
             holder.tvNoS4S.setText(item.noS4S);
-            holder.tvPrintCount.setText(item.hasBeenPrinted + "x");
+            holder.tvPrintCount.setText(item.isPending ? "-" : item.hasBeenPrinted + "x");
 
             if (position == selectedPosition) {
                 highlightOutputRow(holder.itemView);
             } else {
                 resetOutputRow(holder.itemView, position);
+                if (item.isPending) {
+                    holder.tvPrintCount.setTextColor(ContextCompat.getColor(S4S.this, R.color.pending_orange));
+                }
             }
 
             holder.itemView.setOnClickListener(v -> {
@@ -2009,6 +2033,7 @@ public class S4S extends AppCompatActivity {
     private static class OutputLabelItem {
         private final String noS4S;
         private final int hasBeenPrinted;
+        boolean isPending = false;
 
         OutputLabelItem(String noS4S, int hasBeenPrinted) {
             this.noS4S = noS4S;
@@ -2779,6 +2804,20 @@ public class S4S extends AppCompatActivity {
         }
     }
 
+    /**
+     * Update isPending pada item yang sudah ada di outputLabelItems tanpa reload dari SQL Server.
+     * Dipakai sebagai callback setelah enqueue — bekerja meski network/DB sedang down.
+     */
+    private void applyPendingState(String keyValue) {
+        for (OutputLabelItem item : outputLabelItems) {
+            if (keyValue.equals(item.noS4S) && !item.isPending) {
+                item.isPending = true;
+                outputLabelAdapter.notifyDataSetChanged();
+                break;
+            }
+        }
+    }
+
 
     private void addDataDetail(String noS4S) {
         String tebal = DetailTebal.getText().toString();
@@ -3505,18 +3544,14 @@ public class S4S extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoS4S = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoS4S != null && !printedNoS4S.trim().isEmpty()) {
-                updatePrintStatus(printedNoS4S, new UpdatePrintStatusCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(S4S.this, "Status cetak berhasil diupdate", Toast.LENGTH_SHORT).show();
-                        refreshCurrentOutputList();
-                    }
-
-                    @Override
-                    public void onFailed(String message) {
-                        Toast.makeText(S4S.this, message, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                Toast.makeText(S4S.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                final String key = printedNoS4S;
+                PrintStatusQueue.enqueue(
+                        this,
+                        "S4S_h", "NoS4S", key,
+                        idUsername, SharedPrefUtils.getUsername(this),
+                        () -> applyPendingState(key)
+                );
             }
         }
     }
