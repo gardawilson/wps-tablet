@@ -171,7 +171,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackground"
-                android:drawableLeft="@drawable/print_connect"
+                android:drawableLeft="@drawable/ic_print_popup_menu"
                 android:drawablePadding="6dp"
                 android:paddingHorizontal="10dp"
                 android:text="Print"
@@ -191,7 +191,7 @@
                 android:drawableLeft="@drawable/ic_history_popup_menu"
                 android:drawablePadding="6dp"
                 android:paddingHorizontal="10dp"
-                android:text="History"
+                android:text="History Log"
                 android:textAlignment="textStart"
                 android:textColor="@color/black" />
         </LinearLayout>

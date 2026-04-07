@@ -21,6 +21,7 @@ import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_E
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -462,6 +463,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
         Button btnPopupEdit = popupView.findViewById(R.id.btnPopupEdit);
         Button btnPopupHistory = popupView.findViewById(R.id.btnPopupHistory);
         Button btnPopupPrint = popupView.findViewById(R.id.btnPopupPrint);
+        Button btnPopupAuditLog = popupView.findViewById(R.id.btnPopupAuditLog);
 
         PopupWindow popupWindow = new PopupWindow(
                 popupView,
@@ -494,6 +496,13 @@ public class ProsesProduksiPacking extends AppCompatActivity {
         btnPopupPrint.setOnClickListener(v -> {
             popupWindow.dismiss();
             printSelectedProduction();
+        });
+
+        btnPopupAuditLog.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            Intent intent = new Intent(this, AuditActivity.class);
+            intent.putExtra(AuditActivity.EXTRA_SEARCH_PK, data.getNoProduksi().trim());
+            startActivity(intent);
         });
 
         popupView.measure(

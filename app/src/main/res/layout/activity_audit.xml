@@ -126,81 +126,96 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Head to Head (Perubahan)"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="HEADER"
-                        android:textColor="#607D8B"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <HorizontalScrollView
+                    <LinearLayout
+                        android:id="@+id/layoutHeaderSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:background="#F7F9FC"
-                        android:fillViewport="true">
+                        android:orientation="vertical">
 
-                        <TableLayout
-                            android:id="@+id/tblHeadToHeadHeader"
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="HEADER"
+                            android:textColor="#607D8B"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <HorizontalScrollView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="6dp"
-                            android:stretchColumns="1,2" />
-                    </HorizontalScrollView>
+                            android:layout_marginBottom="8dp"
+                            android:background="#F7F9FC"
+                            android:fillViewport="true">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="DETAIL"
-                        android:textColor="#607D8B"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
+                            <TableLayout
+                                android:id="@+id/tblHeadToHeadHeader"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="6dp"
+                                android:stretchColumns="1,2" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
 
-                    <HorizontalScrollView
+                    <LinearLayout
+                        android:id="@+id/layoutDetailSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:background="#F7F9FC"
-                        android:fillViewport="true">
+                        android:orientation="vertical">
 
-                        <TableLayout
-                            android:id="@+id/tblHeadToHeadDetail"
+                        <TextView
+                            android:id="@+id/tvDetailLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DETAIL"
+                            android:textColor="#607D8B"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <HorizontalScrollView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="6dp"
-                            android:stretchColumns="1,2" />
-                    </HorizontalScrollView>
+                            android:layout_marginBottom="8dp"
+                            android:background="#F7F9FC">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="OUTPUT"
-                        android:textColor="#607D8B"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
+                            <TableLayout
+                                android:id="@+id/tblHeadToHeadDetail"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="6dp"
+                                android:stretchColumns="0,1" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
 
-                    <HorizontalScrollView
+                    <LinearLayout
+                        android:id="@+id/layoutOutputSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:background="#F7F9FC"
-                        android:fillViewport="true">
+                        android:orientation="vertical">
 
-                        <TableLayout
-                            android:id="@+id/tblHeadToHeadOutput"
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="OUTPUT"
+                            android:textColor="#607D8B"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <HorizontalScrollView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="6dp"
-                            android:stretchColumns="1,2" />
-                    </HorizontalScrollView>
+                            android:layout_marginBottom="8dp"
+                            android:background="#F7F9FC"
+                            android:fillViewport="true">
+
+                            <TableLayout
+                                android:id="@+id/tblHeadToHeadOutput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="6dp"
+                                android:stretchColumns="1,2" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>

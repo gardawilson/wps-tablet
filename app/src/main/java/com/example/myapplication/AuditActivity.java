@@ -51,6 +51,8 @@ public class AuditActivity extends AppCompatActivity {
     private TextView tvStatus;
     private TextView tvDetailPlaceholder;
     private LinearLayout layoutDetailContent;
+    private LinearLayout layoutHeaderSection;
+    private LinearLayout layoutOutputSection;
     private TableLayout tblHeadToHeadHeader;
     private TableLayout tblHeadToHeadDetail;
     private TableLayout tblHeadToHeadOutput;
@@ -105,6 +107,8 @@ public class AuditActivity extends AppCompatActivity {
         swipeRefresh = findViewById(R.id.swipeRefreshAudit);
         tvDetailPlaceholder = findViewById(R.id.tvDetailPlaceholder);
         layoutDetailContent = findViewById(R.id.layoutDetailContent);
+        layoutHeaderSection = findViewById(R.id.layoutHeaderSection);
+        layoutOutputSection = findViewById(R.id.layoutOutputSection);
         tblHeadToHeadHeader = findViewById(R.id.tblHeadToHeadHeader);
         tblHeadToHeadDetail = findViewById(R.id.tblHeadToHeadDetail);
         tblHeadToHeadOutput = findViewById(R.id.tblHeadToHeadOutput);
@@ -296,48 +300,57 @@ public class AuditActivity extends AppCompatActivity {
             }
         }
 
-        // --- HEADER: tampilkan NoProduksi sebagai wadah ---
-        tblHeadToHeadHeader.removeAllViews();
-        addTableHeader(tblHeadToHeadHeader, "Field", "Nilai", "");
-        TableRow wadahRow = new TableRow(this);
-        wadahRow.addView(createCell("No Produksi", false, false, false, "#222222", false));
-        wadahRow.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
-        wadahRow.addView(createCell("", false, false, false, "#333333", false));
-        tblHeadToHeadHeader.addView(wadahRow);
-
-        // --- DETAIL: tampilkan semua label per item ---
-        tblHeadToHeadDetail.removeAllViews();
-        addTableHeader(tblHeadToHeadDetail, "Field", "Before", "After");
-
+        // Kumpulkan semua input material values + action
+        List<String[]> inputMaterials = new ArrayList<>(); // [value, action]
         for (AuditItem item : items) {
-            boolean isConsume = "CONSUME".equalsIgnoreCase(item.getAction());
             LinkedHashMap<String, String> pkMap = AuditDisplayFormatter.toFieldMap(item.getPk());
-
             for (Map.Entry<String, String> entry : pkMap.entrySet()) {
                 String fieldKey = entry.getKey();
                 if ("NoProduksi".equalsIgnoreCase(fieldKey) || "NoBongkarSusun".equalsIgnoreCase(fieldKey)) {
                     continue;
                 }
                 String labelValue = entry.getValue();
-                String oldVal = isConsume ? "-" : labelValue;
-                String newVal = isConsume ? labelValue : "-";
-                boolean strikeOld = !isConsume;
-                boolean boldNew = isConsume;
-                String oldColor = strikeOld ? "#B71C1C" : "#333333";
-                String newColor = boldNew ? "#1B5E20" : "#333333";
-
-                TableRow row = new TableRow(this);
-                row.addView(createCell(AuditDisplayFormatter.fieldAlias(fieldKey), false, false, false, "#222222", false));
-                row.addView(createCell(oldVal, false, strikeOld, false, oldColor, false));
-                row.addView(createCell(newVal, false, false, boldNew, newColor, false));
-                tblHeadToHeadDetail.addView(row);
+                if (labelValue == null || labelValue.trim().isEmpty() || "-".equals(labelValue.trim())) {
+                    continue;
+                }
+                inputMaterials.add(new String[]{labelValue, item.getAction()});
             }
         }
 
-        // --- OUTPUT: kosongkan ---
+        // Hide HEADER dan OUTPUT section, hanya tampilkan DETAIL
+        layoutHeaderSection.setVisibility(View.GONE);
+        layoutOutputSection.setVisibility(View.GONE);
+        tblHeadToHeadHeader.removeAllViews();
         tblHeadToHeadOutput.removeAllViews();
-        addTableHeader(tblHeadToHeadOutput, "Field", "Before", "After");
-        addInfoRow(tblHeadToHeadOutput, "Tidak ada data");
+
+        tblHeadToHeadDetail.removeAllViews();
+        addTableHeader(tblHeadToHeadDetail, "Proses", "Input");
+
+        int total = inputMaterials.size();
+        if (total == 0) {
+            TableRow row = new TableRow(this);
+            row.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
+            row.addView(createCell("-", false, false, false, "#333333", false));
+            tblHeadToHeadDetail.addView(row);
+        } else {
+            for (int i = 0; i < total; i++) {
+                String value = inputMaterials.get(i)[0];
+                String action = inputMaterials.get(i)[1];
+                boolean isConsume = "CONSUME".equalsIgnoreCase(action);
+                String detailColor = isConsume ? "#1B5E20" : "#B71C1C";
+
+                TableRow row = new TableRow(this);
+                if (i == 0) {
+                    row.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
+                } else {
+                    TextView emptyCell = new TextView(this);
+                    emptyCell.setText("");
+                    row.addView(emptyCell);
+                }
+                row.addView(createCell(value, false, false, false, detailColor, false));
+                tblHeadToHeadDetail.addView(row);
+            }
+        }
     }
 
     private void clearDetailPanel() {
@@ -444,6 +457,8 @@ public class AuditActivity extends AppCompatActivity {
     }
 
     private void renderHeadToHeadTable(List<AuditItem> items) {
+        layoutHeaderSection.setVisibility(View.VISIBLE);
+        layoutOutputSection.setVisibility(View.VISIBLE);
         List<AuditItem> headerItems = new ArrayList<>();
         List<AuditItem> detailItems = new ArrayList<>();
         List<AuditItem> outputItems = new ArrayList<>();
@@ -484,6 +499,21 @@ public class AuditActivity extends AppCompatActivity {
             LinkedHashMap<String, String> newMap = AuditDisplayFormatter.toFieldMap(item.getNewData());
             addAllRowsForAction(target, item.getTableName(), item.getAction(), pkMap.keySet(), oldMap, newMap);
         }
+    }
+
+    private void addTableHeader(TableLayout target, String c1) {
+        TableRow row = new TableRow(this);
+        row.setBackgroundColor(Color.parseColor("#E9EEF6"));
+        row.addView(createCell(c1, true, false, false, "#111111", true));
+        target.addView(row);
+    }
+
+    private void addTableHeader(TableLayout target, String c1, String c2) {
+        TableRow row = new TableRow(this);
+        row.setBackgroundColor(Color.parseColor("#E9EEF6"));
+        row.addView(createCell(c1, true, false, false, "#111111", true));
+        row.addView(createCell(c2, true, false, false, "#111111", true));
+        target.addView(row);
     }
 
     private void addTableHeader(TableLayout target, String c1, String c2, String c3) {

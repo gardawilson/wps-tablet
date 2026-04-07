@@ -75,7 +75,7 @@ public class AuditAdapter extends RecyclerView.Adapter<AuditAdapter.AuditViewHol
         ));
         holder.tvActor.setText(item.getActorSummary());
         holder.tvRequestId.setText(oneLine(item.getRequestId(), 120));
-        holder.tvPk.setText(oneLine(resolvePkSummary(item), 120));
+        holder.tvPk.setVisibility(View.GONE);
         boolean isSelected = position == selectedPosition;
         holder.containerRequest.setBackground(ContextCompat.getDrawable(
                 holder.itemView.getContext(),

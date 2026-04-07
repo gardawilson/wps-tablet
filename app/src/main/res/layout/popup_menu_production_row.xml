@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -9,7 +10,7 @@
 
     <Button
         android:id="@+id/btnPopupEdit"
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
         android:minWidth="0dp"
@@ -17,24 +18,11 @@
         android:paddingHorizontal="12dp"
         android:text="Edit"
         android:textAlignment="textStart"
-        android:textColor="@color/black" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#D9D9D9" />
-
-    <Button
-        android:id="@+id/btnPopupHistory"
-        android:layout_width="140dp"
-        android:layout_height="wrap_content"
-        android:background="?attr/selectableItemBackground"
-        android:minWidth="0dp"
-        android:minHeight="0dp"
-        android:paddingHorizontal="12dp"
-        android:text="Riwayat"
-        android:textAlignment="textStart"
-        android:textColor="@color/black" />
+        android:textColor="@color/black"
+        app:icon="@drawable/ic_edit_popup_menu"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="#555555" />
 
     <View
         android:layout_width="match_parent"
@@ -43,14 +31,60 @@
 
     <Button
         android:id="@+id/btnPopupPrint"
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
         android:minWidth="0dp"
         android:minHeight="0dp"
         android:paddingHorizontal="12dp"
-        android:text="Cetak"
+        android:text="Print"
         android:textAlignment="textStart"
-        android:textColor="@color/black" />
+        android:textColor="@color/black"
+        app:icon="@drawable/ic_print_popup_menu"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="#555555" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D9D9D9" />
+
+    <Button
+        android:id="@+id/btnPopupHistory"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingHorizontal="12dp"
+        android:text="History (Old)"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        app:icon="@drawable/ic_history_popup_menu"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="#555555" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D9D9D9" />
+
+    <Button
+        android:id="@+id/btnPopupAuditLog"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingHorizontal="12dp"
+        android:text="History (New)"
+        android:textAlignment="textStart"
+        android:textColor="@color/black"
+        app:icon="@drawable/ic_history_popup_menu"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="#555555" />
 
 </LinearLayout>
