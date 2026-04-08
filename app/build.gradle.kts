@@ -20,7 +20,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.1.51"
+        versionName = "1.1.53"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

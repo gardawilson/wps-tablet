@@ -1125,17 +1125,17 @@ public class ProsesProduksiApi {
                                                 String tanggal,
                                                 boolean isPemakaian,
                                                 String noPenerimaanST,
-                                                String keterangan) {
+                                                String keterangan,
+                                                String actorId, String actorName, String requestId) {
         final String TAG = "BongkarSusunDB";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
-            // 1. Generate nomor baru dalam transaction
-            con.setAutoCommit(false); // Mulai transaction
+            con.setAutoCommit(false);
+            applyAuditContext(con, actorId, actorName, requestId);
 
-            String newNo = generateNewNoBongkarSusun(con, tableName); // Menerima connection sebagai parameter
+            String newNo = generateNewNoBongkarSusun(con, tableName);
             Log.d(TAG, "Generated new NoBongkarSusun: " + newNo);
 
-            // 2. Simpan data dengan nomor baru
             String query = "INSERT INTO " + tableName + " (" +
                     "NoBongkarSusun, Tanggal, IsPemakaian, NoPenerimaanST, Keterangan" +
                     ") VALUES (?, ?, ?, ?, ?)";
@@ -1150,7 +1150,7 @@ public class ProsesProduksiApi {
                 int rowsAffected = stmt.executeUpdate();
 
                 if (rowsAffected > 0) {
-                    con.commit(); // Commit transaction jika sukses
+                    con.commit();
                     Log.i(TAG, "Successfully created record: " + newNo);
                     return true;
                 } else {
@@ -1182,7 +1182,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static boolean updateBongkarSusunData(String tableName, BongkarSusunData updatedData) {
+    public static boolean updateBongkarSusunData(String tableName, BongkarSusunData updatedData,
+                                                  String actorId, String actorName, String requestId) {
         String query = "UPDATE " + tableName + " SET " +
                 "Tanggal = ?, " +
                 "IsPemakaian = ?, " +
@@ -1193,8 +1194,10 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
+
             stmt.setString(1, updatedData.getTanggal());
-            stmt.setBoolean(2, updatedData.isPemakaian()); // Convert boolean to BIT (1/0)
+            stmt.setBoolean(2, updatedData.isPemakaian());
             stmt.setString(3, updatedData.getNoPenerimaanST());
             stmt.setString(4, updatedData.getKeterangan());
             stmt.setString(5, updatedData.getNoBongkarSusun());
@@ -1423,7 +1426,8 @@ public class ProsesProduksiApi {
     //SAVE IN BONGKAR SUSUN
 
 
-    public static void saveNoSTInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String tableName) {
+    public static void saveNoSTInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSTList, String dateTimeSaved, String tableName,
+                                               String actorId, String actorName, String requestId) {
         if (noSTList == null || noSTList.isEmpty()) {
             Log.e("SaveError", "List NoST kosong, tidak ada data untuk disimpan.");
             return;
@@ -1432,6 +1436,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoST, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE ST_h SET DateUsage = ? WHERE NoST = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputST
             for (String noST : noSTList) {
@@ -1457,7 +1462,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoS4SInBongkarSusun(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName) {
+    public static void saveNoS4SInBongkarSusun(String noProduksi, String tglProduksi, List<String> noS4SList, String dateTimeSaved, String tableName,
+                                               String actorId, String actorName, String requestId) {
         if (noS4SList == null || noS4SList.isEmpty()) {
             Log.e("SaveError", "List NoS4S kosong, tidak ada data untuk disimpan.");
             return;
@@ -1466,6 +1472,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoS4S, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE S4S_h SET DateUsage = ? WHERE NoS4S = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputS4S
             for (String noS4S : noS4SList) {
@@ -1491,7 +1498,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoFJInBongkarSusun(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName) {
+    public static void saveNoFJInBongkarSusun(String noProduksi, String tglProduksi, List<String> noFJList, String dateTimeSaved, String tableName,
+                                               String actorId, String actorName, String requestId) {
         if (noFJList == null || noFJList.isEmpty()) {
             Log.e("SaveError", "List NoFJ kosong, tidak ada data untuk disimpan.");
             return;
@@ -1500,6 +1508,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoFJ, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE FJ_h SET DateUsage = ? WHERE NoFJ = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputFJ
             for (String noFJ : noFJList) {
@@ -1525,7 +1534,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoMouldingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName) {
+    public static void saveNoMouldingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noMouldingList, String dateTimeSaved, String tableName,
+                                                     String actorId, String actorName, String requestId) {
         if (noMouldingList == null || noMouldingList.isEmpty()) {
             Log.e("SaveError", "List NoMoulding kosong, tidak ada data untuk disimpan.");
             return;
@@ -1534,6 +1544,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoMoulding, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Moulding_h SET DateUsage = ? WHERE NoMoulding = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputMoulding
             for (String noMoulding : noMouldingList) {
@@ -1559,7 +1570,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoLaminatingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noLaminatingList, String dateTimeSaved, String tableName) {
+    public static void saveNoLaminatingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noLaminatingList, String dateTimeSaved, String tableName,
+                                                       String actorId, String actorName, String requestId) {
         if (noLaminatingList == null || noLaminatingList.isEmpty()) {
             Log.e("SaveError", "List NoLaminating kosong, tidak ada data untuk disimpan.");
             return;
@@ -1568,6 +1580,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoLaminating, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Laminating_h SET DateUsage = ? WHERE NoLaminating = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputCCAkhir
             for (String noLaminating : noLaminatingList) {
@@ -1593,7 +1606,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoCCInBongkarSusun(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName) {
+    public static void saveNoCCInBongkarSusun(String noProduksi, String tglProduksi, List<String> noCCList, String dateTimeSaved, String tableName,
+                                               String actorId, String actorName, String requestId) {
         if (noCCList == null || noCCList.isEmpty()) {
             Log.e("SaveError", "List NoCCAkhir kosong, tidak ada data untuk disimpan.");
             return;
@@ -1602,6 +1616,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoCCAkhir, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE CCAkhir_h SET DateUsage = ? WHERE NoCCAkhir = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // Insert Data ke S4SProduksiInputCCAkhir
             for (String noCCAkhir : noCCList) {
@@ -1627,7 +1642,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoSandingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSandingList, String dateTimeSaved, String tableName) {
+    public static void saveNoSandingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noSandingList, String dateTimeSaved, String tableName,
+                                                    String actorId, String actorName, String requestId) {
         if (noSandingList == null || noSandingList.isEmpty()) {
             Log.e("SaveError", "List NoSanding kosong, tidak ada data untuk disimpan.");
             return;
@@ -1636,6 +1652,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoSanding, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE Sanding_h SET DateUsage = ? WHERE NoSanding = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             for (String noSanding : noSandingList) {
                 insertStmt.setString(1, noProduksi);
@@ -1659,7 +1676,8 @@ public class ProsesProduksiApi {
         }
     }
 
-    public static void saveNoPackingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noPackingList, String dateTimeSaved, String tableName) {
+    public static void saveNoPackingInBongkarSusun(String noProduksi, String tglProduksi, List<String> noPackingList, String dateTimeSaved, String tableName,
+                                                    String actorId, String actorName, String requestId) {
         if (noPackingList == null || noPackingList.isEmpty()) {
             Log.e("SaveError", "List NoPacking kosong, tidak ada data untuk disimpan.");
             return;
@@ -1668,6 +1686,7 @@ public class ProsesProduksiApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement insertStmt = con.prepareStatement("INSERT INTO " + tableName + " (NoBongkarSusun, NoBJ, DateTimeSaved) VALUES (?, ?, ?)");
              PreparedStatement updateStmt = con.prepareStatement("UPDATE BarangJadi_h SET DateUsage = ? WHERE NoBJ = ?")) {
+            applyAuditContext(con, actorId, actorName, requestId);
 
             for (String noPacking : noPackingList) {
                 insertStmt.setString(1, noProduksi);

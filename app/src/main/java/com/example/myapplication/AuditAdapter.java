@@ -114,8 +114,11 @@ public class AuditAdapter extends RecyclerView.Adapter<AuditAdapter.AuditViewHol
         if (action.startsWith("EDIT")) return R.drawable.bg_badge_action_edit;
         if (action.startsWith("PRINT")) return R.drawable.bg_badge_action_print;
         if (action.startsWith("DELETE")) return R.drawable.bg_badge_action_delete;
-        if (action.startsWith("CONSUME")) return R.drawable.bg_badge_action_consume;
         if (action.startsWith("UNCONSUME")) return R.drawable.bg_badge_action_unconsume;
+        if (action.startsWith("CONSUME")) return R.drawable.bg_badge_action_consume;
+        if (action.startsWith("UNPRODUCE")) return R.drawable.bg_badge_action_unproduce;
+        if (action.startsWith("PRODUCE")) return R.drawable.bg_badge_action_produce;
+        if (action.startsWith("MAPPING")) return R.drawable.bg_badge_action_mapping;
         return R.drawable.bg_badge_action_default;
     }
 

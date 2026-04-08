@@ -126,6 +126,13 @@ public class AuditDisplayFormatter {
         PREFIX_ALIAS.put("TA", "Produksi Moulding");
         PREFIX_ALIAS.put("SA", "Produksi Finger Joint");
         PREFIX_ALIAS.put("Z", "Bongkar Susun");
+        PREFIX_ALIAS.put("RA", "Produksi S4S");
+        PREFIX_ALIAS.put("RB", "Produksi Moulding");
+        PREFIX_ALIAS.put("RC", "Produksi FJ");
+        PREFIX_ALIAS.put("RD", "Produksi Laminating");
+        PREFIX_ALIAS.put("RE", "Produksi CC Akhir");
+        PREFIX_ALIAS.put("RF", "Produksi Sanding");
+        PREFIX_ALIAS.put("RG", "Produksi Packing");
 
         for (Map.Entry<String, String> entry : FIELD_ALIAS.entrySet()) {
             FIELD_ALIAS_CANONICAL.put(canonicalKey(entry.getKey()), entry.getValue());
@@ -148,6 +155,12 @@ public class AuditDisplayFormatter {
                 return "CONSUME";
             case "UNCONSUME":
                 return "UNCONSUME";
+            case "PRODUCE":
+                return "PRODUCE";
+            case "UNPRODUCE":
+                return "UNPRODUCE";
+            case "MAPPING":
+                return "MAPPING";
             default:
                 return upper;
         }

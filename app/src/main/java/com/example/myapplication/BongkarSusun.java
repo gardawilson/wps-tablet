@@ -15,6 +15,10 @@ import static com.example.myapplication.api.ProsesProduksiApi.isTransactionPerio
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.view.HapticFeedbackConstants;
+import android.view.MotionEvent;
+import android.view.ViewGroup;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -77,6 +81,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -169,8 +174,8 @@ public class BongkarSusun extends AppCompatActivity {
     private Button btnEdit;
     private Button btnCreate;
     private List<String> userPermissions;
-
-
+    private String idUsername;
+    private String username;
 
 
     @Override
@@ -243,10 +248,15 @@ public class BongkarSusun extends AppCompatActivity {
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
 
+        idUsername = SharedPrefUtils.getIdUsername(this);
+        username = SharedPrefUtils.getUsername(this);
+
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
-        PermissionUtils.permissionCheck(this, btnEdit, "bongkar_susun:update");
         PermissionUtils.permissionCheck(this, btnCreate, "bongkar_susun:create");
+
+        // btnEdit dipindah ke popup menu long-press baris tabel
+        btnEdit.setVisibility(View.GONE);
 
         // Menangani tombol back menggunakan OnBackPressedDispatcher
         OnBackPressedDispatcher onBackPressedDispatcher = getOnBackPressedDispatcher();
@@ -273,17 +283,7 @@ public class BongkarSusun extends AppCompatActivity {
         });
 
 
-        btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String noProduksi = noBongkarSusunView.getText().toString();
-                if (!noProduksi.isEmpty()) {
-                    showEditProductionDialog();
-                } else {
-                    Toast.makeText(BongkarSusun.this, "Pilih NoProduksi Terlebih Dahulu!", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        // btnEdit dihapus dari header, akses edit melalui long-press baris tabel (popup menu)
 
 
         btnInputManual.setOnClickListener(new View.OnClickListener() {
@@ -470,7 +470,8 @@ public class BongkarSusun extends AppCompatActivity {
                     }
                 });
 
-        btnHistorySave.setOnClickListener(v -> showHistoryDialog(noBongkarSusun));
+        // btnHistorySave dipindah ke popup menu long-press baris tabel
+        btnHistorySave.setVisibility(View.GONE);
 
     }
 
@@ -524,8 +525,8 @@ public class BongkarSusun extends AppCompatActivity {
                             tanggal,
                             isPemakaian,
                             noPenerimaanST.isEmpty() ? null : noPenerimaanST,
-                            keterangan.isEmpty() ? null : keterangan
-                    );
+                            keterangan.isEmpty() ? null : keterangan,
+                            idUsername, username, UUID.randomUUID().toString());
 
                     if (success) {
                         dataList = ProsesProduksiApi.getBongkarSusunData("BongkarSusun_h");
@@ -624,7 +625,8 @@ public class BongkarSusun extends AppCompatActivity {
                 );
 
                 executorService.execute(() -> {
-                    boolean success = ProsesProduksiApi.updateBongkarSusunData("BongkarSusun_h", updatedData);
+                    boolean success = ProsesProduksiApi.updateBongkarSusunData("BongkarSusun_h", updatedData,
+                            idUsername, username, UUID.randomUUID().toString());
                     dataList = ProsesProduksiApi.getBongkarSusunData("BongkarSusun_h");
 
                     runOnUiThread(() -> {
@@ -887,7 +889,10 @@ public class BongkarSusun extends AppCompatActivity {
                 row.setBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Warna untuk baris ganjil
             }
 
-            row.setOnClickListener(v -> {
+            final TableRow currentRow = row;
+            final BongkarSusunData currentData = data;
+
+            currentRow.setOnClickListener(v -> {
                 // Reset warna baris sebelumnya (jika ada)
                 if (selectedRowHeader != null) {
                     int previousRowIndex = (int) selectedRowHeader.getTag();
@@ -896,25 +901,101 @@ public class BongkarSusun extends AppCompatActivity {
                     } else {
                         selectedRowHeader.setBackgroundColor(ContextCompat.getColor(this, R.color.white));
                     }
-                    resetTextColor(selectedRowHeader); // Kembalikan warna teks ke hitam
+                    resetTextColor(selectedRowHeader);
                 }
 
-                // Tandai baris yang baru dipilih
-                row.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)); // Warna penandaan
-                setTextColor(row, R.color.white); // Ubah warna teks menjadi putih
-                selectedRowHeader = row;
+                currentRow.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+                setTextColor(currentRow, R.color.white);
+                selectedRowHeader = currentRow;
 
-                // Simpan data yang dipilih
-                selectedBongkarSusunData = data;
-
-                // Tangani aksi tambahan
-                onRowClick(data);
+                selectedBongkarSusunData = currentData;
+                onRowClick(currentData);
             });
 
+            final float[] touchPoint = new float[2];
+            currentRow.setOnTouchListener((v, event) -> {
+                if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                    touchPoint[0] = event.getRawX();
+                    touchPoint[1] = event.getRawY();
+                }
+                return false;
+            });
+            currentRow.setOnLongClickListener(v -> {
+                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                selectedBongkarSusunData = currentData;
+                selectedRowHeader = currentRow;
+                showBongkarSusunRowActionPopup(currentRow, touchPoint[0], touchPoint[1], currentData);
+                return true;
+            });
 
             tableLayout.addView(row);
             rowIndex++; // Tingkatkan indeks
         }
+    }
+
+    private void showBongkarSusunRowActionPopup(View anchorView, float touchX, float touchY, BongkarSusunData data) {
+        View popupView = LayoutInflater.from(this).inflate(R.layout.popup_menu_production_row, null);
+        Button btnPopupEdit = popupView.findViewById(R.id.btnPopupEdit);
+        Button btnPopupHistory = popupView.findViewById(R.id.btnPopupHistory);
+        Button btnPopupPrint = popupView.findViewById(R.id.btnPopupPrint);
+        Button btnPopupAuditLog = popupView.findViewById(R.id.btnPopupAuditLog);
+
+        // BongkarSusun tidak punya aksi Print
+        btnPopupPrint.setVisibility(View.GONE);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setElevation(16f);
+
+        boolean canUpdate = userPermissions.contains("bongkar_susun:update");
+        btnPopupEdit.setEnabled(canUpdate);
+        btnPopupEdit.setAlpha(canUpdate ? 1f : 0.5f);
+
+        btnPopupEdit.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            if (!canUpdate) {
+                Toast.makeText(this, "Anda tidak memiliki izin untuk edit.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showEditProductionDialog();
+        });
+
+        btnPopupHistory.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            showHistoryDialog(data.getNoBongkarSusun());
+        });
+
+        btnPopupAuditLog.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            Intent intent = new Intent(this, AuditActivity.class);
+            intent.putExtra(AuditActivity.EXTRA_SEARCH_PK, data.getNoBongkarSusun().trim());
+            startActivity(intent);
+        });
+
+        popupView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        );
+        int popupWidth = popupView.getMeasuredWidth();
+        int popupHeight = popupView.getMeasuredHeight();
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int margin = (int) (getResources().getDisplayMetrics().density * 8);
+        int x = (int) touchX;
+        int y = (int) touchY - popupHeight;
+
+        if (x + popupWidth > screenWidth - margin) x = screenWidth - popupWidth - margin;
+        if (x < margin) x = margin;
+        if (y < margin) y = (int) touchY + margin;
+        if (y + popupHeight > screenHeight - margin) y = screenHeight - popupHeight - margin;
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
     }
 
     private void populateNoSTTable(List<String> noSTList) {
@@ -1779,7 +1860,7 @@ public class BongkarSusun extends AppCompatActivity {
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
-        String savedUsername = SharedPrefUtils.getUsername(this);
+        String saveRequestId = UUID.randomUUID().toString();
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -1793,7 +1874,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoST = ProsesProduksiApi.getNoSTByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputST");
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProsesProduksiApi.saveNoSTInBongkarSusun(noBongkarSusun, tglProduksi, newNoST, dateTimeSaved, "BongkarSusunInputST");
+                ProsesProduksiApi.saveNoSTInBongkarSusun(noBongkarSusun, tglProduksi, newNoST, dateTimeSaved, "BongkarSusunInputST",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1804,7 +1886,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProsesProduksiApi.saveNoS4SInBongkarSusun(noBongkarSusun, tglProduksi, newNoS4S, dateTimeSaved, "BongkarSusunInputS4S");
+                ProsesProduksiApi.saveNoS4SInBongkarSusun(noBongkarSusun, tglProduksi, newNoS4S, dateTimeSaved, "BongkarSusunInputS4S",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1815,7 +1898,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProsesProduksiApi.saveNoMouldingInBongkarSusun(noBongkarSusun, tglProduksi, newNoMoulding, dateTimeSaved, "BongkarSusunInputMoulding");
+                ProsesProduksiApi.saveNoMouldingInBongkarSusun(noBongkarSusun, tglProduksi, newNoMoulding, dateTimeSaved, "BongkarSusunInputMoulding",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1826,7 +1910,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProsesProduksiApi.saveNoFJInBongkarSusun(noBongkarSusun, tglProduksi, newNoFJ, dateTimeSaved, "BongkarSusunInputFJ");
+                ProsesProduksiApi.saveNoFJInBongkarSusun(noBongkarSusun, tglProduksi, newNoFJ, dateTimeSaved, "BongkarSusunInputFJ",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1837,7 +1922,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCCInBongkarSusun(noBongkarSusun, tglProduksi, newNoCC, dateTimeSaved, "BongkarSusunInputCCAkhir");
+                ProsesProduksiApi.saveNoCCInBongkarSusun(noBongkarSusun, tglProduksi, newNoCC, dateTimeSaved, "BongkarSusunInputCCAkhir",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1848,7 +1934,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoLaminating = ProsesProduksiApi.getNoLaminatingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputLaminating");
                 List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
                 newNoLaminating.removeAll(existingNoLaminating);
-                ProsesProduksiApi.saveNoLaminatingInBongkarSusun(noBongkarSusun, tglProduksi, newNoLaminating, dateTimeSaved, "BongkarSusunInputLaminating");
+                ProsesProduksiApi.saveNoLaminatingInBongkarSusun(noBongkarSusun, tglProduksi, newNoLaminating, dateTimeSaved, "BongkarSusunInputLaminating",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoLaminating.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1859,7 +1946,8 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoSanding = ProsesProduksiApi.getNoSandingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputSanding");
                 List<String> newNoSanding = new ArrayList<>(noSandingList);
                 newNoSanding.removeAll(existingNoSanding);
-                ProsesProduksiApi.saveNoSandingInBongkarSusun(noBongkarSusun, tglProduksi, newNoSanding, dateTimeSaved, "BongkarSusunInputSanding");
+                ProsesProduksiApi.saveNoSandingInBongkarSusun(noBongkarSusun, tglProduksi, newNoSanding, dateTimeSaved, "BongkarSusunInputSanding",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoSanding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1870,13 +1958,14 @@ public class BongkarSusun extends AppCompatActivity {
                 List<String> existingNoPacking = ProsesProduksiApi.getNoPackingByNoBongkarSusun(noBongkarSusun, "BongkarSusunInputBarangJadi");
                 List<String> newNoPacking = new ArrayList<>(noPackingList);
                 newNoPacking.removeAll(existingNoPacking);
-                ProsesProduksiApi.saveNoPackingInBongkarSusun(noBongkarSusun, tglProduksi, newNoPacking, dateTimeSaved, "BongkarSusunInputBarangJadi");
+                ProsesProduksiApi.saveNoPackingInBongkarSusun(noBongkarSusun, tglProduksi, newNoPacking, dateTimeSaved, "BongkarSusunInputBarangJadi",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoPacking.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
-            ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noBongkarSusun + " Pada Bongkar Susun (Mobile)");
+            ProsesProduksiApi.saveRiwayat(username, dateTimeSaved, "Mengubah Data " + noBongkarSusun + " Pada Bongkar Susun (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();

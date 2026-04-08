@@ -78,6 +78,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -171,6 +172,8 @@ public class Nyangkut extends AppCompatActivity {
     private Button btnCreate;
     private Button btnDelete;
     private List<String> userPermissions;
+    private String idUsername;
+    private String username;
 
 
 
@@ -245,6 +248,9 @@ public class Nyangkut extends AppCompatActivity {
         // Mulai animasi scanner menggunakan ScannerAnimationUtils
         ScannerAnimationUtils.startScanningAnimation(scannerOverlay, displayMetrics);
 
+        idUsername = SharedPrefUtils.getIdUsername(this);
+        username = SharedPrefUtils.getUsername(this);
+
         //PERMISSION CHECK
         userPermissions = SharedPrefUtils.getPermissions(this);
         PermissionUtils.permissionCheck(this, btnEdit, "nyangkut:update");
@@ -301,7 +307,8 @@ public class Nyangkut extends AppCompatActivity {
                         loadingDialogHelper.show(this);
 
                         executorService.execute(() -> {
-                            boolean success = NyangkutApi.deleteNyangkutHeader(noNyangkut);
+                            boolean success = NyangkutApi.deleteNyangkutHeader(noNyangkut,
+                                    idUsername, username, UUID.randomUUID().toString());
 
                             if (success) {
                                 // 🚫 Jangan panggil getNyangkutData() di UI thread
@@ -536,7 +543,8 @@ public class Nyangkut extends AppCompatActivity {
 
             if (!tanggal.isEmpty()) {
                 executorService.execute(() -> {
-                    boolean success = NyangkutApi.createNewNyangkut(tanggal);
+                    boolean success = NyangkutApi.createNewNyangkut(tanggal,
+                            idUsername, username, UUID.randomUUID().toString());
 
                     if (success) {
                         // reload data
@@ -610,7 +618,8 @@ public class Nyangkut extends AppCompatActivity {
 
             if (!tanggalBaru.isEmpty()) {
                 executorService.execute(() -> {
-                    boolean success = NyangkutApi.updateNyangkut(noNyangkut, tanggalBaru);
+                    boolean success = NyangkutApi.updateNyangkut(noNyangkut, tanggalBaru,
+                            idUsername, username, UUID.randomUUID().toString());
 
                     if (success) {
                         dataList = NyangkutApi.getNyangkutData();
@@ -965,7 +974,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutST(noNyangkut, currentNoST);
+                                NyangkutApi.deleteNyangkutST(noNyangkut, currentNoST,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshSTTable);
                             });
                         })
@@ -1052,7 +1062,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutS4S(noNyangkut, currentNoS4S);
+                                NyangkutApi.deleteNyangkutS4S(noNyangkut, currentNoS4S,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshS4STable);
                             });
                         })
@@ -1137,7 +1148,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutFJ(noNyangkut, currentNoFJ);
+                                NyangkutApi.deleteNyangkutFJ(noNyangkut, currentNoFJ,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshFJTable);
                             });
                         })
@@ -1221,7 +1233,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutMoulding(noNyangkut, currentNoMoulding);
+                                NyangkutApi.deleteNyangkutMoulding(noNyangkut, currentNoMoulding,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshMouldingTable);
                             });
                         })
@@ -1305,7 +1318,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutLaminating(noNyangkut, currentNoLaminating);
+                                NyangkutApi.deleteNyangkutLaminating(noNyangkut, currentNoLaminating,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshLaminatingTable);
                             });
                         })
@@ -1389,7 +1403,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutCCA(noNyangkut, currentNoCC);
+                                NyangkutApi.deleteNyangkutCCA(noNyangkut, currentNoCC,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshCCTable);
                             });
                         })
@@ -1470,7 +1485,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutSanding(noNyangkut, currentNoSanding);
+                                NyangkutApi.deleteNyangkutSanding(noNyangkut, currentNoSanding,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshSandingTable);
                             });
                         })
@@ -1549,7 +1565,8 @@ public class Nyangkut extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
 
                             executorService.execute(() -> {
-                                NyangkutApi.deleteNyangkutBJ(noNyangkut, currentNoPacking);
+                                NyangkutApi.deleteNyangkutBJ(noNyangkut, currentNoPacking,
+                                        idUsername, username, UUID.randomUUID().toString());
                                 runOnUiThread(this::refreshPackingTable);
                             });
                         })
@@ -1763,7 +1780,7 @@ public class Nyangkut extends AppCompatActivity {
         customProgressDialog.show(); // Tampilkan progress dialog
 
         String dateTimeSaved = DateTimeUtils.getCurrentDateTime();
-        String savedUsername = SharedPrefUtils.getUsername(this);
+        String saveRequestId = UUID.randomUUID().toString();
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -1777,7 +1794,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoST = ProsesProduksiApi.getNoSTByNoBongkarSusun(noNyangkut, "BongkarSusunInputST");
                 List<String> newNoST = new ArrayList<>(noSTList);
                 newNoST.removeAll(existingNoST);
-                ProsesProduksiApi.saveNoSTInBongkarSusun(noNyangkut, tglProduksi, newNoST, dateTimeSaved, "BongkarSusunInputST");
+                ProsesProduksiApi.saveNoSTInBongkarSusun(noNyangkut, tglProduksi, newNoST, dateTimeSaved, "BongkarSusunInputST",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoST.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1788,7 +1806,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoS4S = ProsesProduksiApi.getNoS4SByNoBongkarSusun(noNyangkut, "BongkarSusunInputS4S");
                 List<String> newNoS4S = new ArrayList<>(noS4SList);
                 newNoS4S.removeAll(existingNoS4S);
-                ProsesProduksiApi.saveNoS4SInBongkarSusun(noNyangkut, tglProduksi, newNoS4S, dateTimeSaved, "BongkarSusunInputS4S");
+                ProsesProduksiApi.saveNoS4SInBongkarSusun(noNyangkut, tglProduksi, newNoS4S, dateTimeSaved, "BongkarSusunInputS4S",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoS4S.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1799,7 +1818,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoMoulding = ProsesProduksiApi.getNoMouldingByNoBongkarSusun(noNyangkut, "BongkarSusunInputMoulding");
                 List<String> newNoMoulding = new ArrayList<>(noMouldingList);
                 newNoMoulding.removeAll(existingNoMoulding);
-                ProsesProduksiApi.saveNoMouldingInBongkarSusun(noNyangkut, tglProduksi, newNoMoulding, dateTimeSaved, "BongkarSusunInputMoulding");
+                ProsesProduksiApi.saveNoMouldingInBongkarSusun(noNyangkut, tglProduksi, newNoMoulding, dateTimeSaved, "BongkarSusunInputMoulding",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoMoulding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1810,7 +1830,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoFJ = ProsesProduksiApi.getNoFJByNoBongkarSusun(noNyangkut, "BongkarSusunInputFJ");
                 List<String> newNoFJ = new ArrayList<>(noFJList);
                 newNoFJ.removeAll(existingNoFJ);
-                ProsesProduksiApi.saveNoFJInBongkarSusun(noNyangkut, tglProduksi, newNoFJ, dateTimeSaved, "BongkarSusunInputFJ");
+                ProsesProduksiApi.saveNoFJInBongkarSusun(noNyangkut, tglProduksi, newNoFJ, dateTimeSaved, "BongkarSusunInputFJ",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoFJ.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1821,7 +1842,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoCC = ProsesProduksiApi.getNoCCByNoBongkarSusun(noNyangkut, "BongkarSusunInputCCAkhir");
                 List<String> newNoCC = new ArrayList<>(noCCList);
                 newNoCC.removeAll(existingNoCC);
-                ProsesProduksiApi.saveNoCCInBongkarSusun(noNyangkut, tglProduksi, newNoCC, dateTimeSaved, "BongkarSusunInputCCAkhir");
+                ProsesProduksiApi.saveNoCCInBongkarSusun(noNyangkut, tglProduksi, newNoCC, dateTimeSaved, "BongkarSusunInputCCAkhir",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoCC.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1832,7 +1854,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoLaminating = ProsesProduksiApi.getNoLaminatingByNoBongkarSusun(noNyangkut, "BongkarSusunInputLaminating");
                 List<String> newNoLaminating = new ArrayList<>(noLaminatingList);
                 newNoLaminating.removeAll(existingNoLaminating);
-                ProsesProduksiApi.saveNoLaminatingInBongkarSusun(noNyangkut, tglProduksi, newNoLaminating, dateTimeSaved, "BongkarSusunInputLaminating");
+                ProsesProduksiApi.saveNoLaminatingInBongkarSusun(noNyangkut, tglProduksi, newNoLaminating, dateTimeSaved, "BongkarSusunInputLaminating",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoLaminating.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1843,7 +1866,8 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoSanding = ProsesProduksiApi.getNoSandingByNoBongkarSusun(noNyangkut, "BongkarSusunInputSanding");
                 List<String> newNoSanding = new ArrayList<>(noSandingList);
                 newNoSanding.removeAll(existingNoSanding);
-                ProsesProduksiApi.saveNoSandingInBongkarSusun(noNyangkut, tglProduksi, newNoSanding, dateTimeSaved, "BongkarSusunInputSanding");
+                ProsesProduksiApi.saveNoSandingInBongkarSusun(noNyangkut, tglProduksi, newNoSanding, dateTimeSaved, "BongkarSusunInputSanding",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoSanding.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
@@ -1854,13 +1878,14 @@ public class Nyangkut extends AppCompatActivity {
                 List<String> existingNoPacking = ProsesProduksiApi.getNoPackingByNoBongkarSusun(noNyangkut, "BongkarSusunInputBarangJadi");
                 List<String> newNoPacking = new ArrayList<>(noPackingList);
                 newNoPacking.removeAll(existingNoPacking);
-                ProsesProduksiApi.saveNoPackingInBongkarSusun(noNyangkut, tglProduksi, newNoPacking, dateTimeSaved, "BongkarSusunInputBarangJadi");
+                ProsesProduksiApi.saveNoPackingInBongkarSusun(noNyangkut, tglProduksi, newNoPacking, dateTimeSaved, "BongkarSusunInputBarangJadi",
+                        idUsername, username, saveRequestId);
                 savedItems += newNoPacking.size();
                 int progress = (savedItems * 100) / totalItems;
                 runOnUiThread(() -> customProgressDialog.updateProgress(progress));
             }
 
-            ProsesProduksiApi.saveRiwayat(savedUsername, dateTimeSaved, "Mengubah Data " + noNyangkut + " Pada Bongkar Susun (Mobile)");
+            ProsesProduksiApi.saveRiwayat(username, dateTimeSaved, "Mengubah Data " + noNyangkut + " Pada Nyangkut (Mobile)");
 
             // Kosongkan semua list setelah penyimpanan berhasil
             noS4SList.clear();

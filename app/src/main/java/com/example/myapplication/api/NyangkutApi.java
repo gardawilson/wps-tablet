@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.myapplication.config.DatabaseConfig;
 import com.example.myapplication.model.BongkarSusunData;
 import com.example.myapplication.model.NyangkutData;
+import com.example.myapplication.utils.AuditSessionContextHelper;
 import com.example.myapplication.utils.DateTimeUtils;
 
 import java.sql.Connection;
@@ -16,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NyangkutApi {
+
+    private static void applyAuditContext(Connection con, String actorId, String actorName, String requestId) throws SQLException {
+        AuditSessionContextHelper.apply(con, actorId, actorName, requestId);
+    }
 
     public static List<NyangkutData> getNyangkutData() {
         List<NyangkutData> nyangkutList = new ArrayList<>();
@@ -253,13 +258,13 @@ public class NyangkutApi {
     }
 
 
-    public static boolean createNewNyangkut(String tanggal) {
+    public static boolean createNewNyangkut(String tanggal, String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
-            con.setAutoCommit(false); // Mulai transaction
+            con.setAutoCommit(false);
+            applyAuditContext(con, actorId, actorName, requestId);
 
-            // 1. Generate nomor baru (misal format Z.XXXXXX)
             String newNo = generateNewNoNyangkut(con);
             Log.d(TAG, "Generated new NoNyangkut: " + newNo);
 
@@ -308,7 +313,8 @@ public class NyangkutApi {
     }
 
 
-    public static boolean updateNyangkut(String noNyangkut, String tanggalBaru) {
+    public static boolean updateNyangkut(String noNyangkut, String tanggalBaru,
+                                          String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-UPDATE";
 
         String query = "UPDATE Nyangkut_h SET Tgl = ? WHERE NoNyangkut = ?";
@@ -316,6 +322,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, DateTimeUtils.formatToDatabaseDate(tanggalBaru));
             stmt.setString(2, noNyangkut);
 
@@ -336,11 +343,12 @@ public class NyangkutApi {
 
 
 
-    public static boolean deleteNyangkutHeader(String noNyangkut) {
+    public static boolean deleteNyangkutHeader(String noNyangkut, String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-CASCADE";
 
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl())) {
-            con.setAutoCommit(false); // Mulai transaction
+            con.setAutoCommit(false);
+            applyAuditContext(con, actorId, actorName, requestId);
 
             // 1. Hapus semua detail di tabel terkait
             String[] detailQueries = new String[]{
@@ -387,7 +395,8 @@ public class NyangkutApi {
 
 
 
-    public static boolean deleteNyangkutST(String noNyangkut, String noST) {
+    public static boolean deleteNyangkutST(String noNyangkut, String noST,
+                                            String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE";
 
         String query = "DELETE FROM Nyangkut_ST WHERE NoNyangkut = ? AND NoST = ?";
@@ -395,6 +404,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noST);
 
@@ -413,7 +423,8 @@ public class NyangkutApi {
     }
 
 
-    public static boolean deleteNyangkutS4S(String noNyangkut, String noS4S) {
+    public static boolean deleteNyangkutS4S(String noNyangkut, String noS4S,
+                                             String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-S4S";
 
         String query = "DELETE FROM Nyangkut_S4S WHERE NoNyangkut = ? AND NoS4S = ?";
@@ -421,6 +432,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noS4S);
 
@@ -439,7 +451,8 @@ public class NyangkutApi {
     }
 
 
-    public static boolean deleteNyangkutFJ(String noNyangkut, String noFJ) {
+    public static boolean deleteNyangkutFJ(String noNyangkut, String noFJ,
+                                            String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-FJ";
 
         String query = "DELETE FROM Nyangkut_FJ WHERE NoNyangkut = ? AND NoFJ = ?";
@@ -447,6 +460,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noFJ);
 
@@ -465,7 +479,8 @@ public class NyangkutApi {
     }
 
 
-    public static boolean deleteNyangkutMoulding(String noNyangkut, String noMoulding) {
+    public static boolean deleteNyangkutMoulding(String noNyangkut, String noMoulding,
+                                                  String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-Moulding";
 
         String query = "DELETE FROM Nyangkut_Moulding WHERE NoNyangkut = ? AND NoMoulding = ?";
@@ -473,6 +488,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noMoulding);
 
@@ -490,7 +506,8 @@ public class NyangkutApi {
         }
     }
 
-    public static boolean deleteNyangkutLaminating(String noNyangkut, String noLaminating) {
+    public static boolean deleteNyangkutLaminating(String noNyangkut, String noLaminating,
+                                                    String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-Laminating";
 
         String query = "DELETE FROM Nyangkut_Laminating WHERE NoNyangkut = ? AND NoLaminating = ?";
@@ -498,6 +515,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noLaminating);
 
@@ -515,7 +533,8 @@ public class NyangkutApi {
         }
     }
 
-    public static boolean deleteNyangkutCCA(String noNyangkut, String noCCAkhir) {
+    public static boolean deleteNyangkutCCA(String noNyangkut, String noCCAkhir,
+                                             String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-CCA";
 
         String query = "DELETE FROM Nyangkut_CCA WHERE NoNyangkut = ? AND NoCCAkhir = ?";
@@ -523,6 +542,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noCCAkhir);
 
@@ -540,7 +560,8 @@ public class NyangkutApi {
         }
     }
 
-    public static boolean deleteNyangkutSanding(String noNyangkut, String noSanding) {
+    public static boolean deleteNyangkutSanding(String noNyangkut, String noSanding,
+                                                 String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-Sanding";
 
         String query = "DELETE FROM Nyangkut_Sanding WHERE NoNyangkut = ? AND NoSanding = ?";
@@ -548,6 +569,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noSanding);
 
@@ -565,7 +587,8 @@ public class NyangkutApi {
         }
     }
 
-    public static boolean deleteNyangkutBJ(String noNyangkut, String noBJ) {
+    public static boolean deleteNyangkutBJ(String noNyangkut, String noBJ,
+                                            String actorId, String actorName, String requestId) {
         final String TAG = "NyangkutDB-DELETE-BJ";
 
         String query = "DELETE FROM Nyangkut_BarangJadi WHERE NoNyangkut = ? AND NoBJ = ?";
@@ -573,6 +596,7 @@ public class NyangkutApi {
         try (Connection con = DriverManager.getConnection(DatabaseConfig.getConnectionUrl());
              PreparedStatement stmt = con.prepareStatement(query)) {
 
+            applyAuditContext(con, actorId, actorName, requestId);
             stmt.setString(1, noNyangkut);
             stmt.setString(2, noBJ);
 

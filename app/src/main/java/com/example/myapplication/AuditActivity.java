@@ -273,6 +273,8 @@ public class AuditActivity extends AppCompatActivity {
 
         if (isConsumeOrUnconsumeGroup(items)) {
             renderConsumeUnconsumeDetail(items);
+        } else if (isProduceOrUnproduceGroup(items)) {
+            renderProduceUnproduceDetail(items);
         } else {
             renderHeadToHeadTable(items);
         }
@@ -283,6 +285,17 @@ public class AuditActivity extends AppCompatActivity {
         for (AuditItem item : items) {
             String action = item.getAction();
             if (!"CONSUME".equalsIgnoreCase(action) && !"UNCONSUME".equalsIgnoreCase(action)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isProduceOrUnproduceGroup(List<AuditItem> items) {
+        if (items == null || items.isEmpty()) return false;
+        for (AuditItem item : items) {
+            String action = item.getAction();
+            if (!"PRODUCE".equalsIgnoreCase(action) && !"UNPRODUCE".equalsIgnoreCase(action)) {
                 return false;
             }
         }
@@ -353,6 +366,75 @@ public class AuditActivity extends AppCompatActivity {
         }
     }
 
+    private void renderProduceUnproduceDetail(List<AuditItem> items) {
+        // Ambil NoProduksi dari item pertama
+        String noProduksi = "-";
+        for (AuditItem item : items) {
+            LinkedHashMap<String, String> pkMap = AuditDisplayFormatter.toFieldMap(item.getPk());
+            if (pkMap.containsKey("NoProduksi")) {
+                noProduksi = pkMap.get("NoProduksi");
+                break;
+            }
+        }
+
+        // Kumpulkan output values + action (semua key selain NoProduksi)
+        List<String[]> outputItems = new ArrayList<>(); // [value, action]
+        for (AuditItem item : items) {
+            // Untuk PRODUCE: data ada di newData; untuk UNPRODUCE: data ada di oldData
+            String rawData = "PRODUCE".equalsIgnoreCase(item.getAction())
+                    ? item.getNewData()
+                    : item.getOldData();
+            LinkedHashMap<String, String> dataMap = AuditDisplayFormatter.toFieldMap(rawData);
+            // Fallback ke PK jika data kosong
+            if (dataMap.isEmpty()) {
+                dataMap = AuditDisplayFormatter.toFieldMap(item.getPk());
+            }
+            for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                String fieldKey = entry.getKey();
+                if ("NoProduksi".equalsIgnoreCase(fieldKey)) continue;
+                String labelValue = entry.getValue();
+                if (labelValue == null || labelValue.trim().isEmpty() || "-".equals(labelValue.trim())) continue;
+                outputItems.add(new String[]{labelValue, item.getAction()});
+            }
+        }
+
+        // Sembunyikan HEADER dan OUTPUT section, hanya tampilkan DETAIL
+        layoutHeaderSection.setVisibility(View.GONE);
+        layoutOutputSection.setVisibility(View.GONE);
+        tblHeadToHeadHeader.removeAllViews();
+        tblHeadToHeadOutput.removeAllViews();
+
+        tblHeadToHeadDetail.removeAllViews();
+        addTableHeader(tblHeadToHeadDetail, "Produksi", "Output");
+
+        int total = outputItems.size();
+        if (total == 0) {
+            TableRow row = new TableRow(this);
+            row.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
+            row.addView(createCell("-", false, false, false, "#333333", false));
+            tblHeadToHeadDetail.addView(row);
+        } else {
+            for (int i = 0; i < total; i++) {
+                String value = outputItems.get(i)[0];
+                String action = outputItems.get(i)[1];
+                boolean isProduce = "PRODUCE".equalsIgnoreCase(action);
+                String outputColor = isProduce ? "#1B5E20" : "#B71C1C";
+                boolean strike = !isProduce;
+
+                TableRow row = new TableRow(this);
+                if (i == 0) {
+                    row.addView(createCell(noProduksi, false, false, true, "#1565C0", false));
+                } else {
+                    TextView emptyCell = new TextView(this);
+                    emptyCell.setText("");
+                    row.addView(emptyCell);
+                }
+                row.addView(createCell(value, false, strike, isProduce, outputColor, false));
+                tblHeadToHeadDetail.addView(row);
+            }
+        }
+    }
+
     private void clearDetailPanel() {
         tvDetailPlaceholder.setVisibility(View.VISIBLE);
         tvDetailPlaceholder.setText("Pilih Request ID untuk melihat detail perubahan.");
@@ -408,12 +490,50 @@ public class AuditActivity extends AppCompatActivity {
     }
 
     private String buildActionSummary(List<AuditItem> items) {
-        Set<String> actions = new LinkedHashSet<>();
+        Set<String> rawActions = new LinkedHashSet<>();
         for (AuditItem item : items) {
-            actions.add(AuditDisplayFormatter.actionAlias(item.getAction()));
+            rawActions.add(item.getAction() == null ? "" : item.getAction().toUpperCase());
         }
-        if (actions.size() == 1) return actions.iterator().next();
-        return "MIXED (" + String.join(", ", actions) + ")";
+
+        // Satu aksi tunggal — tampilkan langsung
+        if (rawActions.size() == 1) {
+            return AuditDisplayFormatter.actionAlias(rawActions.iterator().next());
+        }
+
+        // Resolusi aksi dominan berdasarkan prioritas bisnis:
+        // DELETE/UNPRODUCE mengalahkan segalanya (destruktif)
+        // INSERT/CREATE mengalahkan PRODUCE (INSERT adalah aksi utama, PRODUCE efek sampingnya)
+        // UPDATE/EDIT mengalahkan PRINT
+        boolean hasDelete    = rawActions.contains("DELETE");
+        boolean hasUnproduce = rawActions.contains("UNPRODUCE");
+        boolean hasInsert    = rawActions.contains("INSERT");
+        boolean hasProduce   = rawActions.contains("PRODUCE");
+        boolean hasUpdate    = rawActions.contains("UPDATE");
+        boolean hasMapping   = rawActions.contains("MAPPING");
+        boolean hasPrint     = rawActions.contains("PRINT");
+        boolean hasConsume   = rawActions.contains("CONSUME");
+        boolean hasUnconsume = rawActions.contains("UNCONSUME");
+
+        if (hasDelete && hasUnproduce) return "DELETE";
+        if (hasDelete)    return "DELETE";
+        if (hasUnproduce) return "UNPRODUCE";
+        if (hasInsert && hasProduce) return "CREATE";
+        if (hasInsert)    return "CREATE";
+        if (hasProduce)   return "PRODUCE";
+        if (hasUpdate && hasPrint)  return "EDIT";
+        if (hasUpdate)    return "EDIT";
+        if (hasMapping)   return "MAPPING";
+        if (hasPrint)     return "PRINT";
+        if (hasConsume && hasUnconsume) return "UNCONSUME";
+        if (hasConsume)   return "CONSUME";
+        if (hasUnconsume) return "UNCONSUME";
+
+        // Fallback: semua aksi unik
+        Set<String> aliases = new LinkedHashSet<>();
+        for (String a : rawActions) {
+            aliases.add(AuditDisplayFormatter.actionAlias(a));
+        }
+        return String.join("+", aliases);
     }
 
     private String buildTableSummary(List<AuditItem> items) {
@@ -449,6 +569,15 @@ public class AuditActivity extends AppCompatActivity {
                 lines.add(table + ": data dikonsumsi");
             } else if ("UNCONSUME".equalsIgnoreCase(item.getAction())) {
                 lines.add(table + ": konsumsi data dibatalkan");
+            } else if ("PRODUCE".equalsIgnoreCase(item.getAction())) {
+                lines.add(table + ": data diproduksi");
+            } else if ("UNPRODUCE".equalsIgnoreCase(item.getAction())) {
+                lines.add(table + ": produksi data dibatalkan");
+            } else if ("MAPPING".equalsIgnoreCase(item.getAction())) {
+                String diff = AuditDisplayFormatter.formatActionDiff(
+                        item.getTableName(), item.getAction(),
+                        item.getOldData(), item.getNewData());
+                lines.add(table + ": pindah lokasi — " + firstLine(diff));
             } else {
                 lines.add(table + ": " + item.getAction());
             }
@@ -546,7 +675,8 @@ public class AuditActivity extends AppCompatActivity {
                 outputKeys.add("NoBongkarSusun");
             }
             keys = outputKeys;
-        } else if ("CONSUME".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action)) {
+        } else if ("CONSUME".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action)
+                || "PRODUCE".equalsIgnoreCase(action) || "UNPRODUCE".equalsIgnoreCase(action)) {
             // Hanya buang NoProduksi/NoBongkarSusun, tampilkan nilai label (NoS4S, NoST, dll)
             keys.remove("NoProduksi");
             keys.remove("NoBongkarSusun");
@@ -560,9 +690,9 @@ public class AuditActivity extends AppCompatActivity {
             return;
         }
 
-        boolean isUpdate = "UPDATE".equalsIgnoreCase(action);
-        boolean isInsert = "INSERT".equalsIgnoreCase(action) || "CONSUME".equalsIgnoreCase(action);
-        boolean isDelete = "DELETE".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action);
+        boolean isUpdate = "UPDATE".equalsIgnoreCase(action) || "MAPPING".equalsIgnoreCase(action);
+        boolean isInsert = "INSERT".equalsIgnoreCase(action) || "CONSUME".equalsIgnoreCase(action) || "PRODUCE".equalsIgnoreCase(action);
+        boolean isDelete = "DELETE".equalsIgnoreCase(action) || "UNCONSUME".equalsIgnoreCase(action) || "UNPRODUCE".equalsIgnoreCase(action);
         boolean isPrint = "PRINT".equalsIgnoreCase(action);
         boolean rowsAdded = false;
 
