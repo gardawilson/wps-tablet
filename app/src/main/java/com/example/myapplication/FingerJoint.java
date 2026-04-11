@@ -3327,14 +3327,26 @@ public class FingerJoint extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoFJ = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoFJ != null && !printedNoFJ.trim().isEmpty()) {
-                Toast.makeText(FingerJoint.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoFJ;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "FJ_h", "NoFJ", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(FingerJoint.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(FingerJoint.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                FingerJoint.this,
+                                "FJ_h", "NoFJ", key,
+                                idUsername, SharedPrefUtils.getUsername(FingerJoint.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

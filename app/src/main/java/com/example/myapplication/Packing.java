@@ -3796,14 +3796,26 @@ public class Packing extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoBarangJadi = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoBarangJadi != null && !printedNoBarangJadi.trim().isEmpty()) {
-                Toast.makeText(Packing.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoBarangJadi;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "BarangJadi_h", "NoBJ", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(Packing.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(Packing.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                Packing.this,
+                                "BarangJadi_h", "NoBJ", key,
+                                idUsername, SharedPrefUtils.getUsername(Packing.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

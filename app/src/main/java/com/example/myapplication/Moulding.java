@@ -3292,14 +3292,26 @@ public class Moulding extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoMoulding = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoMoulding != null && !printedNoMoulding.trim().isEmpty()) {
-                Toast.makeText(Moulding.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoMoulding;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "Moulding_h", "NoMoulding", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(Moulding.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(Moulding.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                Moulding.this,
+                                "Moulding_h", "NoMoulding", key,
+                                idUsername, SharedPrefUtils.getUsername(Moulding.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

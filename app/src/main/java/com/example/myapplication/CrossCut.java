@@ -3448,14 +3448,26 @@ public class CrossCut extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoCC = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoCC != null && !printedNoCC.trim().isEmpty()) {
-                Toast.makeText(CrossCut.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoCC;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "CCAkhir_h", "NoCCAkhir", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(CrossCut.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(CrossCut.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                CrossCut.this,
+                                "CCAkhir_h", "NoCCAkhir", key,
+                                idUsername, SharedPrefUtils.getUsername(CrossCut.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

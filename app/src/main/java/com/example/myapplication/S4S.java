@@ -3544,14 +3544,30 @@ public class S4S extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoS4S = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoS4S != null && !printedNoS4S.trim().isEmpty()) {
-                Toast.makeText(S4S.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoS4S;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "S4S_h", "NoS4S", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                // Langsung update DB di background — tidak perlu WorkManager karena koneksi
+                // ke SQL Server sudah pasti aktif (baru saja print berhasil).
+                // WorkManager hanya sebagai fallback jika koneksi gagal saat ini.
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(S4S.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        // Koneksi gagal saat ini — fallback ke WorkManager untuk retry otomatis
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(S4S.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                S4S.this,
+                                "S4S_h", "NoS4S", key,
+                                idUsername, SharedPrefUtils.getUsername(S4S.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

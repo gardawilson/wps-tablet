@@ -3822,14 +3822,26 @@ public class Sanding extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoSanding = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoSanding != null && !printedNoSanding.trim().isEmpty()) {
-                Toast.makeText(Sanding.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoSanding;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "Sanding_h", "NoSanding", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(Sanding.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(Sanding.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                Sanding.this,
+                                "Sanding_h", "NoSanding", key,
+                                idUsername, SharedPrefUtils.getUsername(Sanding.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

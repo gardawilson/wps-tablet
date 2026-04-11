@@ -85,7 +85,7 @@ public class DateTimeUtils {
 
     public static String formatDateToDdYY(String dateString) {
         try {
-            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
             LocalDate localDate = LocalDate.parse(dateString, inputFormatter);
 
             DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMyy", Locale.ENGLISH);

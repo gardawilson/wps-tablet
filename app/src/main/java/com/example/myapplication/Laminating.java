@@ -3278,14 +3278,26 @@ public class Laminating extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PDF_PREVIEW && resultCode == RESULT_OK && data != null) {
             String printedNoLaminating = data.getStringExtra(PdfPreviewActivity.EXTRA_LABEL_NO);
             if (printedNoLaminating != null && !printedNoLaminating.trim().isEmpty()) {
-                Toast.makeText(Laminating.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
                 final String key = printedNoLaminating;
-                PrintStatusQueue.enqueue(
-                        this,
-                        "Laminating_h", "NoLaminating", key,
-                        idUsername, SharedPrefUtils.getUsername(this),
-                        () -> applyPendingState(key)
-                );
+                updatePrintStatus(key, new UpdatePrintStatusCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(Laminating.this, "Cetak berhasil. Status diperbarui.", Toast.LENGTH_SHORT).show();
+                        refreshCurrentOutputList();
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.w("PrintStatus", "Direct update gagal, fallback ke WorkManager: " + reason);
+                        Toast.makeText(Laminating.this, "Cetak berhasil. Status diupdate di background.", Toast.LENGTH_SHORT).show();
+                        PrintStatusQueue.enqueue(
+                                Laminating.this,
+                                "Laminating_h", "NoLaminating", key,
+                                idUsername, SharedPrefUtils.getUsername(Laminating.this),
+                                () -> applyPendingState(key)
+                        );
+                    }
+                });
             }
         }
     }

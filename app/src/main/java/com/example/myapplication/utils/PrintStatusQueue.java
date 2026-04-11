@@ -75,8 +75,11 @@ public class PrintStatusQueue {
      * - Tag: print_status_sync (untuk deduplication — Worker baru tidak dobel jika sudah ada)
      */
     private static void scheduleWorker(Context context) {
+        // Tidak pakai NetworkType.CONNECTED — jaringan lokal (intranet/WiFi tanpa internet)
+        // tidak selalu dianggap "CONNECTED" oleh Android, sehingga Worker tidak pernah jalan.
+        // Koneksi ke SQL Server sudah di-handle di dalam Worker sendiri (catch SQLException).
         Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                 .build();
 
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(PrintStatusSyncWorker.class)
