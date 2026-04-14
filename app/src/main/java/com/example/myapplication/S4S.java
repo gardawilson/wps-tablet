@@ -233,8 +233,6 @@ public class S4S extends AppCompatActivity {
     private Boolean currentOutputIsNoProduksi;
 
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

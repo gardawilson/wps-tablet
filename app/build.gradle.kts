@@ -20,7 +20,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 1
-        versionName = "1.1.60"
+        versionName = "1.1.63"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,6 +39,11 @@ android {
             "String",
             "BASE_URL_API",
             "\"${localProperties.getProperty("BASE_URL_API", "http://192.168.10.100:5002")}\""
+        )
+        buildConfigField(
+            "String",
+            "DEVICE_SERVICE_BASE",
+            "\"${localProperties.getProperty("DEVICE_SERVICE_BASE", "http://192.168.11.79:3000/")}\""
         )
     }
 

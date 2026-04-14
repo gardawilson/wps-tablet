@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -87,9 +88,7 @@ public class BluetoothEscPosPrinter {
         BluetoothSocket socket = null;
         OutputStream out = null;
         try {
-            socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
-            Log.d(TAG, "printBitmaps:connecting uuid=" + SPP_UUID);
-            socket.connect();
+            socket = connectWithFallback(device, adapter);
             out = socket.getOutputStream();
             Log.d(TAG, "printBitmaps:connected");
 
@@ -136,6 +135,62 @@ public class BluetoothEscPosPrinter {
                 }
             }
         }
+    }
+
+    private static BluetoothSocket connectWithFallback(BluetoothDevice device, BluetoothAdapter adapter) throws IOException {
+        IOException lastError = null;
+
+        // Attempt 1: secure SPP RFCOMM.
+        try {
+            if (adapter.isDiscovering()) {
+                adapter.cancelDiscovery();
+            }
+            BluetoothSocket socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+            Log.d(TAG, "connectWithFallback: try secure uuid=" + SPP_UUID);
+            socket.connect();
+            Log.d(TAG, "connectWithFallback: secure success");
+            return socket;
+        } catch (IOException e) {
+            lastError = e;
+            Log.w(TAG, "connectWithFallback: secure failed", e);
+        }
+
+        // Attempt 2: insecure SPP RFCOMM (often needed on some thermal printers/ROMs).
+        try {
+            if (adapter.isDiscovering()) {
+                adapter.cancelDiscovery();
+            }
+            BluetoothSocket socket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+            Log.d(TAG, "connectWithFallback: try insecure uuid=" + SPP_UUID);
+            socket.connect();
+            Log.d(TAG, "connectWithFallback: insecure success");
+            return socket;
+        } catch (IOException e) {
+            lastError = e;
+            Log.w(TAG, "connectWithFallback: insecure failed", e);
+        }
+
+        // Attempt 3: reflection fallback to RFCOMM channel 1.
+        try {
+            if (adapter.isDiscovering()) {
+                adapter.cancelDiscovery();
+            }
+            Method method = device.getClass().getMethod("createRfcommSocket", int.class);
+            BluetoothSocket socket = (BluetoothSocket) method.invoke(device, 1);
+            Log.d(TAG, "connectWithFallback: try reflection channel=1");
+            socket.connect();
+            Log.d(TAG, "connectWithFallback: reflection success");
+            return socket;
+        } catch (Exception e) {
+            Log.w(TAG, "connectWithFallback: reflection failed", e);
+            if (e instanceof IOException) {
+                lastError = (IOException) e;
+            } else if (lastError == null) {
+                lastError = new IOException("Bluetooth connect fallback failed", e);
+            }
+        }
+
+        throw lastError != null ? lastError : new IOException("Bluetooth connect failed");
     }
 
     private static PrintOptions resolvePrintOptions() {
