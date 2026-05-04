@@ -11,6 +11,8 @@ import androidx.core.content.FileProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +35,7 @@ public class PdfMicroserviceUtils {
             try {
 
                 String token = TokenManager.getToken(activity);
+                Log.d(TAG, "Requesting PDF: " + urlString);
 
                 URL url = new URL(urlString);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -44,11 +47,14 @@ public class PdfMicroserviceUtils {
                 connection.connect();
 
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    String errorBody = readStreamSafely(connection.getErrorStream());
 
                     Log.e(TAG, "Server returned HTTP "
                             + connection.getResponseCode()
                             + " "
-                            + connection.getResponseMessage());
+                            + connection.getResponseMessage()
+                            + " for URL: " + urlString
+                            + (errorBody.isEmpty() ? "" : " | body: " + errorBody));
 
                     activity.runOnUiThread(() ->
                             Toast.makeText(activity,
@@ -113,5 +119,26 @@ public class PdfMicroserviceUtils {
                 });
             }
         });
+    }
+
+    private static String readStreamSafely(InputStream stream) {
+        if (stream == null) {
+            return "";
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (builder.length() > 0) {
+                    builder.append(' ');
+                }
+                builder.append(line);
+            }
+            return builder.toString();
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal membaca error response", e);
+            return "";
+        }
     }
 }

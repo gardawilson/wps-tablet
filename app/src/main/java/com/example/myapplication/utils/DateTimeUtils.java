@@ -130,8 +130,16 @@ public class DateTimeUtils {
             return outputFormat.format(date);
 
         } catch (ParseException e) {
-            Log.e("DateFormatError", "Gagal memformat tanggal (dd-MMM-yyyy ke yyyy-MM-dd): " + e.getMessage());
-            return "ERROR";
+            try {
+                SimpleDateFormat inputFormatLocal = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+                SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+
+                Date date = inputFormatLocal.parse(dateString);
+                return outputFormat.format(date);
+            } catch (ParseException localException) {
+                Log.e("DateFormatError", "Gagal memformat tanggal (dd-MMM-yyyy ke yyyy-MM-dd): " + localException.getMessage());
+                return "ERROR";
+            }
         }
     }
 

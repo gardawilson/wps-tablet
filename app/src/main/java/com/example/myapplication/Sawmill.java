@@ -1,7 +1,8 @@
 package com.example.myapplication;
 
-import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
+import static com.example.myapplication.config.ApiEndpoints.BASE_REPORT_MICROSERVICE;
 import static com.example.myapplication.utils.DateTimeUtils.formatDate;
+import static com.example.myapplication.utils.DateTimeUtils.formatToDatabaseDate;
 import static com.example.myapplication.utils.DateTimeUtils.formatTimeToHHmmss;
 import static com.example.myapplication.utils.PanjangStandarUtils.confirmIfNotStandard;
 
@@ -60,9 +61,9 @@ import com.example.myapplication.model.KayuBulatData;
 import com.example.myapplication.model.SpkProdukData;
 import com.example.myapplication.utils.InputFilterMinDecimalNoLeadingZero;
 import com.example.myapplication.utils.InputFilterMinIntNoLeadingZero;
+import com.example.myapplication.utils.DateRangeDialogHelper;
 import com.example.myapplication.utils.LoadingDialogHelper;
-import com.example.myapplication.utils.PdfUtils;
-import com.example.myapplication.utils.SharedPrefUtils;
+import com.example.myapplication.utils.PdfMicroserviceUtils;
 import com.example.myapplication.utils.TokenManager;
 
 import java.sql.SQLException;
@@ -127,7 +128,6 @@ public class Sawmill extends AppCompatActivity {
     private Runnable searchRunnable;
     private static final int SEARCH_DELAY = 1000;
     private final LoadingDialogHelper loadingDialogHelper = new LoadingDialogHelper();
-    private String username;
 
     // ✅ TAMBAHKAN INI untuk prevent race condition
     private volatile boolean isDetailDataLoaded = false;
@@ -156,7 +156,6 @@ public class Sawmill extends AppCompatActivity {
         searchNoKB = findViewById(R.id.searchNoKB);
         scrollView = findViewById(R.id.scrollView);
         btnCetak = findViewById(R.id.btnCetak);
-        username = SharedPrefUtils.getUsername(this);
 
 
         loadDataAndDisplayTable();
@@ -247,30 +246,26 @@ public class Sawmill extends AppCompatActivity {
             }
         });
 
-        btnCetak.setOnClickListener(v -> {
-            if (selectedRowMain != null) {
-                SawmillData selectedData = (SawmillData) selectedRowMain.getTag();
-
-                String noProduksi = selectedData.getNoSTSawmill(); // atau getNoProduksi(), tergantung field-nya
-                String reportName = "CrLembarTally";
-
-                String url = CRYSTAL_REPORT_WPS_EXPORT_PDF
-                        + "?NoProduksi=" + noProduksi
-                        + "&Username=" + username
-                        + "&reportName=" + reportName;
-
-                loadingDialogHelper.show(this);
-                PdfUtils.downloadAndOpenPDF(
+        btnCetak.setOnClickListener(v ->
+                DateRangeDialogHelper.show(
                         this,
-                        url,
-                        "STSawmill_" + noProduksi + ".pdf",
-                        executorService,
-                        loadingDialogHelper
-                );
-            } else {
-                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
-            }
-        });
+                        DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
+                        (tglAwal, tglAkhir) -> {
+                            String url = BASE_REPORT_MICROSERVICE
+                                    + "api/reports/sawn-timber/rekap-hasil-sawmill-per-meja-upah-borongan/pdf"
+                                    + "?TglAwal=" + formatToDatabaseDate(tglAwal)
+                                    + "&TglAkhir=" + formatToDatabaseDate(tglAkhir);
+
+                            PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
+                                    this,
+                                    url,
+                                    "Rekap Hasil Sawmill Per Meja.pdf",
+                                    executorService,
+                                    loadingDialogHelper
+                            );
+                        }
+                )
+        );
     }
 
     private void showLoadingRow() {
