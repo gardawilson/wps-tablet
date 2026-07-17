@@ -3,6 +3,7 @@ package com.example.myapplication;
 import static com.example.myapplication.config.ApiEndpoints.BASE_REPORT_MICROSERVICE;
 import static com.example.myapplication.config.ApiEndpoints.CRYSTAL_REPORT_WPS_EXPORT_PDF;
 
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +16,10 @@ import com.example.myapplication.utils.PdfMicroserviceUtils;
 import com.example.myapplication.utils.PdfUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -175,11 +180,13 @@ public class LaporanST extends AppCompatActivity {
                 this,
                 DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
                 (tglAwal, tglAkhir) -> {
+                    String normalizedTglAwal = normalizeDateForMicroservice(tglAwal);
+                    String normalizedTglAkhir = normalizeDateForMicroservice(tglAkhir);
 
                     String url = BASE_REPORT_MICROSERVICE
                             + "api/reports/sawn-timber/rekap-hasil-sawmill-per-meja-upah-borongan-v2/pdf"
-                            + "?start_date=" + tglAwal
-                            + "&end_date=" + tglAkhir;
+                            + "?start_date=" + Uri.encode(normalizedTglAwal)
+                            + "&end_date=" + Uri.encode(normalizedTglAkhir);
 
                     PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
                             this,
@@ -190,6 +197,26 @@ public class LaporanST extends AppCompatActivity {
                     );
                 }
         );
+    }
+
+    private String normalizeDateForMicroservice(String rawDate) {
+        Locale[] inputLocales = new Locale[]{new Locale("id", "ID"), Locale.ENGLISH, Locale.getDefault()};
+
+        for (Locale locale : inputLocales) {
+            try {
+                SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MMM-yyyy", locale);
+                Date parsedDate = inputFormat.parse(rawDate);
+                if (parsedDate == null) {
+                    continue;
+                }
+                SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                return outputFormat.format(parsedDate);
+            } catch (ParseException ignored) {
+                // Try next locale.
+            }
+        }
+
+        return rawDate;
     }
 
 }

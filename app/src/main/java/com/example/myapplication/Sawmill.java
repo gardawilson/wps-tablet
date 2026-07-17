@@ -246,26 +246,23 @@ public class Sawmill extends AppCompatActivity {
             }
         });
 
-        btnCetak.setOnClickListener(v ->
-                DateRangeDialogHelper.show(
-                        this,
-                        DateRangeDialogHelper.DefaultTanggalMode.MINGGU_LALU,
-                        (tglAwal, tglAkhir) -> {
-                            String url = BASE_REPORT_MICROSERVICE
-                                    + "api/reports/sawn-timber/rekap-hasil-sawmill-per-meja-upah-borongan/pdf"
-                                    + "?TglAwal=" + formatToDatabaseDate(tglAwal)
-                                    + "&TglAkhir=" + formatToDatabaseDate(tglAkhir);
+        btnCetak.setOnClickListener(v -> {
+            if (selectedRowMain == null) {
+                Toast.makeText(this, "Pilih data terlebih dahulu", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            SawmillData selectedData = (SawmillData) selectedRowMain.getTag();
+            String url = "http://192.168.10.100:5006/api/reports/sawn-timber/lembar-tally-hasil-sawmill/pdf"
+                    + "?no_produksi=" + selectedData.getNoSTSawmill();
 
-                            PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
-                                    this,
-                                    url,
-                                    "Rekap Hasil Sawmill Per Meja.pdf",
-                                    executorService,
-                                    loadingDialogHelper
-                            );
-                        }
-                )
-        );
+            PdfMicroserviceUtils.downloadAndOpenPDFWithToken(
+                    this,
+                    url,
+                    "Lembar Tally Hasil Sawmill.pdf",
+                    executorService,
+                    loadingDialogHelper
+            );
+        });
     }
 
     private void showLoadingRow() {

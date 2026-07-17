@@ -2,10 +2,12 @@
 local.properties
 .gradle/
 .gradle-user/
+.gradle-user-home/
 
 # Build output
 build/
 **/build/
+app/release/
 
 # IDE & metadata
 .idea/
