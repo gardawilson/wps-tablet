@@ -133,6 +133,7 @@ dependencies {
 
     implementation(libs.viewpager2)
     implementation(libs.cardview)
+    implementation("androidx.drawerlayout:drawerlayout:1.2.0")
 
     // Room (persistent queue)
     implementation(libs.room.runtime)
