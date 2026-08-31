@@ -15,6 +15,24 @@ android {
         }
     }
 
+    // Pilih environment: -PbuildEnv=prod  (default: dev).
+    // URL & DB_NAME diambil dari env/<buildEnv>.properties dan MENIMPA local.properties.
+    // Rahasia (DB_USER/DB_PASS) & sdk.dir tetap dari local.properties.
+    val buildEnv = (project.findProperty("buildEnv") as String?) ?: "dev"
+    val envProperties = Properties().apply {
+        val file = rootProject.file("env/$buildEnv.properties")
+        if (file.exists()) {
+            load(file.inputStream())
+        } else {
+            logger.warn("build.gradle.kts: env/$buildEnv.properties tidak ada - pakai nilai local.properties")
+        }
+    }
+    val appConfig = Properties().apply {
+        putAll(localProperties)
+        putAll(envProperties)
+    }
+    logger.lifecycle("WPS Tablet build env = $buildEnv | API = ${appConfig["BASE_URL_API"]} | DB = ${appConfig["DB_NAME"]}")
+
     // Kredensial signing dibaca dari keystore.properties (gitignored).
     // Buat dari keystore.properties.example. Lihat deploy.sh.
     val keystoreProperties = Properties().apply {
@@ -39,31 +57,32 @@ android {
         applicationId = "com.example.myapplication"
         minSdk = 29
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.1.79"
+        versionCode = 8
+        versionName = "1.1.80"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "DB_IP", "\"${localProperties["DB_IP"]}\"")
-        buildConfigField("String", "DB_PORT", "\"${localProperties["DB_PORT"]}\"")
-        buildConfigField("String", "DB_USER", "\"${localProperties["DB_USER"]}\"")
-        buildConfigField("String", "DB_PASS", "\"${localProperties["DB_PASS"]}\"")
-        buildConfigField("String", "DB_NAME", "\"${localProperties["DB_NAME"]}\"")
+        buildConfigField("String", "BUILD_ENV", "\"$buildEnv\"")
+        buildConfigField("String", "DB_IP", "\"${appConfig["DB_IP"]}\"")
+        buildConfigField("String", "DB_PORT", "\"${appConfig["DB_PORT"]}\"")
+        buildConfigField("String", "DB_USER", "\"${appConfig["DB_USER"]}\"")
+        buildConfigField("String", "DB_PASS", "\"${appConfig["DB_PASS"]}\"")
+        buildConfigField("String", "DB_NAME", "\"${appConfig["DB_NAME"]}\"")
         buildConfigField(
             "String",
             "BASE_REPORT_MICROSERVICE",
-            "\"${localProperties.getProperty("BASE_REPORT_MICROSERVICE", "http://192.168.10.100:5006/")}\""
+            "\"${appConfig.getProperty("BASE_REPORT_MICROSERVICE", "http://192.168.10.100:5006/")}\""
         )
         buildConfigField(
             "String",
             "BASE_URL_API",
-            "\"${localProperties.getProperty("BASE_URL_API", "http://192.168.10.100:5002")}\""
+            "\"${appConfig.getProperty("BASE_URL_API", "http://192.168.10.100:5002")}\""
         )
         buildConfigField(
             "String",
             "DEVICE_SERVICE_BASE",
-            "\"${localProperties.getProperty("DEVICE_SERVICE_BASE", "http://192.168.11.79:3000/")}\""
+            "\"${appConfig.getProperty("DEVICE_SERVICE_BASE", "http://192.168.11.79:3000/")}\""
         )
     }
 
