@@ -39,8 +39,8 @@ android {
         applicationId = "com.example.myapplication"
         minSdk = 29
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.1.76"
+        versionCode = 5
+        versionName = "1.1.77"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -85,6 +85,15 @@ android {
             )
             // Pakai signing release bila keystore.properties tersedia.
             signingConfig = signingConfigs.findByName("release")
+        }
+        // "WPS Tablet" (applicationId & label produksi, TANPA UI Debug Launcher,
+        // cek update aktif) tapi bisa di-attach debugger.
+        create("staging") {
+            initWith(getByName("release"))
+            isDebuggable = true
+            isMinifyEnabled = false
+            // tidak ada applicationIdSuffix -> tetap com.example.myapplication
+            matchingFallbacks += listOf("release", "debug")
         }
     }
 
