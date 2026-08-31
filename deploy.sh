@@ -69,8 +69,10 @@ ANDROID_SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/AppData/Local/Android/Sdk
 
 if [ "$MODE" = "dev" ]; then
   API_BASE_URL="http://$DEV_IP:$PORT"
+  BUILD_ENV="dev"
 else
   API_BASE_URL="http://$PROD_IP:$PORT"
+  BUILD_ENV="prod"
 fi
 PUBLISH_URL="$API_BASE_URL/api/update/$APP_ID/publish"
 
@@ -119,7 +121,7 @@ echo ""
 echo "=================================================="
 echo " WPS Tablet — Deploy (via API)"
 echo "=================================================="
-echo " Mode         : $MODE"
+echo " Mode         : $MODE  (buildEnv=$BUILD_ENV -> env/$BUILD_ENV.properties)"
 echo " Server       : $API_BASE_URL"
 echo " Versi        : $CUR_NAME (code $CUR_CODE)  ->  $NEXT_NAME (code $NEXT_CODE)"
 echo " APK          : $APK_NAME"
@@ -145,7 +147,7 @@ echo "      $CUR_NAME/$CUR_CODE  ->  $NEXT_NAME/$NEXT_CODE"
 echo ""
 echo "[2/5] Build APK release ..."
 [ "$DO_CLEAN" = "true" ] && ./gradlew clean
-./gradlew :app:assembleRelease
+./gradlew :app:assembleRelease -PbuildEnv="$BUILD_ENV"
 
 # --- [3/5] Verifikasi APK ---
 echo ""
