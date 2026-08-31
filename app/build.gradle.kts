@@ -57,8 +57,8 @@ android {
         applicationId = "com.example.myapplication"
         minSdk = 29
         targetSdk = 34
-        versionCode = 10
-        versionName = "1.1.82"
+        versionCode = 11
+        versionName = "1.1.83"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
