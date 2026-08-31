@@ -15,12 +15,32 @@ android {
         }
     }
 
+    // Kredensial signing dibaca dari keystore.properties (gitignored).
+    // Buat dari keystore.properties.example. Lihat deploy.sh.
+    val keystoreProperties = Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.exists()) {
+            load(file.inputStream())
+        }
+    }
+
+    signingConfigs {
+        if (keystoreProperties.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.myapplication"
         minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.1.73"
+        versionCode = 2
+        versionName = "1.1.74"
         multiDexEnabled = true  // Ditambahkan untuk mendukung jCIFS
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,12 +73,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Pakai signing release bila keystore.properties tersedia.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
