@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(attrib:*)"
+      "Bash(attrib:*)",
+      "Bash(./gradlew.bat :app:compileDebugJavaWithJavac -q)",
+      "Bash(./gradlew.bat :app:processDebugResources -q)",
+      "Bash(D:/Users/garda/AppData/Local/Android/Sdk/platform-tools/adb.exe devices *)",
+      "Bash(adb devices *)",
+      "PowerShell(Test-Path *)",
+      "Bash(./gradlew.bat :app:assembleDebug -q)",
+      "Bash(python3 -c ' *)",
+      "Bash(magick -version)",
+      "Bash(convert -version)",
+      "Bash(grep *)"
     ]
   }
 }

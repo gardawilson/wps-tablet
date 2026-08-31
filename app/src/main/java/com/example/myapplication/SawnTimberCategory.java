@@ -11,7 +11,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class SawnTimberCategory extends AppCompatActivity {
+public class SawnTimberCategory extends BaseSidebarActivity {
 
     private CardView STAll;
     private CardView STUpah;
@@ -20,7 +20,7 @@ public class SawnTimberCategory extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sawn_timber_category);
+        setContent(R.layout.activity_sawn_timber_category);
 
         STAll = findViewById(R.id.STAll);
         STUpah = findViewById(R.id.STUpah);

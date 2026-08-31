@@ -17,6 +17,18 @@
     <color name="warning_yellow">#FFFF00</color>
     <color name="pending_orange">#FF9800</color>
 
+    <color name="sidebar_background">#17382F</color>
+    <color name="sidebar_item">#2D5044</color>
+    <color name="sidebar_item_pressed">#3A6254</color>
+    <color name="sidebar_accent">#B67A43</color>
+    <color name="sidebar_muted_text">#9CB0A7</color>
+    <color name="sidebar_brand_detail">#C9A36B</color>
+
+    <color name="chart_bar">#8FA888</color>
+    <color name="activity_dot_default">#4A371F</color>
+    <color name="activity_dot_highlight">#B67A43</color>
+    <color name="muted_text">#8A7A68</color>
+
     <!-- Default Android colors (diperlukan) -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>

@@ -161,7 +161,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Moulding extends AppCompatActivity {
+public class Moulding extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9103;
 
     //deklarasi semua item yang ada di xml yang akan digunakan
@@ -235,7 +235,7 @@ public class Moulding extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_moulding);
+        setContent(R.layout.activity_moulding);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("Moulding_h".equals(tableName)) {

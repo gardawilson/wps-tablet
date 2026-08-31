@@ -85,7 +85,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class Nyangkut extends AppCompatActivity {
+public class Nyangkut extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -180,7 +180,7 @@ public class Nyangkut extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_nyangkut);
+        setContent(R.layout.activity_nyangkut);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

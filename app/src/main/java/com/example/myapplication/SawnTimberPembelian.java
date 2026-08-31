@@ -55,7 +55,12 @@ import java.util.concurrent.Executors;
 
 
 
-public class SawnTimberPembelian extends AppCompatActivity {
+public class SawnTimberPembelian extends BaseSidebarActivity {
+
+    @Override
+    protected int getSelectedMenuId() {
+        return ID_LABEL_ST;
+    }
 
     private TableLayout mainTable;
     private TableLayout nonRejectTableLayout;
@@ -84,7 +89,7 @@ public class SawnTimberPembelian extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sawn_timber_pembelian);
+        setContent(R.layout.activity_sawn_timber_pembelian);
 
         mainTable = findViewById(R.id.mainTable);
         nonRejectTableLayout = findViewById(R.id.nonRejectTableLayout);

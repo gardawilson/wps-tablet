@@ -162,7 +162,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Laminating extends AppCompatActivity {
+public class Laminating extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9104;
 
     private String idUsername;
@@ -238,7 +238,7 @@ public class Laminating extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_laminating);
+        setContent(R.layout.activity_laminating);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("Laminating_h".equals(tableName)) {

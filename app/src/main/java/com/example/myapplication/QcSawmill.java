@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class QcSawmill extends AppCompatActivity {
+public class QcSawmill extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableLayout detailQcSawmillTable;
@@ -67,7 +67,7 @@ public class QcSawmill extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_qc_sawmill);
+        setContent(R.layout.activity_qc_sawmill);
 
         mainTable = findViewById(R.id.mainTable);
         detailQcSawmillTable = findViewById(R.id.detailQcSawmillTable);

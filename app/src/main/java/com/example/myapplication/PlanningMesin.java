@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class PlanningMesin extends AppCompatActivity {
+public class PlanningMesin extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableRow selectedRow;
@@ -64,7 +64,7 @@ public class PlanningMesin extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_planning_mesin);
+        setContent(R.layout.activity_planning_mesin);
 
         mainTable = findViewById(R.id.mainTable);
         mainLoadingIndicator = findViewById(R.id.mainLoadingIndicator);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Area konten HostActivity. Fragment tiap layar ditukar di dalam
+  @id/hostFragmentContainer; sidebar (dari activity_base_sidebar.xml) tidak
+  ikut dirender ulang saat berpindah menu.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hostFragmentContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_cream" />

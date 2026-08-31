@@ -78,8 +78,10 @@ public class MainActivity extends AppCompatActivity {
         // Set click listeners
         setupClickListeners();
 
-        // Start update check
-        initializeUpdateManagerAndCheck();
+        // Pemeriksaan update tidak diperlukan saat mengembangkan UI.
+        if (!BuildConfig.DEBUG) {
+            initializeUpdateManagerAndCheck();
+        }
     }
 
     private void initializeViews() {
@@ -103,25 +105,39 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            progressBar.setVisibility(View.VISIBLE);
+            BtnLogin.setEnabled(false);
+
             Executors.newSingleThreadExecutor().execute(() -> {
-                boolean isLoginSuccessful = validateLogin(username, password);
+                // Autentikasi tunggal lewat backend API (menggantikan login JDBC).
+                LoginResponse response = AuthApi.login(username, password);
 
                 runOnUiThread(() -> {
-                    if (isLoginSuccessful) {
-                        String capitalizedUsername = capitalizeFirstLetter(username);
-                        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                        String activity = String.format("User %s Telah Login", capitalizedUsername);
-                        new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+                    progressBar.setVisibility(View.GONE);
+                    BtnLogin.setEnabled(true);
 
-                        // Auto-login ke API untuk mendapatkan token
-                        loginToStockOpnameApi(username, password);
+                    boolean ok = response.isSuccess()
+                            && response.getToken() != null && !response.getToken().isEmpty()
+                            && response.getUser() != null;
 
-                        Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(MainActivity.this, MenuUtama.class);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(MainActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
+                    if (!ok) {
+                        String msg = (response.getMessage() == null || response.getMessage().isEmpty())
+                                ? "Login gagal. Periksa username/password atau koneksi server."
+                                : response.getMessage();
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                        return;
                     }
+
+                    persistSession(response);
+
+                    String capitalizedUsername = capitalizeFirstLetter(response.getUser().getUsername());
+                    String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                    String activity = String.format("User %s Telah Login", capitalizedUsername);
+                    new SaveToRiwayatTask(capitalizedUsername, currentDateTime, activity).execute();
+
+                    Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(MainActivity.this, HostActivity.class));
+                    finish();
                 });
             });
         });
@@ -262,20 +278,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showUpdateDialog(UpdateManager.UpdateInfo updateInfo) {
-        new AlertDialog.Builder(this)
+        boolean mandatory = updateInfo.forceUpdate || isBelowMinVersion(updateInfo.minVersion);
+
+        String message = "WPS Tablet Versi " + updateInfo.version + "\n\nRincian :\n" + updateInfo.changelog;
+        if (mandatory) {
+            message += "\n\nPembaruan ini wajib dipasang untuk melanjutkan.";
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("Pembaruan Tersedia!")
-                .setMessage("WPS Tablet Versi " + updateInfo.version + "\n\n" + "Rincian :\n" + updateInfo.changelog)
+                .setMessage(message)
                 .setPositiveButton("Update", (dialog, which) -> {
                     dialog.dismiss();
                     startDownload(updateInfo.fileName);
                 })
-                .setNegativeButton("Nanti", (dialog, which) -> {
-                    dialog.dismiss();
-//                    enableLoginControls(true);
-                    cleanupUpdateManager();
-                })
-                .setCancelable(false)
-                .show();
+                .setCancelable(false);
+
+        if (!mandatory) {
+            builder.setNegativeButton("Nanti", (dialog, which) -> {
+                dialog.dismiss();
+                cleanupUpdateManager();
+            });
+        }
+
+        builder.show();
+    }
+
+    private boolean isBelowMinVersion(String minVersion) {
+        if (minVersion == null || minVersion.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            String current = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0).versionName;
+            String[] a = current.split("\\.");
+            String[] b = minVersion.trim().split("\\.");
+            int len = Math.max(a.length, b.length);
+            for (int i = 0; i < len; i++) {
+                int x = i < a.length ? Integer.parseInt(a[i].replaceAll("[^0-9]", "")) : 0;
+                int y = i < b.length ? Integer.parseInt(b[i].replaceAll("[^0-9]", "")) : 0;
+                if (x != y) {
+                    return x < y;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "isBelowMinVersion: " + e.getMessage());
+        }
+        return false;
     }
 
     private void startDownload(String fileName) {
@@ -371,143 +420,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private boolean validateLogin(String username, String password) {
-        boolean isValid = false;
-        Connection con = ConnectionClass();
 
-        if (con != null) {
-            String query = "SELECT DISTINCT MU.IdUsername, MUGM.IdUGroup, MUGP.NoPermission " +
-                    "FROM dbo.MstUsername MU " +
-                    "JOIN dbo.MstUserGroupMember MUGM ON MU.IdUsername = MUGM.IdUsername " +
-                    "JOIN dbo.MstUserGroupPermission MUGP ON MUGM.IdUGroup = MUGP.IdUGroup " +
-                    "WHERE MU.Username = ? AND MU.Password = ? " +
-                    "AND MUGP.Allow = 1";
+    /** Simpan sesi (token, user, permission) dari respons login API. */
+    private void persistSession(LoginResponse response) {
+        LoginResponse.UserData user = response.getUser();
 
-            try (PreparedStatement ps = con.prepareStatement(query)) {
-                ps.setString(1, username);
-                ps.setString(2, hashPassword(password));
+        TokenManager.saveToken(MainActivity.this, response.getToken());
+        TokenManager.saveUserData(
+                MainActivity.this,
+                user.getIdUsername(),
+                user.getUsername(),
+                user.getFullName()
+        );
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    Set<String> roleSet = new HashSet<>();
-                    Set<String> permissionSet = new HashSet<>();
-                    String idUsername = null;
+        SharedPrefUtils.saveUsername(MainActivity.this, user.getUsername());
+        SharedPrefUtils.saveIdUsername(MainActivity.this, String.valueOf(user.getIdUsername()));
 
-                    while (rs.next()) {
-                        if (idUsername == null) {
-                            idUsername = rs.getString("IdUsername");
-                        }
+        List<String> permissions = user.getPermissions();
+        SharedPrefUtils.savePermissions(
+                MainActivity.this,
+                permissions != null ? new ArrayList<>(new HashSet<>(permissions)) : new ArrayList<>()
+        );
 
-                        String groupId = rs.getString("IdUGroup");
-                        String noPermission = rs.getString("NoPermission");
-
-                        roleSet.add(groupId);
-                        permissionSet.add(noPermission);
-
-                        // Logcat output
-                        Log.d("LoginPermission", "User: " + idUsername +
-                                " | Group: " + groupId +
-                                " | Permission: " + noPermission);
-                    }
-
-                    if (!roleSet.isEmpty() && idUsername != null) {
-                        SharedPrefUtils.saveUsername(this, username);
-                        SharedPrefUtils.saveIdUsername(this, idUsername);   // <-- simpan IdUsername
-                        SharedPrefUtils.saveRoles(this, new ArrayList<>(roleSet));
-                        SharedPrefUtils.savePermissions(this, new ArrayList<>(permissionSet));
-                        isValid = true;
-                    }
-                }
-            } catch (SQLException e) {
-                Log.e("SQL Error", e.getMessage());
-            } finally {
-                try {
-                    if (con != null) con.close();
-                } catch (SQLException e) {
-                    Log.e("Connection Error", "Error closing connection", e);
-                }
-            }
-        } else {
-            Log.e("Connection Error", "Failed to connect to the database.");
-        }
-
-        return isValid;
-    }
-
-    private void loginToStockOpnameApi(String username, String password) {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            LoginResponse response = AuthApi.login(username, password);
-
-            runOnUiThread(() -> {
-                if (response.isSuccess() && response.getToken() != null && !response.getToken().isEmpty()) {
-                    // Simpan token
-                    TokenManager.saveToken(MainActivity.this, response.getToken());
-
-                    // Simpan user data dan permissions dari API
-                    if (response.getUser() != null) {
-                        TokenManager.saveUserData(
-                                MainActivity.this,
-                                response.getUser().getIdUsername(),
-                                response.getUser().getUsername(),
-                                response.getUser().getFullName()
-                        );
-
-                        // Gabungkan permissions dari database dan API
-                        List<String> apiPermissions = response.getUser().getPermissions();
-                        if (apiPermissions != null && !apiPermissions.isEmpty()) {
-                            // Ambil permissions yang sudah ada dari database
-                            List<String> existingPermissions = SharedPrefUtils.getPermissions(MainActivity.this);
-
-                            // Gabungkan dengan permissions dari API (hindari duplikat)
-                            Set<String> combinedPermissions = new HashSet<>(existingPermissions);
-                            combinedPermissions.addAll(apiPermissions);
-
-                            // Simpan kembali permissions yang sudah digabung
-                            SharedPrefUtils.savePermissions(MainActivity.this, new ArrayList<>(combinedPermissions));
-
-                            Log.d("API_LOGIN", "Token dan permissions berhasil disimpan. Total permissions: " + combinedPermissions.size());
-                        }
-                    }
-
-                    Log.d("API_LOGIN", "Token berhasil disimpan");
-                } else {
-                    Log.e("API_LOGIN", "Gagal mendapatkan token API: " + response.getMessage());
-                    // Tidak perlu toast karena user sudah berhasil login ke aplikasi utama
-                }
-            });
-        });
+        Log.d("API_LOGIN", "Sesi tersimpan. Total permissions: "
+                + (permissions != null ? permissions.size() : 0));
     }
 
 
-    private String hashPassword(String password) {
-        try {
-            // Membuat objek MessageDigest dengan algoritma MD5
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
 
-            // Menghitung hash MD5 dari password
-            byte[] keyBytes = md5.digest(password.getBytes());
-
-            // Membuat objek SecretKeySpec dengan key MD5
-            SecretKeySpec key = new SecretKeySpec(keyBytes, "DESede");
-
-            // Membuat objek Cipher dengan algoritma TripleDES
-            Cipher cipher = Cipher.getInstance("DESede/ECB/PKCS5Padding");
-
-            // Menginisialisasi Cipher dengan mode enkripsi dan key
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-
-            // Mengenkripsi password
-            byte[] encryptedBytes = cipher.doFinal(password.getBytes());
-
-            // Mengonversi hasil enkripsi menjadi Base64
-            String encodedHash = Base64.getEncoder().encodeToString(encryptedBytes);
-
-            // Mengembalikan hash yang telah dienkripsi dan di-encode
-            return encodedHash;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     @Override
     public void onBackPressed() {

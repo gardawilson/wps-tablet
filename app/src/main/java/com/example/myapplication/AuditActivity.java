@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.text.SimpleDateFormat;
 
-public class AuditActivity extends AppCompatActivity {
+public class AuditActivity extends BaseSidebarActivity {
     public static final String EXTRA_SEARCH_PK = "extra_search_pk";
 
     private static final int PAGE_SIZE = 20;
@@ -76,7 +76,7 @@ public class AuditActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_audit);
+        setContent(R.layout.activity_audit);
 
         token = TokenManager.getToken(this);
         if (token == null || token.trim().isEmpty()) {

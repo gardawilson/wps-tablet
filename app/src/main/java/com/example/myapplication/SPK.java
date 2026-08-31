@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SPK extends AppCompatActivity {
+public class SPK extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableRow selectedRow;
@@ -60,7 +60,7 @@ public class SPK extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_spk);
+        setContent(R.layout.activity_spk);
 
         mainTable = findViewById(R.id.mainTable);
         scrollView = findViewById(R.id.scrollView);

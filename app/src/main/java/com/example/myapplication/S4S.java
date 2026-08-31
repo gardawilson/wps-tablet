@@ -166,7 +166,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 
-public class S4S extends AppCompatActivity {
+public class S4S extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9101;
 
     private String username;
@@ -238,7 +238,7 @@ public class S4S extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_s4_s);
+        setContent(R.layout.activity_s4_s);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("S4S_h".equals(tableName)) {

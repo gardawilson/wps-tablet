@@ -142,7 +142,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SawnTimber extends AppCompatActivity {
+public class SawnTimber extends BaseSidebarActivity {
+
+    @Override
+    protected int getSelectedMenuId() {
+        // Layar turunan kategori Sawn Timber - jaga state sidebar tetap sama.
+        return ID_LABEL_ST;
+    }
 
     private String idUsername;
     private String username;
@@ -241,7 +247,7 @@ public class SawnTimber extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_sawn_timber);
+        setContent(R.layout.activity_sawn_timber);
 
         BtnBatalST = findViewById(R.id.BtnBatalST);
         BtnDataBaruST = findViewById(R.id.BtnDataBaruST);

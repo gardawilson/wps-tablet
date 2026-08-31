@@ -24,3 +24,5 @@ captures/
 
 # Misc
 *.log
+
+keystore.properties

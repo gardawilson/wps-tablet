@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class StockOpname extends AppCompatActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener, WebSocketConnection.WebSocketListener {
+public class StockOpname extends BaseSidebarActivity implements StockOpnameDataInputAdapter.OnDeleteConfirmationListener, WebSocketConnection.WebSocketListener {
 
     private WebSocketConnection webSocketConnection;
 
@@ -124,7 +124,7 @@ public class StockOpname extends AppCompatActivity implements StockOpnameDataInp
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_stock_opname);
+        setContent(R.layout.activity_stock_opname);
 
         initializeViews();
         initializeRecyclerView();

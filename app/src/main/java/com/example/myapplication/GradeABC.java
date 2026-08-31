@@ -46,7 +46,7 @@ import java.util.concurrent.Executors;
 
 
 
-public class GradeABC extends AppCompatActivity {
+public class GradeABC extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableLayout detailTable;
@@ -75,7 +75,7 @@ public class GradeABC extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_grade_abc);
+        setContent(R.layout.activity_grade_abc);
 
         mainTable = findViewById(R.id.mainTable);
         detailTable = findViewById(R.id.detailTable);

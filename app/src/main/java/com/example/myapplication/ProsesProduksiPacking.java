@@ -92,7 +92,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class ProsesProduksiPacking extends AppCompatActivity {
+public class ProsesProduksiPacking extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -170,7 +170,7 @@ public class ProsesProduksiPacking extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_proses_produksi_packing);
+        setContent(R.layout.activity_proses_produksi_packing);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

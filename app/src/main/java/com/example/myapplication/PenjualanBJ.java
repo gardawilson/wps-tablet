@@ -82,7 +82,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class PenjualanBJ extends AppCompatActivity {
+public class PenjualanBJ extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -153,7 +153,7 @@ public class PenjualanBJ extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_penjualan_bj);
+        setContent(R.layout.activity_penjualan_bj);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

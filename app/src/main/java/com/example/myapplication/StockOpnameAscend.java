@@ -56,7 +56,7 @@
     import java.util.concurrent.Executors;
 
 
-    public class StockOpnameAscend extends AppCompatActivity {
+    public class StockOpnameAscend extends BaseSidebarActivity {
 
         private TableLayout mainTable;
         private TableLayout familyTable;
@@ -108,7 +108,7 @@
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_stock_opname_ascend);
+            setContent(R.layout.activity_stock_opname_ascend);
 
             mainTable = findViewById(R.id.mainTable);
             mainLoadingIndicator = findViewById(R.id.mainLoadingIndicator);

@@ -92,7 +92,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class ProsesProduksiCrossCut extends AppCompatActivity {
+public class ProsesProduksiCrossCut extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -186,7 +186,7 @@ public class ProsesProduksiCrossCut extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_proses_produksi_cross_cut);
+        setContent(R.layout.activity_proses_produksi_cross_cut);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

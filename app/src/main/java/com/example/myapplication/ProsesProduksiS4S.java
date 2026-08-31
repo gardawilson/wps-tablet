@@ -101,7 +101,7 @@ import android.util.DisplayMetrics;
 import android.text.InputType;
 
 
-public class ProsesProduksiS4S extends AppCompatActivity {
+public class ProsesProduksiS4S extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -189,7 +189,7 @@ public class ProsesProduksiS4S extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_proses_produksi_s4_s);
+        setContent(R.layout.activity_proses_produksi_s4_s);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kerangka layar dengan sidebar permanen.
+  Semua Activity yang extend BaseSidebarActivity memakai layout ini; konten
+  masing-masing layar di-inflate ke dalam @id/baseContentContainer.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_cream"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <FrameLayout
+        android:id="@+id/sidebarContainer"
+        android:layout_width="240dp"
+        android:layout_height="0dp"
+        android:background="@drawable/sidebar_background"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingEnd="5dp">
+
+            <include layout="@layout/sidebar_header_menu_utama" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/sidebarMenuList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="12dp"
+                tools:listitem="@layout/item_sidebar_top" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:layout_marginTop="92dp"
+            android:background="@color/sidebar_accent" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/baseContentContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/sidebarContainer"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/sidebarToggle"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="-10dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/avatar_circle_background"
+        android:contentDescription="@string/action_settings"
+        android:elevation="8dp"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_sidebar_collapse"
+        android:translationZ="8dp"
+        app:layout_constraintStart_toEndOf="@id/sidebarContainer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

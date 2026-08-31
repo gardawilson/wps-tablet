@@ -166,7 +166,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFontFactory;
 
-public class FingerJoint extends AppCompatActivity {
+public class FingerJoint extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9102;
 
     private String idUsername;
@@ -240,7 +240,7 @@ public class FingerJoint extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_finger_joint);
+        setContent(R.layout.activity_finger_joint);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("FJ_h".equals(tableName)) {

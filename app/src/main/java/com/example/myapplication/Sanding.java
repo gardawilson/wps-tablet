@@ -163,7 +163,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Sanding extends AppCompatActivity {
+public class Sanding extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9106;
 
     private String idUsername;
@@ -241,7 +241,7 @@ public class Sanding extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_sanding);
+        setContent(R.layout.activity_sanding);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("Sanding_h".equals(tableName)) {

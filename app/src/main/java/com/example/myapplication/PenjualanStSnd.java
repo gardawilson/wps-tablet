@@ -80,7 +80,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class PenjualanStSnd extends AppCompatActivity {
+public class PenjualanStSnd extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -167,7 +167,7 @@ public class PenjualanStSnd extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_penjualan_st_snd);
+        setContent(R.layout.activity_penjualan_st_snd);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

@@ -88,7 +88,7 @@ import java.util.function.Consumer;
 
 import android.util.DisplayMetrics;
 
-public class BongkarSusun extends AppCompatActivity {
+public class BongkarSusun extends BaseSidebarActivity {
 
     private TableLayout tableLayout;
     private TableLayout headerTableProduksi;
@@ -181,7 +181,7 @@ public class BongkarSusun extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bongkar_susun);
+        setContent(R.layout.activity_bongkar_susun);
 
         // Inisialisasi komponen UI
         tableLayout = findViewById(R.id.tableLayout);

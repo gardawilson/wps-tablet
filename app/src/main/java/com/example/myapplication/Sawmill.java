@@ -91,7 +91,7 @@ import android.text.TextWatcher;
 import android.text.Editable;
 
 
-public class Sawmill extends AppCompatActivity {
+public class Sawmill extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableRow selectedRowMain;
@@ -145,7 +145,7 @@ public class Sawmill extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sawmill);
+        setContent(R.layout.activity_sawmill);
 
         mainTable = findViewById(R.id.mainTable);
         btnDataBaru = findViewById(R.id.btnDataBaru);

@@ -47,7 +47,12 @@ import java.util.concurrent.Executors;
 
 
 
-public class SawnTimberUpah extends AppCompatActivity {
+public class SawnTimberUpah extends BaseSidebarActivity {
+
+    @Override
+    protected int getSelectedMenuId() {
+        return ID_LABEL_ST;
+    }
 
     private TableLayout mainTable;
     private TableLayout tableNoSTList;
@@ -67,7 +72,7 @@ public class SawnTimberUpah extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sawn_timber_upah);
+        setContent(R.layout.activity_sawn_timber_upah);
 
         mainTable = findViewById(R.id.mainTable);
         tableNoSTList = findViewById(R.id.tableNoSTList);

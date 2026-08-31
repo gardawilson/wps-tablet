@@ -50,7 +50,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class PenerimaanStDariSawmill extends AppCompatActivity {
+public class PenerimaanStDariSawmill extends BaseSidebarActivity {
 
     private TableLayout mainTable;
     private TableLayout tableNoSTList;
@@ -69,7 +69,7 @@ public class PenerimaanStDariSawmill extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_penerimaan_st_dari_sawmill);
+        setContent(R.layout.activity_penerimaan_st_dari_sawmill);
 
         mainTable = findViewById(R.id.mainTable);
         tableNoSTList = findViewById(R.id.tableNoSTList);

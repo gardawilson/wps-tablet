@@ -2,54 +2,52 @@ package com.example.myapplication;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.utils.RiwayatUtils;
-import com.example.myapplication.utils.SharedPrefUtils;
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.navigation.NavigationView;
+import com.example.myapplication.widget.BarChartView;
 
-public class MenuUtama extends AppCompatActivity {
+import java.util.Arrays;
+import java.util.List;
+
+public class MenuUtama extends BaseSidebarActivity {
     private static final String TAG = "MenuUtama";
 
-    private View sidebarContainer;
-    private View sidebarHeader;
-    private View sidebarLogo;
-    private NavigationView navigationView;
-    private MaterialButton sidebarToggle;
-    private TextView sidebarTitle;
-    private TextView sidebarSubtitle;
-    private TextView sidebarUsername;
     private TextView dashboardTitle;
     private TextView dashboardSubtitle;
     private TextView metricModuleCount;
     private TextView metricMode;
     private TextView metricServer;
-    private int selectedMenuItemId = R.id.nav_dashboard;
-    private boolean syncingSidebarSelection = false;
-    private boolean isSidebarCollapsed = false;
+    private TextView metricPesananAktif;
+    private TextView topBarUsername;
+    private BarChartView productionChart;
+    private LinearLayout activityListContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_menu_utama);
+        setContent(R.layout.activity_menu_utama);
 
         bindViews();
         setupDashboard();
-        setupSidebar();
+        applyUserIdentity(currentUsername());
+    }
 
-        String username = safeUsername(SharedPrefUtils.getUsername(this));
-        applyUserIdentity(username);
+    @Override
+    protected boolean isSidebarHome() {
+        return true;
+    }
+
+    @Override
+    protected void onSidebarLogout() {
+        performLogout(currentUsername());
     }
 
     @Override
@@ -66,146 +64,52 @@ public class MenuUtama extends AppCompatActivity {
     }
 
     private void bindViews() {
-        sidebarContainer = findViewById(R.id.sidebarContainer);
-        sidebarHeader = findViewById(R.id.sidebarHeader);
-        sidebarLogo = findViewById(R.id.sidebarLogo);
-        navigationView = findViewById(R.id.navigationView);
-        sidebarToggle = findViewById(R.id.sidebarToggle);
-        sidebarTitle = findViewById(R.id.sidebarTitle);
-        sidebarSubtitle = findViewById(R.id.sidebarSubtitle);
-        sidebarUsername = findViewById(R.id.sidebarUsername);
         dashboardTitle = findViewById(R.id.dashboardTitle);
         dashboardSubtitle = findViewById(R.id.dashboardSubtitle);
         metricModuleCount = findViewById(R.id.metricModuleCount);
         metricMode = findViewById(R.id.metricMode);
         metricServer = findViewById(R.id.metricServer);
+        metricPesananAktif = findViewById(R.id.metricPesananAktif);
+        topBarUsername = findViewById(R.id.topBarUsername);
+        productionChart = findViewById(R.id.productionChart);
+        activityListContainer = findViewById(R.id.activityListContainer);
     }
 
     private void setupDashboard() {
         metricModuleCount.setText("12.480");
         metricMode.setText("328");
         metricServer.setText("Online");
+        metricPesananAktif.setText("18");
+
+        List<String> chartLabels = Arrays.asList("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min");
+        List<Float> chartValues = Arrays.asList(320f, 410f, 380f, 560f, 430f, 620f, 385f);
+        productionChart.setData(chartLabels, chartValues);
+
+        populateActivityList();
     }
 
-    private void setupSidebar() {
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (syncingSidebarSelection) {
-                return true;
-            }
-            handleMenuSelection(item.getItemId());
-            return true;
-        });
+    private void populateActivityList() {
+        String[][] activities = {
+                {"Penerimaan Kayu Bulat - No. KB-2026-0168", "2 menit lalu"},
+                {"Proses S4S - No. PRD-2026-0456", "15 menit lalu"},
+                {"Penjualan ST - No. J-ST-2026-0214", "1 jam lalu"},
+                {"Stock Opname - Warehouse A", "3 jam lalu"},
+                {"Proses Kiln Dry - No. KD-2026-0098", "5 jam lalu"},
+        };
 
-        sidebarToggle.setOnClickListener(v -> toggleSidebar());
-
-        inflateSidebarMenu(false);
-        syncSelectedSidebarItem(selectedMenuItemId);
-        updateSidebarState(false);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (String[] activity : activities) {
+            View row = inflater.inflate(R.layout.item_dashboard_activity, activityListContainer, false);
+            ((TextView) row.findViewById(R.id.activityText)).setText(activity[0]);
+            ((TextView) row.findViewById(R.id.activityTime)).setText(activity[1]);
+            activityListContainer.addView(row);
+        }
     }
 
     private void applyUserIdentity(String username) {
-        sidebarUsername.setText("User: " + username);
         dashboardTitle.setText("Halo, " + username);
         dashboardSubtitle.setText("Ringkasan stok, produksi hari ini, dan status server dalam satu layar.");
-    }
-
-    private void toggleSidebar() {
-        updateSidebarState(!isSidebarCollapsed);
-    }
-
-    private void updateSidebarState(boolean collapsed) {
-        isSidebarCollapsed = collapsed;
-
-        ViewGroup.LayoutParams layoutParams = sidebarContainer.getLayoutParams();
-        layoutParams.width = dpToPx(collapsed ? 72 : 300);
-        sidebarContainer.setLayoutParams(layoutParams);
-
-        ViewGroup.LayoutParams headerParams = sidebarHeader.getLayoutParams();
-        headerParams.height = dpToPx(collapsed ? 96 : 180);
-        sidebarHeader.setLayoutParams(headerParams);
-
-        sidebarLogo.setVisibility(View.VISIBLE);
-        sidebarTitle.setVisibility(collapsed ? View.GONE : View.VISIBLE);
-        sidebarSubtitle.setVisibility(collapsed ? View.GONE : View.VISIBLE);
-        sidebarUsername.setVisibility(collapsed ? View.GONE : View.VISIBLE);
-
-        inflateSidebarMenu(collapsed);
-        sidebarToggle.setIconResource(collapsed ? R.drawable.ic_sidebar_expand : R.drawable.ic_sidebar_collapse);
-        navigationView.setItemTextColor(ColorStateList.valueOf(collapsed ? Color.TRANSPARENT : ContextCompat.getColor(this, R.color.white)));
-        navigationView.setItemIconPadding(dpToPx(collapsed ? 0 : 12));
-        navigationView.setItemIconTintList(ContextCompat.getColorStateList(this, R.color.white));
-
-        syncSelectedSidebarItem(selectedMenuItemId);
-    }
-
-    private void inflateSidebarMenu(boolean collapsed) {
-        navigationView.getMenu().clear();
-        navigationView.inflateMenu(collapsed ? R.menu.menu_menu_utama_collapsed : R.menu.menu_menu_utama);
-    }
-
-    private void syncSelectedSidebarItem(int itemId) {
-        syncingSidebarSelection = true;
-        try {
-            navigationView.setCheckedItem(itemId);
-        } finally {
-            syncingSidebarSelection = false;
-        }
-    }
-
-    private void handleMenuSelection(int itemId) {
-        selectedMenuItemId = itemId;
-        syncSelectedSidebarItem(itemId);
-
-        if (itemId == R.id.nav_dashboard) {
-            return;
-        }
-        if (itemId == R.id.nav_input_label) {
-            startActivity(new Intent(this, InputLabel.class));
-            return;
-        }
-        if (itemId == R.id.nav_proses_produksi) {
-            startActivity(new Intent(this, ProsesProduksi.class));
-            return;
-        }
-        if (itemId == R.id.nav_stock_opname) {
-            startActivity(new Intent(this, StockOpnameMenu.class));
-            return;
-        }
-        if (itemId == R.id.nav_sawmill) {
-            startActivity(new Intent(this, ProsesSawmill.class));
-            return;
-        }
-        if (itemId == R.id.nav_laporan) {
-            startActivity(new Intent(this, LaporanKategori.class));
-            return;
-        }
-        if (itemId == R.id.nav_penjualan) {
-            startActivity(new Intent(this, Penjualan.class));
-            return;
-        }
-        if (itemId == R.id.nav_audit) {
-            startActivity(new Intent(this, AuditActivity.class));
-            return;
-        }
-        if (itemId == R.id.nav_spk) {
-            startActivity(new Intent(this, SPK.class));
-            return;
-        }
-        if (itemId == R.id.nav_grade_abc) {
-            startActivity(new Intent(this, GradeABC.class));
-            return;
-        }
-        if (itemId == R.id.nav_planning_mesin) {
-            startActivity(new Intent(this, PlanningMesin.class));
-            return;
-        }
-        if (itemId == R.id.nav_nyangkut) {
-            startActivity(new Intent(this, Nyangkut.class));
-            return;
-        }
-        if (itemId == R.id.nav_logout) {
-            performLogout(safeUsername(SharedPrefUtils.getUsername(this)));
-        }
+        topBarUsername.setText(username);
     }
 
     private void performLogout(String username) {
@@ -226,23 +130,5 @@ public class MenuUtama extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
-    }
-
-    private String safeUsername(String username) {
-        if (username == null || username.trim().isEmpty()) {
-            return "-";
-        }
-        return capitalizeFirstLetter(username.trim());
-    }
-
-    private String capitalizeFirstLetter(String inputUsername) {
-        if (inputUsername == null || inputUsername.isEmpty()) {
-            return inputUsername;
-        }
-        return inputUsername.substring(0, 1).toUpperCase() + inputUsername.substring(1).toLowerCase();
-    }
-
-    private int dpToPx(int dp) {
-        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 }

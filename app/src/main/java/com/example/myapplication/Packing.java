@@ -162,7 +162,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Packing extends AppCompatActivity {
+public class Packing extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9107;
 
     private String idUsername;
@@ -245,7 +245,7 @@ public class Packing extends AppCompatActivity {
         });
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_packing);
+        setContent(R.layout.activity_packing);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("BarangJadi_h".equals(tableName)) {

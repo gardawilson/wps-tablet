@@ -20,7 +20,20 @@
     <string name="nav_planning_mesin">Planning Mesin</string>
     <string name="nav_nyangkut">Nyangkut</string>
     <string name="nav_logout">Logout</string>
+    <string name="sidebar_brand_title">WPS</string>
+    <string name="sidebar_brand_subtitle">Wood Production System</string>
+    <string name="sidebar_section_main">UTAMA</string>
+    <string name="sidebar_section_production">PRODUKSI</string>
+    <string name="sidebar_section_operations">OPERASIONAL</string>
+    <string name="sidebar_section_reports">LAPORAN &amp; PENJUALAN</string>
+    <string name="sidebar_section_system">SISTEM</string>
     <string name="action_settings">Settings</string>
+
+    <string name="dashboard_topbar_title">Dashboard</string>
+    <string name="dashboard_topbar_subtitle">Wood Production System</string>
+    <string name="dashboard_chart_title">Produksi 7 Hari Terakhir</string>
+    <string name="dashboard_activity_title">Aktivitas Terbaru</string>
+    <string name="dashboard_footer">WOOD PRODUCTION SYSTEM  |  © 2026 All Rights Reserved</string>
 
     <string name="menu_home">Home</string>
     <string name="menu_gallery">Gallery</string>

@@ -157,7 +157,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CrossCut extends AppCompatActivity {
+public class CrossCut extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9105;
 
     private String idUsername;
@@ -235,7 +235,7 @@ public class CrossCut extends AppCompatActivity {
 
 
 //        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_cross_cut);
+        setContent(R.layout.activity_cross_cut);
 
         PrintSyncEvent.get().observe(this, tableName -> {
             if ("CCAkhir_h".equals(tableName)) {
