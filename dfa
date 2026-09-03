@@ -1,0 +1,529 @@
+[33mcommit ee983c982a4713dfd0d18e98e1994c14e45e2106[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/label[m[33m, [m[1;31morigin/master[m[33m, [m[1;32mmaster[m[33m)[m
+Author: anlichandra <anlichn20@gmail.com>
+Date:   Thu Sep 3 09:34:38 2026 +0700
+
+    s4s label
+
+[33mcommit 09a5d666dae86e425062e0b4598ead6ce439a47b[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 13:53:01 2026 +0700
+
+    chore: deploy and env for dev and prod
+
+[33mcommit 9e2ba27df180f46ddf81752c2541364b3dc0328c[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 13:14:44 2026 +0700
+
+    chore: release 1.1.84 (versionCode 12)
+
+[33mcommit 5a17b005958ec42ac12b5e0a785602d0a2d54c3c[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 13:08:23 2026 +0700
+
+    chore: release 1.1.83 (versionCode 11)
+
+[33mcommit 5955bab147e93f50daad810858eca12f17d2a6b8[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 12:01:19 2026 +0700
+
+    chore: release 1.1.82 (versionCode 10)
+
+[33mcommit 9d1e617969286ec2516748271f30a8a6d2bec2c4[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 11:56:04 2026 +0700
+
+    chore: release 1.1.81 (versionCode 9)
+
+[33mcommit 7672dc4532eeffe27c948b60d2e390b71e40bab8[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 11:44:08 2026 +0700
+
+    chore: release 1.1.80 (versionCode 8)
+
+[33mcommit b71144bfeb8124cffbf98cd7c57aaf97897883a0[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 11:03:32 2026 +0700
+
+    chore: release 1.1.79 (versionCode 7)
+
+[33mcommit 56b0e470f21d5443a162377fd726797927b07d2c[m[33m ([m[1;31morigin/feat/ui-redesign[m[33m)[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:57:41 2026 +0700
+
+    revise: ui sidebar shell and update with endpoint
+
+[33mcommit c5c47c72ef27aa5885203b9de1d0129f7f79d6aa[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:49:25 2026 +0700
+
+    chore: release 1.1.78 (versionCode 6)
+
+[33mcommit 510e1f2d75b771be932212ca9397488e48ae2844[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:45:43 2026 +0700
+
+    chore: release 1.1.77 (versionCode 5)
+
+[33mcommit 091a9a04197441ffb092d8e41914688a4839f9a6[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:33:22 2026 +0700
+
+    chore: release 1.1.76 (versionCode 4)
+
+[33mcommit b51b28277756342b0179df3e07e27e81d7ac8006[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:29:33 2026 +0700
+
+    chore: release 1.1.75 (versionCode 3)
+
+[33mcommit b74482221ca1f1e320f73209a8dd18dd2d2dc7b6[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Mon Aug 31 10:26:56 2026 +0700
+
+    chore: release 1.1.74 (versionCode 2)
+
+[33mcommit 4be26b28309cb3e74f929d84e0adc881fcaace08[m
+Author: Garda Wilson Tarihoran <gardawilson@gmail.com>
+Date:   Tue Jul 21 11:50:41 2026 +0700
+
+    feat: new ui sidebar
+
+[33mcommit ef4c59083b5ef3a822d19eb0f96aa1d479716f86[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Fri Jul 17 10:27:49 2026 +0700
+
+    chore: add agent md
+
+[33mcommit 70298ee6585885b5abf7a1aa767ca2a26071f6ed[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Fri Jul 17 10:10:25 2026 +0700
+
+    chore: ignore gradle cache
+
+[33mcommit b46352224eeed276232b43f83a6e5991b13572a9[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon May 4 09:29:13 2026 +0700
+
+    feat: add endpoint for report upah borongan
+
+[33mcommit 00286927f82ae1428620d5fde493d845b089c396[m
+Merge: 8eae6a6 3a8fff0
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Apr 18 11:23:26 2026 +0700
+
+    Merge branch 'api-report'
+
+[33mcommit 8eae6a6977cd7888c7bf5eb7bbbbb709611cd6c3[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Tue Apr 14 13:56:13 2026 +0700
+
+    feat: add printer monitor log
+
+[33mcommit 7823055c3b9ba796d5e900a95b58891bab5d80b4[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Apr 11 11:33:00 2026 +0700
+
+    feat: fix print flow
+
+[33mcommit 9f89518d922d28ea835a9df9a7b267b032e3c661[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Wed Apr 8 14:33:32 2026 +0700
+
+    feat: add action mapping and produce/unproduce in audit
+
+[33mcommit 10bf1f4db3fcd97bb8e9d0b51733cdbafcb63141[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Tue Apr 7 10:51:18 2026 +0700
+
+    feat: revise consume unconsume
+
+[33mcommit 5fd07db0e0c6e7939cf36e548521d05f3c27bdc6[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Thu Apr 2 14:52:01 2026 +0700
+
+      feat: pending print status auto-retry with Room and WorkManager
+
+[33mcommit bacbfde58af6ec9d68aa78b8e077064a219d6a21[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Wed Apr 1 14:39:19 2026 +0700
+
+    feat: audit for process production
+
+[33mcommit 3a8fff03f602db5f85e533e7dd3bac194efc6bc7[m[33m ([m[1;31morigin/api-report[m[33m)[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 30 15:03:41 2026 +0700
+
+    revise laporan rekap penerimaan st endpoint
+
+[33mcommit b6e2d763b54756b708f3f388290a97dc87609443[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 30 14:29:56 2026 +0700
+
+    revise api st report
+
+[33mcommit 8a9f715057bd856e958706fa0edaa987c32b1ec3[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 30 13:51:31 2026 +0700
+
+    feat: pop up menu in dialog list label
+
+[33mcommit ac6c4f607d80af8d3b894b5730f738caa45e7334[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sun Mar 29 14:42:08 2026 +0700
+
+    feat: audit trail
+
+[33mcommit 45ace539ddd99cd41598f6c0358a35ab5258f278[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Thu Mar 26 10:47:56 2026 +0700
+
+    redesign output label
+
+[33mcommit feec24af69afaa5c94a06faf37c5a5939116a643[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Thu Mar 26 10:02:44 2026 +0700
+
+    migration tabel output to recycle view
+
+[33mcommit 5b90bbcede9f03802b31e94b75e061f820d93ea0[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Tue Mar 17 14:04:30 2026 +0700
+
+    add preview pdf and sdk bluetooth printer
+
+[33mcommit 38456c18553dd120a898fecdf115e0ada82fc2a9[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 16 15:47:18 2026 +0700
+
+    feature: add supllier pada lembar tally
+
+[33mcommit 2520ae985bb4f83c6265686f1674e419d9a07431[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 16 15:08:43 2026 +0700
+
+    bug fixing: double entry data when double clicked save button
+
+[33mcommit 54528c15e0e365557cfd045df4602975f6d98d7c[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Mon Mar 16 14:18:44 2026 +0700
+
+    add laporan ST
+
+[33mcommit aa4c426d88f984857e5d8037fefc5937e3c37fb6[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Mar 7 09:56:46 2026 +0700
+
+    revise ui in label and add laporan rekap hasil sawmill per meja
+
+[33mcommit c1d76b17e4d07ac0c4d371c25c72a0fd0fbc546d[m
+Merge: 7045b26 ed67601
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sun Feb 22 13:36:01 2026 +0700
+
+    add spk tujuan in produksi
+
+[33mcommit 7045b2607c0d2d21784daceb0fb9c38b6963b994[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sun Feb 22 09:35:08 2026 +0700
+
+    Fix: Remove tracked build artifacts and gradle files and added isborongan in sawmill
+
+[33mcommit ed67601082a6495167df0930dc5ca2e5417f4333[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Feb 21 11:17:24 2026 +0700
+
+    Cleanup: Stop tracking gradle internal files and update gitignore
+
+[33mcommit 621ee94ede549f3253b46f510a71710519e383d1[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Feb 21 11:16:20 2026 +0700
+
+    Fix: stop tracking gradle internal files
+
+[33mcommit 33587f35175baf57dcb18bc55d114dc1f9d348ae[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Feb 21 11:02:48 2026 +0700
+
+    release update microservices
+
+[33mcommit 0206fa69c901167aefec9b248861619d48c0695e[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Feb 21 10:51:05 2026 +0700
+
+    add pdf new microservice for pdf generate
+
+[33mcommit 603f83bcde1d38f3757ffe0ea23dd1a4878db8b8[m[33m ([m[1;31morigin/feature/spk-produksi[m[33m)[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sat Feb 21 10:15:17 2026 +0700
+
+    add new feature spk tujuan
+
+[33mcommit b3947223d0f84eb0840231679f7ece9a5e9223e1[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Fri Feb 20 15:28:32 2026 +0700
+
+    fix bug edit detail in Lembar Tally
+
+[33mcommit 7a79dec5e12a57955a37af16fb8b039a89f2f528[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Fri Feb 13 11:09:33 2026 +0700
+
+    adjust sawmill header precondition
+
+[33mcommit 2893a786ac15313c34addb869dd9f9c6ba55107a[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Thu Feb 12 17:52:05 2026 +0700
+
+    add spk produk st sawmill
+
+[33mcommit e1a157412041d32b16143ddf5d113cba51354f4e[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Wed Feb 11 10:42:04 2026 +0700
+
+    added input manual stock opname and implement api routes with jwt
+
+[33mcommit dde803df0453265f2e5a9c255d7378179f2fddc9[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Sun Feb 8 14:17:21 2026 +0700
+
+    adjust gradle
+
+[33mcommit 2e572095becf1d195aaa033390867dab0b60cef9[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Wed Feb 4 13:24:18 2026 +0700
+
+    revise precondition check and berat balok in st sawmill
+
+[33mcommit 6aadbeea2f72edb2578c2c6810bcdf42cb64b997[m
+Author: Garda Wilson <garda@utamacorp.com>
+Date:   Fri Jan 23 14:11:39 2026 +0700
+
+    new version 2026
+
+[33mcommit 3a0dbbee030d4440960f9c22d17b38df4d54950b[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Nov 18 16:07:00 2025 +0700
+
+    optimized stockopname sparepart
+
+[33mcommit 4cf21247f82f383fb78e851c0f96e00814a16d26[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Oct 23 10:13:31 2025 +0700
+
+    added precondition check bongkarsusun
+
+[33mcommit fb2acf216ea8a527ca2474090d006dcbc4bedfbe[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Sat Sep 27 12:45:56 2025 +0700
+
+    added management and verification reporting features
+
+[33mcommit eaf19559e771a60dcb79f52c00aca0c9bc9faa64[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Sep 26 10:44:15 2025 +0700
+
+    Remove local.properties from repo
+
+[33mcommit f2d86ec102e9c48044b174964ec04ad92ffc1233[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Sep 26 10:23:12 2025 +0700
+
+    modul nyangkut
+
+[33mcommit 7c92faef280508baf0e063e6decb80d2a8c99a81[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Sep 25 15:29:57 2025 +0700
+
+    feature stock opname ascend
+
+[33mcommit 83768fa3b0f05d968bd1b9ccb626df9585783da3[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Sep 12 15:27:58 2025 +0700
+
+    fix bug tally (label)
+
+[33mcommit 78f9708bff667eb39d836f6b609078380f241edb[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Sep 11 11:37:17 2025 +0700
+
+    penambahan modul planning mesin
+
+[33mcommit be4866b2c016bac0ffd304b48480638a363a9fc0[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Sep 10 14:38:56 2025 +0700
+
+    penambahan modul Grade ABC
+
+[33mcommit 362551195c116ef1085d2647c00ee81c9d8fce69[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Sep 9 10:07:20 2025 +0700
+
+    add modul SPK
+
+[33mcommit b985519593811d270bb72195eb2f1b45f1a2d48f[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Mon Sep 8 15:39:14 2025 +0700
+
+    penambahan modul penjualan BJ dan refactor layout menu utama
+
+[33mcommit a99c6039e5a5afe8454c811a73fd6d584ed816c9[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Sep 2 16:58:05 2025 +0700
+
+    REFACTORING INPUT LABEL ST - BJ AND CRUD FEATURE
+
+[33mcommit f6cd3b125830bc23c8043910d7b78f33afe53865[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Aug 26 15:00:07 2025 +0700
+
+    optimization s4s data
+
+[33mcommit f061eed83daa29db6ac40cf3f27416f2c1145a32[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Sat Aug 9 10:08:26 2025 +0700
+
+    update and delete feature for proses produksi and bongkar susun
+
+[33mcommit a1db929328fd64e8b697154b85793afa7fa97473[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Jul 30 08:56:57 2025 +0700
+
+    adding reports and sawmill features
+
+[33mcommit fd65a85ada90616a2c88767df511a3e8c1dcbc30[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Jul 10 09:35:47 2025 +0700
+
+    Stop tracking local.properties
+
+[33mcommit fd796bea1b5cb04508c83f3f1175406e8b129205[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Jul 10 09:27:52 2025 +0700
+
+    refactor penamaan file (laporan) dan pemisahan credential server ke local.properties
+
+[33mcommit cbf16e12444c94f9e79e9727b7c8d527865a1dfa[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Mon Jul 7 10:43:55 2025 +0700
+
+    initial for report feature
+
+[33mcommit 596659a1f62c94a5dec8ad5b9fa98e55bf375213[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Jul 3 14:05:54 2025 +0700
+
+    Modul QC Sawmill
+
+[33mcommit 3ced541014313a25421002a50c085d20669bfb16[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Jul 2 13:26:56 2025 +0700
+
+    modul sawmil update feature dan fix bugs
+
+[33mcommit fbe9e810dc0a52ae3d1872f06c86b0caf4d77a7d[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Mon Jun 23 15:05:51 2025 +0700
+
+    Modul Sawmill Update Fix
+
+[33mcommit e68ac087fdf64d677c8685d90962630f6e73f776[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Jun 4 08:41:39 2025 +0700
+
+    Modul Sawmill (Header)
+
+[33mcommit 85d3f8ec5bef6e52ea9640270ad92035c4239b32[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Apr 30 14:48:01 2025 +0700
+
+    Perbaikan dan penyesuaian pada label ST
+
+[33mcommit 9d04e497fe99eba08d47f9108288d95037d27cdf[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Apr 17 17:19:59 2025 +0700
+
+    Modifikasi Detail ST
+
+[33mcommit edb07ad3670da6c229b6ec3384962d9a1c7bf826[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Apr 17 11:40:12 2025 +0700
+
+    Pembaharuan Layout ST
+
+[33mcommit 0612ece822db02b0c3a674726b8feb347d99317d[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Apr 15 14:34:45 2025 +0700
+
+    Fitur Input Label ST (Pembelian)
+
+[33mcommit 036f801fde297cbac984149ba0c1db3bef730bfa[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Apr 11 16:36:51 2025 +0700
+
+    Fix bug label mati bisa dicetak
+
+[33mcommit 77711b707d2c32e44b1a26574ccbca3fe15811d6[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Mon Mar 24 14:29:38 2025 +0700
+
+    Lock Dimension without Grade and CCA Machine in S4S Label
+
+[33mcommit 39186f6f8bb0692764424071e85bf0c51b13dd2d[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Sat Mar 22 09:04:33 2025 +0700
+
+    Penerapan websocket untuk stockopname
+
+[33mcommit 75eef8e26486212fea4a2d168dd91b3a86618ca9[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Mar 19 17:07:07 2025 +0700
+
+    Proses Input Data Label kemudian NoLabel diakhir
+
+[33mcommit 3f6cde1f19eb343abcf853bf60aee0d464646114[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Tue Mar 18 09:16:48 2025 +0700
+
+    Tooltip for SO and checkpoint for NoLabel in NewDataBtn
+
+[33mcommit b6d8a0330d33136a97464ce541d045e17931f252[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Sat Mar 1 13:38:46 2025 +0700
+
+    Update New Label and UI in Input Label and Proses Produksi
+
+[33mcommit 1e9f38879fc00ea08cd05f1ca28ea927a9257d4f[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Sat Feb 22 12:41:33 2025 +0700
+
+    Update Filter dan UI StockOpname
+
+[33mcommit ec3c8b8c2e625c9be057435ca9d08551b43383c8[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Feb 21 14:50:40 2025 +0700
+
+    Fix bug filter SO part 3
+
+[33mcommit 314ffaba70c5e4d1221e02bddfe4b67818a834d5[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Fri Feb 21 10:24:35 2025 +0700
+
+    Fix bug filter in SO part 2
+
+[33mcommit 9ae792b889bb468d72b694a36e52b7898b18fa07[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Feb 20 11:32:47 2025 +0700
+
+    Multiple Filter pada Stock Opname
+
+[33mcommit a8e9958ac15221737d2a9bc2e882b2170d7506b2[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Thu Feb 20 09:23:38 2025 +0700
+
+    fix bugs scroll in recycleview
+
+[33mcommit 653ecbb93fe5e5d921ad9dadebdabcf79fec7741[m
+Author: gardawilson <gardawilson@gmail.com>
+Date:   Wed Feb 19 10:42:30 2025 +0700
+
+    Fitur filter pada Stock Opname

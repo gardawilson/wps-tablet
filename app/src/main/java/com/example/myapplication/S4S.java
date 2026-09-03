@@ -1283,7 +1283,7 @@ public class S4S extends BaseSidebarActivity {
                     if (!filePath.isEmpty()) {
                         Intent previewIntent = new Intent(S4S.this, PdfPreviewActivity.class);
                         //"content://media/external/downloads/1000000041"/
-                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "content://media/" + filePath/* pdfUri.toString()*/);
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "content://media/" + filePath);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noS4S);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label S4S");
                         startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
@@ -1294,7 +1294,7 @@ public class S4S extends BaseSidebarActivity {
                     }
                 }).start();
 
-                Log.d("Download", "after download");
+                //Log.d("Download", "after download");
 
 
                 //if (pdfUri != null) {
