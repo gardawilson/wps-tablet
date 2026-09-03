@@ -3390,7 +3390,8 @@ public class S4S extends BaseSidebarActivity {
     }
 
     private String savePdfToStorage(Response response, String noS4S) throws IOException {
-        String fileName = noS4S + ".pdf"; // "downloaded_document.pdf";
+        //String fileName = noS4S + ".pdf"; // "downloaded_document.pdf";
+        String fileName = "S4S_" + noS4S + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         OutputStream fos = null;
         Uri fileUri = null;
 

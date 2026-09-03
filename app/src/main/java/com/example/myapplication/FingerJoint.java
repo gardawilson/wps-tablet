@@ -3092,7 +3092,8 @@ public class FingerJoint extends BaseSidebarActivity {
     }
 
     private String savePdfToStorage(Response response, String noFJ) throws IOException {
-        String fileName = noFJ + ".pdf"; // "downloaded_document.pdf";
+        //String fileName = noFJ + ".pdf"; // "downloaded_document.pdf";
+        String fileName =  "FJ_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         OutputStream fos = null;
         Uri fileUri = null;
 
