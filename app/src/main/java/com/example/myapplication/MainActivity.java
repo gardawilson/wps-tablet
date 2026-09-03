@@ -111,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
             Executors.newSingleThreadExecutor().execute(() -> {
                 // Autentikasi tunggal lewat backend API (menggantikan login JDBC).
                 LoginResponse response = AuthApi.login(username, password);
+                //Log.d("err", response.getMessage());
 
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);

@@ -34,6 +34,7 @@ public class AuthApi {
             requestBody.put("password", password);
 
             OutputStream os = connection.getOutputStream();
+
             os.write(requestBody.toString().getBytes("UTF-8"));
             os.close();
 
@@ -53,6 +54,8 @@ public class AuthApi {
                 response.append(line);
             }
             reader.close();
+
+            //Log.d("Err", response.toString());
 
             return LoginResponse.fromJSON(response.toString());
 
