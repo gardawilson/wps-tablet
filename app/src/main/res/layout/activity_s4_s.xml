@@ -205,13 +205,13 @@
                             android:id="@+id/mesinView"
                             android:layout_width="match_parent"
                             android:layout_height="36dp"
-                            android:padding="8dp"
+                            android:layout_marginBottom="10dp"
                             android:layout_weight="1"
                             android:background="@drawable/border_disabled"
                             android:elevation="1dp"
-                            android:layout_marginBottom="10dp"
                             android:enabled="false"
-                            android:visibility="gone"/>
+                            android:padding="8dp"
+                            android:visibility="gone" />
 
                         <Spinner
                             android:id="@+id/SpinSusun"
