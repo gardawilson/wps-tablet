@@ -29,3 +29,4 @@ keystore.properties
 
 # override env per-developer (opsional): -PbuildEnv=local
 env/local.properties
+env/dev.properties
