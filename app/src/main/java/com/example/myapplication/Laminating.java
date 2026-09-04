@@ -1,5 +1,7 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.config.ApiEndpoints.BASE_URL_API;
+
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 
@@ -18,6 +20,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -106,6 +109,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -129,6 +133,7 @@ import com.example.myapplication.utils.LoadingDialogHelper;
 import com.example.myapplication.utils.PermissionUtils;
 import com.example.myapplication.utils.SharedPrefUtils;
 import com.example.myapplication.utils.TableUtils;
+import com.example.myapplication.utils.TokenManager;
 import com.example.myapplication.utils.TooltipUtils;
 import com.google.android.material.textfield.TextInputEditText;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
@@ -161,6 +166,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class Laminating extends BaseSidebarActivity {
     private static final int REQUEST_CODE_PDF_PREVIEW = 9104;
@@ -1055,7 +1064,8 @@ public class Laminating extends BaseSidebarActivity {
                 } else {
                     mesinSusun = SpinSusun.getSelectedItem() != null && isCreateMode ? SpinSusun.getSelectedItem().toString().trim() : susunView.getText().toString();
                 }
-                Uri pdfUri = createPdf(noLaminating, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
+
+                /*Uri pdfUri = createPdf(noLaminating, jenisKayu, date, time, tellyBy, mesinSusun, noSPK, noSPKasal, grade,
                         temporaryDataListDetail, jumlahPcs, m3, printCount, fisik, remark);
                 if (pdfUri != null) {
                     Intent previewIntent = new Intent(Laminating.this, PdfPreviewActivity.class);
@@ -1063,7 +1073,20 @@ public class Laminating extends BaseSidebarActivity {
                     previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noLaminating);
                     previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Laminating");
                     startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
-                }
+                }*/
+
+                new Thread(() -> {
+                    String filePath = downloadPdfFromApi(noLaminating);
+                    if (!filePath.isEmpty()) {
+                        Intent previewIntent = new Intent(Laminating.this, PdfPreviewActivity.class);
+                        //"content://media/external/downloads/1000000041"/
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "content://media/" + filePath);
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noLaminating);
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label LMT");
+                        startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
+                        // Lakukan sesuatu dengan filePath di sini
+                    }
+                }).start();
             } catch (Exception e) {
                 e.printStackTrace();
                 String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
@@ -2979,6 +3002,84 @@ public class Laminating extends BaseSidebarActivity {
 
             canvas.restoreState();
         }
+    }
+
+    // Fungsi sekarang mengembalikan String dan berjalan secara sinkron
+    private String downloadPdfFromApi(String noLMT) {
+        OkHttpClient client = new OkHttpClient();
+        Response response = null;
+
+        try {
+            URL url = new URL(BASE_URL_API + "/api/label/lmt/" + noLMT + "/pdf");
+            String token = TokenManager.getToken(this);
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .build();
+
+            // Menggunakan execute() alih-alih enqueue() untuk proses sinkron
+            response = client.newCall(request).execute();
+
+            if (!response.isSuccessful()) {
+                runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Download failed: Unexpected code", Toast.LENGTH_SHORT).show());
+                return null;
+            }
+
+            // Simpan ke storage dan kembalikan path/URI-nya
+            return savePdfToStorage(response, noLMT);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            return null;
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+    }
+
+    private String savePdfToStorage(Response response, String noLMT) throws IOException {
+        //String fileName = noLMT + ".pdf"; // "downloaded_document.pdf";
+        String fileName = "LMT_" + noLMT + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+        OutputStream fos = null;
+        Uri fileUri = null;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentResolver resolver = getContentResolver();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+            fileUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+            if (fileUri != null) {
+                fos = resolver.openOutputStream(fileUri);
+            }
+        } else {
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File file = new File(downloadsDir, fileName);
+            fos = new FileOutputStream(file);
+        }
+
+        if (fos != null) {
+            InputStream inputStream = response.body().byteStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
+            }
+            fos.flush();
+            fos.close();
+            inputStream.close();
+
+            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "PDF Saved to Downloads!", Toast.LENGTH_LONG).show());
+
+            Log.d("path", fileUri.getPath());
+            return fileUri.getPath();
+        }
+        return null;
     }
 
     private Uri createPdf(String noLaminating, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<LabelDetailData> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik, String remark) throws IOException {

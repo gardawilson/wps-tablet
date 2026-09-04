@@ -1280,6 +1280,7 @@ public class S4S extends BaseSidebarActivity {
 
                 new Thread(() -> {
                     String filePath = downloadPdfFromApi(noS4S);
+
                     if (!filePath.isEmpty()) {
                         Intent previewIntent = new Intent(S4S.this, PdfPreviewActivity.class);
                         //"content://media/external/downloads/1000000041"/
@@ -1289,8 +1290,7 @@ public class S4S extends BaseSidebarActivity {
                         startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
 
 
-                        Log.d("Download", "Path file: " + filePath);
-                        // Lakukan sesuatu dengan filePath di sini
+
                     }
                 }).start();
 

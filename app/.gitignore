@@ -6,6 +6,7 @@ local.properties
 build/
 bin/
 gen/
+env/
 
 # File khusus Android Studio / IntelliJ
 .idea/
