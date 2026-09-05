@@ -1084,7 +1084,7 @@ public class Moulding extends BaseSidebarActivity {
                     if (!filePath.isEmpty()) {
                         Intent previewIntent = new Intent(Moulding.this, PdfPreviewActivity.class);
                         //"content://media/external/downloads/1000000041"/
-                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "content://media/" + filePath);
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "file://" + filePath);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noMoulding);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label Moulding");
                         startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
@@ -3057,48 +3057,41 @@ public class Moulding extends BaseSidebarActivity {
         }
     }
 
-    private String savePdfToStorage(Response response, String noMLD) throws IOException {
-        //String fileName = noMLD + ".pdf"; // "downloaded_document.pdf";
-        String fileName =  "MLD_" + noMLD + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
-        OutputStream fos = null;
-        Uri fileUri = null;
+    private String savePdfToStorage(Response response, String noMLD) throws IOException{
+        String fileName = "MLD_" + noMLD + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContentResolver resolver = getContentResolver();
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
-            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-
-            fileUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
-            if (fileUri != null) {
-                fos = resolver.openOutputStream(fileUri);
-            }
-        } else {
-            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File file = new File(downloadsDir, fileName);
-            fos = new FileOutputStream(file);
+        File internalDir = getFilesDir();
+        if (!internalDir.exists()) {
+            internalDir.mkdirs();
         }
 
-        if (fos != null) {
-            InputStream inputStream = response.body().byteStream();
+        File file = new File(internalDir, fileName);
+
+        OutputStream fos = null;
+        InputStream inputStream = response.body() != null ? response.body().byteStream() : null;
+
+        try{
+            fos = new FileOutputStream(file);
             byte[] buffer = new byte[4096];
             int read;
             while ((read = inputStream.read(buffer)) != -1) {
                 fos.write(buffer, 0, read);
             }
             fos.flush();
-            fos.close();
-            inputStream.close();
-
-            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "PDF Saved to Downloads!", Toast.LENGTH_LONG).show());
-
-            Log.d("path", fileUri.getPath());
-            return fileUri.getPath();
+        } finally {
+            if (fos != null) {
+                try { fos.close(); } catch(IOException e) { e.printStackTrace(); }
+            }
+            if(inputStream != null){
+                try { inputStream.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
         }
-        return null;
-    }
+        String filePath = file.getAbsolutePath();
+        runOnUiThread(() -> Toast.makeText(getApplicationContext(), "PDF secured internally!", Toast.LENGTH_SHORT).show());
+        Log.d("path", filePath);
 
+        return filePath;
+    }
     private Uri createPdf(String noMoulding, String jenisKayu, String date, String time, String tellyBy, String mesinSusun, String noSPK, String noSPKasal, String grade, List<LabelDetailData> temporaryDataListDetail, String jumlahPcs, String m3, int printCount, String fisik, String remark) throws IOException {
         // Validasi parameter wajib
         if (noMoulding == null || noMoulding.trim().isEmpty()) {

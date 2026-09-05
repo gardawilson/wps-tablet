@@ -1104,7 +1104,7 @@ public class FingerJoint extends BaseSidebarActivity {
                     if (!filePath.isEmpty()) {
                         Intent previewIntent = new Intent(FingerJoint.this, PdfPreviewActivity.class);
                         //"content://media/external/downloads/1000000041"/
-                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "content://media/" + filePath);
+                        previewIntent.putExtra(PdfPreviewActivity.EXTRA_PDF_URI, "file://" + filePath);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_LABEL_NO, noFJ);
                         previewIntent.putExtra(PdfPreviewActivity.EXTRA_PREVIEW_TITLE, "Preview Label FJ");
                         startActivityForResult(previewIntent, REQUEST_CODE_PDF_PREVIEW);
@@ -3091,7 +3091,43 @@ public class FingerJoint extends BaseSidebarActivity {
         }
     }
 
-    private String savePdfToStorage(Response response, String noFJ) throws IOException {
+    private String savePdfToStorage(Response response, String noFJ) throws IOException{
+        String fileName = "FJ_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
+
+        File internalDir = getFilesDir();
+        if (!internalDir.exists()) {
+            internalDir.mkdirs();
+        }
+
+        File file = new File(internalDir, fileName);
+
+        OutputStream fos = null;
+        InputStream inputStream = response.body() != null ? response.body().byteStream() : null;
+
+        try{
+            fos = new FileOutputStream(file);
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
+            }
+            fos.flush();
+        } finally {
+            if (fos != null) {
+                try { fos.close(); } catch(IOException e) { e.printStackTrace(); }
+            }
+            if(inputStream != null){
+                try { inputStream.close(); } catch (IOException e) { e.printStackTrace(); }
+            }
+        }
+        String filePath = file.getAbsolutePath();
+        runOnUiThread(() -> Toast.makeText(getApplicationContext(), "PDF secured internally!", Toast.LENGTH_SHORT).show());
+        Log.d("path", filePath);
+
+        return filePath;
+    }
+
+    private String savePdfToStorage1(Response response, String noFJ) throws IOException {
         //String fileName = noFJ + ".pdf"; // "downloaded_document.pdf";
         String fileName =  "FJ_" + noFJ + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".pdf";
         OutputStream fos = null;
